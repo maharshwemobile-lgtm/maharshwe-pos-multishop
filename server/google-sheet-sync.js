@@ -161,7 +161,7 @@ function captureDataset(req) {
   const path = String(req.path || req.originalUrl || '');
   if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) return null;
   if (path.startsWith('/api/remittances')) return null;
-  if (path.startsWith('/api/business-control/daily-closing')) return 'daily-closing';
+  if (path === '/api/business-control/daily-closing') return 'daily-closing';
   if (path.startsWith('/api/business-control/expenses')) return 'expense';
   if (path.startsWith('/api/business-control/other-income')) {
     const category = String(req.body?.category || '').toUpperCase();

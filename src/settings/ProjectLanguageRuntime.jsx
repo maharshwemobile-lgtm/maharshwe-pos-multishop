@@ -18,7 +18,7 @@ const MYANMAR = {
   'Backup & Recovery': 'Backup နှင့် Recovery',
   'Project Settings': 'Project Settings',
   'Money Service': 'ငွေလွှဲဝန်ဆောင်မှု',
-  'Other Records': 'အခြား ဝင်ငွေနှင့်ထွက်ငွေ',
+  'Other Records': 'စာရင်းချုပ်',
   'About Us': 'အကြောင်းအရာ',
   'Day Closed': 'နေ့ပိတ်ပြီး',
   'Daily Transfer / Cash Out Ledger': 'နေ့စဉ် ငွေလွှဲ / ငွေထုတ် စာရင်း',

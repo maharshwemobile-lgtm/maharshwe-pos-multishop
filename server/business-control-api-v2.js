@@ -497,6 +497,32 @@ function attachBusinessControlApiV2(app) {
     res.json({ ok: true, ...(await buildOverview(req.auth.shopId, businessDate)) });
   }));
 
+  app.get('/api/business-control/daily-closing/history', ...read, wrap(async (req, res) => {
+    const today = currentYangonDate();
+    const from = parseBusinessDate(req.query.from || shiftDate(today, -30));
+    const to = parseBusinessDate(req.query.to || today);
+    if (from > to) throw new ApiError(400, 'From date cannot be after To date');
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT dc.id,dc.closing_date AS "businessDate",dc.sales_total AS "salesTotal",
+              dc.product_profit_total AS "productProfitTotal",dc.service_income_total AS "serviceIncomeTotal",
+              dc.money_profit_total AS "moneyProfitTotal",dc.repair_income_total AS "repairIncomeTotal",
+              dc.repair_profit_total AS "repairProfitTotal",dc.expense_total AS "expenseTotal",
+              dc.other_income_total AS "otherIncomeTotal",dc.receivable_total AS "receivableTotal",
+              dc.payable_total AS "payableTotal",dc.total_profit AS "totalProfit",
+              dc.cash_balance AS "cashBalance",dc.kpay_balance AS "kpayBalance",
+              dc.wave_pay_balance AS "wavePayBalance",dc.note,dc.closed_at AS "closedAt",u.name AS "closedByName"
+         FROM daily_closings dc
+         LEFT JOIN users u ON u.id=dc.closed_by_id
+        WHERE dc.shop_id=$1::uuid AND dc.closing_date >= $2::date AND dc.closing_date <= $3::date
+        ORDER BY dc.closing_date DESC, dc.closed_at DESC
+        LIMIT 100`,
+      req.auth.shopId,
+      from,
+      to,
+    );
+    res.json({ ok: true, from, to, rows: rows.map(closingJson), total: rows.length });
+  }));
+
   app.post('/api/business-control/expenses', ...write, wrap(async (req, res) => {
     const expenseDate = parseBusinessDate(req.body?.expenseDate);
     if (expenseDate > currentYangonDate()) throw new ApiError(400, 'Future expense dates are not allowed');

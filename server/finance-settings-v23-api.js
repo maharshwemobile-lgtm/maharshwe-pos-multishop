@@ -30,9 +30,6 @@ let schemaPromise;
 const DEFAULT_INCOME_CATEGORIES = [
   'Other Income',
   'Service Income',
-  'Sales Income (Auto) From POS',
-  'Total Bill Sale',
-  'Money Service (Auto)',
 ];
 
 async function ensureDefaultIncomeCategories(shopId, userId) {
