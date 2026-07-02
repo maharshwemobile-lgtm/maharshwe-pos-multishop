@@ -1,0 +1,28 @@
+/* Minimal POS shell: keep only products, cart and payment controls. */
+.simple-pos-topbar {
+  display: none !important;
+}
+
+.simple-pos-screen {
+  grid-template-rows: minmax(0, 1fr) 104px !important;
+}
+
+.simple-pos-workspace {
+  padding-top: 8px !important;
+}
+
+/* The browser theme overlay used to inject a floating AI Summary button/panel. */
+body.ms-theme-active .ms-ai-summary-button,
+body.ms-theme-active .ms-ai-summary-panel,
+.ms-ai-summary-button,
+.ms-ai-summary-panel {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 1100px) {
+  .simple-pos-screen {
+    grid-template-rows: auto auto !important;
+  }
+}

@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="my" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#16a34a" />
+  <title>Mahar POS Multi Shop - ဖုန်းဆိုင် POS နှင့် Multi Shop Management</title>
+  <meta name="description" content="Mahar POS သည် ဖုန်းဆိုင်၊ Mobile Accessories ဆိုင်၊ Repair Service နှင့် Multi Shop လုပ်ငန်းများအတွက် PostgreSQL POS စနစ်ဖြစ်သည်။" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: Padauk, system-ui, sans-serif; }
+    .soft-grid { background-image: radial-gradient(rgba(22,163,74,.13) 1px, transparent 1px); background-size: 26px 26px; }
+    .glass { background: rgba(255,255,255,.82); backdrop-filter: blur(18px); border: 1px solid rgba(226,232,240,.9); }
+    .dark-glass { background: rgba(15,23,42,.72); backdrop-filter: blur(18px); border: 1px solid rgba(148,163,184,.18); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 overflow-x-hidden">
+  <nav class="fixed top-0 inset-x-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
+    <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <a href="https://maharshwe.shop/" class="flex items-center gap-3">
+        <img src="/maharshwe-logo.png" alt="Mahar POS" class="h-12 w-12 rounded-2xl object-contain" />
+        <div>
+          <b class="block text-xl font-black text-emerald-700">Mahar POS</b>
+          <span class="hidden text-xs text-slate-500 sm:block">Multi Shop PostgreSQL POS</span>
+        </div>
+      </a>
+      <div class="hidden items-center gap-7 text-sm font-bold text-slate-600 md:flex">
+        <a class="hover:text-emerald-700" href="#features">Function များ</a>
+        <a class="hover:text-emerald-700" href="#workflow">Flow</a>
+        <a class="hover:text-emerald-700" href="#partner">Partner Settlement</a>
+        <a class="hover:text-emerald-700" href="#pricing">Plan</a>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="https://admin.maharshwe.shop/" class="hidden rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 sm:inline-flex">Admin</a>
+        <a href="https://app.maharshwe.shop/" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700">Login / Register</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="soft-grid relative overflow-hidden pt-32">
+    <div class="absolute -left-24 top-24 h-80 w-80 rounded-full bg-emerald-200 blur-3xl"></div>
+    <div class="absolute -right-28 top-40 h-96 w-96 rounded-full bg-blue-200 blur-3xl"></div>
+    <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-28">
+      <section>
+        <div class="mb-5 inline-flex rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-sm font-bold text-emerald-700 shadow-sm">
+          7 Day Free Trial · Multi Shop · PostgreSQL Data
+        </div>
+        <h1 class="max-w-4xl text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+          ဖုန်းဆိုင်လုပ်ငန်းကို
+          <span class="text-emerald-600">တစ်နေရာတည်းကနေ</span>
+          စီမံနိုင်တဲ့ POS စနစ်
+        </h1>
+        <p class="mt-6 max-w-3xl text-lg leading-9 text-slate-600">
+          Sale POS, Stock, Products, Repair, Customer Credit, Finance, Money Service, Partner Settlement, Reports, Admin Control အားလုံးကို
+          ဆိုင်တစ်ဆိုင်ချင်း သီးသန့် Data နဲ့ ချိတ်ဆက်ထားတဲ့ Mahar POS Multi Shop System ဖြစ်ပါတယ်။
+        </p>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <a href="https://app.maharshwe.shop/" class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-7 py-4 text-base font-black text-white shadow-xl shadow-emerald-600/20 hover:bg-emerald-700">
+            စမ်းသုံးမယ် / ဆိုင်အသစ်ဖွင့်မယ်
+          </a>
+          <a href="#features" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-700 hover:border-emerald-300 hover:text-emerald-700">
+            Function တွေကြည့်မယ်
+          </a>
+        </div>
+        <div class="mt-8 grid gap-3 text-sm font-bold text-slate-600 sm:grid-cols-3">
+          <div class="rounded-2xl bg-white p-4 shadow-sm">✅ Gmail / Password Login</div>
+          <div class="rounded-2xl bg-white p-4 shadow-sm">✅ Tenant ID / Shop သီးသန့်</div>
+          <div class="rounded-2xl bg-white p-4 shadow-sm">✅ Mobile + Desktop အသုံးပြုနိုင်</div>
+        </div>
+      </section>
+
+      <section class="glass rounded-[2rem] p-5 shadow-2xl shadow-slate-900/10">
+        <div class="rounded-[1.5rem] bg-slate-950 p-5 text-white">
+          <div class="mb-5 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-emerald-300">LIVE BUSINESS CONTROL</span>
+              <h2 class="text-2xl font-black">Mahar POS Dashboard</h2>
+            </div>
+            <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-200">Online</span>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl bg-white/10 p-4">
+              <span class="text-sm text-slate-300">Today Sales</span>
+              <b class="mt-1 block text-2xl">2,888,262 MMK</b>
+            </div>
+            <div class="rounded-2xl bg-white/10 p-4">
+              <span class="text-sm text-slate-300">Stock Alert</span>
+              <b class="mt-1 block text-2xl text-amber-300">Low Stock</b>
+            </div>
+            <div class="rounded-2xl bg-white/10 p-4">
+              <span class="text-sm text-slate-300">Payment Wallet</span>
+              <b class="mt-1 block text-2xl">Cash / KBZ / Wave</b>
+            </div>
+            <div class="rounded-2xl bg-white/10 p-4">
+              <span class="text-sm text-slate-300">Tenant</span>
+              <b class="mt-1 block text-2xl">Shop Data Isolated</b>
+            </div>
+          </div>
+          <div class="mt-5 rounded-2xl bg-emerald-500 p-4 text-emerald-950">
+            <b class="block text-lg">အဓိက Data Rule</b>
+            <span class="text-sm font-bold">ဆိုင် A ရဲ့ Data ကို ဆိုင် B မမြင်ရပါ။ Server/API level မှာ tenant_id ခွဲထားပါတယ်။</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </header>
+
+  <main>
+    <section id="features" class="py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto mb-12 max-w-3xl text-center">
+          <span class="text-sm font-black uppercase tracking-[.18em] text-emerald-600">Function တစ်ခုချင်း ရှင်းပြချက်</span>
+          <h2 class="mt-3 text-3xl font-black text-slate-950 sm:text-4xl">Mahar POS မှာ ပါတဲ့ အဓိက Function များ</h2>
+          <p class="mt-4 text-lg leading-8 text-slate-600">ဆိုင်ရှင်၊ Admin၊ Staff အားလုံး နားလည်လွယ်အောင် အလုပ်လုပ်ပုံကို တစ်ခုချင်းဖော်ပြထားပါတယ်။</p>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🛒</span>
+            <h3 class="mt-4 text-xl font-black">Sale POS</h3>
+            <p class="mt-2 leading-7 text-slate-600">Product ရှာ၊ Cart ထဲထည့်၊ Qty ပြင်၊ Discount ထည့်ပြီး ရောင်းချနိုင်တဲ့ အဓိက POS စာမျက်နှာပါ။ Mobile view မှာလည်း လူတိုင်းသုံးတတ်အောင် compact ဖြစ်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">📦</span>
+            <h3 class="mt-4 text-xl font-black">Products & Categories</h3>
+            <p class="mt-2 leading-7 text-slate-600">ဖုန်း၊ Accessories၊ Parts, Cable, Earphone စတာတွေကို Category, SKU, Barcode, Selling Price, Cost Price နဲ့ စနစ်တကျသိမ်းနိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">📊</span>
+            <h3 class="mt-4 text-xl font-black">Stock Management</h3>
+            <p class="mt-2 leading-7 text-slate-600">Stock In, Stock Out, Adjustment, Damage, Repair Usage အားလုံးကို မှတ်တမ်းတင်နိုင်ပါတယ်။ Low Stock / Out of Stock Alert တွေပါရှိပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🧾</span>
+            <h3 class="mt-4 text-xl font-black">Sales History</h3>
+            <p class="mt-2 leading-7 text-slate-600">ရောင်းပြီး sale slip, payment, customer, sold items, void status တွေကို ပြန်ကြည့်နိုင်ပါတယ်။ ဆိုင်တစ်ဆိုင်ချင်း sale history သီးသန့်ဖြစ်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🔧</span>
+            <h3 class="mt-4 text-xl font-black">Repair Platform</h3>
+            <p class="mt-2 leading-7 text-slate-600">Customer ဖုန်းပြင်စာရင်း၊ Device Model, IMEI, ပြဿနာ, Repair Status, Charges, Pickup Status စတာတွေကို tracking လုပ်နိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🤝</span>
+            <h3 class="mt-4 text-xl font-black">Partner Shop & Weekly Settlement</h3>
+            <p class="mt-2 leading-7 text-slate-600">တခြားဆိုင်ကို ပစ္စည်းပေးရောင်းခိုင်းတာ၊ weekly ရောင်းအား/ကော်မရှင်/ပြန်ရမည့်ငွေ တွက်တာကို စီမံနိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🚚</span>
+            <h3 class="mt-4 text-xl font-black">Purchases & Suppliers</h3>
+            <p class="mt-2 leading-7 text-slate-600">Supplier ဆီက ပစ္စည်းဝယ်တာ၊ Purchase Order, Receiving, Supplier Payable, Purchase Return တို့ကို စနစ်တကျထားနိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">👥</span>
+            <h3 class="mt-4 text-xl font-black">Customers & Credit</h3>
+            <p class="mt-2 leading-7 text-slate-600">Customer အကြွေး၊ Credit Sale, Repayment, Balance ကျန်ငွေတွေကို မှတ်တမ်းတင်နိုင်ပါတယ်။ အကြွေးမေ့တာတွေ လျော့သွားစေပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">💳</span>
+            <h3 class="mt-4 text-xl font-black">Finance & Accounts</h3>
+            <p class="mt-2 leading-7 text-slate-600">Cash, KBZ Pay, Wave Pay, Bank, Wallet တွေကို account အလိုက်သိမ်းနိုင်ပါတယ်။ POS Payment Method နဲ့ wallet link လုပ်နိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">💸</span>
+            <h3 class="mt-4 text-xl font-black">Money Service</h3>
+            <p class="mt-2 leading-7 text-slate-600">Cash In / Cash Out ဝန်ဆောင်မှုအတွက် fee rate သတ်မှတ်ပြီး wallet နဲ့ချိတ်နိုင်ပါတယ်။ Finance ကိုမရောဘဲ သီးသန့် workflow ဖြစ်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">📈</span>
+            <h3 class="mt-4 text-xl font-black">Reports & Dashboard</h3>
+            <p class="mt-2 leading-7 text-slate-600">Today Sale, Profit, Stock Alert, Customer Credit, Money Movement, Daily Closing စတာတွေကို အမြန်ကြည့်နိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">⚙️</span>
+            <h3 class="mt-4 text-xl font-black">Project Settings</h3>
+            <p class="mt-2 leading-7 text-slate-600">Shop Info, Theme, Language, Wallet Links, Payment Method, Category, Google Sheet Sync စတာတွေကို တစ်နေရာတည်းမှာချိန်နိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🔐</span>
+            <h3 class="mt-4 text-xl font-black">Users / Roles / Permissions</h3>
+            <p class="mt-2 leading-7 text-slate-600">Admin, Staff, Cashier စတဲ့ user များကို create, reset password, feature hide/show, tab access control လုပ်နိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🛡️</span>
+            <h3 class="mt-4 text-xl font-black">Audit Trail</h3>
+            <p class="mt-2 leading-7 text-slate-600">ဘယ် user က ဘယ် action လုပ်ခဲ့လဲ၊ sale/stock/settings ပြောင်းလဲမှုတွေကို Super Admin အတွက် audit log အဖြစ်သိမ်းထားပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">☁️</span>
+            <h3 class="mt-4 text-xl font-black">Backup & Latest Verified Archive</h3>
+            <p class="mt-2 leading-7 text-slate-600">ဆိုင် data, tenant age, users, sale data, stock data တွေကို verified archive အနေနဲ့ backup/restore စိတ်ချရအောင်ထားနိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🔔</span>
+            <h3 class="mt-4 text-xl font-black">Push Notifications</h3>
+            <p class="mt-2 leading-7 text-slate-600">Low Stock, Sale Completed, Credit Repayment, Money Movement စတဲ့ notification တွေကို shop/user isolation နဲ့ ပို့နိုင်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">🔑</span>
+            <h3 class="mt-4 text-xl font-black">Google Sign-in & Tenant Login</h3>
+            <p class="mt-2 leading-7 text-slate-600">Gmail နဲ့ login/register လုပ်နိုင်ပြီး Gmail က identity စစ်ပေးတာသာဖြစ်ပါတယ်။ Data access ကတော့ shop membership နဲ့ပဲဆုံးဖြတ်ပါတယ်။</p>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <span class="text-3xl">👑</span>
+            <h3 class="mt-4 text-xl font-black">Super Admin Portal</h3>
+            <p class="mt-2 leading-7 text-slate-600">Tenant create/delete, user management, subscription plan, VPN ads/push, POS monitoring စတာတွေကို central admin ကနေကြည့်နိုင်ပါတယ်။</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="bg-slate-950 py-20 text-white">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-12 max-w-3xl">
+          <span class="text-sm font-black uppercase tracking-[.18em] text-emerald-300">Real Work Flow</span>
+          <h2 class="mt-3 text-3xl font-black sm:text-4xl">ဆိုင်တစ်ဆိုင်ရဲ့ နေ့စဉ်လုပ်ငန်း Flow</h2>
+          <p class="mt-4 text-lg leading-8 text-slate-300">ပစ္စည်းထည့်ခြင်းမှ ရောင်းချခြင်း၊ ငွေဝင်/ငွေထွက်၊ report ထုတ်ခြင်းအထိ flow တစ်ခုတည်းနဲ့သွားပါတယ်။</p>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div class="dark-glass rounded-3xl p-6">
+            <b class="text-emerald-300">Step 1</b>
+            <h3 class="mt-2 text-xl font-black">Product / Stock ထည့်</h3>
+            <p class="mt-2 leading-7 text-slate-300">ပစ္စည်းအမည်၊ category, SKU, barcode, price, stock quantity ထည့်ထားပါ။</p>
+          </div>
+          <div class="dark-glass rounded-3xl p-6">
+            <b class="text-emerald-300">Step 2</b>
+            <h3 class="mt-2 text-xl font-black">Sale POS မှာရောင်း</h3>
+            <p class="mt-2 leading-7 text-slate-300">Product ရှာပြီး add လုပ်ပါ။ Payment wallet ရွေးပြီး sale complete လုပ်ပါ။</p>
+          </div>
+          <div class="dark-glass rounded-3xl p-6">
+            <b class="text-emerald-300">Step 3</b>
+            <h3 class="mt-2 text-xl font-black">Stock / Wallet Auto Update</h3>
+            <p class="mt-2 leading-7 text-slate-300">Sale ပြီးတာနဲ့ stock လျော့ပြီး cash/wallet amount မှတ်တမ်းဝင်ပါတယ်။</p>
+          </div>
+          <div class="dark-glass rounded-3xl p-6">
+            <b class="text-emerald-300">Step 4</b>
+            <h3 class="mt-2 text-xl font-black">Report / Audit ကြည့်</h3>
+            <p class="mt-2 leading-7 text-slate-300">နေ့ကုန် report, profit, history, audit log တွေကို admin ကစစ်နိုင်ပါတယ်။</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="partner" class="py-20">
+      <div class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:px-8">
+        <div>
+          <span class="text-sm font-black uppercase tracking-[.18em] text-emerald-600">Partner Shop & Weekly Settlement</span>
+          <h2 class="mt-3 text-3xl font-black text-slate-950 sm:text-4xl">Partner Shop ဆိုတာ ဘာလဲ?</h2>
+          <p class="mt-5 text-lg leading-9 text-slate-600">
+            မင်းဆိုင်က တခြားဆိုင်တစ်ခုကို ပစ္စည်းပေးရောင်းခိုင်းတဲ့အခါ Partner Shop အဖြစ်မှတ်ထားနိုင်ပါတယ်။
+            အပတ်ကုန်ရင် ဘယ်ပစ္စည်း ဘယ်လောက်ရောင်းပြီးပြီ၊ မင်းဆိုင်ကို ပြန်ပေးရမယ့်ငွေဘယ်လောက်၊ Partner ကော်မရှင်ဘယ်လောက် ဆိုတာကို Weekly Settlement နဲ့တွက်ပါတယ်။
+          </p>
+        </div>
+        <div class="grid gap-4">
+          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <b class="text-emerald-700">ဥပမာ</b>
+            <p class="mt-2 leading-8 text-slate-600">ABC Mobile ကို Redmi Note 13 ၅ လုံး ပေးထားတယ်။ သူတို့ ၂ လုံးရောင်းပြီးလို့ အပတ်ကုန်မှာ ငွေရှင်းမယ်။</p>
+          </div>
+          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <b class="text-emerald-700">Settlement ထဲမှာတွက်မယ့်အရာ</b>
+            <ul class="mt-3 grid gap-2 text-slate-600">
+              <li>• ရောင်းပြီး quantity</li>
+              <li>• Partner ရောင်းအားစုစုပေါင်း</li>
+              <li>• Partner commission / margin</li>
+              <li>• မင်းဆိုင်ကို ပြန်ပေးရမယ့် Net Amount</li>
+              <li>• Paid / Unpaid status</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-emerald-50 py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-12 max-w-3xl">
+          <span class="text-sm font-black uppercase tracking-[.18em] text-emerald-700">Multi Shop Security</span>
+          <h2 class="mt-3 text-3xl font-black text-slate-950 sm:text-4xl">ဆိုင်တစ်ဆိုင်ချင်း Data သီးသန့်</h2>
+          <p class="mt-4 text-lg leading-8 text-slate-600">Mahar POS မှာ user login ဝင်နိုင်တာနဲ့ Data မြင်ခွင့်မတူပါ။ သူပါဝင်တဲ့ shop/tenant data ပဲမြင်ရပါတယ်။</p>
+        </div>
+        <div class="grid gap-5 md:grid-cols-3">
+          <div class="rounded-3xl bg-white p-6 shadow-sm">
+            <b class="text-xl">Shop A</b>
+            <p class="mt-2 leading-7 text-slate-600">Products, sales, stock, reports အားလုံး Shop A အတွက်ပဲမြင်ရပါတယ်။</p>
+          </div>
+          <div class="rounded-3xl bg-white p-6 shadow-sm">
+            <b class="text-xl">Shop B</b>
+            <p class="mt-2 leading-7 text-slate-600">Shop B data ကို Shop A user မမြင်ရပါ။ API level မှာ membership စစ်ပါတယ်။</p>
+          </div>
+          <div class="rounded-3xl bg-white p-6 shadow-sm">
+            <b class="text-xl">Super Admin</b>
+            <p class="mt-2 leading-7 text-slate-600">Tenant, users, subscription, access permission များကို central admin မှစီမံနိုင်ပါတယ်။</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="py-20">
+      <div class="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+        <span class="text-sm font-black uppercase tracking-[.18em] text-emerald-600">Plans</span>
+        <h2 class="mt-3 text-3xl font-black text-slate-950 sm:text-4xl">အသစ်စမ်းသုံးသူအတွက် 7 Day Free Trial</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-lg leading-8 text-slate-600">ဆိုင်အသစ် register လုပ်ပြီး Tenant ID ရရှိပါက 7 ရက် အခမဲ့ စမ်းသုံးနိုင်ပါတယ်။ Renewal ပြီးရင် data မပျက်ဘဲပြန်သုံးနိုင်ပါတယ်။</p>
+        <div class="mx-auto mt-10 grid max-w-5xl gap-5 md:grid-cols-4">
+          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <b class="text-xl">1 Month</b>
+            <p class="mt-2 text-slate-600">လစဉ်အသုံးပြုရန်</p>
+          </div>
+          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <b class="text-xl">3 Months</b>
+            <p class="mt-2 text-slate-600">Season plan အတွက်</p>
+          </div>
+          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <b class="text-xl">1 Year</b>
+            <p class="mt-2 text-slate-600">နှစ်စဉ် plan အတွက်</p>
+          </div>
+          <div class="rounded-3xl border border-emerald-200 bg-emerald-600 p-6 text-white shadow-lg shadow-emerald-600/20">
+            <b class="text-xl">Custom</b>
+            <p class="mt-2 text-emerald-50">ဆိုင်အရေအတွက်/လိုအပ်ချက်အလိုက်</p>
+          </div>
+        </div>
+        <div class="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+          <a href="https://app.maharshwe.shop/" class="rounded-2xl bg-emerald-600 px-8 py-4 font-black text-white shadow-xl shadow-emerald-600/20 hover:bg-emerald-700">စတင်အသုံးပြုမယ်</a>
+          <a href="https://t.me/+2gc9ml7iMgk1ZThl" class="rounded-2xl border border-slate-200 bg-white px-8 py-4 font-black text-slate-700 hover:border-emerald-300 hover:text-emerald-700">Telegram Support</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white py-10">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 text-sm text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+      <div>
+        <b class="block text-base text-slate-900">Mahar POS Multi Shop</b>
+        <span>PostgreSQL POS System for phone shops, repair services, and multi-shop businesses.</span>
+      </div>
+      <div class="flex gap-4 font-bold">
+        <a class="hover:text-emerald-700" href="https://app.maharshwe.shop/">POS App</a>
+        <a class="hover:text-emerald-700" href="https://admin.maharshwe.shop/">Admin Portal</a>
+        <a class="hover:text-emerald-700" href="https://api.maharshwe.shop/health">API Health</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

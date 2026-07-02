@@ -1,0 +1,64 @@
+name: PR23 Finance Workspace Check
+
+on:
+  push:
+    branches:
+      - pr-23-remittance-sheet-sync-expense-categories
+  pull_request:
+    branches:
+      - pr-22-admin-password-reset
+    paths:
+      - 'server/**'
+      - 'src/**'
+      - 'prisma/**'
+      - 'integrations/**'
+      - 'package.json'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Generate Prisma Client
+        run: npm run db:generate
+      - name: Run existing project checks
+        run: |
+          npm run check:phase9
+          npm run check:phase10
+          npm run check:sales-v10
+          npm run check:phase11
+          npm run check:phase12
+          npm run check:ui-v21
+          npm run check:phase23
+      - name: Check centralized settings and all-wallet modules
+        run: |
+          node --check server/api-connected-pr23-v3.js
+          node --check server/api-connected-pr23-v4.js
+          node --check server/api-connected-pr23-v5.js
+          node --check server/google-sheet-project-settings-v23.js
+          node --check server/google-sheet-project-export-data-v23.js
+          node --check server/google-sheet-project-export-api-v23.js
+          node --check server/pos-all-wallets-v24.js
+          node --check server/pos-sale-payment-methods-v23.js
+          node --check server/payments-accounts-dynamic-v23.js
+          node --check server/project-settings-response-sanitizer.js
+      - name: Production build
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee pr23-build.log
+      - name: Upload production build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr23-build-diagnostics
+          path: pr23-build.log
+          if-no-files-found: warn
+          retention-days: 3

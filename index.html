@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#13a36f" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Mahar Shwe Mobile POS</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/maharshwe-logo.png?v=20260617-settings" />
+    <link rel="shortcut icon" type="image/png" href="/maharshwe-logo.png?v=20260617-settings" />
+    <link rel="apple-touch-icon" href="/maharshwe-logo.png?v=20260617-settings" />
+    <style>
+      #app-boot-status{position:fixed;inset:0;display:grid;place-items:center;background:#f8fafc;color:#334155;font-family:Arial,sans-serif;z-index:999999}
+      #app-boot-status>div{text-align:center;padding:24px}
+      #app-boot-status b{display:block;margin-bottom:8px;font-size:18px;color:#166534}
+      #app-boot-status small{color:#64748b}
+    </style>
+  </head>
+  <body>
+    <div id="app-boot-status"><div><b>Mahar POS</b><small>Loading PostgreSQL Settings...</small></div></div>
+    <div id="root"></div>
+    <script type="module" src="/src/bootstrap-secure.jsx"></script>
+  </body>
+</html>

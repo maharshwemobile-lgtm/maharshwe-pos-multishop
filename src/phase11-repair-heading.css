@@ -1,0 +1,20 @@
+.phase11-repair-heading{padding:18px 20px;border:1px solid #dfe8e3;border-radius:16px;background:linear-gradient(135deg,#fff,#fffaf0)}
+.phase11-repair-root .repair-operations-workspace .repair-platform-page>.repair-page-heading>div:first-child{display:none}
+.phase11-repair-root .repair-operations-workspace .repair-platform-page>.repair-page-heading{justify-content:flex-end;margin:0}
+.repair-finance-tools-single{grid-template-columns:1fr}
+.phase11-repair-bottom-tools{display:flex;flex-direction:column;gap:16px;margin-top:2px;padding-top:18px;border-top:2px solid #e2e8f0}
+.phase11-repair-bottom-heading{padding:18px 20px;border:1px solid #dfe8e3;border-radius:16px;background:linear-gradient(135deg,#fff,#fffaf0)}
+.phase11-repair-bottom-heading span{display:block;margin-bottom:5px;color:#16a34a;font-size:11px;font-weight:950;letter-spacing:.1em}
+.phase11-repair-bottom-heading h2{margin:0;color:#0f172a;font-size:20px}
+.phase11-repair-bottom-heading p{margin:6px 0 0;color:#64748b;font-size:12px;line-height:1.5}
+.phase11-repair-bottom-tools>.repair-export-panel{width:100%;box-sizing:border-box}
+.phase11-repair-tool-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:10px}
+.phase11-repair-tool-buttons button{display:flex;align-items:center;gap:10px;min-height:64px;padding:12px;border:1px solid #dfe8e3;border-radius:14px;background:#fff;color:#0f172a;text-align:left;font-weight:900;cursor:pointer;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+.phase11-repair-tool-buttons button svg{color:#f59e0b;flex:0 0 auto}.phase11-repair-tool-buttons b,.phase11-repair-tool-buttons small{display:block}.phase11-repair-tool-buttons small{margin-top:3px;color:#64748b;font-size:11px}.phase11-repair-tool-buttons button.active{border-color:#f59e0b;background:#fff7ed}.phase11-repair-tool-buttons .clear-tool{justify-content:center;background:#f8fafc;color:#475569}
+.dark .phase11-repair-heading,.dark .phase11-repair-bottom-heading{background:#0f213b;border-color:#1f3655}
+.dark .phase11-repair-heading h2,.dark .phase11-repair-bottom-heading h2{color:#f8fafc}
+.dark .phase11-repair-bottom-heading p{color:#9fb0c7}
+.dark .phase11-repair-bottom-tools{border-top-color:#1f3655}
+.dark .phase11-repair-tool-buttons button{background:#0b1b33;color:#e5eef8;border-color:#1e3555}.dark .phase11-repair-tool-buttons small{color:#9fb0c7}.dark .phase11-repair-tool-buttons button.active{background:#332b16;border-color:#f59e0b}
+@media(max-width:1100px){.phase11-repair-tool-buttons{grid-template-columns:1fr 1fr}.phase11-repair-tool-buttons .clear-tool{grid-column:1/-1}}
+@media(max-width:650px){.phase11-repair-tool-buttons{grid-template-columns:1fr}}

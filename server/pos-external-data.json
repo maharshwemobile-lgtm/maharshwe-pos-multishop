@@ -1,0 +1,849 @@
+{
+  "generatedAt": "2026-05-20T11:35:18.948Z",
+  "shop": "Mahar Shwe Mobile",
+  "products": [
+    {
+      "barcode": "AUTO-1779274791318",
+      "brand": "454",
+      "model": "54",
+      "specs": "545",
+      "color": "",
+      "category": "New Phone",
+      "costPrice": 454,
+      "sellingPrice": 54,
+      "stockQty": 5442,
+      "imei": "45",
+      "condition": "Grade A",
+      "repairCost": 0,
+      "reorderLevel": 2,
+      "id": "p_1779274791318"
+    },
+    {
+      "barcode": "454",
+      "brand": "45454",
+      "model": "545",
+      "specs": "45454",
+      "color": "",
+      "category": "New Phone",
+      "costPrice": 5454,
+      "sellingPrice": -1545454,
+      "stockQty": 54532,
+      "imei": "54",
+      "condition": "Grade A",
+      "repairCost": 0,
+      "reorderLevel": 2,
+      "id": "p_1779274786470"
+    }
+  ],
+  "sales": [
+    {
+      "id": "sal_1779276805038",
+      "invoiceNo": "MS-INV-1023",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "454 54 (545)",
+          "qty": 3,
+          "price": 54,
+          "cost": 454,
+          "category": "New Phone"
+        },
+        {
+          "name": "45454 545 (45454)",
+          "qty": 1,
+          "price": -1545454,
+          "cost": 5454,
+          "category": "New Phone"
+        }
+      ],
+      "total": -1545292,
+      "discount": 0,
+      "payable": 0,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:33:25.038Z"
+    },
+    {
+      "id": "sal_1779275587862",
+      "invoiceNo": "MS-INV-1022",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "454 54 (545)",
+          "qty": 2,
+          "price": 54,
+          "cost": 454,
+          "category": "New Phone"
+        },
+        {
+          "name": "45454 545 (45454)",
+          "qty": 1,
+          "price": -1545454,
+          "cost": 5454,
+          "category": "New Phone"
+        }
+      ],
+      "total": -1545346,
+      "discount": 0,
+      "payable": 0,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:13:07.862Z"
+    },
+    {
+      "id": "sal_1779275539549",
+      "invoiceNo": "MS-INV-1021",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "454 54 (545)",
+          "qty": 3,
+          "price": 54,
+          "cost": 454,
+          "category": "New Phone"
+        },
+        {
+          "name": "45454 545 (45454)",
+          "qty": 1,
+          "price": -1545454,
+          "cost": 5454,
+          "category": "New Phone"
+        }
+      ],
+      "total": -1545292,
+      "discount": 0,
+      "payable": 0,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:12:19.549Z"
+    },
+    {
+      "id": "sal_1779275369981",
+      "invoiceNo": "MS-INV-1020",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "454 54 (545)",
+          "qty": 3,
+          "price": 54,
+          "cost": 454,
+          "category": "New Phone"
+        }
+      ],
+      "total": 162,
+      "discount": 0,
+      "payable": 162,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:09:29.981Z"
+    },
+    {
+      "id": "sal_1779275354221",
+      "invoiceNo": "MS-INV-1019",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "54 54 (545)",
+          "qty": 5,
+          "price": 545,
+          "cost": 454,
+          "category": "New Phone"
+        }
+      ],
+      "total": 2725,
+      "discount": 0,
+      "payable": 2725,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:09:14.221Z"
+    },
+    {
+      "id": "sal_1779275228085",
+      "invoiceNo": "MS-INV-1018",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "54 54 (545)",
+          "qty": 3,
+          "price": 545,
+          "cost": 454,
+          "category": "New Phone"
+        }
+      ],
+      "total": 1635,
+      "discount": 0,
+      "payable": 1635,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:07:08.085Z"
+    },
+    {
+      "id": "sal_1779275097437",
+      "invoiceNo": "MS-INV-1017",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "54 54 (545)",
+          "qty": 1,
+          "price": 545,
+          "cost": 454,
+          "category": "New Phone"
+        },
+        {
+          "name": "454 54 (545)",
+          "qty": 1,
+          "price": 54,
+          "cost": 454,
+          "category": "New Phone"
+        },
+        {
+          "name": "45454 545 (45454)",
+          "qty": 1,
+          "price": -1545454,
+          "cost": 5454,
+          "category": "New Phone"
+        }
+      ],
+      "total": -1544855,
+      "discount": 0,
+      "payable": 0,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:04:57.437Z"
+    },
+    {
+      "id": "sal_1779274810797",
+      "invoiceNo": "MS-INV-1016",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "54 54 (545)",
+          "qty": 2,
+          "price": 545,
+          "cost": 454,
+          "category": "New Phone"
+        },
+        {
+          "name": "454 54 (545)",
+          "qty": 2,
+          "price": 54,
+          "cost": 454,
+          "category": "New Phone"
+        },
+        {
+          "name": "45454 545 (45454)",
+          "qty": 1,
+          "price": -1545454,
+          "cost": 5454,
+          "category": "New Phone"
+        }
+      ],
+      "total": -1544256,
+      "discount": 0,
+      "payable": 0,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:00:10.797Z"
+    },
+    {
+      "id": "sal_1779274807143",
+      "invoiceNo": "MS-INV-1015",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "45454 545 (45454)",
+          "qty": 4,
+          "price": -1545454,
+          "cost": 5454,
+          "category": "New Phone"
+        }
+      ],
+      "total": -6181816,
+      "discount": 0,
+      "payable": 0,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:00:07.143Z"
+    },
+    {
+      "id": "sal_1779274803078",
+      "invoiceNo": "MS-INV-1014",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "45454 545 (45454)",
+          "qty": 5,
+          "price": -1545454,
+          "cost": 5454,
+          "category": "New Phone"
+        }
+      ],
+      "total": -7727270,
+      "discount": 0,
+      "payable": 0,
+      "payMethod": "Cash",
+      "date": "2026-05-20T11:00:03.078Z"
+    },
+    {
+      "id": "sal_1779274203373",
+      "invoiceNo": "MS-INV-1013",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 2,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 13000,
+      "discount": 0,
+      "payable": 13000,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:50:03.373Z"
+    },
+    {
+      "id": "sal_1779273891253",
+      "invoiceNo": "MS-INV-1012",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 4,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 26000,
+      "discount": 0,
+      "payable": 26000,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:44:51.253Z"
+    },
+    {
+      "id": "sal_1779273786758",
+      "invoiceNo": "MS-INV-1011",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 2,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 13000,
+      "discount": 0,
+      "payable": 13000,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:43:06.758Z"
+    },
+    {
+      "id": "sal_1779272400836",
+      "invoiceNo": "MS-INV-1009",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 1,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 6500,
+      "discount": 0,
+      "payable": 6500,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:20:00.836Z"
+    },
+    {
+      "id": "sal_1779272301661",
+      "invoiceNo": "MS-INV-1008",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 2,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 13000,
+      "discount": 0,
+      "payable": 13000,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:18:21.661Z"
+    },
+    {
+      "id": "sal_1779271922756",
+      "invoiceNo": "MS-INV-1007",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 1,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 6500,
+      "discount": 0,
+      "payable": 6500,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:12:02.756Z"
+    },
+    {
+      "id": "sal_1779271865309",
+      "invoiceNo": "MS-INV-1006",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 3,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 19500,
+      "discount": 0,
+      "payable": 19500,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:11:05.309Z"
+    },
+    {
+      "id": "sal_1779271123516",
+      "invoiceNo": "MS-INV-1005",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 2,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 13000,
+      "discount": 0,
+      "payable": 13000,
+      "payMethod": "Cash",
+      "date": "2026-05-20T09:58:43.516Z"
+    },
+    {
+      "id": "sal_1779270763965",
+      "invoiceNo": "MS-INV-1004",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 3,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        },
+        {
+          "name": "Samsung Galaxy A55 (8GB/256GB)",
+          "qty": 1,
+          "price": 950000,
+          "cost": 850000,
+          "category": "New Phone"
+        }
+      ],
+      "total": 969500,
+      "discount": 0,
+      "payable": 969500,
+      "payMethod": "Cash",
+      "date": "2026-05-20T09:52:43.965Z"
+    },
+    {
+      "id": "sal_1779270485072",
+      "invoiceNo": "MS-INV-1003",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 1,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 6500,
+      "discount": 0,
+      "payable": 6500,
+      "payMethod": "Cash",
+      "date": "2026-05-20T09:48:05.072Z"
+    },
+    {
+      "id": "sal_1779270274532",
+      "invoiceNo": "MS-INV-1002",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 3,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        },
+        {
+          "name": "Samsung Galaxy A55 (8GB/256GB)",
+          "qty": 2,
+          "price": 950000,
+          "cost": 850000,
+          "category": "New Phone"
+        }
+      ],
+      "total": 1919500,
+      "discount": 0,
+      "payable": 1919500,
+      "payMethod": "Cash",
+      "date": "2026-05-20T09:44:34.532Z"
+    },
+    {
+      "id": "sal_1779270162780",
+      "invoiceNo": "MS-INV-1001",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "Anker 20W USB-C Charger (PowerPort III)",
+          "qty": 5,
+          "price": 32000,
+          "cost": 18000,
+          "category": "Accessories"
+        },
+        {
+          "name": "Xiaomi Redmi Note 13 (8GB/128GB)",
+          "qty": 1,
+          "price": 590000,
+          "cost": 520000,
+          "category": "New Phone"
+        }
+      ],
+      "total": 750000,
+      "discount": 0,
+      "payable": 750000,
+      "payMethod": "Cash",
+      "date": "2026-05-20T09:42:42.780Z"
+    },
+    {
+      "id": "sal_1779272522236",
+      "invoiceNo": "MS-INV-1010",
+      "user": "Admin",
+      "customerName": "Walk-in Customer",
+      "customerPhone": "",
+      "items": [
+        {
+          "name": "ExExpress VPN Monthly Key (1 Device)",
+          "qty": 4,
+          "price": 6500,
+          "cost": 3000,
+          "category": "VPN Service"
+        }
+      ],
+      "total": 26000,
+      "discount": 0,
+      "payable": 26000,
+      "payMethod": "Cash",
+      "date": "2026-05-20T10:22:02.236Z"
+    }
+  ],
+  "repairs": [],
+  "buyins": [],
+  "expenses": [],
+  "cashiers": [
+    {
+      "id": "cashier_1",
+      "name": "Cashier One",
+      "username": "cashier",
+      "pin": "1234",
+      "permissions": {
+        "sale": true,
+        "history": true,
+        "discount": true,
+        "deleteSale": false,
+        "editSale": false
+      }
+    }
+  ],
+  "salesByUser": [
+    {
+      "user": "Admin",
+      "count": 23,
+      "items": 76,
+      "total": 3786522
+    }
+  ],
+  "financials": {
+    "serviceIncome": 0,
+    "saleIncome": 3604522,
+    "billIncome": 182000,
+    "otherIncome": 0,
+    "totalIncome": 3786522,
+    "serviceOutcome": 0,
+    "saleBillOutcome": 3331706,
+    "otherOutcome": 0,
+    "totalOutcome": 3331706,
+    "profitLoss": 454816
+  },
+  "todayFinancials": {
+    "serviceIncome": 0,
+    "saleIncome": -18029605,
+    "billIncome": 182000,
+    "otherIncome": 0,
+    "totalIncome": -17847605,
+    "serviceOutcome": 0,
+    "saleBillOutcome": 0,
+    "otherOutcome": 0,
+    "totalOutcome": 0,
+    "profitLoss": -17847605
+  },
+  "financialCategories": [
+    {
+      "key": "serviceIncome",
+      "type": "income",
+      "name": "Service Income",
+      "label": "Service Income (ဝန်ဆောင်မှုဝင်ငွေ/ဖုန်းပြင်ခ)"
+    },
+    {
+      "key": "saleIncome",
+      "type": "income",
+      "name": "Sale Income",
+      "label": "Sale Income (ပစ္စည်းအရောင်းရငွေ)"
+    },
+    {
+      "key": "billIncome",
+      "type": "income",
+      "name": "Bill Income",
+      "label": "Bill Income (ဖုန်းဘေလ်ဝင်ငွေ/VPN)"
+    },
+    {
+      "key": "otherIncome",
+      "type": "income",
+      "name": "Other Income",
+      "label": "Other Income (အခြားဝင်ငွေ)"
+    },
+    {
+      "key": "serviceOutcome",
+      "type": "outcome",
+      "name": "Service Outcome",
+      "label": "Service Outcome (ပြင်ဆင်မှုဆိုင်ရာအထွက်စရိတ်)"
+    },
+    {
+      "key": "saleBillOutcome",
+      "type": "outcome",
+      "name": "Sale + Bill Outcome",
+      "label": "Sale + Bill Outcome (ကုန်ပစ္စည်းဝယ်ယူစရိတ်)"
+    },
+    {
+      "key": "otherOutcome",
+      "type": "outcome",
+      "name": "Other Outcome",
+      "label": "Other Outcome (အခြားအသုံးစရိတ် - ဆိုင်လစာ၊ လျှပ်စစ်၊ ဆိုင်ခန်းခ)"
+    }
+  ],
+  "financialRows": [
+    {
+      "scope": "2026-05-20",
+      "type": "income",
+      "category": "ဝင်ငွေအုပ်စုများ",
+      "label": "Total Income",
+      "amount": -17847605
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "income",
+      "category": "Service Income",
+      "label": "Service Income (ဝန်ဆောင်မှုဝင်ငွေ/ဖုန်းပြင်ခ)",
+      "amount": 0
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "income",
+      "category": "Sale Income",
+      "label": "Sale Income (ပစ္စည်းအရောင်းရငွေ)",
+      "amount": -18029605
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "income",
+      "category": "Bill Income",
+      "label": "Bill Income (ဖုန်းဘေလ်ဝင်ငွေ/VPN)",
+      "amount": 182000
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "income",
+      "category": "Other Income",
+      "label": "Other Income (အခြားဝင်ငွေ)",
+      "amount": 0
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "outcome",
+      "category": "ထွက်ငွေအုပ်စုများ",
+      "label": "Total Outcome",
+      "amount": 0
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "outcome",
+      "category": "Service Outcome",
+      "label": "Service Outcome (ပြင်ဆင်မှုဆိုင်ရာအထွက်စရိတ်)",
+      "amount": 0
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "outcome",
+      "category": "Sale + Bill Outcome",
+      "label": "Sale + Bill Outcome (ကုန်ပစ္စည်းဝယ်ယူစရိတ်)",
+      "amount": 0
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "outcome",
+      "category": "Other Outcome",
+      "label": "Other Outcome (အခြားအသုံးစရိတ် - ဆိုင်လစာ၊ လျှပ်စစ်၊ ဆိုင်ခန်းခ)",
+      "amount": 0
+    },
+    {
+      "scope": "2026-05-20",
+      "type": "profitLoss",
+      "category": "Profit / Loss",
+      "label": "Profit / Loss (အသားတင်အမြတ် သို့မဟုတ် အရှုံး)",
+      "amount": -17847605
+    }
+  ],
+  "allFinancialRows": [
+    {
+      "scope": "All",
+      "type": "income",
+      "category": "ဝင်ငွေအုပ်စုများ",
+      "label": "Total Income",
+      "amount": 3786522
+    },
+    {
+      "scope": "All",
+      "type": "income",
+      "category": "Service Income",
+      "label": "Service Income (ဝန်ဆောင်မှုဝင်ငွေ/ဖုန်းပြင်ခ)",
+      "amount": 0
+    },
+    {
+      "scope": "All",
+      "type": "income",
+      "category": "Sale Income",
+      "label": "Sale Income (ပစ္စည်းအရောင်းရငွေ)",
+      "amount": 3604522
+    },
+    {
+      "scope": "All",
+      "type": "income",
+      "category": "Bill Income",
+      "label": "Bill Income (ဖုန်းဘေလ်ဝင်ငွေ/VPN)",
+      "amount": 182000
+    },
+    {
+      "scope": "All",
+      "type": "income",
+      "category": "Other Income",
+      "label": "Other Income (အခြားဝင်ငွေ)",
+      "amount": 0
+    },
+    {
+      "scope": "All",
+      "type": "outcome",
+      "category": "ထွက်ငွေအုပ်စုများ",
+      "label": "Total Outcome",
+      "amount": 3331706
+    },
+    {
+      "scope": "All",
+      "type": "outcome",
+      "category": "Service Outcome",
+      "label": "Service Outcome (ပြင်ဆင်မှုဆိုင်ရာအထွက်စရိတ်)",
+      "amount": 0
+    },
+    {
+      "scope": "All",
+      "type": "outcome",
+      "category": "Sale + Bill Outcome",
+      "label": "Sale + Bill Outcome (ကုန်ပစ္စည်းဝယ်ယူစရိတ်)",
+      "amount": 3331706
+    },
+    {
+      "scope": "All",
+      "type": "outcome",
+      "category": "Other Outcome",
+      "label": "Other Outcome (အခြားအသုံးစရိတ် - ဆိုင်လစာ၊ လျှပ်စစ်၊ ဆိုင်ခန်းခ)",
+      "amount": 0
+    },
+    {
+      "scope": "All",
+      "type": "profitLoss",
+      "category": "Profit / Loss",
+      "label": "Profit / Loss (အသားတင်အမြတ် သို့မဟုတ် အရှုံး)",
+      "amount": 454816
+    }
+  ],
+  "shopConfig": {
+    "shopId": "default-shop",
+    "shopName": "Mahar Shwe Mobile",
+    "phone": "09778394052",
+    "address": "ဆီဆိုင်မြို့",
+    "logoUrl": "./maharshwe-logo.png",
+    "appToken": "maharshwe123",
+    "googleSheetApiUrl": "https://script.google.com/macros/s/AKfycbw6yeCpStq-ypEVlVKNnQDZ45VUEqLFGZfmBZhh5iP9PC0aHdFenqiExg2x5lLANjm6LQ/exec",
+    "adminUsername": "admin",
+    "adminPassword": "1234",
+    "repairApiUrl": "https://www.maharshwe.online/api/voucher",
+    "telegramBotToken": "",
+    "adminChatId": "",
+    "dailyReportEnabled": false,
+    "dailyReportTime": "18:30",
+    "telegramBotUsername": ""
+  },
+  "updatedAt": "2026-05-20T11:35:18.950Z"
+}

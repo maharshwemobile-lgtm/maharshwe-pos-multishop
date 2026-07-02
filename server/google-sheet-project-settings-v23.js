@@ -1,0 +1,358 @@
+const crypto = require('crypto');
+const { z } = require('zod');
+const { prisma } = require('./prisma');
+const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
+
+const DATASETS = {
+  remittances: 'Remittances',
+  'sale-history': 'Sale History',
+  'other-income': 'Other Income',
+  'service-income': 'Service Income',
+  expense: 'Expense',
+  stock: 'STOCK',
+  'user-audit': 'User audit',
+  'repair-records': 'Repair Records',
+};
+
+const GOOGLE_HOSTS = new Set(['script.google.com', 'script.googleusercontent.com']);
+const configSchema = z.object({
+  enabled: z.boolean().default(false),
+  postUrl: z.string().trim().max(2000).optional().default(''),
+  getUrl: z.string().trim().max(2000).optional().default(''),
+  secret: z.string().trim().max(500).optional().default(''),
+  timeoutMs: z.coerce.number().int().min(1000).max(60000).default(10000),
+});
+
+let runner = null;
+let schemaPromise = null;
+
+function object(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function clean(value, max = 500) {
+  return String(value ?? '').trim().slice(0, max);
+}
+
+function requireManager(req, res, next) {
+  if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN' || req.auth?.permissions?.settings === true) return next();
+  return res.status(403).json({ ok: false, message: 'Settings permission is required' });
+}
+
+function validateGoogleUrl(value, required = false) {
+  const text = clean(value, 2000);
+  if (!text) {
+    if (required) throw Object.assign(new Error('Google Apps Script Web App URL is required'), { status: 400 });
+    return '';
+  }
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    throw Object.assign(new Error('Google Apps Script URL is invalid'), { status: 400 });
+  }
+  if (url.protocol !== 'https:' || !GOOGLE_HOSTS.has(url.hostname.toLowerCase())) {
+    throw Object.assign(new Error('Only HTTPS Google Apps Script Web App URLs are allowed'), { status: 400 });
+  }
+  return url.toString();
+}
+
+async function ensureSchema() {
+  if (!schemaPromise) {
+    schemaPromise = prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS google_sheet_sync_outbox (
+        id UUID PRIMARY KEY,
+        shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+        dataset TEXT NOT NULL,
+        action TEXT NOT NULL,
+        entity_id TEXT,
+        payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        sent_at TIMESTAMPTZ
+      )`);
+      await tx.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS google_sheet_sync_outbox_pending_idx ON google_sheet_sync_outbox(status,created_at)');
+      return true;
+    }).catch((error) => {
+      schemaPromise = null;
+      throw error;
+    });
+  }
+  return schemaPromise;
+}
+
+async function readRawSettings(shopId) {
+  const row = await prisma.shopSettings.findUnique({ where: { shopId }, select: { settings: true } });
+  return object(row?.settings);
+}
+
+async function loadConfig(shopId) {
+  const raw = await readRawSettings(shopId);
+  const api = object(raw.api);
+  const saved = object(api.googleSheets);
+  return {
+    enabled: saved.enabled === true,
+    postUrl: clean(saved.postUrl || saved.webhookUrl, 2000),
+    getUrl: clean(saved.getUrl, 2000),
+    secret: clean(saved.secret, 500),
+    timeoutMs: Math.min(60000, Math.max(1000, Number(saved.timeoutMs || 10000))),
+    lastTest: saved.lastTest || null,
+    updatedAt: saved.updatedAt || null,
+  };
+}
+
+async function saveConfig(shopId, userId, input, req) {
+  const raw = await readRawSettings(shopId);
+  const api = object(raw.api);
+  const previous = object(api.googleSheets);
+  const secret = clean(input.secret, 500) || clean(previous.secret, 500);
+  const next = {
+    ...previous,
+    enabled: input.enabled,
+    postUrl: validateGoogleUrl(input.postUrl, input.enabled),
+    getUrl: validateGoogleUrl(input.getUrl, false),
+    secret,
+    timeoutMs: input.timeoutMs,
+    updatedAt: new Date().toISOString(),
+  };
+  if (next.enabled && !next.secret) {
+    throw Object.assign(new Error('Shared Secret is required when Google Sheet sync is enabled'), { status: 400 });
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.shopSettings.upsert({
+      where: { shopId },
+      create: { shopId, settings: { ...raw, api: { ...api, googleSheets: next } } },
+      update: { settings: { ...raw, api: { ...api, googleSheets: next } } },
+    });
+    await tx.auditLog.create({
+      data: {
+        shopId,
+        userId,
+        action: 'PROJECT_GOOGLE_SHEET_INTEGRATION_UPDATED',
+        entityType: 'project_settings',
+        entityId: shopId,
+        details: {
+          enabled: next.enabled,
+          hasPostUrl: Boolean(next.postUrl),
+          hasGetUrl: Boolean(next.getUrl),
+          secretConfigured: Boolean(next.secret),
+        },
+        ipAddress: req?.ip || null,
+        userAgent: req?.headers?.['user-agent'] || null,
+      },
+    }).catch(() => {});
+  });
+  return next;
+}
+
+function publicConfig(config) {
+  return {
+    enabled: config.enabled,
+    postUrl: config.postUrl,
+    getUrl: config.getUrl,
+    timeoutMs: config.timeoutMs,
+    secret: config.secret || '',
+    secretConfigured: Boolean(config.secret),
+    secretMasked: config.secret ? `••••••${config.secret.slice(-4)}` : '',
+    lastTest: config.lastTest || null,
+    updatedAt: config.updatedAt || null,
+  };
+}
+
+async function shopIdentity(shopId) {
+  return prisma.shop.findUnique({ where: { id: shopId }, select: { id: true, slug: true, name: true } });
+}
+
+async function deliverRow(row) {
+  const config = await loadConfig(row.shopId);
+  if (!config.enabled || !config.postUrl || !config.secret || typeof fetch !== 'function') {
+    return { sent: false, configured: false };
+  }
+  const shop = await shopIdentity(row.shopId);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+  try {
+    const response = await fetch(config.postUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        secret: config.secret,
+        eventId: row.id,
+        dataset: row.dataset,
+        tab: DATASETS[row.dataset] || row.dataset,
+        action: row.action,
+        entityId: row.entityId,
+        shopSlug: shop?.slug || '',
+        shopName: shop?.name || '',
+        createdAt: row.createdAt,
+        payload: row.payload || {},
+      }),
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    if (!response.ok) throw new Error(`Google Sheet webhook ${response.status}: ${text.slice(0, 300)}`);
+    await prisma.$executeRawUnsafe(
+      `UPDATE google_sheet_sync_outbox SET status='SENT',attempts=attempts+1,last_error=NULL,sent_at=NOW() WHERE id=$1::uuid`,
+      row.id,
+    );
+    return { sent: true, configured: true };
+  } catch (error) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE google_sheet_sync_outbox SET status='FAILED',attempts=attempts+1,last_error=$2 WHERE id=$1::uuid`,
+      row.id,
+      clean(error.name === 'AbortError' ? 'Request timeout' : error.message, 1000),
+    ).catch(() => {});
+    return { sent: false, configured: true, error: error.message };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function deliverPending(limit = 25, shopId = null) {
+  await ensureSchema();
+  const take = Math.min(100, Math.max(1, Number(limit || 25)));
+  const rows = shopId
+    ? await prisma.$queryRawUnsafe(
+      `SELECT id,shop_id AS "shopId",dataset,action,entity_id AS "entityId",payload,created_at AS "createdAt"
+         FROM google_sheet_sync_outbox
+        WHERE shop_id=$1::uuid AND status IN ('PENDING','FAILED') AND attempts < 20
+        ORDER BY created_at ASC LIMIT $2`,
+      shopId,
+      take,
+    )
+    : await prisma.$queryRawUnsafe(
+      `SELECT id,shop_id AS "shopId",dataset,action,entity_id AS "entityId",payload,created_at AS "createdAt"
+         FROM google_sheet_sync_outbox
+        WHERE status IN ('PENDING','FAILED') AND attempts < 20
+        ORDER BY created_at ASC LIMIT $1`,
+      take,
+    );
+
+  let sent = 0;
+  let configured = 0;
+  for (const row of rows) {
+    const result = await deliverRow(row);
+    if (result.configured) configured += 1;
+    if (result.sent) sent += 1;
+  }
+  return { checked: rows.length, sent, configured: configured > 0 };
+}
+
+function startGoogleSheetProjectSettingsRunner() {
+  if (runner) return runner;
+  runner = setInterval(() => {
+    deliverPending(25).catch((error) => console.warn('Project Settings Google Sheet runner:', error.message));
+  }, 30000);
+  runner.unref?.();
+  return runner;
+}
+
+async function testConfig(shopId, method = 'POST') {
+  const config = await loadConfig(shopId);
+  const target = validateGoogleUrl(method === 'GET' ? config.getUrl : config.postUrl, true);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+  let response;
+  let preview = '';
+  try {
+    response = await fetch(target, {
+      method,
+      signal: controller.signal,
+      headers: method === 'POST'
+        ? { 'content-type': 'application/json', accept: 'application/json,text/plain,*/*' }
+        : { accept: 'application/json,text/plain,*/*' },
+      ...(method === 'POST'
+        ? { body: JSON.stringify({ secret: config.secret, source: 'Mahar POS Project Settings Test', shopId, testedAt: new Date().toISOString() }) }
+        : {}),
+    });
+    preview = (await response.text()).slice(0, 1000);
+  } catch (error) {
+    preview = error.name === 'AbortError' ? 'Request timeout' : error.message;
+  } finally {
+    clearTimeout(timeout);
+  }
+  return {
+    method,
+    ok: Boolean(response?.ok),
+    status: response?.status || 0,
+    testedAt: new Date().toISOString(),
+    responsePreview: preview,
+  };
+}
+
+async function persistLastTest(shopId, test) {
+  const raw = await readRawSettings(shopId);
+  const api = object(raw.api);
+  const googleSheets = { ...object(api.googleSheets), lastTest: test };
+  await prisma.shopSettings.upsert({
+    where: { shopId },
+    create: { shopId, settings: { ...raw, api: { ...api, googleSheets } } },
+    update: { settings: { ...raw, api: { ...api, googleSheets } } },
+  });
+}
+
+function attachGoogleSheetProjectSettingsApi(app) {
+  const read = [requireAuth, requireShopUser];
+  const write = [requireAuth, requireShopUser, requireWritableSubscription, requireManager];
+
+  app.get('/api/project-settings/integrations/google-sheet', ...read, async (req, res) => {
+    try {
+      await ensureSchema();
+      const [config, counts, shop] = await Promise.all([
+        loadConfig(req.auth.shopId),
+        prisma.$queryRawUnsafe(
+          `SELECT status,COUNT(*)::int AS count FROM google_sheet_sync_outbox WHERE shop_id=$1::uuid GROUP BY status`,
+          req.auth.shopId,
+        ),
+        shopIdentity(req.auth.shopId),
+      ]);
+      return res.json({
+        ok: true,
+        config: publicConfig(config),
+        counts: Object.fromEntries(counts.map((row) => [row.status, Number(row.count || 0)])),
+        shop: shop || null,
+        tabs: Object.values(DATASETS),
+      });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Google Sheet integration load failed' });
+    }
+  });
+
+  app.put('/api/project-settings/integrations/google-sheet', ...write, async (req, res) => {
+    try {
+      const parsed = configSchema.safeParse(req.body || {});
+      if (!parsed.success) return res.status(400).json({ ok: false, message: 'Invalid Google Sheet configuration', details: parsed.error.flatten().fieldErrors });
+      const config = await saveConfig(req.auth.shopId, req.auth.userId, parsed.data, req);
+      return res.json({ ok: true, config: publicConfig(config), message: 'Google Sheet integration saved in PostgreSQL' });
+    } catch (error) {
+      return res.status(error.status || 500).json({ ok: false, message: error.message || 'Google Sheet integration save failed' });
+    }
+  });
+
+  app.post('/api/project-settings/integrations/google-sheet/test', ...write, async (req, res) => {
+    try {
+      const method = req.body?.method === 'GET' ? 'GET' : 'POST';
+      const test = await testConfig(req.auth.shopId, method);
+      await persistLastTest(req.auth.shopId, test);
+      return res.status(test.ok ? 200 : 502).json({ ok: test.ok, test });
+    } catch (error) {
+      return res.status(error.status || 500).json({ ok: false, message: error.message || 'Google Sheet connection test failed' });
+    }
+  });
+
+  app.post('/api/project-settings/integrations/google-sheet/retry', ...write, async (req, res) => {
+    try {
+      return res.json({ ok: true, ...(await deliverPending(100, req.auth.shopId)) });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Google Sheet sync retry failed' });
+    }
+  });
+}
+
+module.exports = {
+  attachGoogleSheetProjectSettingsApi,
+  deliverPendingProjectSettingsGoogleSheetSync: deliverPending,
+  startGoogleSheetProjectSettingsRunner,
+};

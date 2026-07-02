@@ -1,0 +1,23 @@
+[Unit]
+Description=Mahar POS PostgreSQL verified backup
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/maharshwe/maharshwe-pos
+Environment=ENV_FILE=/opt/maharshwe/maharshwe-pos/.env
+ExecStart=/usr/bin/bash /opt/maharshwe/maharshwe-pos/scripts/postgres-backup.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/mahar-pos
+
+[Install]
+WantedBy=multi-user.target

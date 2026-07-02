@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Mahar POS PostgreSQL backup every day
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=mahar-pos-backup.service
+
+[Install]
+WantedBy=timers.target

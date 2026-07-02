@@ -1,0 +1,34 @@
+name: Phase 12 Build Check
+
+on:
+  push:
+    branches:
+      - phase-12-business-control
+  pull_request:
+    branches:
+      - phase-11-project-settings-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - name: Phase 12 syntax checks
+        run: npm run check:phase12
+      - name: Production build
+        run: npm run build

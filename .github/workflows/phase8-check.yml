@@ -1,0 +1,26 @@
+name: Phase 8 Customer Repair Portal Check
+on:
+  push:
+    branches: [phase-8-customer-repair-portal]
+  pull_request:
+    branches: [phase-6-backup-recovery]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run db:generate
+      - run: node --check server/repair-public-portal-api.js
+      - run: node --check server/repair-customer-admin-api.js
+      - run: node --check server/repair-notification-outbox.js
+      - run: node --check server/repair-status-notification-middleware.js
+      - run: node --check server/repair-outbox-runner.js
+      - run: node --check server/repair-customer-portal-utils.js
+      - run: node --check server/repair-platform-schema.js
+      - run: node --check server/tenant-integrity-api.js
+      - run: node --check server/api-connected.js
+      - run: npm run build

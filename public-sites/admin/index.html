@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Mahar POS System</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Padauk', 'Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            900: '#1e3a8a',
+                            950: '#172554',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar{width:6px;height:6px}
+        ::-webkit-scrollbar-track{background:#f1f5f9}
+        ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+        ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+        .fade-in-up{animation:fadeInUp .6s ease-out forwards;opacity:0;transform:translateY(20px)}
+        @keyframes fadeInUp{to{opacity:1;transform:translateY(0)}}
+        .delay-100{animation-delay:.1s}.delay-200{animation-delay:.2s}.delay-300{animation-delay:.3s}
+        .admin-modal-backdrop{backdrop-filter:blur(12px)}
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen overflow-hidden">
+
+    <section id="login-page" class="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 admin-modal-backdrop px-4">
+        <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden fade-in-up">
+            <div class="bg-slate-900 px-7 py-6 text-white">
+                <div class="flex items-center gap-3">
+                    <img class="h-11 w-11 rounded-2xl bg-white/10 p-1.5" src="https://raw.githubusercontent.com/maharshwemobile-lgtm/maharshwe.shop/main/mahar-pos-logo.png" alt="Logo">
+                    <div>
+                        <h1 class="font-black text-xl leading-tight">Mahar POS</h1>
+                        <p class="text-[11px] text-blue-300 font-bold uppercase tracking-widest">Super Admin Login</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm text-slate-300 leading-7">Tenant ID မထည့်ဘဲ Super Admin account နဲ့ဝင်ပါ။</p>
+            </div>
+            <form id="login-form" class="p-7 space-y-4">
+                <label class="block">
+                    <span class="text-xs font-bold text-slate-600">Tenant ID / Shop Slug</span>
+                    <input id="tenant" class="mt-1 w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Super Admin ဆို blank ထားပါ" autocomplete="organization">
+                </label>
+                <label class="block">
+                    <span class="text-xs font-bold text-slate-600">Username</span>
+                    <input id="username" class="mt-1 w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" value="superadmin" autocomplete="username" required>
+                </label>
+                <label class="block">
+                    <span class="text-xs font-bold text-slate-600">Password</span>
+                    <input id="password" type="password" class="mt-1 w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" autocomplete="current-password" required>
+                </label>
+                <button class="w-full h-12 rounded-xl bg-brand-600 text-white font-black hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/25" type="submit">Sign in</button>
+                <div id="login-message"></div>
+            </form>
+        </div>
+    </section>
+
+    <section id="dashboard-shell" class="hidden h-screen overflow-hidden flex">
+        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 hidden md:flex h-full border-r border-slate-800 shadow-xl z-20">
+            <div class="h-20 flex items-center px-6 border-b border-slate-800 bg-slate-950/50">
+                <img class="h-8 w-auto mr-3 bg-white/10 p-1 rounded backdrop-blur-sm" src="https://raw.githubusercontent.com/maharshwemobile-lgtm/maharshwe.shop/main/mahar-pos-logo.png" alt="Logo">
+                <div>
+                    <span class="font-bold text-lg text-white block leading-none">Mahar POS</span>
+                    <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Super Admin</span>
+                </div>
+            </div>
+
+            <nav id="side-nav" class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+                <p class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">ပင်မ မီနူး</p>
+
+                <button type="button" data-view="overview" class="admin-nav flex w-full items-center gap-3 px-3 py-2.5 bg-brand-600 text-white rounded-xl shadow-md shadow-brand-500/20 group transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    <span class="font-medium">ဒက်ရှ်ဘုတ် (Overview)</span>
+                </button>
+
+                <button type="button" data-view="tenants" class="admin-nav flex w-full items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group">
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    <span class="font-medium">ဆိုင်များစီမံရန် (Tenants)</span>
+                </button>
+
+                <button type="button" data-view="users" class="admin-nav flex w-full items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group">
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <span class="font-medium">အသုံးပြုသူများ (Users)</span>
+                </button>
+
+                <p class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">ဘဏ္ဍာရေး</p>
+
+                <button type="button" data-view="billing" class="admin-nav flex w-full items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group">
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span class="font-medium">လစဉ်ကြေးများ (Billing)</span>
+                </button>
+
+                <button type="button" data-view="reports" class="admin-nav flex w-full items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group">
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span class="font-medium">အစီရင်ခံစာ (Reports)</span>
+                </button>
+
+                <p class="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6">စနစ်ဆက်တင်</p>
+
+                <button type="button" data-view="settings" class="admin-nav flex w-full items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition-all group">
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="font-medium">စနစ်ဆက်တင် (Settings)</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold border-2 border-slate-700">A</div>
+                    <div>
+                        <p class="text-sm font-bold text-white">System Admin</p>
+                        <p class="text-xs text-slate-400">admin@maharpos</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f4f7fa]">
+            <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 lg:px-10 z-10">
+                <div class="flex items-center flex-1 gap-4">
+                    <button class="md:hidden text-slate-500 hover:text-slate-700" type="button">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+
+                    <div class="max-w-md w-full hidden sm:block relative group">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input id="global-search" type="text" class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm transition-all" placeholder="ဆိုင်အမည် / Tenant ID / ဖုန်းနံပါတ်ဖြင့် ရှာရန်...">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 lg:gap-5">
+                    <a href="https://maharshwe.shop" class="hidden lg:inline-flex text-sm font-bold text-slate-500 hover:text-brand-600">Landing</a>
+                    <a href="https://app.maharshwe.shop" class="hidden lg:inline-flex text-sm font-bold text-slate-500 hover:text-brand-600">POS App</a>
+                    <a href="https://api.maharshwe.shop/health" class="hidden lg:inline-flex text-sm font-bold text-slate-500 hover:text-brand-600">API Health</a>
+                    <button id="refresh-all" class="hidden md:flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-600 hover:shadow-lg hover:shadow-brand-500/30 transition-all" type="button">
+                        Refresh
+                    </button>
+                    <button id="logout" class="px-3 py-2 rounded-lg border border-red-100 bg-red-50 text-red-700 text-sm font-bold hover:bg-red-100" type="button">Logout</button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-6 lg:p-10">
+                <section id="view-overview" data-section="overview">
+                    <div class="flex justify-between items-end mb-8 fade-in-up">
+                        <div>
+                            <h1 class="text-3xl font-black text-slate-900 tracking-tight">စီမံခန့်ခွဲမှု အနှစ်ချုပ်</h1>
+                            <p class="text-slate-500 mt-1">ယနေ့အထိ Mahar POS စနစ်၏ PostgreSQL data အခြေအနေများ</p>
+                        </div>
+                        <div id="today-label" class="text-sm font-bold text-brand-600 bg-brand-50 px-4 py-2 rounded-lg border border-brand-100 hidden sm:block"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 fade-in-up delay-100">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
+                            </div>
+                            <p class="text-sm font-bold text-slate-500 mb-1">စုစုပေါင်း ဆိုင်များ (Tenants)</p>
+                            <h3 id="stat-tenants" class="text-4xl font-black text-slate-900">0</h3>
+                            <div class="mt-4 flex items-center text-sm">
+                                <span id="stat-active-tenants" class="text-emerald-500 font-bold flex items-center bg-emerald-50 px-2 py-0.5 rounded-md">0 active</span>
+                                <span class="text-slate-400 ml-2">အသုံးပြုနေသောဆိုင်</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                <svg class="w-16 h-16 text-indigo-600" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path></svg>
+                            </div>
+                            <p class="text-sm font-bold text-slate-500 mb-1">အသုံးပြုသူ (Active Users)</p>
+                            <h3 id="stat-users" class="text-4xl font-black text-slate-900">0</h3>
+                            <div class="mt-4 flex items-center text-sm">
+                                <span id="stat-customers" class="text-emerald-500 font-bold flex items-center bg-emerald-50 px-2 py-0.5 rounded-md">0 customers</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                <svg class="w-16 h-16 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path></svg>
+                            </div>
+                            <p class="text-sm font-bold text-slate-500 mb-1">စုစုပေါင်း ဝင်ငွေ (Revenue)</p>
+                            <h3 id="stat-revenue" class="text-3xl font-black text-slate-900 mt-2">0 MMK</h3>
+                            <div class="mt-4 flex items-center text-sm">
+                                <span id="stat-profit" class="text-emerald-500 font-bold flex items-center bg-emerald-50 px-2 py-0.5 rounded-md">Profit 0</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl shadow-lg border border-slate-700 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-4 opacity-20">
+                                <svg class="w-16 h-16 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                            </div>
+                            <p class="text-sm font-bold text-slate-300 mb-1">သက်တမ်းကုန်မည့် / ပြဿနာရှိ</p>
+                            <h3 id="stat-alerts" class="text-4xl font-black text-white">0</h3>
+                            <div class="mt-4 flex items-center text-sm">
+                                <button type="button" data-view-link="tenants" class="text-amber-400 font-bold flex items-center hover:text-amber-300">
+                                    စာရင်းကြည့်ရန်
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10 fade-in-up delay-200">
+                        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-lg font-bold text-slate-800">လစဉ် ဝင်ငွေအခြေအနေ</h3>
+                                <select class="bg-slate-50 border border-slate-200 text-slate-600 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2 outline-none">
+                                    <option>2026</option>
+                                </select>
+                            </div>
+                            <div class="h-64 flex items-end justify-between gap-2 px-2 relative border-b border-slate-100 pb-2">
+                                <div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-slate-400 -ml-2 py-2">
+                                    <span id="chart-max-label">100 သိန်း</span>
+                                    <span id="chart-mid-label">50 သိန်း</span>
+                                    <span>0</span>
+                                </div>
+                                <div id="revenue-bars" class="w-full flex justify-between items-end h-full pl-12 gap-1 sm:gap-3"></div>
+                            </div>
+                            <div id="revenue-months" class="flex justify-between pl-12 pr-2 text-xs text-slate-500 font-bold mt-3"></div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800 mb-6">အစီအစဉ်များ (Plan Distribution)</h3>
+                            <div class="flex items-center justify-center mb-6 relative">
+                                <div id="plan-donut" class="w-40 h-40 rounded-full flex items-center justify-center" style="background: conic-gradient(#3b82f6 0% 65%, #8b5cf6 65% 85%, #f59e0b 85% 100%);">
+                                    <div class="w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center">
+                                        <span id="plan-total" class="text-2xl font-black text-slate-800">0</span>
+                                        <span class="text-xs font-bold text-slate-500">ဆိုင်များ</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="plan-legend" class="space-y-4"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden fade-in-up delay-300">
+                        <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="text-lg font-bold text-slate-800">နောက်ဆုံးစာရင်းသွင်းထားသော ဆိုင်များ</h3>
+                            <button type="button" data-view-link="tenants" class="text-sm font-bold text-brand-600 hover:text-brand-700">အားလုံးကြည့်ရန် &rarr;</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-white border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
+                                        <th class="px-6 py-4 font-bold">ဆိုင်အမည် / Tenant</th>
+                                        <th class="px-6 py-4 font-bold">အစီအစဉ် (Plan)</th>
+                                        <th class="px-6 py-4 font-bold">အခြေအနေ (Status)</th>
+                                        <th class="px-6 py-4 font-bold">ရက်စွဲ (Date)</th>
+                                        <th class="px-6 py-4 font-bold text-right">လုပ်ဆောင်ချက်</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-tenant-rows" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-tenants" data-section="tenants" class="hidden">
+                    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-3xl font-black text-slate-900 tracking-tight">ဆိုင်များစီမံရန်</h1>
+                            <p class="text-slate-500 mt-1">Plan renew, suspend/activate, users, settings, data detail စီမံနိုင်ပါတယ်။</p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <input id="tenant-search" class="h-11 min-w-[240px] px-4 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Tenant search...">
+                            <select id="tenant-status-filter" class="h-11 px-4 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <option value="ALL">All Status</option>
+                                <option value="ACTIVE">Active</option>
+                                <option value="TRIAL">Trial</option>
+                                <option value="OVERDUE">Overdue</option>
+                                <option value="SUSPENDED">Suspended / Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <form id="create-tenant-form" class="mb-6 bg-emerald-50 rounded-2xl border border-emerald-100 p-5">
+                        <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-4">
+                            <div>
+                                <h2 class="font-black text-emerald-950 text-xl">Create Tenant Shop</h2>
+                                <p class="text-sm text-emerald-700 mt-1">New tenant is created as Active. Active tenants cannot be deleted; suspend/deactivate first, then delete.</p>
+                            </div>
+                            <button class="px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-black hover:bg-emerald-700" type="submit">Create Active Tenant</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <input id="tenant-create-name" class="h-11 px-3 rounded-xl border border-emerald-200" required placeholder="Shop name">
+                            <input id="tenant-create-slug" class="h-11 px-3 rounded-xl border border-emerald-200" placeholder="Shop slug optional">
+                            <input id="tenant-create-code" class="h-11 px-3 rounded-xl border border-emerald-200" placeholder="Tenant ID optional">
+                            <input id="tenant-create-phone" class="h-11 px-3 rounded-xl border border-emerald-200" placeholder="Phone optional">
+                            <input id="tenant-create-admin-name" class="h-11 px-3 rounded-xl border border-emerald-200" placeholder="Admin name optional">
+                            <input id="tenant-create-admin-username" class="h-11 px-3 rounded-xl border border-emerald-200" required placeholder="Admin username">
+                            <input id="tenant-create-admin-password" type="password" minlength="6" class="h-11 px-3 rounded-xl border border-emerald-200" required placeholder="Admin password">
+                            <input id="tenant-create-trial-days" type="number" min="1" max="365" class="h-11 px-3 rounded-xl border border-emerald-200" placeholder="Trial days (default 7)">
+                        </div>
+                    </form>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[1180px]">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
+                                        <th class="px-6 py-4 font-bold">Tenant</th>
+                                        <th class="px-6 py-4 font-bold">Subscription</th>
+                                        <th class="px-6 py-4 font-bold">Data</th>
+                                        <th class="px-6 py-4 font-bold">Admin Settings</th>
+                                        <th class="px-6 py-4 font-bold text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tenant-rows" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="dashboard-message"></div>
+                </section>
+
+                <section id="view-users" data-section="users" class="hidden">
+                    <div class="mb-6">
+                        <h1 class="text-3xl font-black text-slate-900 tracking-tight">အသုံးပြုသူများ / Hide Tabs</h1>
+                        <p class="text-slate-500 mt-1">Tenant user create, role, active status, tab visibility, function permission စီမံရန်။</p>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-6">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 h-max">
+                            <label class="block">
+                                <span class="text-xs font-black text-slate-500 uppercase">Select Tenant</span>
+                                <select id="access-tenant-select" class="mt-2 w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500"></select>
+                            </label>
+                            <div id="access-tenant-card" class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm text-slate-500">Tenant ရွေးပါ။</div>
+                        </div>
+                        <div class="space-y-6">
+                            <form id="create-user-form" class="bg-emerald-50 rounded-2xl border border-emerald-100 p-5">
+                                <div class="flex items-start justify-between gap-4 mb-4">
+                                    <div>
+                                        <h3 class="font-black text-emerald-900">Create Tenant User</h3>
+                                        <p class="text-sm text-emerald-700 mt-1">Shop Admin / Staff account အသစ်ဖန်တီးရန်။</p>
+                                    </div>
+                                    <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700" type="submit">Create</button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    <input id="new-user-name" class="h-11 px-3 rounded-xl border border-emerald-200" required placeholder="Name">
+                                    <input id="new-user-username" class="h-11 px-3 rounded-xl border border-emerald-200" required placeholder="Username">
+                                    <input id="new-user-password" type="password" minlength="6" class="h-11 px-3 rounded-xl border border-emerald-200" required placeholder="Password">
+                                    <select id="new-user-role" class="h-11 px-3 rounded-xl border border-emerald-200"><option value="SHOP_ADMIN">Shop Admin</option><option value="CASHIER">Staff / Cashier</option></select>
+                                </div>
+                            </form>
+                            <div id="users" class="space-y-4"></div>
+                            <div id="user-message"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-settings" data-section="settings" class="hidden">
+                    <div class="mb-6">
+                        <h1 class="text-3xl font-black text-slate-900 tracking-tight">စနစ်ဆက်တင်</h1>
+                        <p class="text-slate-500 mt-1">Tenant plan label, feature flags, support note, limit settings များ။</p>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-6">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 h-max">
+                            <label class="block">
+                                <span class="text-xs font-black text-slate-500 uppercase">Select Tenant</span>
+                                <select id="settings-tenant-select" class="mt-2 w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500"></select>
+                            </label>
+                            <div id="settings-tenant-card" class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm text-slate-500">Tenant ရွေးပါ။</div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                            <div class="flex items-start justify-between gap-4 mb-5">
+                                <div>
+                                    <h3 class="font-black text-slate-900 text-lg">Tenant Control Settings</h3>
+                                    <p class="text-sm text-slate-500 mt-1">PostgreSQL `ShopSettings.settings.adminPortal` ထဲမှာသိမ်းပါတယ်။</p>
+                                </div>
+                                <button id="save-settings" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700" type="button">Save Settings</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Plan Label</span><input id="set-plan-label" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200" placeholder="7 Day Trial / 1 Month / VIP"></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Support Tier</span><select id="set-support-tier" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"><option>BASIC</option><option>STANDARD</option><option>VIP</option><option>CUSTOM</option></select></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Feature Preset</span><select id="set-feature-preset" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"><option value="FULL">FULL</option><option value="SALE_HISTORY_ONLY">SALE_HISTORY_ONLY</option><option value="CUSTOM">CUSTOM</option></select></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Billing Contact</span><input id="set-billing-contact" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Notify Email</span><input id="set-notify-email" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Notify Phone</span><input id="set-notify-phone" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Data Retention Days</span><input id="set-retention-days" type="number" min="30" max="3650" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Max Users</span><input id="set-max-users" type="number" min="1" max="1000" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Max Products</span><input id="set-max-products" type="number" min="1" max="100000" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"></label>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                                <label class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm">Maintenance Lock <input id="set-maintenance" type="checkbox" class="w-5 h-5 accent-brand-600"></label>
+                                <label class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm">Auto Suspend <input id="set-auto-suspend" type="checkbox" class="w-5 h-5 accent-brand-600"></label>
+                                <label class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm">Allow Trial Renewal <input id="set-trial-renewal" type="checkbox" class="w-5 h-5 accent-brand-600"></label>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Support Note</span><textarea id="set-support-note" class="mt-1 w-full min-h-[90px] p-3 rounded-xl border border-slate-200"></textarea></label>
+                                <label class="block"><span class="text-xs font-bold text-slate-500">Admin Note</span><textarea id="set-admin-note" class="mt-1 w-full min-h-[90px] p-3 rounded-xl border border-slate-200"></textarea></label>
+                            </div>
+                            <h3 class="mt-6 mb-3 font-black text-slate-900">Feature Flags</h3>
+                            <div id="feature-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+                            <div id="settings-message"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-billing" data-section="billing" class="hidden"></section>
+                <section id="view-reports" data-section="reports" class="hidden"></section>
+            </div>
+        </main>
+    </section>
+
+    <div id="toast" class="hidden fixed top-5 right-5 z-[60] max-w-sm rounded-xl px-4 py-3 text-white font-bold shadow-2xl"></div>
+
+    <script>
+        const tokenKey = 'mahar_admin_token';
+        const state = {
+            token: sessionStorage.getItem(tokenKey) || '',
+            tenants: [],
+            overview: null,
+            selectedTenant: null,
+            users: [],
+            settings: null,
+            detail: null,
+            query: '',
+            tenantStatus: 'ALL',
+            featureFlags: [],
+        };
+
+        const TABS = [
+            ['tab.Dashboard','Dashboard'],['tab.Sale POS','Sale POS'],['tab.Sales History','Sales History'],['tab.Repairs','Repairs'],['tab.Partner Settlement','Partner Settlement'],['tab.Products','Products'],['tab.Stock','Stock'],['tab.Purchases','Purchases'],['tab.Customers','Customers & Credit'],['tab.Accounting','Finance & Accounts'],['tab.Reports','Reports'],['tab.Audit Trail','Audit Trail'],['tab.Backup','Backup'],['tab.Settings','Settings'],
+        ];
+        const FUNCTIONS = [
+            ['sale','Use Sale POS'],['history','View Sales History'],['reprint','Reprint / Print Voucher'],['export','Export CSV / Download'],['discount','Apply Discount'],['editSale','Edit Sale'],['deleteSale','Void / Delete Sale'],['repairs','View Repair Platform'],['repairCreate','Create Repair'],['repairEdit','Edit Repair / Status / Finance'],['repairPrint','Print Repair Voucher'],['repairImport','Import / Sync Repair'],['inventory','View Stock & Purchasing'],['stockAdjust','Stock In / Out / Adjustment'],['stockHistory','View Stock Movements'],['productEdit','Create / Edit Products'],['purchaseApprove','Approve Purchase Order'],['purchaseReceive','Receive Purchase Goods'],['purchasePayment','Pay Supplier'],['purchaseReturn','Return Purchase Goods'],['repairParts','Use / Reverse Repair Parts'],['accounting','Finance & Reports'],['settings','Manage Settings & Users'],['viewCost','View Cost & Profit'],
+        ];
+        const DEFAULTS = {
+            SHOP_ADMIN: Object.fromEntries([...TABS, ...FUNCTIONS].map(([key]) => [key, true])),
+            CASHIER: {
+                ...Object.fromEntries([...TABS, ...FUNCTIONS].map(([key]) => [key, false])),
+                'tab.Dashboard': true,
+                'tab.Sale POS': true,
+                'tab.Sales History': true,
+                sale: true,
+                history: true,
+                reprint: true,
+            },
+        };
+
+        const $ = (id) => document.getElementById(id);
+        const fmt = (date) => date ? new Date(date).toLocaleDateString('my-MM', { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
+        const number = (value) => Number(value || 0);
+        const money = (value) => `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number(value))} MMK`;
+        const compactMoney = (value) => `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(number(value) / 100000))} သိန်း`;
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+
+        function toast(text, type = 'success') {
+            $('toast').textContent = text;
+            $('toast').className = `fixed top-5 right-5 z-[60] max-w-sm rounded-xl px-4 py-3 text-white font-bold shadow-2xl ${type === 'error' ? 'bg-red-600' : 'bg-emerald-600'}`;
+            setTimeout(() => $('toast').classList.add('hidden'), 3600);
+        }
+
+        function message(id, text, type = 'success') {
+            $(id).innerHTML = text ? `<div class="mt-4 rounded-xl px-4 py-3 text-sm font-bold ${type === 'error' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">${escapeHtml(text)}</div>` : '';
+        }
+
+        async function api(path, options = {}) {
+            const response = await fetch(path, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}),
+                    ...(options.headers || {}),
+                },
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.ok === false) throw new Error(data.message || `Request failed (${response.status})`);
+            return data;
+        }
+
+        function randomIndex(max) {
+            if (window.crypto?.getRandomValues) {
+                const values = new Uint32Array(1);
+                window.crypto.getRandomValues(values);
+                return values[0] % max;
+            }
+            return Math.floor(Math.random() * max);
+        }
+
+        function generateTemporaryPassword(length = 12) {
+            const groups = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '@#$%'];
+            const all = groups.join('');
+            const chars = groups.map((group) => group[randomIndex(group.length)]);
+            while (chars.length < length) chars.push(all[randomIndex(all.length)]);
+            for (let index = chars.length - 1; index > 0; index -= 1) {
+                const swap = randomIndex(index + 1);
+                [chars[index], chars[swap]] = [chars[swap], chars[index]];
+            }
+            return chars.join('');
+        }
+
+        async function copyText(value) {
+            if (!value) return false;
+            try {
+                await navigator.clipboard.writeText(value);
+                return true;
+            } catch {
+                const input = document.createElement('textarea');
+                input.value = value;
+                input.style.position = 'fixed';
+                input.style.opacity = '0';
+                document.body.appendChild(input);
+                input.select();
+                const copied = document.execCommand('copy');
+                input.remove();
+                return copied;
+            }
+        }
+
+        function showShell(show) {
+            $('login-page').classList.toggle('hidden', show);
+            $('dashboard-shell').classList.toggle('hidden', !show);
+            $('dashboard-shell').classList.toggle('flex', show);
+        }
+
+        function showView(view) {
+            document.querySelectorAll('[data-section]').forEach((section) => section.classList.add('hidden'));
+            if (view === 'billing' || view === 'reports') {
+                renderBillingReports(view);
+            }
+            $(`view-${view}`)?.classList.remove('hidden');
+            document.querySelectorAll('.admin-nav').forEach((button) => {
+                const active = button.dataset.view === view;
+                button.classList.toggle('bg-brand-600', active);
+                button.classList.toggle('text-white', active);
+                button.classList.toggle('shadow-md', active);
+                button.classList.toggle('shadow-brand-500/20', active);
+            });
+        }
+
+        function tenantLabel(tenant) {
+            return `${tenant?.name || ''} · ${tenant?.tenantId || ''}`;
+        }
+
+        function setSelectOptions() {
+            const options = '<option value="">Tenant ရွေးပါ...</option>' + state.tenants.map((tenant) => `<option value="${tenant.id}">${escapeHtml(tenantLabel(tenant))}</option>`).join('');
+            ['access-tenant-select','settings-tenant-select'].forEach((id) => {
+                const value = $(id).value;
+                $(id).innerHTML = options;
+                if (value) $(id).value = value;
+            });
+        }
+
+        async function loadOverview() {
+            const data = await api('/api/admin/overview');
+            state.overview = data;
+            state.featureFlags = data.featureFlags || state.featureFlags;
+            renderOverview();
+        }
+
+        async function loadTenants() {
+            const data = await api('/api/admin/tenants');
+            state.tenants = data.tenants || [];
+            setSelectOptions();
+            renderTenants();
+        }
+
+        async function loadAll() {
+            await Promise.all([loadOverview(), loadTenants()]);
+            renderSettingsForm();
+            $('today-label').textContent = `📅 ${new Date().toLocaleDateString('my-MM', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+        }
+
+        function renderOverview() {
+            const summary = state.overview?.summary || {};
+            const alerts = number(summary.overdueTenants) + number(summary.suspendedTenants) + number(summary.expiringInSevenDays);
+            $('stat-tenants').textContent = summary.totalTenants || 0;
+            $('stat-active-tenants').textContent = `${summary.activeTenants || 0} active`;
+            $('stat-users').textContent = summary.activeUsers || 0;
+            $('stat-customers').textContent = `${summary.customersTotal || 0} customers`;
+            $('stat-revenue').textContent = money(summary.salesRevenue || 0);
+            $('stat-profit').textContent = `Profit ${money(summary.salesProfit || 0)}`;
+            $('stat-alerts').textContent = alerts;
+
+            const months = state.overview?.monthlyRevenue || [];
+            const max = Math.max(1, ...months.map((item) => number(item.revenue)));
+            $('chart-max-label').textContent = compactMoney(max);
+            $('chart-mid-label').textContent = compactMoney(max / 2);
+            $('revenue-bars').innerHTML = months.map((item) => {
+                const percent = Math.max(3, Math.round((number(item.revenue) / max) * 100));
+                const active = number(item.revenue) === max && max > 1;
+                return `<div class="w-full ${active ? 'bg-brand-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-blue-100 hover:bg-brand-500'} rounded-t-sm relative group transition-colors cursor-pointer" style="height:${percent}%">
+                    <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity whitespace-nowrap">${compactMoney(item.revenue)}</span>
+                </div>`;
+            }).join('');
+            $('revenue-months').innerHTML = months.map((item) => `<span>${escapeHtml(String(item.label || '').split(' ')[0])}</span>`).join('');
+
+            const distribution = state.overview?.planDistribution || [];
+            const total = distribution.reduce((sum, item) => sum + number(item.value), 0);
+            $('plan-total').textContent = total;
+            const colors = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#22c55e'];
+            let cursor = 0;
+            const segments = distribution.length ? distribution.map((item, index) => {
+                const start = cursor;
+                const end = cursor + (number(item.value) / Math.max(1, total)) * 100;
+                cursor = end;
+                return `${colors[index % colors.length]} ${start}% ${end}%`;
+            }).join(', ') : '#e2e8f0 0% 100%';
+            $('plan-donut').style.background = `conic-gradient(${segments})`;
+            $('plan-legend').innerHTML = distribution.map((item, index) => {
+                const percent = total ? Math.round(number(item.value) / total * 100) : 0;
+                return `<div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 rounded-full mr-2" style="background:${colors[index % colors.length]}"></span>
+                        <span class="text-sm font-bold text-slate-600">${escapeHtml(item.label)}</span>
+                    </div>
+                    <span class="text-sm font-bold text-slate-900">${percent}%</span>
+                </div>`;
+            }).join('') || '<p class="text-sm text-slate-500">Plan data မရှိသေးပါ။</p>';
+
+            $('recent-tenant-rows').innerHTML = (state.overview?.recentTenants || []).map(renderRecentTenantRow).join('') || emptyRow(5, 'No tenants yet.');
+        }
+
+        function statusPill(tenant) {
+            const status = tenant.active ? tenant.subscription?.status || 'NO SUB' : 'SUSPENDED';
+            const color = status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                : status === 'TRIAL' ? 'bg-amber-100 text-amber-800 border-amber-200'
+                : status === 'OVERDUE' || status === 'SUSPENDED' ? 'bg-red-100 text-red-800 border-red-200'
+                : 'bg-slate-100 text-slate-700 border-slate-200';
+            const dot = status === 'ACTIVE' ? 'bg-emerald-500' : status === 'TRIAL' ? 'bg-amber-500' : status === 'OVERDUE' || status === 'SUSPENDED' ? 'bg-red-500' : 'bg-slate-400';
+            const suffix = tenant.subscription?.daysLeft !== null && tenant.subscription?.daysLeft !== undefined ? ` · ${tenant.subscription.daysLeft} days` : '';
+            return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${color}">
+                <span class="w-1.5 h-1.5 rounded-full ${dot} mr-1.5"></span>${escapeHtml(status)}${escapeHtml(suffix)}
+            </span>`;
+        }
+
+        function renderRecentTenantRow(tenant) {
+            return `<tr class="hover:bg-slate-50 transition-colors group">
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <div class="h-10 w-10 flex-shrink-0 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg border border-blue-200">${escapeHtml((tenant.name || 'M')[0]).toUpperCase()}</div>
+                        <div class="ml-4">
+                            <div class="font-bold text-slate-900">${escapeHtml(tenant.name)}</div>
+                            <div class="text-sm text-slate-500">${escapeHtml(tenant.tenantId)} · ${escapeHtml(tenant.slug)}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4"><span class="text-sm font-bold text-slate-700">${escapeHtml(tenant.settings?.planLabel || tenant.subscription?.plan || tenant.subscription?.status || '-')}</span></td>
+                <td class="px-6 py-4">${statusPill(tenant)}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 font-medium">${fmt(tenant.createdAt)}</td>
+                <td class="px-6 py-4 text-right text-sm font-medium"><button data-open-tenant="${tenant.id}" class="text-brand-600 hover:text-brand-900 bg-brand-50 px-3 py-1.5 rounded-md border border-brand-100 transition-colors">စီမံရန်</button></td>
+            </tr>`;
+        }
+
+        function filteredTenants() {
+            const query = String(state.query || '').toLowerCase();
+            return state.tenants.filter((tenant) => {
+                const status = tenant.active ? tenant.subscription?.status || 'NO_SUB' : 'SUSPENDED';
+                const searchable = [tenant.name, tenant.tenantId, tenant.slug, tenant.phone, tenant.settings?.planLabel, status].join(' ').toLowerCase();
+                return (!query || searchable.includes(query)) && (state.tenantStatus === 'ALL' || status === state.tenantStatus);
+            });
+        }
+
+        function renderTenants() {
+            const rows = filteredTenants();
+            $('tenant-rows').innerHTML = rows.map((tenant) => `<tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4">
+                    <div class="font-bold text-slate-900">${escapeHtml(tenant.name)}</div>
+                    <div class="text-sm text-slate-500">${escapeHtml(tenant.tenantId)} · ${escapeHtml(tenant.slug)}</div>
+                    <div class="text-xs text-slate-400 mt-1">${escapeHtml(tenant.phone || '-')}</div>
+                </td>
+                <td class="px-6 py-4">${statusPill(tenant)}<div class="text-xs text-slate-500 mt-2">Ends: ${fmt(tenant.subscription?.endsAt)} · Plan: ${escapeHtml(tenant.subscription?.plan || '-')}</div></td>
+                <td class="px-6 py-4 text-sm text-slate-600">Users ${tenant.counts?.users || 0} · Products ${tenant.counts?.products || 0}<br>Sales ${tenant.counts?.sales || 0} · Repairs ${tenant.counts?.repairs || 0} · Money ${tenant.counts?.moneyServiceTransactions || 0}</td>
+                <td class="px-6 py-4 text-sm text-slate-600"><b>${escapeHtml(tenant.settings?.featurePreset || 'FULL')}</b><br>${escapeHtml(tenant.settings?.supportTier || 'STANDARD')}</td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2 flex-wrap">
+                        <select data-plan="${tenant.id}" class="h-9 px-2 rounded-lg border border-slate-200 text-xs font-bold"><option value="1M">1M</option><option value="3M">3M</option><option value="1Y">1Y</option><option value="CUSTOM">Custom</option></select>
+                        <input data-custom-days="${tenant.id}" type="number" min="1" max="1095" class="h-9 w-20 px-2 rounded-lg border border-slate-200 text-xs" placeholder="days">
+                        <button data-action="renew" data-id="${tenant.id}" class="h-9 px-3 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-black">Renew</button>
+                        <button data-action="users" data-id="${tenant.id}" class="h-9 px-3 rounded-lg bg-brand-50 border border-brand-100 text-brand-700 text-xs font-black">Users</button>
+                        <button data-action="settings" data-id="${tenant.id}" class="h-9 px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black">Settings</button>
+                        ${tenant.active ? `<button data-action="suspend" data-id="${tenant.id}" class="h-9 px-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-xs font-black">Suspend</button>` : `<button data-action="activate" data-id="${tenant.id}" class="h-9 px-3 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-black">Activate</button>`}
+                        ${tenant.active ? `<button type="button" disabled title="Suspend/deactivate first, then delete" class="h-9 px-3 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 text-xs font-black cursor-not-allowed">Delete</button>` : `<button data-action="delete" data-id="${tenant.id}" class="h-9 px-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-xs font-black">Delete</button>`}
+                    </div>
+                </td>
+            </tr>`).join('') || emptyRow(5, 'No tenants found.');
+        }
+
+        function emptyRow(cols, text) {
+            return `<tr><td colspan="${cols}" class="px-6 py-10 text-center text-slate-500">${escapeHtml(text)}</td></tr>`;
+        }
+
+        function setSelectedTenant(tenant) {
+            state.selectedTenant = tenant;
+            ['access-tenant-select','settings-tenant-select'].forEach((id) => { if ($(id)) $(id).value = tenant?.id || ''; });
+            const card = tenant ? `<b class="text-slate-900">${escapeHtml(tenant.name)}</b><br><span>${escapeHtml(tenant.tenantId)} · ${escapeHtml(tenant.slug)}</span><br><span>${escapeHtml(tenant.subscription?.status || 'NO SUB')}</span>` : 'Tenant ရွေးပါ။';
+            $('access-tenant-card').innerHTML = card;
+            $('settings-tenant-card').innerHTML = card;
+        }
+
+        async function loadUsers(tenantId) {
+            const data = await api(`/api/admin/tenants/${tenantId}/users`);
+            setSelectedTenant(data.tenant);
+            state.users = data.users || [];
+            renderUsers();
+            showView('users');
+        }
+
+        function permissionsFor(user) {
+            const permissions = { ...(DEFAULTS[user?.role] || DEFAULTS.CASHIER), ...(user?.permissions || {}) };
+            if (user?.role === 'SHOP_ADMIN') permissions['tab.Settings'] = true;
+            return permissions;
+        }
+
+        function permissionClass(enabled) {
+            return enabled ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-100 bg-red-50 text-red-700';
+        }
+
+        function renderPermissionButtons(rows, permissions, type) {
+            return rows.map(([key, label]) => {
+                const enabled = permissions[key] === true;
+                return `<button type="button" data-permission="${escapeHtml(key)}" data-enabled="${enabled}" class="min-h-[52px] rounded-xl border px-3 py-2 text-left text-xs font-bold ${permissionClass(enabled)}">
+                    <span class="block">${escapeHtml(label)}</span>
+                    <em class="not-italic opacity-70">${type}: ${enabled ? 'Show / Allow' : 'Hide / Block'}</em>
+                </button>`;
+            }).join('');
+        }
+
+        function renderUsers() {
+            $('users').innerHTML = state.users.map((user) => {
+                const permissions = permissionsFor(user);
+                return `<article class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" data-user-id="${user.id}">
+                    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <div><b class="text-slate-900">${escapeHtml(user.name)}</b><p class="text-sm text-slate-500">@${escapeHtml(user.username)} · ${escapeHtml(user.role)} · ${user.active ? 'Active' : 'Inactive'}</p></div>
+                        <div class="flex flex-wrap justify-end gap-2">
+                            <button data-action="reset-user-password" data-user-id="${user.id}" data-username="${escapeHtml(user.username)}" data-name="${escapeHtml(user.name)}" class="px-3 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-100 font-bold hover:bg-amber-100" type="button">Reset Password</button>
+                            <button data-action="delete-user" data-user-id="${user.id}" data-username="${escapeHtml(user.username)}" data-name="${escapeHtml(user.name)}" class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 font-bold hover:bg-red-100" type="button">Delete</button>
+                            <button data-action="save-user" data-user-id="${user.id}" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700" type="button">Save</button>
+                        </div>
+                    </div>
+                    <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <label class="block"><span class="text-xs font-bold text-slate-500">Name</span><input data-user-field="name" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200" value="${escapeHtml(user.name)}"></label>
+                        <label class="block"><span class="text-xs font-bold text-slate-500">Role</span><select data-user-field="role" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200"><option value="SHOP_ADMIN" ${user.role === 'SHOP_ADMIN' ? 'selected' : ''}>Shop Admin</option><option value="CASHIER" ${user.role === 'CASHIER' ? 'selected' : ''}>Staff / Cashier</option></select></label>
+                        <label class="flex items-center gap-3 mt-6 font-bold"><input data-user-field="active" type="checkbox" class="w-5 h-5 accent-brand-600" ${user.active ? 'checked' : ''}> Active</label>
+                    </div>
+                    <div class="px-5 pb-5">
+                        <h4 class="font-black text-slate-900 mb-3">Tab Visibility</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">${renderPermissionButtons(TABS, permissions, 'Tab')}</div>
+                        <h4 class="font-black text-slate-900 mt-5 mb-3">Function Permissions</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">${renderPermissionButtons(FUNCTIONS, permissions, 'Function')}</div>
+                    </div>
+                </article>`;
+            }).join('') || '<div class="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-500">Tenant ရွေးပြီး users ကိုကြည့်ပါ။</div>';
+        }
+
+        function collectUserPayload(card) {
+            const role = card.querySelector('[data-user-field="role"]').value;
+            const permissions = {};
+            card.querySelectorAll('[data-permission]').forEach((button) => { permissions[button.dataset.permission] = button.dataset.enabled === 'true'; });
+            if (role === 'SHOP_ADMIN') permissions['tab.Settings'] = true;
+            return {
+                name: card.querySelector('[data-user-field="name"]').value.trim(),
+                role,
+                active: card.querySelector('[data-user-field="active"]').checked,
+                permissions,
+            };
+        }
+
+        function applyRoleDefaults(card, role) {
+            const defaults = DEFAULTS[role] || DEFAULTS.CASHIER;
+            card.querySelectorAll('[data-permission]').forEach((button) => {
+                const enabled = defaults[button.dataset.permission] === true || (role === 'SHOP_ADMIN' && button.dataset.permission === 'tab.Settings');
+                button.dataset.enabled = String(enabled);
+                button.className = `min-h-[52px] rounded-xl border px-3 py-2 text-left text-xs font-bold ${permissionClass(enabled)}`;
+                const em = button.querySelector('em');
+                if (em) em.textContent = em.textContent.replace(/: .+$/, enabled ? ': Show / Allow' : ': Hide / Block');
+            });
+        }
+
+        async function loadSettings(tenantId) {
+            const data = await api(`/api/admin/tenants/${tenantId}/settings`);
+            setSelectedTenant(data.tenant);
+            state.settings = data.settings || {};
+            state.featureFlags = data.featureFlags || state.featureFlags;
+            renderSettingsForm();
+            showView('settings');
+        }
+
+        function setValue(id, value) { $(id).value = value ?? ''; }
+        function setChecked(id, value) { $(id).checked = value === true; }
+        function optionalNumber(id) {
+            const value = $(id).value.trim();
+            return value === '' ? undefined : Number(value);
+        }
+
+        function renderSettingsForm() {
+            const settings = state.settings || {};
+            setValue('set-plan-label', settings.planLabel || '');
+            setValue('set-support-tier', settings.supportTier || 'STANDARD');
+            setValue('set-feature-preset', settings.featurePreset || 'FULL');
+            setValue('set-billing-contact', settings.billingContact || '');
+            setValue('set-notify-email', settings.notificationEmail || '');
+            setValue('set-notify-phone', settings.notificationPhone || '');
+            setValue('set-retention-days', settings.dataRetentionDays || 365);
+            setValue('set-max-users', settings.limits?.maxUsers || '');
+            setValue('set-max-products', settings.limits?.maxProducts || '');
+            setValue('set-support-note', settings.supportNote || '');
+            setValue('set-admin-note', settings.adminNote || '');
+            setChecked('set-maintenance', settings.maintenanceLocked);
+            setChecked('set-auto-suspend', settings.autoSuspendOnExpiry !== false);
+            setChecked('set-trial-renewal', settings.allowTrialRenewal !== false);
+            const flags = settings.featureFlags || {};
+            const rows = state.featureFlags.length ? state.featureFlags : [
+                { key:'dashboard', label:'Dashboard' },{ key:'salePos', label:'Sale POS' },{ key:'salesHistory', label:'Sales History' },{ key:'products', label:'Products' },{ key:'stock', label:'Stock / IMEI' },{ key:'repairs', label:'Repairs' },{ key:'accounting', label:'Accounting' },{ key:'reports', label:'Reports' },{ key:'settings', label:'Settings' },
+            ];
+            $('feature-grid').innerHTML = rows.map((feature) => `<label class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm">${escapeHtml(feature.label)} <input data-feature-flag="${escapeHtml(feature.key)}" type="checkbox" class="w-5 h-5 accent-brand-600" ${flags[feature.key] !== false ? 'checked' : ''}></label>`).join('');
+        }
+
+        function collectSettingsPayload() {
+            const featureFlags = {};
+            document.querySelectorAll('[data-feature-flag]').forEach((checkbox) => { featureFlags[checkbox.dataset.featureFlag] = checkbox.checked; });
+            const limits = {};
+            const maxUsers = optionalNumber('set-max-users');
+            const maxProducts = optionalNumber('set-max-products');
+            if (maxUsers !== undefined) limits.maxUsers = maxUsers;
+            if (maxProducts !== undefined) limits.maxProducts = maxProducts;
+            return {
+                planLabel: $('set-plan-label').value.trim(),
+                supportTier: $('set-support-tier').value,
+                supportNote: $('set-support-note').value.trim(),
+                adminNote: $('set-admin-note').value.trim(),
+                billingContact: $('set-billing-contact').value.trim(),
+                notificationEmail: $('set-notify-email').value.trim(),
+                notificationPhone: $('set-notify-phone').value.trim(),
+                featurePreset: $('set-feature-preset').value,
+                featureFlags,
+                limits,
+                dataRetentionDays: optionalNumber('set-retention-days') || 365,
+                maintenanceLocked: $('set-maintenance').checked,
+                autoSuspendOnExpiry: $('set-auto-suspend').checked,
+                allowTrialRenewal: $('set-trial-renewal').checked,
+            };
+        }
+
+        function renderBillingReports(view) {
+            const target = $(`view-${view}`);
+            const summary = state.overview?.summary || {};
+            target.innerHTML = `<div class="mb-6">
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">${view === 'billing' ? 'လစဉ်ကြေးများ (Billing)' : 'အစီရင်ခံစာ (Reports)'}</h1>
+                <p class="text-slate-500 mt-1">Mockup style ထဲမှာ PostgreSQL summary data ချိတ်ထားပါတယ်။</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-sm font-bold text-slate-500">Sales Revenue</p><h3 class="text-2xl font-black mt-2">${money(summary.salesRevenue || 0)}</h3></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-sm font-bold text-slate-500">Repair Revenue</p><h3 class="text-2xl font-black mt-2">${money(summary.repairRevenue || 0)}</h3></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100"><p class="text-sm font-bold text-slate-500">Money Service Profit</p><h3 class="text-2xl font-black mt-2">${money(summary.moneyServiceProfit || 0)}</h3></div>
+            </div>`;
+        }
+
+        $('login-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            message('login-message', '');
+            try {
+                const data = await api('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        shopSlug: $('tenant').value.trim() || undefined,
+                        username: $('username').value.trim(),
+                        password: $('password').value,
+                    }),
+                });
+                state.token = data.token;
+                sessionStorage.setItem(tokenKey, state.token);
+                $('password').value = '';
+                showShell(true);
+                await loadAll();
+                showView('overview');
+            } catch (error) {
+                message('login-message', error.message, 'error');
+            }
+        });
+
+        $('logout').addEventListener('click', () => {
+            state.token = '';
+            sessionStorage.removeItem(tokenKey);
+            showShell(false);
+        });
+
+        $('side-nav').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-view]');
+            if (button) showView(button.dataset.view);
+        });
+
+        document.addEventListener('click', async (event) => {
+            const link = event.target.closest('[data-view-link]');
+            if (link) showView(link.dataset.viewLink);
+            const openTenant = event.target.closest('[data-open-tenant]');
+            if (openTenant) {
+                await loadUsers(openTenant.dataset.openTenant).catch((error) => toast(error.message, 'error'));
+            }
+        });
+
+        $('global-search').addEventListener('input', (event) => {
+            state.query = event.target.value;
+            $('tenant-search').value = state.query;
+            renderTenants();
+        });
+        $('tenant-search').addEventListener('input', (event) => {
+            state.query = event.target.value;
+            $('global-search').value = state.query;
+            renderTenants();
+        });
+        $('tenant-status-filter').addEventListener('change', (event) => {
+            state.tenantStatus = event.target.value;
+            renderTenants();
+        });
+        $('refresh-all').addEventListener('click', () => loadAll().then(() => toast('Refreshed.')).catch((error) => toast(error.message, 'error')));
+
+        $('tenant-rows').addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-action]');
+            if (!button) return;
+            button.disabled = true;
+            const { action, id } = button.dataset;
+            try {
+                if (action === 'users') {
+                    await loadUsers(id);
+                } else if (action === 'settings') {
+                    await loadSettings(id);
+                } else if (action === 'delete') {
+                    const tenant = state.tenants.find((item) => item.id === id);
+                    if (tenant?.active) throw new Error('Active tenant cannot be deleted. Suspend/deactivate first.');
+                    const approved = window.confirm(`Permanently delete tenant "${tenant?.name || id}"?\n\nThis deletes the tenant shop and related data. Active tenants cannot be deleted; suspend/deactivate first.`);
+                    if (!approved) return;
+                    await api(`/api/admin/tenants/${id}`, { method: 'DELETE' });
+                    if (state.selectedTenant?.id === id) setSelectedTenant(null);
+                    message('dashboard-message', 'Tenant deleted.');
+                    toast('Tenant deleted.');
+                    await loadAll();
+                } else {
+                    const plan = document.querySelector(`[data-plan="${id}"]`)?.value || '1M';
+                    const customDays = Number(document.querySelector(`[data-custom-days="${id}"]`)?.value || 0);
+                    const path = action === 'renew' ? `/api/admin/tenants/${id}/renew` : `/api/admin/tenants/${id}/${action}`;
+                    const body = action === 'renew' ? { plan, note: 'Updated from Super Admin Dashboard', ...(plan === 'CUSTOM' && customDays > 0 ? { customDays } : {}) } : {};
+                    await api(path, { method: 'POST', body: JSON.stringify(body) });
+                    message('dashboard-message', action === 'renew' ? 'Tenant renewed. Data remains available.' : 'Tenant status updated.');
+                    toast('Tenant updated.');
+                    await loadAll();
+                }
+            } catch (error) {
+                message('dashboard-message', error.message, 'error');
+                toast(error.message, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        $('create-tenant-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = event.submitter;
+            button.disabled = true;
+            try {
+                const payload = {
+                    name: $('tenant-create-name').value.trim(),
+                    slug: $('tenant-create-slug').value.trim() || undefined,
+                    tenantId: $('tenant-create-code').value.trim() || undefined,
+                    phone: $('tenant-create-phone').value.trim() || undefined,
+                    adminName: $('tenant-create-admin-name').value.trim() || undefined,
+                    adminUsername: $('tenant-create-admin-username').value.trim(),
+                    adminPassword: $('tenant-create-admin-password').value,
+                    trialDays: Number($('tenant-create-trial-days').value || 0) || undefined,
+                };
+                const result = await api('/api/admin/tenants', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+                event.target.reset();
+                message('dashboard-message', `Tenant created: ${result.tenant?.tenantId || result.tenant?.slug || payload.name}`);
+                toast('Tenant created.');
+                await loadAll();
+            } catch (error) {
+                message('dashboard-message', error.message, 'error');
+                toast(error.message, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        $('access-tenant-select').addEventListener('change', (event) => {
+            if (event.target.value) loadUsers(event.target.value).catch((error) => toast(error.message, 'error'));
+        });
+        $('settings-tenant-select').addEventListener('change', (event) => {
+            if (event.target.value) loadSettings(event.target.value).catch((error) => toast(error.message, 'error'));
+        });
+
+        $('create-user-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!state.selectedTenant) return message('user-message', 'Please select a tenant first.', 'error');
+            const button = event.submitter;
+            button.disabled = true;
+            try {
+                const role = $('new-user-role').value;
+                await api(`/api/admin/tenants/${state.selectedTenant.id}/users`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: $('new-user-name').value.trim(),
+                        username: $('new-user-username').value.trim(),
+                        password: $('new-user-password').value,
+                        role,
+                        permissions: { ...(DEFAULTS[role] || DEFAULTS.CASHIER) },
+                    }),
+                });
+                $('create-user-form').reset();
+                $('new-user-role').value = 'SHOP_ADMIN';
+                message('user-message', 'New tenant user created.');
+                toast('New tenant user created.');
+                await loadUsers(state.selectedTenant.id);
+                await loadTenants();
+            } catch (error) {
+                message('user-message', error.message, 'error');
+                toast(error.message, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        $('users').addEventListener('click', async (event) => {
+            const permission = event.target.closest('[data-permission]');
+            if (permission) {
+                const enabled = permission.dataset.enabled !== 'true';
+                permission.dataset.enabled = String(enabled);
+                permission.className = `min-h-[52px] rounded-xl border px-3 py-2 text-left text-xs font-bold ${permissionClass(enabled)}`;
+                const em = permission.querySelector('em');
+                if (em) em.textContent = em.textContent.replace(/: .+$/, enabled ? ': Show / Allow' : ': Hide / Block');
+                return;
+            }
+            const reset = event.target.closest('[data-action="reset-user-password"]');
+            if (reset && state.selectedTenant) {
+                const tempPassword = generateTemporaryPassword();
+                const password = window.prompt(`New password for ${reset.dataset.name} (@${reset.dataset.username}). Edit if needed:`, tempPassword);
+                if (!password) return;
+                if (password.length < 6) return toast('Password must contain at least 6 characters.', 'error');
+                if (!window.confirm(`Reset password for @${reset.dataset.username}?`)) return;
+                reset.disabled = true;
+                try {
+                    await api(`/api/admin/tenants/${state.selectedTenant.id}/users/${reset.dataset.userId}/reset-password`, {
+                        method: 'POST',
+                        body: JSON.stringify({ password, reason: 'Reset from Super Admin Portal' }),
+                    });
+                    const copied = await copyText(password);
+                    message('user-message', `Password reset completed for @${reset.dataset.username}. Temporary password ${copied ? 'copied to clipboard' : 'is: ' + password}`);
+                    toast(copied ? 'Password reset. Temporary password copied.' : 'Password reset.');
+                    await loadUsers(state.selectedTenant.id);
+                } catch (error) {
+                    message('user-message', error.message, 'error');
+                    toast(error.message, 'error');
+                } finally {
+                    reset.disabled = false;
+                }
+                return;
+            }
+            const del = event.target.closest('[data-action="delete-user"]');
+            if (del && state.selectedTenant) {
+                const approved = window.confirm(`Delete @${del.dataset.username}?\n\nIf this user has sales/history, login access will be removed and history will be preserved.`);
+                if (!approved) return;
+                del.disabled = true;
+                try {
+                    const result = await api(`/api/admin/tenants/${state.selectedTenant.id}/users/${del.dataset.userId}`, {
+                        method: 'DELETE',
+                        body: JSON.stringify({ confirmation: del.dataset.username }),
+                    });
+                    message('user-message', `${result.message || 'User deleted.'}${result.warning ? ' ' + result.warning : ''}`);
+                    toast(result.mode === 'soft_deleted' ? 'User access removed. History preserved.' : 'User deleted.');
+                    await loadUsers(state.selectedTenant.id);
+                    await loadTenants();
+                } catch (error) {
+                    message('user-message', error.message, 'error');
+                    toast(error.message, 'error');
+                } finally {
+                    del.disabled = false;
+                }
+                return;
+            }
+            const save = event.target.closest('[data-action="save-user"]');
+            if (!save || !state.selectedTenant) return;
+            save.disabled = true;
+            try {
+                const card = save.closest('[data-user-id]');
+                const result = await api(`/api/admin/tenants/${state.selectedTenant.id}/users/${save.dataset.userId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(collectUserPayload(card)),
+                });
+                message('user-message', `User access saved.${result.warning ? ' ' + result.warning : ''}`);
+                toast('User access saved.');
+                await loadUsers(state.selectedTenant.id);
+            } catch (error) {
+                message('user-message', error.message, 'error');
+                toast(error.message, 'error');
+            } finally {
+                save.disabled = false;
+            }
+        });
+
+        $('users').addEventListener('change', (event) => {
+            const role = event.target.closest('[data-user-field="role"]');
+            if (role) applyRoleDefaults(role.closest('[data-user-id]'), role.value);
+        });
+
+        $('save-settings').addEventListener('click', async (event) => {
+            if (!state.selectedTenant) return message('settings-message', 'Please select a tenant first.', 'error');
+            event.target.disabled = true;
+            try {
+                await api(`/api/admin/tenants/${state.selectedTenant.id}/settings`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(collectSettingsPayload()),
+                });
+                message('settings-message', 'Tenant settings saved.');
+                toast('Tenant settings saved.');
+                await loadSettings(state.selectedTenant.id);
+                await loadTenants();
+                await loadOverview();
+            } catch (error) {
+                message('settings-message', error.message, 'error');
+                toast(error.message, 'error');
+            } finally {
+                event.target.disabled = false;
+            }
+        });
+
+        if (state.token) {
+            showShell(true);
+            loadAll().then(() => showView('overview')).catch((error) => {
+                sessionStorage.removeItem(tokenKey);
+                state.token = '';
+                showShell(false);
+                message('login-message', error.message, 'error');
+            });
+        }
+    </script>
+    <script src="./admin-portal-extensions.js?v=20260620152000"></script>
+</body>
+</html>

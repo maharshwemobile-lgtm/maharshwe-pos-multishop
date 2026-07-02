@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Mahar POS logo">
+  <defs>
+    <linearGradient id="g" x1="20" x2="108" y1="18" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA"/>
+      <stop offset="0.52" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1E40AF"/>
+    </linearGradient>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#1E40AF" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect x="12" y="12" width="104" height="104" rx="28" fill="url(#g)" filter="url(#s)"/>
+  <path d="M34 82V45c0-5 4-9 9-9h10l12 27 12-27h10c5 0 9 4 9 9v37" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M43 88h42" stroke="#DBEAFE" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="95" cy="34" r="9" fill="#DBEAFE"/>
+</svg>

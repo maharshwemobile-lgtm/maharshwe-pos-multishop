@@ -1,0 +1,250 @@
+.phase9-sidebar-backdrop{display:none}
+.phase9-sidebar-close{display:none}
+@media(max-width:900px){
+  .phase9-sidebar-backdrop{display:block;position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:899}
+  .phase9-sidebar{display:flex!important;position:fixed!important;left:0!important;top:0!important;bottom:0!important;z-index:900;width:min(88vw,320px)!important;max-width:calc(100vw - 34px)!important;height:100dvh!important;min-height:0!important;overflow-y:auto;flex-direction:column;box-shadow:18px 0 50px rgba(15,23,42,.32)}
+  .phase9-sidebar .brand div,.phase9-sidebar nav span,.phase9-sidebar .help b,.phase9-sidebar .help span{display:block!important}
+  .phase9-sidebar nav{flex:1}
+  .phase9-sidebar .help{margin-top:16px}
+  .phase9-sidebar-close{display:grid;place-items:center;position:absolute;right:12px;top:12px;width:38px;height:38px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.08);color:#fff}
+  .phase9-sidebar .brand{padding-right:44px}
+}
+
+
+/* Global: hide in-app refresh buttons everywhere */
+button:has(svg.lucide-refresh-cw),
+button:has(.lucide-refresh-cw),
+.refresh-button,
+.payments-refresh-button {
+  display: none !important;
+}
+
+
+/* Mobile menu button: make sidebar access obvious */
+.phase9-mobile-menu-button span{display:none}
+@media(max-width:900px){
+  .phase9-mobile-menu-button{
+    width:auto!important;
+    min-width:92px!important;
+    padding:0 13px!important;
+    gap:7px!important;
+    border-color:#22c55e!important;
+    color:#0f766e!important;
+    background:#ecfdf5!important;
+    font-weight:900!important;
+  }
+  .phase9-mobile-menu-button span{display:inline!important}
+  .phase9-mobile-menu-button:after{
+    content:'';
+    position:absolute;
+    right:5px;
+    top:5px;
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:#ef4444;
+    box-shadow:0 0 0 4px rgba(239,68,68,.12);
+  }
+}
+
+
+/* Mobile-wide polish: smooth layout, hide phase text and non-essential actions */
+.topbar-phase-label{display:none!important}
+html{scroll-behavior:smooth}
+body{overscroll-behavior-y:none}
+@media(max-width:900px){
+  html,body,#root{max-width:100%;overflow-x:hidden}
+  body{-webkit-text-size-adjust:100%;touch-action:manipulation}
+  .app.phase9-app{min-height:100dvh;overflow-x:hidden}
+  .app.phase9-app main{width:100%;min-width:0;overflow-x:hidden}
+  .content{padding:10px 10px calc(78px + env(safe-area-inset-bottom))!important;min-width:0}
+  .topbar{height:auto!important;min-height:62px!important;padding:8px 10px!important;gap:8px!important;z-index:80!important}
+  .topbar>img{width:40px!important;height:40px!important;border-radius:11px!important}
+  .topbar-title-copy{min-width:0!important;flex:1!important}
+  .topbar-title-copy h1{font-size:17px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .topbar-title-copy p,.topbar .profile,.topbar .search{display:none!important}
+  .phase9-mobile-menu-button{box-shadow:0 8px 20px rgba(34,197,94,.18)!important}
+  .phase9-sidebar{scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .phase9-sidebar nav button{min-height:44px!important}
+  .phase9-sidebar-backdrop{backdrop-filter:blur(3px)}
+  :where(.card,[class$="-card"],[class$="-panel"],[class$="-page"],section,article,form){min-width:0!important}
+  :where(.stats,.quick,.miniStats,.reports-summary-grid,.reports-operations-grid,.stock-summary-grid,.payments-summary-grid,.payments-account-grid,.p2-summary-grid,.repair-summary-grid,.tenant-user-stats,.msc-ledger-cards,.about-donation-grid,.about-grid){grid-template-columns:1fr!important}
+  :where(.toolbar,.stock-toolbar,.payments-toolbar,.repair-toolbar,.reports-period-bar,.reports-heading-actions,.p2-toolbar,.tenant-users-toolbar){align-items:stretch!important;flex-direction:column!important;gap:8px!important;padding:10px!important}
+  :where(.toolbar input,.toolbar select,.toolbar button,.stock-toolbar select,.payments-toolbar input,.payments-toolbar select,.repair-toolbar select,.reports-period-bar label,.p2-toolbar select,.p2-toolbar input){width:100%!important;min-width:0!important}
+  :where(.table-wrap,.stock-table-wrap,.payments-table-wrap,.repair-table-wrap,.reports-table-wrap,.p2-table-wrap,.tenant-users-table-wrap){overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;max-width:100%!important}
+  :where(table){font-size:12px!important}
+  :where(th,td){padding:9px 10px!important}
+  :where(.p2-modal-backdrop,.stock-modal-backdrop,.repair-modal-backdrop,.msc-modal-backdrop){padding:0!important;align-items:stretch!important;place-items:stretch!important}
+  :where(.p2-modal,.stock-modal,.repair-modal,.msc-detail-modal){width:100%!important;max-width:100%!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important}
+  :where(.p2-modal>header,.stock-modal>header,.repair-modal-header){padding:12px!important}
+  :where(.p2-form,.stock-movement-form,.repair-form,.repair-detail-body){padding:12px!important}
+  :where(.p2-form-grid,.p2-form-grid-3,.repair-form-grid,.repair-action-form,.stock-balance-preview,.msc-form-grid,.br-form-grid){grid-template-columns:1fr!important}
+  :where(button:has(svg.lucide-refresh-cw),button:has(.lucide-refresh-cw),button:has(svg.lucide-download),button:has(.lucide-download),button:has(svg.lucide-upload),button:has(.lucide-upload),button:has(svg.lucide-printer),button:has(.lucide-printer),button:has(svg.lucide-file-down),button:has(.lucide-file-down),button:has(svg.lucide-file-up),button:has(.lucide-file-up),.refresh-button,.payments-refresh-button,.stock-refresh-button,.export-button){display:none!important}
+  :where(.reports-heading-actions button:not(.primary),.repair-page-heading button:not(.primary),.payments-heading-actions button:not(.payments-transfer-button)){display:none!important}
+  :where(.stock-row-actions,.p2-actions,.repair-page-heading>div:last-child){gap:5px!important}
+  :where(.stock-action,.p2-actions button,.repair-open-button){min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
+  :where(.notice,.subscription-limited-banner){margin:0 0 8px!important}
+}
+@media(max-width:560px){
+  .topbar{position:sticky!important;top:0!important}
+  .content{padding-left:8px!important;padding-right:8px!important}
+  :where(h1){font-size:20px!important}
+  :where(h2){font-size:21px!important}
+  :where(h3){font-size:17px!important}
+  :where(.card,[class$="-card"]){border-radius:13px!important}
+  :where(.stat,.quickCard){padding:13px!important}
+  :where(input,select,textarea,button){font-size:16px}
+}
+
+
+/* Smooth mobile navigation drawer */
+@media(max-width:900px){
+  .phase9-sidebar-backdrop{
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .24s ease;
+    will-change:opacity;
+  }
+  .phase9-sidebar-backdrop.is-open{
+    opacity:1;
+    pointer-events:auto;
+  }
+  .phase9-sidebar-backdrop.is-closing{
+    opacity:0;
+    pointer-events:none;
+  }
+  .phase9-sidebar{
+    transform:translate3d(-104%,0,0);
+    opacity:.98;
+    transition:transform .26s cubic-bezier(.22,.61,.36,1), opacity .22s ease;
+    will-change:transform,opacity;
+    contain:layout paint;
+  }
+  .phase9-sidebar.is-open{
+    transform:translate3d(0,0,0);
+    opacity:1;
+  }
+  .phase9-sidebar.is-closing{
+    transform:translate3d(-104%,0,0);
+    opacity:.98;
+    pointer-events:none;
+  }
+  .phase9-mobile-menu-button{
+    transition:transform .16s ease, box-shadow .2s ease, background .2s ease!important;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .phase9-mobile-menu-button:active{
+    transform:scale(.96);
+  }
+}
+
+
+/* Clean mobile menu button override */
+@media(max-width:900px){
+  .topbar .phase9-mobile-menu-button{
+    width:46px!important;
+    min-width:46px!important;
+    height:46px!important;
+    padding:0!important;
+    border-radius:14px!important;
+    display:grid!important;
+    place-items:center!important;
+    gap:0!important;
+    background:#ffffff!important;
+    color:#0f172a!important;
+    border:1px solid #dbe7f0!important;
+    box-shadow:0 8px 18px rgba(15,23,42,.10)!important;
+  }
+  .topbar .phase9-mobile-menu-button span{
+    display:none!important;
+  }
+  .topbar .phase9-mobile-menu-button:after{
+    display:none!important;
+    content:none!important;
+  }
+  .topbar .phase9-mobile-menu-button svg{
+    width:24px!important;
+    height:24px!important;
+    stroke-width:2.4!important;
+  }
+  .topbar .phase9-mobile-menu-button.is-active{
+    background:#0f172a!important;
+    color:#ffffff!important;
+    border-color:#0f172a!important;
+    box-shadow:0 10px 24px rgba(15,23,42,.24)!important;
+  }
+}
+
+
+/* Login menu/sidebar tour guide */
+.app-menu-tour{
+  position:fixed;
+  left:300px;
+  top:86px;
+  z-index:860;
+  width:min(420px,calc(100vw - 330px));
+  pointer-events:none;
+}
+.app-menu-tour-card{
+  pointer-events:auto;
+  border:1px solid #bfdbfe;
+  border-radius:18px;
+  background:linear-gradient(135deg,#ffffff,#eff6ff);
+  box-shadow:0 24px 70px rgba(15,23,42,.20);
+  padding:18px;
+  color:#0f172a;
+}
+.app-menu-tour-badge{
+  display:inline-flex;
+  margin-bottom:7px;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.14em;
+  color:#2563eb;
+}
+.app-menu-tour-card h3{margin:0 0 8px;font-size:20px}
+.app-menu-tour-card p{margin:0;color:#475569;line-height:1.7;font-size:13px}
+.app-menu-tour-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.app-menu-tour-actions button{
+  border:0;
+  border-radius:12px;
+  min-height:40px;
+  padding:0 14px;
+  font-weight:900;
+  cursor:pointer;
+}
+.app-menu-tour-actions .secondary{
+  background:#f1f5f9;
+  color:#334155;
+  border:1px solid #dbe7f0;
+}
+.dark .app-menu-tour-card{
+  background:linear-gradient(135deg,#0b1b33,#10243f);
+  border-color:#1e3555;
+  color:#e5eef8;
+}
+.dark .app-menu-tour-card p{color:#9fb0c7}
+.dark .app-menu-tour-actions .secondary{background:#10243f;border-color:#1e3555;color:#e5eef8}
+
+@media(max-width:900px){
+  .app-menu-tour{
+    left:10px;
+    right:10px;
+    top:74px;
+    width:auto;
+    z-index:905;
+  }
+  .app-menu-tour-card{
+    border-radius:16px;
+    padding:14px;
+  }
+  .app-menu-tour-card h3{font-size:17px}
+  .app-menu-tour-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  .app-menu-tour-actions button{
+    width:100%;
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "shopConfig": {
+    "shopName": "Mahar Shwe Mobile",
+    "address": "ဆီဆိုင်မြို့",
+    "phone": "09778394052",
+    "logoUrl": "./maharshwe-logo.png",
+    "googleSheetApiUrl": "",
+    "accountingDailyApiUrl": "",
+    "repairApiUrl": "https://script.google.com/macros/s/AKfycbzxx0LubVYZm5e6ZbMdAzsQ5QR6ZI7bC0xYSs63y12qUr75D22pvUZC8nSDKUgZeaBUCw/exec",
+    "telegramBotToken": "",
+    "adminChatId": "",
+    "appToken": "maharshwe123",
+    "dailyReportEnabled": false,
+    "dailyReportTime": "18:30",
+    "googleAutoSyncEnabled": true,
+    "googleSaleSyncIntervalMinutes": 60,
+    "googleSyncAfterSale": true,
+    "packageType": "Free",
+    "currency": "MMK",
+    "defaultPaymentMethod": "Cash",
+    "lowStockAlertQty": 2,
+    "autoPrintReceipt": false,
+    "featureFlags": {
+      "posRetail": true,
+      "inventory": true,
+      "customers": true,
+      "buyin": true,
+      "repairs": true,
+      "accounting": true,
+      "reports": true,
+      "saleEdit": true,
+      "saleReturn": false,
+      "purchase": false,
+      "purchaseReturn": false,
+      "stockAdjust": true,
+      "cashAdjust": true,
+      "transfers": false,
+      "printSettings": true,
+      "googleSync": true,
+      "telegramReports": true
+    },
+    "shopId": "default-shop",
+    "adminUsername": "admin",
+    "telegramBotUsername": "",
+    "accountingDailySyncAfterSale": true
+  },
+  "technicians": [
+    {
+      "name": "Khun Lwin OO",
+      "chatId": "5386894413"
+    },
+    {
+      "name": "Khun Mg Ponn",
+      "chatId": "6730666866"
+    },
+    {
+      "name": "Sayar San",
+      "chatId": "8035358430"
+    },
+    {
+      "name": "Ba Mg",
+      "chatId": "8731433727"
+    },
+    {
+      "name": "KMA",
+      "chatId": "8128573692"
+    }
+  ],
+  "customCategories": [
+    "New Phone",
+    "Used Phone",
+    "Accessories",
+    "VPN Service",
+    "Bill / Topup"
+  ],
+  "updatedAt": "2026-05-22T02:49:27.573Z"
+}

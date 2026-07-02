@@ -1,0 +1,8 @@
+.purchasing-hub{display:grid;gap:18px}
+.purchasing-hero{display:flex;align-items:center;gap:16px;padding:22px;border:1px solid #dbeafe;border-radius:22px;background:#eff6ff}
+.purchasing-hero-icon{display:grid;place-items:center;width:54px;height:54px;border-radius:18px;background:#0f766e;color:#fff}
+.purchasing-hero h2{margin:3px 0 5px;font-size:26px;color:#0f172a}
+.purchasing-hero p{margin:0;color:#475569}
+.purchasing-tabs{display:flex;gap:10px;flex-wrap:wrap}
+.purchasing-tabs button{display:flex;align-items:center;gap:8px;padding:11px 15px;border:1px solid #cbd5e1;border-radius:14px;background:#fff;color:#334155;font-weight:700}
+.purchasing-tabs button.active{background:#0f766e;border-color:#0f766e;color:#fff}
