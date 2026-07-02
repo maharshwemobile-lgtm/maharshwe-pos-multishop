@@ -23,6 +23,11 @@ import './business-records.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 
+function isAccountingAdminRole(role) {
+  const normalized = String(role || '').trim().toUpperCase();
+  return normalized === 'SUPER_ADMIN' || normalized === 'SHOP_ADMIN' || normalized === 'ADMIN';
+}
+
 function yangonToday() {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Yangon', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -85,15 +90,20 @@ function DetailModal({ record, onClose, isMiniMart = false }) {
 }
 
 function EditModal({ record, accounts, isMiniMart, saving, onSave, onClose }) {
-  const [form, setForm] = useState(() => ({
-    businessDate: record?.businessDate || yangonToday(),
-    category: record?.type === 'income' ? (record?.category || 'OTHER_INCOME') : (record?.title || record?.category || ''),
-    title: record?.title || '',
-    amount: String(record?.amount || ''),
-    method: record?.method || 'CASH',
-    moneyAccountId: record?.moneyAccountId || '',
-    note: record?.note || '',
-  }));
+  const buildForm = (currentRecord) => ({
+    businessDate: currentRecord?.businessDate || yangonToday(),
+    category: currentRecord?.type === 'income' ? (currentRecord?.category || 'OTHER_INCOME') : (currentRecord?.title || currentRecord?.category || ''),
+    title: currentRecord?.title || '',
+    amount: String(currentRecord?.amount || ''),
+    method: currentRecord?.method || 'CASH',
+    moneyAccountId: currentRecord?.moneyAccountId || '',
+    note: currentRecord?.note || '',
+  });
+  const [form, setForm] = useState(() => buildForm(record));
+
+  useEffect(() => {
+    setForm(buildForm(record));
+  }, [record]);
 
   if (!record) return null;
 
@@ -126,7 +136,7 @@ function EditModal({ record, accounts, isMiniMart, saving, onSave, onClose }) {
     }}>
       <section className="br-modal br-edit-modal" role="dialog" aria-modal="true">
         <header>
-          <div><Pencil size={21} /><span><b>Edit {record.type === 'income' ? 'Other Income' : 'Quick Expense'}</b><small>Account balance will be recalculated safely.</small></span></div>
+          <div><Pencil size={21} /><span><b>Edit {record.type === 'income' ? 'Other Income' : 'Quick Expense'}</b><small>Date, category and amount can be corrected safely.</small></span></div>
           <button type="button" disabled={saving} onClick={onClose}><X size={19} /></button>
         </header>
         <form className="br-edit-form" onSubmit={submit}>
@@ -162,7 +172,7 @@ export default function BusinessRecordsPanel() {
   const permissions = session?.user?.permissions || {};
   const rawBusinessType = session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
   const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
-  const canWriteAccounting = role === 'SUPER_ADMIN' || role === 'SHOP_ADMIN' || permissions.accounting === true;
+  const canWriteAccounting = isAccountingAdminRole(role) || permissions.accounting === true;
   const [businessDate, setBusinessDate] = useState(today);
   const [type, setType] = useState('income');
   const [from, setFrom] = useState(monthStart(today));
@@ -190,7 +200,7 @@ export default function BusinessRecordsPanel() {
       from,
       to,
       page: String(page),
-      limit: '20',
+      limit: '10',
     });
     if (query.trim()) search.set('q', query.trim());
     return search;
@@ -334,6 +344,15 @@ export default function BusinessRecordsPanel() {
     }
   };
 
+  const openEdit = (record) => {
+    if (!canWriteAccounting) {
+      setNotice('');
+      setError('Accounting permission is required');
+      return;
+    }
+    setEditing(record);
+  };
+
   const accounts = context.accounts || [];
   const dayClosed = Boolean(context.closing);
 
@@ -435,7 +454,7 @@ export default function BusinessRecordsPanel() {
                 <td>
                   <div className="br-row-actions">
                     <button type="button" className="br-view" onClick={() => setSelected(record)}><Eye size={17} /> View</button>
-                    {canWriteAccounting ? <button type="button" className="br-edit" onClick={() => setEditing(record)}><Pencil size={17} /> Edit</button> : null}
+                    <button type="button" className="br-edit" onClick={() => openEdit(record)}><Pencil size={17} /> Edit</button>
                   </div>
                 </td>
               </tr>

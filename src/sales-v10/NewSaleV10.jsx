@@ -22,6 +22,7 @@ import '../stock-management.css';
 import './sales-v10.css';
 import FirstLoginGuide from '../FirstLoginGuide.jsx';
 import './sales-v10-guided.css';
+import { pickLanguageText } from '../settings/ProjectLanguageRuntime.jsx';
 import {
   clearDraft,
   loadDraft,
@@ -32,12 +33,13 @@ import {
 } from './salesV10Utils';
 import { playPaymentSuccessSound, playPosAddSound } from './salesAudio';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 const EMPTY_CUSTOMER = { name: '', phone: '' };
 const EMPTY_PAYMENT = { method: '', methodId: '', methodCode: '', methodName: '', reference: '', cashReceived: '' };
 const CASH_PAYMENT_METHOD = { key: 'CASH', id: '', name: 'Cash', code: 'CASH', kind: 'CASH', accountName: 'Cash', legacyMethod: 'CASH', balance: 0 };
 const CREDIT_PAYMENT_METHOD = { key: 'CREDIT', id: '', name: 'Credit', code: 'CREDIT', kind: 'CREDIT', accountName: '', legacyMethod: 'CREDIT', balance: 0 };
 const FALLBACK_PAYMENT_METHODS = [CASH_PAYMENT_METHOD, CREDIT_PAYMENT_METHOD];
+const t = pickLanguageText;
 
 function normalizePaymentOption(row) {
   const legacyMethod = row?.legacyMethod || row?.method || row?.code || 'OTHER';
@@ -265,12 +267,12 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   )).length;
   const needsCreditCustomer = paymentLegacyMethod === 'CREDIT' && !customer.name.trim() && !customer.phone.trim();
   const nextAction = !cart.length
-    ? 'Step 1: Product ကိုရှာပြီး Add နှိပ်ပါ။'
+    ? t('Step 1: Search a product and tap Add.', 'Step 1: Product ကိုရှာပြီး Add နှိပ်ပါ။')
     : belowMinimumCount
-      ? 'Step 2: Minimum price အောက်ရောက်နေတဲ့ item ကိုစစ်ပါ။'
+      ? t('Step 2: Check items below the minimum price.', 'Step 2: Minimum price အောက်ရောက်နေတဲ့ item ကိုစစ်ပါ။')
       : needsCreditCustomer
-        ? 'Step 3: Credit sale အတွက် customer name သို့ phone ဖြည့်ပါ။'
-        : 'Ready: Review & Confirm Sale ကိုနှိပ်ပြီး အရောင်းသိမ်းနိုင်ပါပြီ။';
+        ? t('Step 3: Enter customer name or phone for a credit sale.', 'Step 3: Credit sale အတွက် customer name သို့ phone ဖြည့်ပါ။')
+        : t('Ready: Tap Review & Confirm Sale to complete this sale.', 'Ready: Review & Confirm Sale ကိုနှိပ်ပြီး အရောင်းသိမ်းနိုင်ပါပြီ။');
   const guideState = {
     pick: cart.length ? 'done' : 'active',
     check: cart.length && !belowMinimumCount ? 'done' : (cart.length ? 'active' : ''),
@@ -349,7 +351,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
 
   const addProduct = (item) => {
     if (Number(item.available ?? item.stockQuantity ?? 0) <= 0) {
-      notify('error', 'Stock မရှိတော့ပါ။');
+      notify('error', t('Out of stock.', 'Stock မရှိတော့ပါ။'));
       return;
     }
 
@@ -418,7 +420,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     if (delta > 0) {
       const source = catalog.find((item) => item.id === line.id);
       if (!source || Number(source.stockQuantity || 0) <= Number(reserved.get(line.id) || 0)) {
-        notify('error', 'Stock မလုံလောက်ပါ။');
+        notify('error', t('Not enough stock.', 'Stock မလုံလောက်ပါ။'));
         return;
       }
       patchLine(line.key, { quantity: Number(line.quantity || 0) + 1 });
@@ -434,7 +436,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
 
   const clearCart = () => {
     if (!cart.length) return;
-    if (!window.confirm('Current sale ကို ရှင်းမလား?')) return;
+    if (!window.confirm(t('Clear the current sale?', 'Current sale ကို ရှင်းမလား?'))) return;
     setLastAddedKey('');
     setCart([]);
     setCustomer(EMPTY_CUSTOMER);
@@ -468,7 +470,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
 
   const addSplitPayment = () => {
     const method = splitPaymentOptions.find((item) => item.legacyMethod === 'CASH') || splitPaymentOptions[0];
-    if (!method) return notify('error', 'Payment Type မရှိသေးပါ။');
+    if (!method) return notify('error', t('No payment type is available yet.', 'Payment Type မရှိသေးပါ။'));
     setSplitPayments((current) => [...current, {
       id: `split_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       methodKey: paymentOptionKey(method),
@@ -501,15 +503,21 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const validate = () => {
     if (!cart.length) return 'Cart is empty.';
     const belowMinimum = cart.find((line) => Number(line.unitPrice || 0) < Number(line.minimumSellingPrice || 0));
-    if (belowMinimum) return `${productName(belowMinimum)} ရောင်းဈေးသည် Minimum Price အောက်ရောက်နေသည်။`;
+    if (belowMinimum) return t(
+      `${productName(belowMinimum)} selling price is below the minimum price.`,
+      `${productName(belowMinimum)} ရောင်းဈေးသည် Minimum Price အောက်ရောက်နေသည်။`,
+    );
     const missingSerial = cart.find((line) => line.requiresSerial && !String(line.imeiSerial || '').trim());
-    if (missingSerial) return `${productName(missingSerial)} အတွက် IMEI / Serial ထည့်ပါ။`;
-    if (safeDiscount > 0 && !canDiscount) return 'Discount permission မရှိပါ။';
+    if (missingSerial) return t(
+      `Enter IMEI / Serial for ${productName(missingSerial)}.`,
+      `${productName(missingSerial)} အတွက် IMEI / Serial ထည့်ပါ။`,
+    );
+    if (safeDiscount > 0 && !canDiscount) return t('You do not have discount permission.', 'Discount permission မရှိပါ။');
     if (splitPaymentActive) {
-      if (splitPayments.some((row) => Number(row.amount || 0) <= 0)) return 'Split Payment amount မမှန်ပါ။';
-      if (splitPaymentTotal < total) return 'Split Payment စုစုပေါင်းသည် Sale Total ထက် နည်းနေသည်။';
+      if (splitPayments.some((row) => Number(row.amount || 0) <= 0)) return t('One or more split payment amounts are invalid.', 'Split Payment amount မမှန်ပါ။');
+      if (splitPaymentTotal < total) return t('Split payment total is less than the sale total.', 'Split Payment စုစုပေါင်းသည် Sale Total ထက် နည်းနေသည်။');
     } else {
-      if (paymentLegacyMethod === 'CREDIT' && !customer.name.trim() && !customer.phone.trim()) return 'Credit sale အတွက် customer ထည့်ပါ။';
+      if (paymentLegacyMethod === 'CREDIT' && !customer.name.trim() && !customer.phone.trim()) return t('Enter a customer for credit sale.', 'Credit sale အတွက် customer ထည့်ပါ။');
       if (paymentLegacyMethod === 'CASH' && cashReceived < total) return 'Cash received is less than total.';
     }
     return '';

@@ -8,6 +8,9 @@ export default function Phase10PayablesPanel({ notify, onError }) {
   const [summary, setSummary] = useState({});
   const [accounts, setAccounts] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [form, setForm] = useState({ paymentDate: today(), amount: '', method: 'CASH', moneyAccountId: '', reference: '', note: '' });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -16,13 +19,17 @@ export default function Phase10PayablesPanel({ notify, onError }) {
     setLoading(true);
     try {
       const [payableData, accountData] = await Promise.all([
-        apiFetch('/api/purchasing/payables?page=1&limit=100&outstandingOnly=true'),
+        apiFetch(`/api/purchasing/payables?page=${page}&limit=10&outstandingOnly=true`),
         apiFetch('/api/payments/accounts?page=1&limit=50'),
       ]);
-      setRows(payableData.payables || []); setSummary(payableData.summary || {}); setAccounts(accountData.accounts || []);
+      setRows(payableData.payables || []);
+      setSummary(payableData.summary || {});
+      setAccounts(accountData.accounts || []);
+      setTotal(Number(payableData.total || payableData.count || payableData.payables?.length || 0));
+      setTotalPages(Math.max(1, Number(payableData.totalPages || Math.ceil(Number(payableData.total || payableData.payables?.length || 0) / 10) || 1)));
     } catch (error) { onError(error); } finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [page]);
 
   const pick = (row) => {
     setSelected(row);
@@ -54,6 +61,14 @@ export default function Phase10PayablesPanel({ notify, onError }) {
       <div className="p10-summary-row"><span><small>Net Purchases</small><b>{money(Number(summary.receivedAmount || 0) - Number(summary.returnedAmount || 0))}</b></span><span><small>Paid</small><b>{money(summary.paidAmount)}</b></span><span><small>Outstanding</small><b>{money(summary.outstanding)}</b></span></div>
       <div className="p10-table-wrap"><table className="p10-table"><thead><tr><th>PO</th><th>Supplier</th><th>Net Received</th><th>Paid</th><th>Outstanding</th><th></th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><b>{row.orderNumber}</b><small>{String(row.orderDate || '').slice(0,10)}</small></td><td>{row.supplierCode} · {row.supplierName}</td><td>{money(row.netReceived)}</td><td>{money(row.paidAmount)}</td><td><b>{money(row.outstanding)}</b></td><td><button className="p10-small-button" onClick={() => pick(row)}>Pay</button></td></tr>)}</tbody></table></div>
       {!rows.length && !loading ? <div className="purchasing-empty"><Wallet size={32}/><b>No outstanding payables</b></div> : null}
+      <footer className="stock-pagination">
+        <span>Showing {rows.length} of {total}</span>
+        <div>
+          <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
+          <b>{page} / {totalPages}</b>
+          <button type="button" disabled={page >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next</button>
+        </div>
+      </footer>
     </section>
 
     <section className="purchasing-card p10-op-form-card">

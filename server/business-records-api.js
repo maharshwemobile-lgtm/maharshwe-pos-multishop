@@ -5,15 +5,20 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SERVICE_PREFIX = '__SERVICE_INCOME__:';
 let schemaPromise;
 
+function isAccountingAdminRole(role) {
+  const normalized = String(role || '').trim().toUpperCase();
+  return normalized === 'SUPER_ADMIN' || normalized === 'SHOP_ADMIN' || normalized === 'ADMIN';
+}
+
 function requireAccountingRead(req, res, next) {
-  if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN') return next();
+  if (isAccountingAdminRole(req.auth?.role)) return next();
   const permissions = req.auth?.permissions || {};
   if (permissions.accounting === true || permissions.reports === true || permissions.history === true) return next();
   return res.status(403).json({ ok: false, message: 'Accounting or reports permission is required' });
 }
 
 function requireAccountingWrite(req, res, next) {
-  if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN') return next();
+  if (isAccountingAdminRole(req.auth?.role)) return next();
   const permissions = req.auth?.permissions || {};
   if (permissions.accounting === true) return next();
   return res.status(403).json({ ok: false, message: 'Accounting permission is required' });

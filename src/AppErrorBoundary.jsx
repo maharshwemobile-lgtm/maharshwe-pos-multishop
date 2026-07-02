@@ -18,15 +18,14 @@ export default class AppErrorBoundary extends React.Component {
     try {
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
-        const legacyRegistrations = registrations.filter((registration) => {
+        const appRegistrations = registrations.filter((registration) => {
           const scriptUrl = registration.active?.scriptURL
             || registration.waiting?.scriptURL
             || registration.installing?.scriptURL
             || '';
-          return /\/sw-v\d+\.js|\/service-worker\.js|legacy/i.test(scriptUrl)
-            && !/firebase-messaging-sw\.js/i.test(scriptUrl);
+          return scriptUrl && !/firebase-messaging-sw\.js/i.test(scriptUrl);
         });
-        await Promise.all(legacyRegistrations.map((registration) => registration.unregister()));
+        await Promise.all(appRegistrations.map((registration) => registration.unregister()));
       }
       if ('caches' in window) {
         const keys = await caches.keys();

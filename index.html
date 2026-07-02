@@ -16,6 +16,39 @@
       #app-boot-status b{display:block;margin-bottom:8px;font-size:18px;color:#166534}
       #app-boot-status small{color:#64748b}
     </style>
+    <script>
+      (function () {
+        try {
+          var runtimeVersion = '20260702-disable-app-shell-sw';
+          var previousVersion = window.localStorage.getItem('mahar-runtime-version');
+          if (previousVersion !== runtimeVersion) {
+            window.localStorage.setItem('mahar-runtime-version', runtimeVersion);
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+              registrations.forEach(function (registration) {
+                var scriptUrl = (registration.active && registration.active.scriptURL)
+                  || (registration.waiting && registration.waiting.scriptURL)
+                  || (registration.installing && registration.installing.scriptURL)
+                  || '';
+                if (!/firebase-messaging-sw\.js/i.test(scriptUrl)) {
+                  registration.unregister().catch(function () {});
+                }
+              });
+            }).catch(function () {});
+          }
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              return Promise.all(keys
+                .filter(function (key) { return !/firebase|fcm|messaging/i.test(key); })
+                .map(function (key) { return caches.delete(key); }));
+            }).catch(function () {});
+          }
+        } catch (error) {
+          console.warn('Runtime cleanup bootstrap failed:', error);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app-boot-status"><div><b>Mahar POS</b><small>Loading PostgreSQL Settings...</small></div></div>

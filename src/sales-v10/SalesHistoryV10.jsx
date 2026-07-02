@@ -21,8 +21,9 @@ import { apiFetch, clearSession } from '../phase2Api';
 import '../stock-management.css';
 import './sales-v10.css';
 import { money, reprintReceipt } from './salesV10Utils';
+import { pickLanguageText } from '../settings/ProjectLanguageRuntime.jsx';
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 const EXPORT_PAGE_SIZE = 100;
 const STATUS_OPTIONS = [
   ['', 'All Statuses'],
@@ -39,6 +40,7 @@ const PAYMENT_OPTIONS = [
   ['CREDIT', 'Credit'],
   ['OTHER', 'Other'],
 ];
+const t = pickLanguageText;
 
 function formatDate(value) {
   if (!value) return '-';
@@ -260,7 +262,7 @@ export default function SalesHistoryV10() {
     if (!row) return;
     const popup = window.open('', '_blank', 'width=430,height=760');
     if (!popup) {
-      notify('error', 'Browser popup blocked. Popups ကို Allow လုပ်ပြီး Reprint ပြန်နှိပ်ပါ။');
+      notify('error', t('Browser popup blocked. Allow popups and try reprint again.', 'Browser popup blocked. Popups ကို Allow လုပ်ပြီး Reprint ပြန်နှိပ်ပါ။'));
       return;
     }
 
@@ -294,7 +296,7 @@ export default function SalesHistoryV10() {
       } while (exportPage <= pages && exportPage <= 100);
 
       if (!allRows.length) {
-        notify('error', 'Export လုပ်ရန် Sale History မရှိပါ။');
+        notify('error', t('No sale history is available to export.', 'Export လုပ်ရန် Sale History မရှိပါ။'));
         return;
       }
 
@@ -371,7 +373,7 @@ export default function SalesHistoryV10() {
         <div>
           <span className="stock-eyebrow">SALES</span>
           <h2>Sales History</h2>
-          <p>Invoice, Customer, Payment, Status နဲ့ Cashier အလိုက် ရှာဖွေပြီး Detail, Reprint, Export နဲ့ Void ကို စီမံပါ။</p>
+          <p>{t('Search by invoice, customer, payment, status, or cashier, then manage detail, reprint, export, and void from one place.', 'Invoice, Customer, Payment, Status နဲ့ Cashier အလိုက် ရှာဖွေပြီး Detail, Reprint, Export နဲ့ Void ကို စီမံပါ။')}</p>
         </div>
         <div className="sale10-heading-actions">
           <button type="button" className="stock-refresh-button sale10-export-button" onClick={exportCsv} disabled={exporting || loading}>
@@ -405,7 +407,7 @@ export default function SalesHistoryV10() {
         {loading && rows.length === 0 ? (
           <div className="stock-loading"><Loader2 className="stock-spin" /> Loading sales…</div>
         ) : rows.length === 0 ? (
-          <div className="stock-empty"><FileText size={38} /><b>No sales found</b><span>Filter ကိုပြောင်းပြီး ပြန်ရှာပါ။</span></div>
+          <div className="stock-empty"><FileText size={38} /><b>No sales found</b><span>{t('Change the filters and search again.', 'Filter ကိုပြောင်းပြီး ပြန်ရှာပါ။')}</span></div>
         ) : (
           <div className="stock-table-wrap">
             <table className="stock-table sale10-history-table">

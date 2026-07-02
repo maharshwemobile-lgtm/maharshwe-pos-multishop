@@ -153,6 +153,7 @@ function publicConfig(config) {
     postUrl: config.postUrl,
     getUrl: config.getUrl,
     timeoutMs: config.timeoutMs,
+    secret: config.secret || '',
     secretConfigured: Boolean(config.secret),
     secretMasked: config.secret ? `••••••${config.secret.slice(-4)}` : '',
     lastTest: config.lastTest || null,

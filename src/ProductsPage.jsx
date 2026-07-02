@@ -18,11 +18,13 @@ import {
   X,
 } from 'lucide-react';
 import { apiFetch, clearSession, getSession, login } from './phase2Api';
+import { pickLanguageText } from './settings/ProjectLanguageRuntime.jsx';
 import './products.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 const numberValue = (value) => Number(String(value ?? '').replaceAll(',', '')) || 0;
 const dateInputValue = (value) => value ? String(value).slice(0, 10) : '';
+const t = pickLanguageText;
 
 const blankProduct = {
   categoryId: '',
@@ -178,7 +180,7 @@ export default function ProductsPage({ onboardingGuide }) {
     if (!session?.token) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (query.trim()) params.set('q', query.trim());
       if (categoryId) params.set('categoryId', categoryId);
       const data = await apiFetch(`/api/products?${params.toString()}`);
@@ -234,7 +236,7 @@ export default function ProductsPage({ onboardingGuide }) {
     if (action === 'add-variant') {
       const firstProduct = products.find((item) => item.active !== false) || products[0];
       if (!firstProduct) {
-        notify('error', 'Product အရင် Save လုပ်ပါ။ ပြီးမှ Variant ထည့်ပါ။');
+        notify('error', t('Save a product first, then add a variant.', 'Product အရင် Save လုပ်ပါ။ ပြီးမှ Variant ထည့်ပါ။'));
         openCreateProduct();
         return;
       }
@@ -269,7 +271,7 @@ export default function ProductsPage({ onboardingGuide }) {
     event.preventDefault();
     const editor = productEditor;
     const form = editor.form;
-    if (!form.name.trim()) return notify('error', 'Product name ထည့်ပါ');
+    if (!form.name.trim()) return notify('error', t('Please enter a product name.', 'Product name ထည့်ပါ'));
 
     const common = {
       categoryId: form.categoryId || null,
@@ -293,15 +295,15 @@ export default function ProductsPage({ onboardingGuide }) {
         setProductEditor(null);
         await Promise.all([loadProducts(), loadCategories()]);
         if (onboardingGuide?.show && createdProduct?.id) {
-          notify('success', 'Product သိမ်းပြီးပါပြီ။ Variant / Stock ဆက်ထည့်ပါ။');
+          notify('success', t('Product saved. Continue with variant or stock setup.', 'Product သိမ်းပြီးပါပြီ။ Variant / Stock ဆက်ထည့်ပါ။'));
           openVariant(createdProduct);
           return;
         }
-        notify('success', 'Product အသစ် သိမ်းပြီးပါပြီ။ Variant ကို Add Variant မှာသီးသန့်ထည့်ပါ');
+        notify('success', t('New product saved. Add variants from Add Variant.', 'Product အသစ် သိမ်းပြီးပါပြီ။ Variant ကို Add Variant မှာသီးသန့်ထည့်ပါ'));
         return;
       } else {
         await apiFetch(`/api/products/${editor.product.id}`, { method: 'PATCH', body: common });
-        notify('success', 'Product ပြင်ဆင်ပြီးပါပြီ');
+        notify('success', t('Product updated successfully.', 'Product ပြင်ဆင်ပြီးပါပြီ'));
       }
       setProductEditor(null);
       await Promise.all([loadProducts(), loadCategories()]);
@@ -311,10 +313,10 @@ export default function ProductsPage({ onboardingGuide }) {
   };
 
   const deactivateProduct = async (product) => {
-    if (!window.confirm(`${product.name} ကို Deactivate လုပ်မလား?`)) return;
+    if (!window.confirm(t(`Deactivate ${product.name}?`, `${product.name} ကို Deactivate လုပ်မလား?`))) return;
     try {
       await apiFetch(`/api/products/${product.id}`, { method: 'DELETE' });
-      notify('success', 'Product ကို Deactivate လုပ်ပြီးပါပြီ');
+      notify('success', t('Product deactivated successfully.', 'Product ကို Deactivate လုပ်ပြီးပါပြီ'));
       loadProducts();
     } catch (error) {
       handleError(error);
@@ -347,7 +349,7 @@ export default function ProductsPage({ onboardingGuide }) {
   const saveVariant = async (event) => {
     event.preventDefault();
     const { mode, product, variant, form } = variantEditor;
-    if (!form.variantName.trim()) return notify('error', 'Display name ထည့်ပါ');
+    if (!form.variantName.trim()) return notify('error', t('Please enter a display name.', 'Display name ထည့်ပါ'));
     const body = {
       variantName: form.variantName.trim(),
       sku: form.sku || null,
@@ -368,10 +370,10 @@ export default function ProductsPage({ onboardingGuide }) {
     try {
       if (mode === 'create') {
         await apiFetch(`/api/products/${product.id}/variants`, { method: 'POST', body });
-        notify('success', 'Variant အသစ် ထည့်ပြီးပါပြီ');
+        notify('success', t('New variant added successfully.', 'Variant အသစ် ထည့်ပြီးပါပြီ'));
       } else {
         await apiFetch(`/api/variants/${variant.id}`, { method: 'PATCH', body });
-        notify('success', 'Variant / specs ပြင်ဆင်ပြီးပါပြီ');
+        notify('success', t('Variant and specs updated successfully.', 'Variant / specs ပြင်ဆင်ပြီးပါပြီ'));
       }
       setVariantEditor(null);
       loadProducts();
@@ -381,10 +383,10 @@ export default function ProductsPage({ onboardingGuide }) {
   };
 
   const deactivateVariant = async (variant) => {
-    if (!window.confirm(`${variant.variantName} ကို Deactivate လုပ်မလား? Sale history မပျက်အောင် အပြီးဖျက်မည်မဟုတ်ပါ။`)) return;
+    if (!window.confirm(t(`Deactivate ${variant.variantName}? Sale history will be kept safe.`, `${variant.variantName} ကို Deactivate လုပ်မလား? Sale history မပျက်အောင် အပြီးဖျက်မည်မဟုတ်ပါ။`))) return;
     try {
       await apiFetch(`/api/variants/${variant.id}`, { method: 'DELETE' });
-      notify('success', 'Variant ကို Deactivate လုပ်ပြီးပါပြီ');
+      notify('success', t('Variant deactivated successfully.', 'Variant ကို Deactivate လုပ်ပြီးပါပြီ'));
       loadProducts();
     } catch (error) {
       handleError(error);
@@ -584,7 +586,7 @@ function CategoryManager({ categories, onClose, onChanged, onError, notify }) {
     try {
       if (form.id) await apiFetch(`/api/categories/${form.id}`, { method: 'PATCH', body: { name: form.name.trim(), kind: form.kind || null } });
       else await apiFetch('/api/categories', { method: 'POST', body: { name: form.name.trim(), kind: form.kind || null } });
-      notify('success', form.id ? 'Category ပြင်ပြီးပါပြီ' : 'Category အသစ် ထည့်ပြီးပါပြီ');
+      notify('success', form.id ? t('Category updated successfully.', 'Category ပြင်ပြီးပါပြီ') : t('New category added successfully.', 'Category အသစ် ထည့်ပြီးပါပြီ'));
       setForm({ id: '', name: '', kind: '' });
       await onChanged();
     } catch (error) {
@@ -592,10 +594,10 @@ function CategoryManager({ categories, onClose, onChanged, onError, notify }) {
     }
   };
   const remove = async (category) => {
-    if (!window.confirm(`${category.name} ကို Deactivate လုပ်မလား?`)) return;
+    if (!window.confirm(t(`Deactivate ${category.name}?`, `${category.name} ကို Deactivate လုပ်မလား?`))) return;
     try {
       await apiFetch(`/api/categories/${category.id}`, { method: 'DELETE' });
-      notify('success', 'Category ကို Deactivate လုပ်ပြီးပါပြီ');
+      notify('success', t('Category deactivated successfully.', 'Category ကို Deactivate လုပ်ပြီးပါပြီ'));
       await onChanged();
     } catch (error) {
       onError(error);

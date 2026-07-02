@@ -13,6 +13,11 @@ const ACCOUNT_TYPES = ['CASH', 'KPAY', 'WAVE_PAY', 'OTHER'];
 const PAYMENT_METHODS = new Set(ACCOUNT_TYPES);
 let schemaPromise;
 
+function isAccountingAdminRole(role) {
+  const normalized = String(role || '').trim().toUpperCase();
+  return normalized === 'SUPER_ADMIN' || normalized === 'SHOP_ADMIN' || normalized === 'ADMIN';
+}
+
 class ApiError extends Error {
   constructor(status, message, details) {
     super(message);
@@ -44,20 +49,20 @@ function wrap(handler) {
 }
 
 function requireAccountingRead(req, res, next) {
-  if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN') return next();
+  if (isAccountingAdminRole(req.auth?.role)) return next();
   const permissions = req.auth?.permissions || {};
   if (permissions.accounting === true || permissions.reports === true || permissions.history === true) return next();
   return res.status(403).json({ ok: false, message: 'Accounting or reports permission is required' });
 }
 
 function requireAccountingWrite(req, res, next) {
-  if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN') return next();
+  if (isAccountingAdminRole(req.auth?.role)) return next();
   if (req.auth?.permissions?.accounting === true) return next();
   return res.status(403).json({ ok: false, message: 'Accounting permission is required' });
 }
 
 function requireManager(req, res, next) {
-  if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN') return next();
+  if (isAccountingAdminRole(req.auth?.role)) return next();
   return res.status(403).json({ ok: false, message: 'Only a Shop Admin can close the business day' });
 }
 

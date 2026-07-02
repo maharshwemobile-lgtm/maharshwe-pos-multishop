@@ -309,7 +309,7 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (query.trim()) params.set('q', query.trim());
       if (status) params.set('status', status);
       if (sourceType) params.set('sourceType', sourceType);

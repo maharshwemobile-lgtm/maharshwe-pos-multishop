@@ -20,11 +20,13 @@ import {
   X,
 } from 'lucide-react';
 import { apiFetch, clearSession } from './phase2Api';
+import { pickLanguageText } from './settings/ProjectLanguageRuntime.jsx';
 import './customers-credit.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 const blankCustomer = { name: '', phone: '', address: '' };
 const blankCollection = { amount: '', method: 'CASH', reference: '', note: '' };
+const t = pickLanguageText;
 
 function formatDate(value) {
   if (!value) return '-';
@@ -225,7 +227,7 @@ export default function CustomersCreditPage({ onNavigate }) {
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (query.trim()) params.set('q', query.trim());
       if (balanceFilter) params.set('balance', balanceFilter);
       const response = await apiFetch(`/api/customers?${params.toString()}`);

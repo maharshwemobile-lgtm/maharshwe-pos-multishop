@@ -10,6 +10,9 @@ export default function Phase10PurchaseOrders() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -48,11 +51,13 @@ export default function Phase10PurchaseOrders() {
   };
 
   const loadOrders = async () => {
-    const params = new URLSearchParams({ page: '1', limit: '100' });
+    const params = new URLSearchParams({ page: String(page), limit: '10' });
     if (search.trim()) params.set('q', search.trim());
     if (status) params.set('status', status);
     const data = await apiFetch(`/api/purchasing/orders?${params}`);
     setOrders(data.orders || []);
+    setTotal(Number(data.total || data.count || data.orders?.length || 0));
+    setTotalPages(Math.max(1, Number(data.totalPages || Math.ceil(Number(data.total || data.orders?.length || 0) / 10) || 1)));
   };
 
   const load = async () => {
@@ -70,7 +75,9 @@ export default function Phase10PurchaseOrders() {
   useEffect(() => {
     const timer = window.setTimeout(() => loadOrders().catch(handleError), 250);
     return () => window.clearTimeout(timer);
-  }, [search, status]);
+  }, [search, status, page]);
+
+  useEffect(() => { setPage(1); }, [search, status]);
 
   const created = async (order) => {
     notify('success', `${order?.orderNumber || 'Purchase Order'} saved as DRAFT. Stock unchanged.`);
@@ -95,6 +102,10 @@ export default function Phase10PurchaseOrders() {
           status={status}
           setSearch={setSearch}
           setStatus={setStatus}
+          page={page}
+          total={total}
+          totalPages={totalPages}
+          setPage={setPage}
           onRefresh={load}
           onError={handleError}
           onApproved={approved}

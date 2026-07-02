@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Building2, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingCart, Truck, Users, Wallet,
+import { BarChart3, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingCart, Truck, Users, Wallet,
   BadgePercent, Wrench, X } from 'lucide-react';
 import DashboardLive from './DashboardLive.jsx';
 import NewSaleV10 from './sales-v10/NewSaleV10.jsx';
@@ -22,7 +22,6 @@ import ReportsWorkspace from './ReportsWorkspace.jsx';
 import AuditTrailPage from './AuditTrailPage.jsx';
 import GrandAdminPortal from './GrandAdminPortal.jsx';
 import BackupRecoveryPage from './BackupRecoveryPage.jsx';
-import ShopAdminBranchControl from './ShopAdminBranchControl.jsx';
 import PartnerSettlementWorkspace from './PartnerSettlementWorkspace.jsx';
 import ProjectSettingsRuntimeBridge from './settings/ProjectSettingsRuntimeBridge.jsx';
 import ProjectFunctionGuard from './settings/ProjectFunctionGuard.jsx';
@@ -42,7 +41,6 @@ const menu = [
   { name: 'Products', icon: Box, color: '#ec4899' },
   { name: 'Prices', label: 'ဈေးနှုန်းနှင့် လျော့ဈေးများ', icon: BadgePercent, color: '#f97316' },
   { name: 'Stock', icon: PackagePlus, color: '#8b5cf6' },
-  { name: 'Branches', label: 'Branches / Staff', icon: Building2, color: '#0ea5e9' },
   { name: 'Purchases', icon: Truck, color: '#06b6d4' },
   { name: 'Customers', label: 'Customers & Credit', icon: Users, color: '#10b981' },
   { name: 'Money Service', label: 'Money Service', icon: CircleDollarSign, color: '#16a34a' },
@@ -84,7 +82,6 @@ const pageTitles = {
   Settings: 'Project Settings',
   'About Us': 'About Us',
   'Prices': 'ဈေးနှုန်းနှင့် လျော့ဈေးများ',
-  Branches: 'Branches / Staff Management',
 };
 
 function recoverIndexedString(value) {
@@ -143,7 +140,6 @@ const legacyVisibility = {
   Products: (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
   'Prices': (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
   Stock: (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
-  Branches: (permissions, role, user) => Boolean(user?.shopId) && (role === 'SHOP_ADMIN' || permissions.settings === true),
   Purchases: (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
   Customers: (permissions) => permissions.sale !== false || permissions.history !== false,
   'Money Service': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
@@ -171,7 +167,7 @@ function pageVisible(page, user) {
 
 function fallbackPageFor(user) {
   const visible = menu.find((item) => pageVisible(item.name, user));
-  return visible?.name || (isSaleHistoryOnly(user) ? 'Sale POS' : 'Dashboard');
+  return visible?.name || 'Sale POS';
 }
 
 function applyProjectAppearance(settings) {
@@ -335,7 +331,6 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (safePage === 'Products') return <ProductsPage onboardingGuide={onboardingGuide}/>;
   if (safePage === 'Prices') return <Connected page={safePage} setPage={setPage}><ProductPriceDiscountPage/></Connected>;
   if (safePage === 'Stock') return <StockWorkspace/>;
-  if (safePage === 'Branches') return <ShopAdminBranchControl/>;
   if (safePage === 'Purchases') return <PurchasingWorkspace/>;
   if (safePage === 'Customers') return <Connected page={safePage} setPage={setPage}><CustomersCreditPage onNavigate={setPage}/></Connected>;
   if (safePage === 'Money Service') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23/></Connected>;
@@ -343,7 +338,7 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (safePage === 'Other Records') return <Connected page={safePage} setPage={setPage}><BusinessRecordsPanel/></Connected>;
   if (safePage === 'About Us') return <Connected page={safePage} setPage={setPage}><AboutUsPage/></Connected>;
   if (safePage === 'Reports') return <Connected page={safePage} setPage={setPage}><ReportsWorkspace onNavigate={setPage}/></Connected>;
-  if (safePage === 'Audit Trail' && user?.role !== 'SUPER_ADMIN') return <AccessDenied onBack={() => setPage('Dashboard')} backLabel="Back to Dashboard"/>;
+  if (safePage === 'Audit Trail' && user?.role !== 'SUPER_ADMIN') return <AccessDenied onBack={() => setPage('Sale POS')} backLabel="Back to Sale POS"/>;
   if (safePage === 'Audit Trail') return <AuditTrailPage/>;
   if (safePage === 'Backup') return <BackupRecoveryPage/>;
   if (safePage === 'Settings') return <ProjectSettingsRuntimeBridge/>;
@@ -353,7 +348,7 @@ function Page({ page, setPage, user, onboardingGuide }) {
 export default function AppFull() {
   const [session, setSession] = useState(() => getSession());
   const user = session?.user || null;
-  const [page, setPage] = useState('Dashboard');
+  const [page, setPage] = useState('Sale POS');
   const [isMobileShell, setIsMobileShell] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 900);
   const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 900);
   const [sidebarRendered, setSidebarRendered] = useState(() => typeof window === 'undefined' || window.innerWidth > 900);
@@ -362,7 +357,7 @@ export default function AppFull() {
   const [menuTourDismissed, setMenuTourDismissed] = useState(false);
 
   const visibleMenu = useMemo(() => menu.filter((item) => pageVisible(item.name, user)).map((item) => miniMartMenuItem(item, user)), [user]);
-  const fallbackPage = visibleMenu[0]?.name || (isSaleHistoryOnly(user) ? 'Sale POS' : 'Dashboard');
+  const fallbackPage = visibleMenu[0]?.name || 'Sale POS';
 
   useEffect(() => subscribeSession(setSession), []);
 
@@ -424,8 +419,8 @@ export default function AppFull() {
       .then((settings) => {
         setProjectSettings(settings);
         applyProjectAppearance(settings);
-        const preferredPage = validPageName(settings?.preferences?.openingPage, 'Dashboard');
-        if (page === 'Dashboard' && pageVisible(preferredPage, user)) setPage(preferredPage);
+        const preferredPage = validPageName(settings?.preferences?.openingPage, 'Sale POS');
+        if (page === 'Sale POS' && pageVisible(preferredPage, user)) setPage(preferredPage);
       })
       .catch((error) => console.warn('Project settings load failed:', error));
   }, [session?.token]);

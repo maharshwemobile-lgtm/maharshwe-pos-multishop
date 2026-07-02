@@ -218,7 +218,7 @@ export default function PaymentsAccountsPage({ onNavigate }) {
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (query.trim()) params.set('q', query.trim());
       if (accountType) params.set('accountType', accountType);
       if (source) params.set('source', source);

@@ -120,7 +120,7 @@ function ScannerModal({ onClose }) {
     setBusy(true);
     setError('');
     try {
-      const params = new URLSearchParams({ q: normalized, page: '1', limit: '20' });
+      const params = new URLSearchParams({ q: normalized, page: '1', limit: '10' });
       const data = await apiFetch(`/api/stock?${params.toString()}`);
       setMatches(data.items || []);
       setCode(normalized);

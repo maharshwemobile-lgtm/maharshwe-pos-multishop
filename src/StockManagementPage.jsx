@@ -19,9 +19,11 @@ import {
   X,
 } from 'lucide-react';
 import { apiFetch, clearSession } from './phase2Api';
+import { pickLanguageText } from './settings/ProjectLanguageRuntime.jsx';
 import './stock-management.css';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
+const t = pickLanguageText;
 
 const ACTIONS = {
   STOCK_IN: {
@@ -262,7 +264,7 @@ function HistoryModal({ variant, onClose }) {
       const params = new URLSearchParams({
         productVariantId: variant.id,
         page: String(page),
-        limit: '20',
+        limit: '10',
       });
       const data = await apiFetch(`/api/stock/movements?${params.toString()}`);
       setMovements(data.movements || []);

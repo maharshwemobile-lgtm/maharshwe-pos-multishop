@@ -317,7 +317,7 @@ export default function MoneyServiceCenterV23() {
   const loadSettings = async () => setSettings(await apiFetch('/api/money-service/settings'));
   const loadDashboard = async () => setDashboard(await apiFetch('/api/money-service/dashboard'));
   const loadHistory = async () => {
-    const params = new URLSearchParams({ page: String(page), limit: '20' });
+    const params = new URLSearchParams({ page: String(page), limit: '10' });
     if (query.trim()) params.set('q', query.trim());
     if (status) params.set('status', status);
     setHistory(await apiFetch(`/api/money-service/transactions?${params}`));

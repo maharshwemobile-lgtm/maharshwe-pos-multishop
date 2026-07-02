@@ -3,7 +3,7 @@ import { printSaleReceipt } from '../printing/projectPrintUtils';
 const DRAFT_TTL = 12 * 60 * 60 * 1000;
 
 export function money(value) {
-  return `${Number(value || 0).toLocaleString('en-US')} ကျပ်`;
+  return Number(value || 0).toLocaleString('en-US');
 }
 
 export function shortMoney(value) {
@@ -14,7 +14,7 @@ export function shortMoney(value) {
 }
 
 export function productName(item) {
-  return [item?.productName, item?.variantName].filter(Boolean).join(' · ') || 'Unnamed product';
+  return [item?.productName, item?.variantName].filter(Boolean).join(' Â· ') || 'Unnamed product';
 }
 
 export function reservedQuantity(cart = []) {

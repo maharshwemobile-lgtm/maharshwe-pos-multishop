@@ -14,6 +14,7 @@ import { apiFetch, clearSession } from './phase2Api';
 import './tenant-users.css';
 
 const blankForm = { username: '', password: '', name: '', role: 'CASHIER' };
+const PAGE_SIZE = 10;
 
 function formatDate(value) {
   if (!value) return 'Never';
@@ -28,6 +29,7 @@ export default function TenantUsersPage() {
   const [data, setData] = useState({ users: [], tenant: null, total: 0 });
   const [integrity, setIntegrity] = useState(null);
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
   const [form, setForm] = useState(blankForm);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -105,6 +107,17 @@ export default function TenantUsersPage() {
     cashiers: (data.users || []).filter((user) => user.role === 'CASHIER' && user.active).length,
   }), [data.users]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
+
+  useEffect(() => {
+    setPage((value) => Math.min(value, totalPages));
+  }, [totalPages]);
+
   return (
     <section className="tenant-users-page">
       <div className="tenant-users-heading">
@@ -151,7 +164,7 @@ export default function TenantUsersPage() {
           <table>
             <thead><tr><th>User</th><th>Role</th><th>Tenant</th><th>Last Login</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
-              {filtered.map((user) => (
+              {pageRows.map((user) => (
                 <tr key={user.id}>
                   <td><div className="tenant-user-cell"><UserRound size={18} /><span><b>{user.name}</b><small>@{user.username} · {user.id.slice(0, 8)}</small></span></div></td>
                   <td><span className={`tenant-role ${user.role === 'SHOP_ADMIN' ? 'admin' : 'cashier'}`}>{user.role === 'SHOP_ADMIN' ? 'Shop Admin' : 'Cashier'}</span></td>
@@ -166,6 +179,14 @@ export default function TenantUsersPage() {
           </table>
           {loading ? <div className="tenant-loading"><Loader2 className="tenant-spin" /> Loading tenant users...</div> : null}
         </div>
+        <footer className="stock-pagination">
+          <span>Showing {pageRows.length} of {filtered.length}</span>
+          <div>
+            <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
+            <b>{page} / {totalPages}</b>
+            <button type="button" disabled={page >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next</button>
+          </div>
+        </footer>
       </section>
 
       {message ? <div className={`tenant-toast ${message.type}`}>{message.text}</div> : null}
