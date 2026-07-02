@@ -369,12 +369,7 @@ export default function SalesHistoryV10() {
     <div className="stock-page sale10-history-page">
       {toast ? <div className={`stock-toast stock-toast-${toast.type}`}>{toast.text}</div> : null}
 
-      <div className="stock-page-heading">
-        <div>
-          <span className="stock-eyebrow">SALES</span>
-          <h2>Sales History</h2>
-          <p>{t('Search by invoice, customer, payment, status, or cashier, then manage detail, reprint, export, and void from one place.', 'Invoice, Customer, Payment, Status နဲ့ Cashier အလိုက် ရှာဖွေပြီး Detail, Reprint, Export နဲ့ Void ကို စီမံပါ။')}</p>
-        </div>
+      <div className="stock-page-heading stock-page-actions-only">
         <div className="sale10-heading-actions">
           <button type="button" className="stock-refresh-button sale10-export-button" onClick={exportCsv} disabled={exporting || loading}>
             {exporting ? <Loader2 className="stock-spin" size={18} /> : <Download size={18} />} Export CSV
