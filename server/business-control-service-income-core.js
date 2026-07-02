@@ -18,7 +18,7 @@ async function serviceIncomeTotal(shopId, businessDate) {
     const rows = await prisma.$queryRawUnsafe(
       `SELECT COALESCE(SUM(amount),0) AS total
          FROM business_other_income
-        WHERE shop_id=$1::uuid AND income_date=$2::date AND source LIKE $3`,
+        WHERE shop_id=$1::uuid AND income_date=$2::date AND (category='SERVICE_INCOME' OR source LIKE $3)`,
       shopId,
       businessDate,
       `${SERVICE_PREFIX}%`,
@@ -33,7 +33,7 @@ async function serviceIncomeTotal(shopId, businessDate) {
 function classifyRecentIncome(rows) {
   return (rows || []).map((row) => {
     const source = String(row.source || '');
-    const serviceIncome = source.startsWith(SERVICE_PREFIX);
+    const serviceIncome = row.category === 'SERVICE_INCOME' || source.startsWith(SERVICE_PREFIX);
     return {
       ...row,
       category: serviceIncome ? 'SERVICE_INCOME' : 'OTHER_INCOME',
@@ -90,7 +90,6 @@ function attachBusinessControlServiceIncomeCore(app) {
       if (category === 'SERVICE_INCOME' && source && !source.startsWith(SERVICE_PREFIX)) {
         req.body.source = `${SERVICE_PREFIX}${source}`;
       }
-      delete req.body.category;
     }
 
     const originalJson = res.json.bind(res);

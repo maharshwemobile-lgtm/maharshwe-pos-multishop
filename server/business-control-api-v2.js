@@ -110,6 +110,7 @@ async function ensureBusinessControlSchema() {
           id UUID PRIMARY KEY,
           shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
           income_date DATE NOT NULL,
+          category TEXT NOT NULL DEFAULT 'OTHER_INCOME',
           source TEXT NOT NULL,
           amount NUMERIC(14,2) NOT NULL DEFAULT 0,
           method TEXT NOT NULL DEFAULT 'CASH',
@@ -119,6 +120,7 @@ async function ensureBusinessControlSchema() {
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )`,
         `CREATE INDEX IF NOT EXISTS business_other_income_shop_date_idx ON business_other_income(shop_id, income_date DESC, created_at DESC)`,
+        `ALTER TABLE business_other_income ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'OTHER_INCOME'`,
         `ALTER TABLE daily_closings ADD COLUMN IF NOT EXISTS repair_income_total NUMERIC(14,2) NOT NULL DEFAULT 0`,
         `ALTER TABLE daily_closings ADD COLUMN IF NOT EXISTS repair_profit_total NUMERIC(14,2) NOT NULL DEFAULT 0`,
         `ALTER TABLE daily_closings ADD COLUMN IF NOT EXISTS expense_total NUMERIC(14,2) NOT NULL DEFAULT 0`,
@@ -312,7 +314,7 @@ async function buildOverview(shopId, businessDate) {
       businessDate,
     ),
     prisma.$queryRawUnsafe(
-      `SELECT i.id,i.income_date AS "incomeDate",i.source,i.amount,i.method,i.note,i.created_at AS "createdAt",
+      `SELECT i.id,i.income_date AS "incomeDate",i.category,i.source,i.amount,i.method,i.note,i.created_at AS "createdAt",
               a.name AS "accountName",u.name AS "createdByName"
          FROM business_other_income i
          LEFT JOIN money_accounts a ON a.id=i.money_account_id AND a.shop_id=i.shop_id
@@ -534,6 +536,7 @@ function attachBusinessControlApiV2(app) {
     const incomeDate = parseBusinessDate(req.body?.incomeDate);
     if (incomeDate > currentYangonDate()) throw new ApiError(400, 'Future income dates are not allowed');
     const source = clean(req.body?.source, 80);
+    const category = clean(req.body?.category || 'OTHER_INCOME', 80) || 'OTHER_INCOME';
     const amount = Number(req.body?.amount);
     const method = clean(req.body?.method || 'CASH', 20).toUpperCase();
     const note = clean(req.body?.note, 500) || null;
@@ -547,13 +550,13 @@ function attachBusinessControlApiV2(app) {
       const account = await resolveAccount(tx, req.auth.shopId, requestedAccountId, method);
       await applyAccountChange(tx, req, account, amount, 1, `[OTHER_INCOME:${source}] ${note || ''}`.trim());
       await tx.$executeRawUnsafe(
-        `INSERT INTO business_other_income (id,shop_id,income_date,source,amount,method,money_account_id,note,created_by_id,created_at)
-         VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7::uuid,$8,$9::uuid,NOW())`,
-        id, req.auth.shopId, incomeDate, source, amount, method, account?.id || null, note, req.auth.userId,
+        `INSERT INTO business_other_income (id,shop_id,income_date,category,source,amount,method,money_account_id,note,created_by_id,created_at)
+         VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7,$8::uuid,$9,$10::uuid,NOW())`,
+        id, req.auth.shopId, incomeDate, category, source, amount, method, account?.id || null, note, req.auth.userId,
       );
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
 
-    await audit(req, 'BUSINESS_OTHER_INCOME_CREATED', 'business_other_income', id, { incomeDate, source, amount, method, note });
+    await audit(req, 'BUSINESS_OTHER_INCOME_CREATED', 'business_other_income', id, { incomeDate, category, source, amount, method, note });
     queuePush(() => sendPushToShop({
       shopId: req.auth.shopId,
       eventType: 'MONEY_ACCOUNT_MOVEMENT',

@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
+const { ensureDefaultExpenseCategories, ensureExpenseCategoriesSchema } = require('./expense-categories-core');
 
 const uuid = z.string().uuid();
 const paymentMethodSchema = z.object({
@@ -25,6 +26,29 @@ const categoryUpdateSchema = z.object({
 }).refine((value) => Object.keys(value).length > 0, { message: 'At least one field is required' });
 
 let schemaPromise;
+
+const DEFAULT_INCOME_CATEGORIES = [
+  'Other Income',
+  'Service Income',
+  'Sales Income (Auto) From POS',
+  'Total Bill Sale',
+  'Money Service (Auto)',
+];
+
+async function ensureDefaultIncomeCategories(shopId, userId) {
+  for (let index = 0; index < DEFAULT_INCOME_CATEGORIES.length; index += 1) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO business_income_categories(id,shop_id,name,active,sort_order,created_by_id,created_at,updated_at)
+       VALUES($1::uuid,$2::uuid,$3,TRUE,$4,$5::uuid,NOW(),NOW())
+       ON CONFLICT DO NOTHING`,
+      crypto.randomUUID(),
+      shopId,
+      DEFAULT_INCOME_CATEGORIES[index],
+      index + 1,
+      userId || null,
+    );
+  }
+}
 
 function parse(schema, value) {
   const result = schema.safeParse(value);
@@ -119,6 +143,9 @@ function attachFinanceSettingsV23Api(app) {
     try {
       noStore(res);
       await ensureSchema();
+      await ensureExpenseCategoriesSchema();
+      await ensureDefaultIncomeCategories(req.auth.shopId, req.auth.userId);
+      await ensureDefaultExpenseCategories(req.auth.shopId, req.auth.userId);
       const [methods, incomes, expenses] = await Promise.all([
         prisma.$queryRawUnsafe(`SELECT m.id,m.name,m.code,m.kind,m.account_id AS "accountId",m.supports_money_service AS "supportsMoneyService",m.active,m.sort_order AS "sortOrder",a.balance,a.type AS "accountType"
           FROM finance_payment_methods m LEFT JOIN money_accounts a ON a.id=m.account_id WHERE m.shop_id=$1::uuid ORDER BY m.active DESC,m.sort_order,LOWER(m.name)`, req.auth.shopId),
