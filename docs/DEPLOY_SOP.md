@@ -64,6 +64,29 @@ VPS test deploy OK ဖြစ်ရမယ့် checklist:
 - DB migration/data issue မရှိ
 - important flows မပျက်
 
+### Frontend deploy target rule
+
+- nginx live root = `/var/www/app.maharshwe.shop`
+- deploy target က `dist/` folder မဟုတ်ဘူး
+- `dist` build output ကို webroot root-level ထဲ sync လုပ်ရမယ်
+- old root-level files နဲ့ `dist/` နှစ်နေရာခွဲမထားရ
+
+Recommended command on VPS:
+
+```bash
+cd /opt/maharshwe/maharshwe-pos
+npm run build
+npm run deploy:webroot
+```
+
+Backend files ပါပြောင်းရင်:
+
+```bash
+cd /opt/maharshwe/maharshwe-pos
+npm run build
+npm run deploy:webroot:api
+```
+
 ## 5. If VPS Test Fails
 
 - GitHub update မလုပ်သေး
