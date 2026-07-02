@@ -120,14 +120,6 @@ export default function TenantUsersPage() {
 
   return (
     <section className="tenant-users-page">
-      <div className="tenant-users-heading">
-        <div>
-          <span>TENANT SECURITY</span>
-          <h2>Users & Tenant Isolation</h2>
-          <p>Users၊ roles နဲ့ Sale History cashier links တွေကို လက်ရှိ PostgreSQL shop tenant အတွင်းမှာပဲ ထိန်းသိမ်းထားပါတယ်။</p>
-        </div>
-      </div>
-
       <div className={`tenant-integrity ${integrity?.tenantSafe ? 'safe' : 'unsafe'}`}>
         {integrity?.tenantSafe ? <ShieldCheck size={24} /> : <ShieldX size={24} />}
         <div>

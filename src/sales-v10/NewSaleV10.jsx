@@ -586,13 +586,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     <div className="stock-page sale10-page">
       {toast ? <div className={`stock-toast stock-toast-${toast.type}`}>{toast.text}</div> : null}
 
-      <div className="stock-page-heading">
-        <div>
-          <span className="stock-eyebrow">SALES</span>
-          <h2>Sale POS</h2>
-          <p className="sale10-clear-helper">Product ရွေး → Cart ထဲမှာ Qty/Price စစ် → Payment Confirm လုပ်တဲ့ 3-step flow ပါ။ Beginner staff တွေအတွက် next action ကို အောက်မှာပြထားပါတယ်။</p>
-          <p>Product row တစ်ခုကို နှိပ်တာနဲ့ Cart ထဲ တန်းထည့်ပြီး POS အသံပေးပါမယ်။</p>
-        </div>
+      <div className="stock-page-heading stock-page-actions-only">
         <button type="button" className="stock-refresh-button" onClick={loadCatalog} disabled={loading}>
           <RefreshCw className={loading ? 'stock-spin' : ''} size={18} /> Refresh Products
         </button>

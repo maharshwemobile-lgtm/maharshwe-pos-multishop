@@ -319,12 +319,7 @@ export default function ProductPriceDiscountPage() {
     <div className="price-page">
       {message ? <div className={`price-toast ${message.type}`}>{message.text}</div> : null}
 
-      <section className="price-heading">
-        <div>
-          <span>PRICE & DISCOUNT CONTROL</span>
-          <h2>ဈေးနှုန်းနှင့် လျော့ဈေးများ</h2>
-          <p>Category / Group အလိုက်ရွေးပြီး Selling Price, Wholesale Price, Minimum Price နှင့် Discount % ကို Batch Apply လုပ်နိုင်ပါတယ်။</p>
-        </div>
+      <section className="price-heading price-heading-actions-only">
         <button type="button" onClick={loadProducts} disabled={loading}>
           <RefreshCw className={loading ? 'price-spin' : ''} size={17} /> Refresh
         </button>

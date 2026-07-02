@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClipboardList, PackageCheck, Settings2, Truck, Users } from 'lucide-react';
+import { ClipboardList, PackageCheck, Settings2, Users } from 'lucide-react';
 import SupplierManagementPanel from './SupplierManagementPanel.jsx';
 import Phase10PurchaseOrders from './Phase10PurchaseOrders.jsx';
 import Phase10PurchasingCompletion from './Phase10PurchasingCompletion.jsx';
@@ -17,10 +17,6 @@ const tabs = [
 export default function PurchasingWorkspaceV2() {
   const [tab, setTab] = useState('suppliers');
   return <div className="purchasing-hub">
-    <section className="purchasing-hero">
-      <div className="purchasing-hero-icon"><Truck size={28}/></div>
-      <div><span>PURCHASING</span><h2>Suppliers & Purchase Orders</h2><p>Manage suppliers, orders, receiving, payables, returns, repair parts and reports.</p></div>
-    </section>
     <nav className="purchasing-tabs" aria-label="Purchasing sections">
       {tabs.map((item) => <button key={item.id} type="button" className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}><item.icon size={18}/><span>{item.label}</span></button>)}
     </nav>
