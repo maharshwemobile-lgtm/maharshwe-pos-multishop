@@ -340,8 +340,7 @@ export default function InventoryToolsPanel({ onInventoryChanged }) {
 
   return (
     <section className="inventory-tools-panel">
-      <div className="inventory-tools-heading">
-        <div><span>INVENTORY TOOLS</span><h3>Low Stock, Barcode & CSV</h3></div>
+      <div className="inventory-tools-heading inventory-tools-actions-only">
         <div className="inventory-tool-actions">
           <button type="button" onClick={enableNotifications}><BellRing size={17} /> Enable Notification</button>
           <button type="button" onClick={() => setScannerOpen(true)}><Barcode size={17} /> Scan Barcode</button>

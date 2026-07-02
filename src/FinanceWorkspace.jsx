@@ -13,11 +13,6 @@ import './finance-workspace.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 
-function dateLabel(value) {
-  if (!value) return '-';
-  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short' }).format(new Date(value));
-}
-
 export default function FinanceWorkspace({ onNavigate }) {
   const [weekly, setWeekly] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -48,9 +43,6 @@ export default function FinanceWorkspace({ onNavigate }) {
   return (
     <div className="finance-workspace">
       <section className="finance-weekly-panel">
-        <header>
-          <div><span>WEEKLY PROFIT</span><h2>Finance Performance</h2><p>{dateLabel(weekly?.weekStart)} – {dateLabel(weekly?.weekEnd)} · Myanmar time</p></div>
-        </header>
         {error ? <div className="finance-error">{error}</div> : null}
         <div className="finance-weekly-grid">
           <article className="total"><TrendingUp size={24} /><span>This Week Total Profit</span><b>{money(weekly?.totalProfit)}</b><small className={positive ? 'positive' : 'negative'}>{positive ? '▲' : '▼'} {Math.abs(Number(weekly?.changePercent || 0)).toFixed(1)}% vs previous week</small></article>

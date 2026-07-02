@@ -296,8 +296,7 @@ export default function CustomersCreditPage({ onNavigate }) {
 
   return (
     <section className="credit-page">
-      <div className="credit-page-heading">
-        <div><span className="credit-eyebrow">CUSTOMER CREDIT</span><h2>Customers & Credit</h2><p>Customer profile၊ credit balance၊ payment collection နဲ့ sale history ကို workflow တစ်ခုတည်းအဖြစ် ချိတ်ဆက်စီမံပါ။</p></div>
+      <div className="credit-page-heading credit-page-actions-only">
         <div className="credit-heading-actions">
           <button type="button" className="credit-refresh-button" onClick={load} disabled={loading}><RefreshCw size={18} /> Refresh</button>
           <button type="button" className="credit-new-button" onClick={() => setEditor({ customer: null })}><Plus size={18} /> New Customer</button>

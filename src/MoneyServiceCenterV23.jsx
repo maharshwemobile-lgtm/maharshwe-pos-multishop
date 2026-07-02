@@ -372,8 +372,7 @@ export default function MoneyServiceCenterV23() {
   };
 
   return <section className="money-service-center">
-    <header className="msc-heading">
-      <div><span>MONEY SERVICE</span><h2>Money Service Ledger</h2><p>Transfer နဲ့ Cash Out ကို တစ်နေရာတည်းကနေ စာရင်းသွင်းပါ။</p></div>
+    <header className="msc-heading msc-actions-only">
       <button type="button" onClick={refresh} disabled={loading}>{loading ? <Loader2 className="msc-spin" size={17}/> : <Clock3 size={17}/>} Refresh</button>
     </header>
 

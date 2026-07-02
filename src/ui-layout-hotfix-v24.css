@@ -13,7 +13,11 @@ body,
   .stock-page-actions-only,
   .repair-page-actions-only,
   .purchase-page-actions-only,
-  .psw-actions-only
+  .psw-actions-only,
+  .inventory-tools-actions-only,
+  .credit-page-actions-only,
+  .msc-actions-only,
+  .reports-page-actions-only
 ) {
   display: flex !important;
   justify-content: flex-end !important;
@@ -43,7 +47,11 @@ body,
     .stock-page-actions-only,
     .repair-page-actions-only,
     .purchase-page-actions-only,
-    .psw-actions-only
+    .psw-actions-only,
+    .inventory-tools-actions-only,
+    .credit-page-actions-only,
+    .msc-actions-only,
+    .reports-page-actions-only
   ) {
     justify-content: stretch !important;
   }
@@ -54,7 +62,11 @@ body,
     .stock-page-actions-only,
     .repair-page-actions-only,
     .purchase-page-actions-only,
-    .psw-actions-only
+    .psw-actions-only,
+    .inventory-tools-actions-only,
+    .credit-page-actions-only,
+    .msc-actions-only,
+    .reports-page-actions-only
   ) :where(button, .psw-button) {
     min-height: 38px;
   }

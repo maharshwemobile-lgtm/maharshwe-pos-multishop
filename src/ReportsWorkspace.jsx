@@ -164,12 +164,7 @@ export default function ReportsWorkspace({ onNavigate }) {
   };
 
   return <section className="reports-page">
-    <div className="reports-page-heading">
-      <div>
-        <span className="reports-eyebrow">BUSINESS INTELLIGENCE</span>
-        <h2>Reports & Performance</h2>
-        <p>Sales၊ profit၊ payments၊ customer credit၊ repair နဲ့ inventory health ကို ဆက်စပ်ပြီး ဆုံးဖြတ်ချက်ချနိုင်အောင် တစ်နေရာထဲကြည့်ပါ။</p>
-      </div>
+    <div className="reports-page-heading reports-page-actions-only">
       <div className="reports-heading-actions">
         <button type="button" onClick={load} disabled={loading}><RefreshCw size={18} /> Refresh</button>
         <button type="button" className="primary" onClick={exportCsv} disabled={!data}><Download size={18} /> Export CSV</button>
