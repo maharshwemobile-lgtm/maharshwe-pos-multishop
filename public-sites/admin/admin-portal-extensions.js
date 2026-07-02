@@ -283,7 +283,7 @@
         </form>
         <div class="space-y-4">
           <div id="vpn-ads-preview"></div>
-          <div class="bg-amber-50 text-amber-800 border border-amber-100 p-4 rounded-2xl text-sm font-bold">Security: this page calls only /api/admin/integrations/vpn-ads. x-api-key stays server-side.</div>
+          <div class="bg-amber-50 text-amber-800 border border-amber-100 p-4 rounded-2xl text-sm font-bold">Local run: this page saves config inside super.maharshwe.shop. VPN app reads /api/vpn-ads from this VPS.</div>
         </div>
       </div>`);
     fillVpnAds(config);
@@ -366,7 +366,7 @@
         <p class="mt-2 text-sm text-slate-300">${escapeHtml($('vpn-push-body')?.value || 'Message text')}</p>
         <p class="mt-4 text-xs text-blue-300">${escapeHtml($('vpn-push-url')?.value || '')}</p>
       </div>
-      <p class="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3 font-bold">Confirmation appears before sending. x-api-key is added only by backend proxy.</p>`;
+      <p class="mt-4 text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3 font-bold">Confirmation appears before sending. Push is sent directly from this VPS using Firebase Admin SDK.</p>`;
   }
 
   async function loadPosWebPush() {
@@ -586,15 +586,15 @@
         <div class="bg-white rounded-2xl border border-slate-100 p-6">
           <h3 class="font-black text-slate-900">Required server env</h3>
           <ul class="mt-4 space-y-2 text-sm text-slate-600 font-bold">
-            <li>MAHARSHWE_ONLINE_ADMIN_API_KEY — server-only VPN ads/push proxy key</li>
-            <li>FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY — server-only Firebase Admin SDK</li>
+            <li>FCM_TOPIC — VPN topic, default maharshwe-vpn</li>
+            <li>FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY — server-only Firebase Admin SDK for VPN + POS push</li>
             <li>NEXT_PUBLIC_FIREBASE_* — public web push config for app.maharshwe.shop</li>
           </ul>
         </div>
         <div class="bg-white rounded-2xl border border-slate-100 p-6">
           <h3 class="font-black text-slate-900">Security rules</h3>
           <ul class="mt-4 space-y-2 text-sm text-slate-600 font-bold">
-            <li>x-api-key is never exposed to frontend.</li>
+            <li>No maharshwe.online proxy key is required for VPN Ads / VPN Push.</li>
             <li>All admin APIs require auth + permission server-side.</li>
             <li>POS admin pages are read-only for destructive actions.</li>
             <li>Push payloads must stay generic and non-sensitive.</li>
