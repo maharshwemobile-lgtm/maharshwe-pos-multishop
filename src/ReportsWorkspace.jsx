@@ -187,12 +187,14 @@ export default function ReportsWorkspace({ onNavigate }) {
           <button type="button" className="export" onClick={exportDailyCloseExcel} disabled={!dailyCloseReport.rows?.length}><Download size={16} /> Export to Excel</button>
         </div>
       </header>
-      <div className="reports-close-filter-row">
-        <button type="button" onClick={setCloseToday}>Today</button>
-        <label><CalendarDays size={16} /><span>From</span><input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value || defaults.from)} /></label>
-        <label><CalendarDays size={16} /><span>To</span><input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value || defaults.to)} /></label>
-        <small>{closePeriodMeta.name}: {fromDate} → {toDate}</small>
-      </div>
+      {closePeriod === 'daily' ? (
+        <div className="reports-close-filter-row">
+          <button type="button" onClick={setCloseToday}>Today</button>
+          <label><CalendarDays size={16} /><span>From</span><input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value || defaults.from)} /></label>
+          <label><CalendarDays size={16} /><span>To</span><input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value || defaults.to)} /></label>
+          <small>{closePeriodMeta.name}: {fromDate} → {toDate}</small>
+        </div>
+      ) : null}
       <div className="reports-close-total-grid">
         <article><span>{closePeriodMeta.name} Income Total</span><b className="positive">{money(dailyCloseReport.totals?.incomeTotal)}</b></article>
         <article><span>{closePeriodMeta.name} Expense Total</span><b className="negative">{money(dailyCloseReport.totals?.expenseTotal)}</b></article>
