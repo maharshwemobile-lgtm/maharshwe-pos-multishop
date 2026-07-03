@@ -114,9 +114,149 @@ function publicStaff(user) {
   };
 }
 
+function number(value) {
+  return Number(value || 0);
+}
+
+function branchName(branches, branchId) {
+  if (!branchId) return "Unassigned / Main";
+  return branches.find((branch) => branch.id === branchId)?.name || "Unassigned / Main";
+}
+
+function branchIdForSale(sale) {
+  const permissions = settingsObject(sale.user?.permissions);
+  return permissions.branchId || "";
+}
+
+function pushTopProduct(bucket, item) {
+  const key = item.productVariantId || `${item.productNameSnapshot}-${item.variantNameSnapshot || ""}`;
+  const current = bucket.get(key) || {
+    key,
+    name: item.productNameSnapshot || "Product",
+    variantName: item.variantNameSnapshot || "",
+    quantity: 0,
+    revenue: 0,
+    profit: 0,
+  };
+  current.quantity += number(item.quantity);
+  current.revenue += number(item.actualSoldPrice) * number(item.quantity);
+  current.profit += number(item.profit);
+  bucket.set(key, current);
+}
+
+function buildShopAdminAnalytics(branches, sales, inventoryRows) {
+  const branchMap = new Map();
+  const allProducts = new Map();
+
+  branches.forEach((branch) => {
+    branchMap.set(branch.id, {
+      branchId: branch.id,
+      branchName: branch.name,
+      code: branch.code || "",
+      salesCount: 0,
+      revenue: 0,
+      profit: 0,
+      topProductsMap: new Map(),
+    });
+  });
+
+  if (!branchMap.has("")) {
+    branchMap.set("", {
+      branchId: "",
+      branchName: "Unassigned / Main",
+      code: "",
+      salesCount: 0,
+      revenue: 0,
+      profit: 0,
+      topProductsMap: new Map(),
+    });
+  }
+
+  sales.forEach((sale) => {
+    const branchId = branchIdForSale(sale);
+    const bucket = branchMap.get(branchId) || branchMap.get("");
+    bucket.salesCount += 1;
+    bucket.revenue += number(sale.total);
+    bucket.profit += number(sale.profitTotal);
+    (sale.items || []).forEach((item) => {
+      pushTopProduct(bucket.topProductsMap, item);
+      pushTopProduct(allProducts, item);
+    });
+  });
+
+  const toTopProducts = (map, limit = 5) => Array.from(map.values())
+    .sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue)
+    .slice(0, limit)
+    .map((item) => ({
+      ...item,
+      revenue: Math.round(item.revenue),
+      profit: Math.round(item.profit),
+    }));
+
+  const branchSales = Array.from(branchMap.values())
+    .map((branch) => ({
+      branchId: branch.branchId,
+      branchName: branch.branchName,
+      code: branch.code,
+      salesCount: branch.salesCount,
+      revenue: Math.round(branch.revenue),
+      profit: Math.round(branch.profit),
+      topProducts: toTopProducts(branch.topProductsMap, 3),
+    }))
+    .sort((a, b) => b.revenue - a.revenue || b.salesCount - a.salesCount);
+
+  const outOfStock = inventoryRows
+    .filter((row) => number(row.quantity) <= 0)
+    .map((row) => ({
+      productVariantId: row.productVariantId,
+      productName: row.productVariant?.product?.name || "Product",
+      variantName: row.productVariant?.variantName || "",
+      sku: row.productVariant?.sku || "",
+      barcode: row.productVariant?.barcode || "",
+      quantity: number(row.quantity),
+      scope: "Shop inventory",
+    }))
+    .slice(0, 20);
+
+  const lowStock = inventoryRows
+    .filter((row) => number(row.minAlertQuantity) > 0 && number(row.quantity) > 0 && number(row.quantity) <= number(row.minAlertQuantity))
+    .map((row) => ({
+      productVariantId: row.productVariantId,
+      productName: row.productVariant?.product?.name || "Product",
+      variantName: row.productVariant?.variantName || "",
+      sku: row.productVariant?.sku || "",
+      barcode: row.productVariant?.barcode || "",
+      quantity: number(row.quantity),
+      minAlertQuantity: number(row.minAlertQuantity),
+      scope: "Shop inventory",
+    }))
+    .slice(0, 20);
+
+  const totalRevenue = branchSales.reduce((sum, branch) => sum + branch.revenue, 0);
+  const totalProfit = branchSales.reduce((sum, branch) => sum + branch.profit, 0);
+  const totalSales = branchSales.reduce((sum, branch) => sum + branch.salesCount, 0);
+
+  return {
+    period: "Last 30 days",
+    totalRevenue,
+    totalProfit,
+    totalSales,
+    branchSales,
+    topProducts: toTopProducts(allProducts, 10),
+    stockAlerts: {
+      outOfStock,
+      lowStock,
+      outOfStockCount: outOfStock.length,
+      lowStockCount: lowStock.length,
+    },
+    stockScopeNote: "Current database stores inventory at shop level. Branch sales are calculated from each staff member's assigned branch.",
+  };
+}
+
 async function overview(req, res) {
   const shopId = req.auth.shopId;
-  const [{ branches }, users, metrics, auditLogs] = await Promise.all([
+  const since = new Date(Date.now() - 30 * 86400000);
+  const [{ branches }, users, metrics, auditLogs, recentSales, inventoryRows] = await Promise.all([
     getShopSettings(shopId),
     prisma.user.findMany({
       where: { shopId },
@@ -146,7 +286,25 @@ async function overview(req, res) {
       take: 40,
       include: { user: { select: { name: true, username: true, role: true } } },
     }),
+    prisma.sale.findMany({
+      where: { shopId, status: { not: "VOIDED" }, soldAt: { gte: since } },
+      orderBy: { soldAt: "desc" },
+      take: 5000,
+      include: {
+        user: { select: { id: true, name: true, username: true, permissions: true } },
+        items: true,
+      },
+    }),
+    prisma.inventoryBalance.findMany({
+      where: { shopId },
+      include: {
+        productVariant: { include: { product: true } },
+      },
+      orderBy: { quantity: "asc" },
+      take: 5000,
+    }),
   ]);
+  const analytics = buildShopAdminAnalytics(branches, recentSales, inventoryRows);
 
   res.json({
     ok: true,
@@ -160,6 +318,7 @@ async function overview(req, res) {
       staff: users.length,
       activeBranches: branches.filter((item) => item.active !== false).length,
     },
+    analytics,
     auditLogs,
   });
 }
