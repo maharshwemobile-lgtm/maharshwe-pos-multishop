@@ -199,19 +199,22 @@
   color: var(--app-muted, #68776f);
   line-height: 1;
 }
-.bc-metric-breakdown em span {
+.bc-metric-copy .bc-metric-breakdown em span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 7px;
   font-weight: 450;
+  line-height: 1;
+  color: var(--app-muted, #68776f);
 }
-.bc-metric-breakdown em b {
+.bc-metric-copy .bc-metric-breakdown em b {
   flex: 0 0 auto;
   color: var(--app-muted, #68776f);
   font-size: 7px;
   font-weight: 550;
+  line-height: 1;
 }
 
 .bc-tone-blue .bc-metric-icon { background: #2563eb; }
