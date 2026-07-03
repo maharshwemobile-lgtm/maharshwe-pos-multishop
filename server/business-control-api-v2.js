@@ -8,6 +8,7 @@ const { queuePush, sendPushToShop } = require('./push-notifications-api');
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ACCOUNT_TYPES = ['CASH', 'KPAY', 'WAVE_PAY', 'OTHER'];
 const PAYMENT_METHODS = new Set(ACCOUNT_TYPES);
+const OTHER_SERVICE_INCOME_CATEGORY = 'အခြား Service ဝင်ငွေ';
 let schemaPromise;
 
 class ApiError extends Error {
@@ -296,11 +297,15 @@ async function buildOverview(shopId, businessDate) {
       businessDate,
     ),
     prisma.$queryRawUnsafe(
-      `SELECT COALESCE(SUM(amount),0) AS total,COUNT(*)::int AS count
+      `SELECT COALESCE(SUM(amount),0) AS total,
+              COALESCE(SUM(CASE WHEN category=$3 THEN amount ELSE 0 END),0) AS "serviceIncome",
+              COALESCE(SUM(CASE WHEN category!=$3 THEN amount ELSE 0 END),0) AS "nonServiceIncome",
+              COUNT(*)::int AS count
          FROM business_other_income
         WHERE shop_id=$1::uuid AND income_date=$2::date`,
       shopId,
       businessDate,
+      OTHER_SERVICE_INCOME_CATEGORY,
     ),
     prisma.$queryRawUnsafe(
       `SELECT e.id,e.expense_date AS "expenseDate",e.category,e.amount,e.method,e.note,e.created_at AS "createdAt",
@@ -383,12 +388,13 @@ async function buildOverview(shopId, businessDate) {
 
   const todaySaleIncome = number(sales._sum.total);
   const productProfit = number(sales._sum.profitTotal);
-  const repairIncome = number(repairPayments._sum.amount);
-  const repairRevenue = number(repairFinance.repairRevenue);
+  const otherServiceIncome = number(income.serviceIncome);
+  const repairIncome = number(repairPayments._sum.amount) + otherServiceIncome;
+  const repairRevenue = number(repairFinance.repairRevenue) + otherServiceIncome;
   const repairProfit = number(repairFinance.repairProfit);
   const serviceProfit = number(moneyProfit._sum.serviceProfit);
   const todayExpense = number(expense.total);
-  const otherIncome = number(income.total);
+  const otherIncome = number(income.nonServiceIncome);
   const todayTotalIncome = todaySaleIncome + repairIncome + serviceProfit + otherIncome;
   const todayProfit = productProfit + repairProfit + serviceProfit + otherIncome - todayExpense;
 
