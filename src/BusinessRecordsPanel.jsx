@@ -222,7 +222,6 @@ export default function BusinessRecordsPanel() {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ rows: [], total: 0, totalAmount: 0, totalPages: 1 });
-  const [closingHistory, setClosingHistory] = useState({ rows: [], total: 0 });
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
@@ -295,24 +294,10 @@ export default function BusinessRecordsPanel() {
     }
   };
 
-  const loadClosingHistory = async () => {
-    try {
-      const response = await apiFetch(`/api/business-control/daily-closing/history?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
-      setClosingHistory({ rows: response.rows || [], total: response.total || 0 });
-    } catch (requestError) {
-      handleError(requestError);
-    }
-  };
-
   useEffect(() => {
     const timer = window.setTimeout(load, 180);
     return () => window.clearTimeout(timer);
   }, [params.toString()]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(loadClosingHistory, 180);
-    return () => window.clearTimeout(timer);
-  }, [from, to]);
 
   useEffect(() => {
     loadContext();
@@ -550,38 +535,6 @@ export default function BusinessRecordsPanel() {
           <button type="button" disabled={page >= Math.max(1, Number(data.totalPages || 1)) || loading} onClick={() => setPage((value) => value + 1)}>Next <ChevronRight size={17} /></button>
         </div>
       </div>
-
-      <section className="br-close-history">
-        <header>
-          <div>
-            <span>DAY CLOSE HISTORY</span>
-            <h4>Daily Close စာရင်းချုပ်</h4>
-          </div>
-          <button type="button" onClick={loadClosingHistory}>Refresh History</button>
-        </header>
-        <div className="br-table-wrap">
-          <table>
-            <thead>
-              <tr><th>Date</th><th>Sales</th><th>Other Income</th><th>Expense</th><th>Total Profit</th><th>Cash / Wallet</th><th>Closed By</th><th>Note</th></tr>
-            </thead>
-            <tbody>
-              {(closingHistory.rows || []).map((row) => (
-                <tr key={row.id}>
-                  <td><b>{row.businessDate}</b><small>{formatDateTime(row.closedAt)}</small></td>
-                  <td><strong className="income">{money(row.salesTotal)}</strong></td>
-                  <td><strong className="income">{money(row.otherIncomeTotal)}</strong><small>Service/Fee: {money(Number(row.serviceIncomeTotal || 0) + Number(row.moneyProfitTotal || 0))}</small></td>
-                  <td><strong className="expense">{money(row.expenseTotal)}</strong></td>
-                  <td><strong className={Number(row.totalProfit || 0) >= 0 ? 'income' : 'expense'}>{money(row.totalProfit)}</strong></td>
-                  <td><b>{money(row.cashBalance)}</b><small>KPay {money(row.kpayBalance)} · Wave {money(row.wavePayBalance)}</small></td>
-                  <td><b>{row.closedByName || '-'}</b></td>
-                  <td><span className="br-note">{row.note || '-'}</span></td>
-                </tr>
-              ))}
-              {!closingHistory.rows?.length ? <tr><td colSpan="8"><div className="br-empty">ဒီ date range ထဲမှာ Daily Close history မရှိသေးပါ။</div></td></tr> : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       <DetailModal record={selected} isMiniMart={isMiniMart} onClose={() => setSelected(null)} />
       <EditModal record={editing} accounts={accounts} isMiniMart={isMiniMart} incomeOptions={incomeOptions} expenseOptions={expenseOptions} saving={savingEdit} onSave={saveEdit} onClose={() => setEditing(null)} />

@@ -94,6 +94,264 @@ function buildMiniMartDailySales(activeSales) {
     .slice(0, 14);
 }
 
+const OTHER_INCOME_CATEGORY_KEYS = {
+  otherServiceIncome: 'အခြား Service ဝင်ငွေ',
+  otherSaleIncome: 'အခြား အရောင်းပိုင် ဝင်ငွေ',
+  otherTopupIncome: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ',
+};
+
+const OTHER_EXPENSE_CATEGORY_KEYS = {
+  otherServiceExpense: 'အခြား Service ထွက်ငွေ',
+  otherSaleExpense: 'အခြား အရောင်းပိုင်း ထွက်ငွေ',
+  otherTopupExpense: 'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
+};
+
+function closePeriod(value) {
+  const normalized = String(value || '').toLowerCase();
+  if (normalized === 'monthly' || normalized === 'month') return 'monthly';
+  if (normalized === 'yearly' || normalized === 'year') return 'yearly';
+  return 'daily';
+}
+
+function bucketExpression(dateExpression, period) {
+  if (period === 'monthly') return `TO_CHAR(${dateExpression}, 'YYYY-MM')`;
+  if (period === 'yearly') return `TO_CHAR(${dateExpression}, 'YYYY')`;
+  return `TO_CHAR(${dateExpression}, 'YYYY-MM-DD')`;
+}
+
+function emptyCloseRow(bucket) {
+  return {
+    bucket,
+    salePosIncome: 0,
+    salePosExpense: 0,
+    salePosProfit: 0,
+    saleCount: 0,
+    servicePosIncome: 0,
+    servicePosExpense: 0,
+    servicePosProfit: 0,
+    moneyServiceFee: 0,
+    otherSaleIncome: 0,
+    otherServiceIncome: 0,
+    otherTopupIncome: 0,
+    otherSaleExpense: 0,
+    otherServiceExpense: 0,
+    otherTopupExpense: 0,
+    incomeTotal: 0,
+    expenseTotal: 0,
+    netProfit: 0,
+    closedDays: 0,
+    lastClosedAt: null,
+  };
+}
+
+function mergeCloseRows(target, rows, mapper) {
+  for (const raw of rows || []) {
+    const bucket = String(raw.bucket || '');
+    if (!bucket) continue;
+    const row = target.get(bucket) || emptyCloseRow(bucket);
+    mapper(row, raw);
+    target.set(bucket, row);
+  }
+}
+
+async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
+  const period = closePeriod(requestedPeriod);
+  const fromDay = isoDate(from);
+  const toDay = isoDate(to);
+  const saleDate = `((sold_at AT TIME ZONE 'Asia/Yangon')::date)`;
+  const repairDate = `((COALESCE(completed_at,delivered_at,updated_at) AT TIME ZONE 'Asia/Yangon')::date)`;
+  const serviceDate = `((created_at AT TIME ZONE 'Asia/Yangon')::date)`;
+  const saleBucket = bucketExpression(saleDate, period);
+  const repairBucket = bucketExpression(repairDate, period);
+  const serviceBucket = bucketExpression(serviceDate, period);
+  const recordBucket = bucketExpression('income_date', period);
+  const expenseBucket = bucketExpression('expense_date', period);
+  const closeBucket = bucketExpression('closing_date', period);
+
+  const [
+    saleRows,
+    repairRows,
+    moneyServiceRows,
+    incomeRows,
+    expenseRows,
+    closingRows,
+  ] = await Promise.all([
+    prisma.$queryRawUnsafe(
+      `SELECT ${saleBucket} AS bucket,
+              COALESCE(SUM(total),0) AS "salePosIncome",
+              COALESCE(SUM(total-profit_total),0) AS "salePosExpense",
+              COALESCE(SUM(profit_total),0) AS "salePosProfit",
+              COUNT(*)::int AS "saleCount"
+         FROM sales
+        WHERE shop_id=$1::uuid
+          AND status IN ('COMPLETED','PARTIAL_RETURN')
+          AND ${saleDate} >= $2::date
+          AND ${saleDate} <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${repairBucket} AS bucket,
+              COALESCE(SUM(final_cost),0) AS "servicePosIncome",
+              COALESCE(SUM(final_cost-parts_cost-technician_commission-other_cost),0) AS "servicePosProfit",
+              COALESCE(SUM(parts_cost+technician_commission+other_cost),0) AS "servicePosExpense"
+         FROM repairs
+        WHERE shop_id=$1::uuid
+          AND status IN ('COMPLETED','DELIVERED')
+          AND ${repairDate} >= $2::date
+          AND ${repairDate} <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${serviceBucket} AS bucket,
+              COALESCE(SUM(service_profit),0) AS "moneyServiceFee"
+         FROM money_service_transactions
+        WHERE shop_id=$1::uuid
+          AND ${serviceDate} >= $2::date
+          AND ${serviceDate} <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${recordBucket} AS bucket,
+              COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceIncome",
+              COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleIncome",
+              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupIncome"
+         FROM business_other_income
+        WHERE shop_id=$1::uuid
+          AND income_date >= $2::date
+          AND income_date <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+      OTHER_INCOME_CATEGORY_KEYS.otherServiceIncome,
+      OTHER_INCOME_CATEGORY_KEYS.otherSaleIncome,
+      OTHER_INCOME_CATEGORY_KEYS.otherTopupIncome,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${expenseBucket} AS bucket,
+              COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceExpense",
+              COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleExpense",
+              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupExpense"
+         FROM business_expenses
+        WHERE shop_id=$1::uuid
+          AND expense_date >= $2::date
+          AND expense_date <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherServiceExpense,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherSaleExpense,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherTopupExpense,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${closeBucket} AS bucket,
+              COUNT(*)::int AS "closedDays",
+              MAX(closed_at) AS "lastClosedAt"
+         FROM daily_closings
+        WHERE shop_id=$1::uuid
+          AND closing_date >= $2::date
+          AND closing_date <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+  ]);
+
+  const map = new Map();
+  mergeCloseRows(map, saleRows, (row, raw) => {
+    row.salePosIncome = round(raw.salePosIncome);
+    row.salePosExpense = round(raw.salePosExpense);
+    row.salePosProfit = round(raw.salePosProfit);
+    row.saleCount = Number(raw.saleCount || 0);
+  });
+  mergeCloseRows(map, repairRows, (row, raw) => {
+    row.servicePosIncome = round(raw.servicePosIncome);
+    row.servicePosExpense = round(raw.servicePosExpense);
+    row.servicePosProfit = round(raw.servicePosProfit);
+  });
+  mergeCloseRows(map, moneyServiceRows, (row, raw) => {
+    row.moneyServiceFee = round(raw.moneyServiceFee);
+  });
+  mergeCloseRows(map, incomeRows, (row, raw) => {
+    row.otherSaleIncome = round(raw.otherSaleIncome);
+    row.otherServiceIncome = round(raw.otherServiceIncome);
+    row.otherTopupIncome = round(raw.otherTopupIncome);
+  });
+  mergeCloseRows(map, expenseRows, (row, raw) => {
+    row.otherSaleExpense = round(raw.otherSaleExpense);
+    row.otherServiceExpense = round(raw.otherServiceExpense);
+    row.otherTopupExpense = round(raw.otherTopupExpense);
+  });
+  mergeCloseRows(map, closingRows, (row, raw) => {
+    row.closedDays = Number(raw.closedDays || 0);
+    row.lastClosedAt = raw.lastClosedAt || null;
+  });
+
+  const rows = [...map.values()]
+    .map((row) => {
+      const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee
+        + row.otherSaleIncome + row.otherServiceIncome + row.otherTopupIncome;
+      const expenseTotal = row.salePosExpense + row.servicePosExpense
+        + row.otherSaleExpense + row.otherServiceExpense + row.otherTopupExpense;
+      return {
+        ...row,
+        incomeTotal: round(incomeTotal),
+        expenseTotal: round(expenseTotal),
+        netProfit: round(incomeTotal - expenseTotal),
+      };
+    })
+    .sort((a, b) => b.bucket.localeCompare(a.bucket));
+
+  const totals = rows.reduce((acc, row) => {
+    for (const key of Object.keys(acc)) acc[key] += Number(row[key] || 0);
+    return acc;
+  }, {
+    salePosIncome: 0,
+    salePosExpense: 0,
+    salePosProfit: 0,
+    saleCount: 0,
+    servicePosIncome: 0,
+    servicePosExpense: 0,
+    servicePosProfit: 0,
+    moneyServiceFee: 0,
+    otherSaleIncome: 0,
+    otherServiceIncome: 0,
+    otherTopupIncome: 0,
+    otherSaleExpense: 0,
+    otherServiceExpense: 0,
+    otherTopupExpense: 0,
+    incomeTotal: 0,
+    expenseTotal: 0,
+    netProfit: 0,
+    closedDays: 0,
+  });
+
+  for (const key of Object.keys(totals)) totals[key] = round(totals[key]);
+
+  return {
+    period,
+    from: fromDay,
+    to: toDay,
+    rows,
+    totals,
+    categories: {
+      income: OTHER_INCOME_CATEGORY_KEYS,
+      expense: OTHER_EXPENSE_CATEGORY_KEYS,
+    },
+  };
+}
+
 async function buildMiniMartSupplierPurchases(shopId, from, to) {
   const rows = await prisma.$queryRawUnsafe(
     `SELECT s.id AS "supplierId",
@@ -265,6 +523,7 @@ function attachReportsPostgresApi(app) {
       });
       const productReports = buildProductReports(activeSales);
       const repairReports = buildRepairReports(repairs);
+      const dailyCloseReport = await buildDailyCloseReport(shopId, from, to, req.query?.closePeriod);
       const miniMart = String(shop?.businessType || '').toUpperCase() === 'MINI_MART'
         ? await buildMiniMartReports({ shopId, from, to, activeSales, inventory, productReports, summary })
         : { enabled: false };
@@ -286,6 +545,7 @@ function attachReportsPostgresApi(app) {
         staff: buildStaff(activeSales),
         repairStatuses: repairReports.repairStatuses,
         technicians: repairReports.technicians,
+        dailyCloseReport,
         accounts: accounts.map((account) => ({
           id: account.id,
           name: account.name,
