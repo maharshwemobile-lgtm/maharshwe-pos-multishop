@@ -23,10 +23,17 @@ import './business-records.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 const DEFAULT_INCOME_OPTIONS = [
-  { name: 'Other Income', value: 'OTHER_INCOME' },
-  { name: 'Service Income', value: 'SERVICE_INCOME' },
+  { name: 'အခြား Service ဝင်ငွေ', value: 'အခြား Service ဝင်ငွေ' },
+  { name: 'အခြား အရောင်းပိုင် ဝင်ငွေ', value: 'အခြား အရောင်းပိုင် ဝင်ငွေ' },
+  { name: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ', value: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ' },
 ];
-const DEFAULT_EXPENSE_OPTIONS = ['Other Outcome', 'Sale Outcome', 'Service Voucher Outcome', 'Bill Outcome'];
+const DEFAULT_EXPENSE_OPTIONS = [
+  'အခြား Service ထွက်ငွေ',
+  'အခြား အရောင်းပိုင်း ထွက်ငွေ',
+  'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
+];
+const DEFAULT_INCOME_CATEGORY = DEFAULT_INCOME_OPTIONS[0].value;
+const DEFAULT_EXPENSE_CATEGORY = DEFAULT_EXPENSE_OPTIONS[0];
 const MINI_MART_HIDDEN_CATEGORIES = new Set([
   'SERVICE_INCOME',
   'Service Income',
@@ -87,22 +94,11 @@ function categoryVisible(option, isMiniMart) {
 }
 
 function buildIncomeOptions(rows = [], isMiniMart = false) {
-  const map = new Map(DEFAULT_INCOME_OPTIONS.map((option) => [option.value, option]));
-  for (const row of rows || []) {
-    if (row?.active === false) continue;
-    const value = incomeCategoryValue(row.name);
-    map.set(value, { name: row.name, value });
-  }
-  return [...map.values()].filter((option) => categoryVisible(option, isMiniMart));
+  return DEFAULT_INCOME_OPTIONS.filter((option) => categoryVisible(option, isMiniMart));
 }
 
 function buildExpenseOptions(rows = [], isMiniMart = false) {
-  const map = new Map(DEFAULT_EXPENSE_OPTIONS.map((name) => [name, { name, value: name }]));
-  for (const row of rows || []) {
-    if (row?.active === false) continue;
-    map.set(row.name, { name: row.name, value: row.name });
-  }
-  return [...map.values()].filter((option) => categoryVisible(option, isMiniMart));
+  return DEFAULT_EXPENSE_OPTIONS.map((name) => ({ name, value: name })).filter((option) => categoryVisible(option, isMiniMart));
 }
 
 function DetailModal({ record, onClose, isMiniMart = false }) {
@@ -239,8 +235,8 @@ export default function BusinessRecordsPanel() {
   const [savingIncome, setSavingIncome] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
   const [catalogs, setCatalogs] = useState({ incomeCategories: [], expenseCategories: [] });
-  const [income, setIncome] = useState({ category: 'OTHER_INCOME', source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
-  const [expense, setExpense] = useState({ category: 'Other Outcome', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+  const [income, setIncome] = useState({ category: DEFAULT_INCOME_CATEGORY, source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+  const [expense, setExpense] = useState({ category: DEFAULT_EXPENSE_CATEGORY, amount: '', method: 'CASH', moneyAccountId: '', note: '' });
   const incomeOptions = useMemo(() => buildIncomeOptions(catalogs.incomeCategories, isMiniMart), [catalogs.incomeCategories, isMiniMart]);
   const expenseOptions = useMemo(() => buildExpenseOptions(catalogs.expenseCategories, isMiniMart), [catalogs.expenseCategories, isMiniMart]);
 
@@ -328,13 +324,13 @@ export default function BusinessRecordsPanel() {
 
   useEffect(() => {
     if (!incomeOptions.some((option) => option.value === income.category)) {
-      setIncome((current) => ({ ...current, category: incomeOptions[0]?.value || 'OTHER_INCOME' }));
+      setIncome((current) => ({ ...current, category: incomeOptions[0]?.value || DEFAULT_INCOME_CATEGORY }));
     }
   }, [incomeOptions.map((option) => option.value).join('|')]);
 
   useEffect(() => {
     if (!expenseOptions.some((option) => option.value === expense.category)) {
-      setExpense((current) => ({ ...current, category: expenseOptions[0]?.value || 'Other Outcome' }));
+      setExpense((current) => ({ ...current, category: expenseOptions[0]?.value || DEFAULT_EXPENSE_CATEGORY }));
     }
   }, [expenseOptions.map((option) => option.value).join('|')]);
 
@@ -375,9 +371,9 @@ export default function BusinessRecordsPanel() {
           note: income.note,
         },
       });
-      setIncome({ category: 'OTHER_INCOME', source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+      setIncome({ category: DEFAULT_INCOME_CATEGORY, source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
       setType('income');
-      setNotice(income.category === 'SERVICE_INCOME' && !isMiniMart ? 'Service income saved and added to repair income.' : 'Other income saved and account balance updated.');
+      setNotice('Income saved and wallet balance updated.');
       await loadContext();
       await load();
     } catch (requestError) {
@@ -404,7 +400,7 @@ export default function BusinessRecordsPanel() {
           note: expense.note,
         },
       });
-      setExpense({ category: expenseOptions[0]?.value || 'Other Outcome', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+      setExpense({ category: expenseOptions[0]?.value || DEFAULT_EXPENSE_CATEGORY, amount: '', method: 'CASH', moneyAccountId: '', note: '' });
       setType('expense');
       setNotice('Expense saved and account balance updated.');
       await loadContext();
@@ -456,7 +452,6 @@ export default function BusinessRecordsPanel() {
             <span>NEW RECORD</span>
             <h4>{formMode === 'income' ? 'Add Other Income' : 'Add Expense'}</h4>
           </div>
-          <label><CalendarDays size={17} /><span>Date</span><input type="date" value={businessDate} max={today} onChange={(event) => setBusinessDate(event.target.value || today)} /></label>
         </div>
         <div className="br-record-actions">
           <button type="button" className={formMode === 'income' ? 'active income' : ''} onClick={() => setFormMode('income')}>
@@ -474,12 +469,11 @@ export default function BusinessRecordsPanel() {
           canWriteAccounting ? <form className="br-entry-form" onSubmit={submitIncome}>
             <div className="br-form-grid">
               <label>Category<select value={income.category} onChange={(event) => setIncome({ ...income, category: event.target.value })}>{incomeOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
-              <label>Source<input required value={income.source} onChange={(event) => setIncome({ ...income, source: event.target.value })} placeholder={income.category === 'SERVICE_INCOME' && !isMiniMart ? 'Repair service, software service…' : 'Commission, Rent, Bonus…'} maxLength={80} /></label>
+              <label>Description<input required value={income.source} onChange={(event) => setIncome({ ...income, source: event.target.value })} placeholder="Income detail" maxLength={80} /></label>
               <label>Amount<input required type="number" min="1" step="1" value={income.amount} onChange={(event) => setIncome({ ...income, amount: event.target.value })} placeholder="0" /></label>
               <label>Method<select value={income.method} onChange={(event) => setIncome({ ...income, method: event.target.value, moneyAccountId: '' })}><option value="CASH">Cash</option><option value="KPAY">KBZPay</option><option value="WAVE_PAY">WavePay</option><option value="OTHER">Other</option></select></label>
-              <label>Account<select value={income.moneyAccountId} onChange={(event) => setIncome({ ...income, moneyAccountId: event.target.value })}><option value="">Auto-select account</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}</select></label>
+              <label>Wallet<select value={income.moneyAccountId} onChange={(event) => setIncome({ ...income, moneyAccountId: event.target.value })}><option value="">Auto-select wallet</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}</select></label>
             </div>
-            <label>Note<input value={income.note} onChange={(event) => setIncome({ ...income, note: event.target.value })} placeholder="Income details" maxLength={500} /></label>
             <button type="submit" disabled={savingIncome || dayClosed}>{savingIncome ? <Loader2 className="br-spin" size={18} /> : <PlusCircle size={18} />} {dayClosed ? 'Closed Day Cannot Change' : 'Save Income'}</button>
           </form> : <div className="br-warning">Accounting permission is required.</div>
         ) : null}
@@ -488,11 +482,11 @@ export default function BusinessRecordsPanel() {
           canWriteAccounting ? <form className="br-entry-form" onSubmit={submitExpense}>
             <div className="br-form-grid">
               <label>Category<select required value={expense.category} onChange={(event) => setExpense({ ...expense, category: event.target.value })}>{expenseOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
+              <label>Description<input required value={expense.note} onChange={(event) => setExpense({ ...expense, note: event.target.value })} placeholder="Expense detail" maxLength={500} /></label>
               <label>Amount<input required type="number" min="1" step="1" value={expense.amount} onChange={(event) => setExpense({ ...expense, amount: event.target.value })} placeholder="0" /></label>
               <label>Method<select value={expense.method} onChange={(event) => setExpense({ ...expense, method: event.target.value, moneyAccountId: '' })}><option value="CASH">Cash</option><option value="KPAY">KBZPay</option><option value="WAVE_PAY">WavePay</option><option value="OTHER">Other</option></select></label>
-              <label>Account<select value={expense.moneyAccountId} onChange={(event) => setExpense({ ...expense, moneyAccountId: event.target.value })}><option value="">Auto-select account</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}</select></label>
+              <label>Wallet<select value={expense.moneyAccountId} onChange={(event) => setExpense({ ...expense, moneyAccountId: event.target.value })}><option value="">Auto-select wallet</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}</select></label>
             </div>
-            <label>Note<input value={expense.note} onChange={(event) => setExpense({ ...expense, note: event.target.value })} placeholder="Expense details" maxLength={500} /></label>
             <button type="submit" disabled={savingExpense || dayClosed}>{savingExpense ? <Loader2 className="br-spin" size={18} /> : <CreditCard size={18} />} {dayClosed ? 'Closed Day Cannot Change' : 'Save Expense'}</button>
           </form> : <div className="br-warning">Accounting permission is required.</div>
         ) : null}

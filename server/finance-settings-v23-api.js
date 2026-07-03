@@ -28,8 +28,9 @@ const categoryUpdateSchema = z.object({
 let schemaPromise;
 
 const DEFAULT_INCOME_CATEGORIES = [
-  'Other Income',
-  'Service Income',
+  'အခြား Service ဝင်ငွေ',
+  'အခြား အရောင်းပိုင် ဝင်ငွေ',
+  'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ',
 ];
 
 async function ensureDefaultIncomeCategories(shopId, userId) {

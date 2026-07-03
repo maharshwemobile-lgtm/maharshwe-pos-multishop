@@ -2,19 +2,9 @@ const crypto = require('crypto');
 const { prisma } = require('./prisma');
 
 const DEFAULT_CATEGORIES = [
-  'Other Outcome',
-  'Sale Outcome',
-  'Service Voucher Outcome',
-  'Bill Outcome',
-  'Electricity',
-  'Transport',
-  'Rent',
-  'Salary',
-  'Food',
-  'Internet',
-  'Repair Parts',
-  'Office Supplies',
-  'Other',
+  'အခြား Service ထွက်ငွေ',
+  'အခြား အရောင်းပိုင်း ထွက်ငွေ',
+  'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
 ];
 
 let schemaPromise;
