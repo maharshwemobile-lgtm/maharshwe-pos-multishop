@@ -181,6 +181,33 @@
 .bc-metric-copy span { color: var(--app-muted, #68776f); font-size: 12px; font-weight: 850; }
 .bc-metric-copy strong { margin: 5px 0; color: var(--app-text, #10241a); font-size: 19px; line-height: 1.25; }
 .bc-metric-copy small { color: var(--app-muted, #7b8981); font-size: 10px; line-height: 1.35; }
+.bc-metric-breakdown {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+}
+.bc-metric-breakdown em {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--app-muted, #68776f);
+}
+.bc-metric-breakdown em span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.bc-metric-breakdown em b {
+  flex: 0 0 auto;
+  color: var(--app-text, #10241a);
+  font-size: 10px;
+  font-weight: 900;
+}
 
 .bc-tone-blue .bc-metric-icon { background: #2563eb; }
 .bc-tone-gold .bc-metric-icon { background: #d69000; }

@@ -46,7 +46,7 @@ function dateLabel(value) {
   }).format(new Date(`${value}T00:00:00+06:30`));
 }
 
-function MetricCard({ icon: Icon, label, value, detail, tone = 'green' }) {
+function MetricCard({ icon: Icon, label, value, detail, tone = 'green', breakdown = [] }) {
   return (
     <article className={`bc-metric bc-tone-${tone}`}>
       <div className="bc-metric-icon"><Icon size={23} /></div>
@@ -54,6 +54,16 @@ function MetricCard({ icon: Icon, label, value, detail, tone = 'green' }) {
         <span>{label}</span>
         <strong>{money(value)}</strong>
         <small>{detail}</small>
+        {breakdown?.length ? (
+          <div className="bc-metric-breakdown">
+            {breakdown.map((row) => (
+              <em key={`${row.label}-${row.amount}`}>
+                <span>{row.label}</span>
+                <b>{money(row.amount)}</b>
+              </em>
+            ))}
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -118,7 +128,7 @@ export default function DashboardBusinessV3({ onNavigate }) {
     { icon: ShoppingCart, label: 'Product Sales Income', value: dashboard.todaySaleIncome, detail: `${Number(dashboard.todayOrders || 0)} sale orders`, tone: 'blue' },
     { icon: TrendingUp, label: 'Product Sales Profit', value: dashboard.productProfit, detail: 'Product gross profit', tone: 'green' },
     !isMiniMart ? { icon: Wrench, label: 'Repair Income', value: dashboard.repairIncome, detail: `${Number(dashboard.repairPayments || 0)} repair payments + Service Income`, tone: 'gold' } : null,
-    { icon: PlusCircle, label: 'Other Income', value: dashboard.otherIncome, detail: `${Number(dashboard.otherIncomeCount || 0)} income records`, tone: 'blue' },
+    { icon: PlusCircle, label: 'Other Income', value: dashboard.otherIncome, detail: `${Number(dashboard.otherIncomeCount || 0)} income records`, tone: 'blue', breakdown: dashboard.otherIncomeBreakdown || [] },
     { icon: CreditCard, label: "Today's Expense", value: dashboard.todayExpense, detail: `${Number(dashboard.expenseCount || 0)} expense records`, tone: 'red' },
     { icon: Users, label: 'Customer Receivable', value: dashboard.receivable, detail: `${Number(dashboard.receivableCustomers || 0)} customers owe`, tone: 'orange' },
     { icon: Truck, label: 'Supplier Payable', value: dashboard.payable, detail: `Paid today ${money(dashboard.supplierPaidToday)}`, tone: 'red' },

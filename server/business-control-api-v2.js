@@ -232,6 +232,7 @@ async function buildOverview(shopId, businessDate) {
     repairFinanceRows,
     expenseRows,
     otherIncomeRows,
+    otherIncomeBreakdownRows,
     recentExpenses,
     recentOtherIncome,
     closingRows,
@@ -303,6 +304,22 @@ async function buildOverview(shopId, businessDate) {
               COUNT(*)::int AS count
          FROM business_other_income
         WHERE shop_id=$1::uuid AND income_date=$2::date`,
+      shopId,
+      businessDate,
+      OTHER_SERVICE_INCOME_CATEGORY,
+    ),
+    prisma.$queryRawUnsafe(
+      `SELECT COALESCE(NULLIF(source,''), category, 'Other Income') AS label,
+              category,
+              COALESCE(SUM(amount),0) AS amount,
+              COUNT(*)::int AS count
+         FROM business_other_income
+        WHERE shop_id=$1::uuid
+          AND income_date=$2::date
+          AND COALESCE(category,'OTHER_INCOME')!=$3
+        GROUP BY COALESCE(NULLIF(source,''), category, 'Other Income'), category
+        ORDER BY amount DESC, label ASC
+        LIMIT 8`,
       shopId,
       businessDate,
       OTHER_SERVICE_INCOME_CATEGORY,
@@ -412,6 +429,14 @@ async function buildOverview(shopId, businessDate) {
       repairProfit,
       moneyServiceProfit: serviceProfit,
       otherIncome,
+      otherIncomeBreakdown: (otherIncomeBreakdownRows || [])
+        .map((row) => ({
+          label: clean(row.label || row.category || 'Other Income', 80),
+          category: row.category || 'OTHER_INCOME',
+          amount: number(row.amount),
+          count: Number(row.count || 0),
+        }))
+        .filter((row) => row.amount > 0),
       todayProfit,
       todayExpense,
       receivable: number(receivable._sum.balance),
