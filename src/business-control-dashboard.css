@@ -184,32 +184,34 @@
 .bc-metric-breakdown {
   display: grid;
   gap: 1px;
-  margin-top: 3px;
-  opacity: .44;
+  max-height: 22px;
+  margin-top: 2px;
+  overflow: hidden;
+  opacity: .36;
 }
 .bc-metric-breakdown em {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 5px;
+  gap: 4px;
   font-style: normal;
-  font-size: 8px;
+  font-size: 7px;
   color: var(--app-muted, #68776f);
-  line-height: 1.05;
+  line-height: 1;
 }
 .bc-metric-breakdown em span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 8px;
-  font-weight: 500;
+  font-size: 7px;
+  font-weight: 450;
 }
 .bc-metric-breakdown em b {
   flex: 0 0 auto;
   color: var(--app-muted, #68776f);
-  font-size: 8px;
-  font-weight: 600;
+  font-size: 7px;
+  font-weight: 550;
 }
 
 .bc-tone-blue .bc-metric-icon { background: #2563eb; }
