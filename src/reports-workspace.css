@@ -2,6 +2,11 @@
 .reports-table .negative{color:#dc2626;font-weight:900}
 .reports-close-period-switch button.export{background:#2563eb;border-color:#2563eb;color:#fff;display:inline-flex;align-items:center;gap:6px}
 .reports-close-period-switch button:disabled{opacity:.5;cursor:not-allowed}
+.reports-close-filter-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #edf2f7;background:#fbfdff}
+.reports-close-filter-row button{border:1px solid #16a34a;background:#16a34a;color:#fff;border-radius:9px;padding:9px 13px;font-weight:900;cursor:pointer}
+.reports-close-filter-row label{height:38px;display:flex;align-items:center;gap:7px;border:1px solid #dce5ef;border-radius:9px;background:#fff;padding:0 10px;color:#64748b;font-size:12px;font-weight:900}
+.reports-close-filter-row input{border:0;outline:0;background:transparent;color:#334155;font-weight:800}
+.reports-close-filter-row small{color:#64748b;font-size:12px;font-weight:800}
 .reports-close-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid #edf2f7;background:#fff}
 .reports-close-pagination span{color:#64748b;font-size:12px;font-weight:800}
 .reports-close-pagination div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -9,9 +14,13 @@
 .reports-close-pagination button:disabled{opacity:.45;cursor:not-allowed}
 .reports-close-pagination b{font-size:12px;color:#334155}
 .dark .reports-close-pagination{background:#0b1b33;border-color:#1e3555}
+.dark .reports-close-filter-row{background:#07172c;border-color:#1e3555}
+.dark .reports-close-filter-row label{background:#0b1b33;color:#9fb0c7;border-color:#1e3555}
+.dark .reports-close-filter-row input{color:#e5eef8}
+.dark .reports-close-filter-row small{color:#9fb0c7}
 .dark .reports-close-pagination span,.dark .reports-close-pagination b{color:#9fb0c7}
 .dark .reports-close-pagination button{background:#10223d;color:#e5eef8;border-color:#1e3555}
-@media(max-width:760px){.reports-close-pagination{align-items:stretch;flex-direction:column}.reports-close-pagination div{justify-content:space-between}.reports-close-pagination button{flex:1}}
+@media(max-width:760px){.reports-close-filter-row{align-items:stretch;flex-direction:column}.reports-close-filter-row label{width:100%}.reports-close-pagination{align-items:stretch;flex-direction:column}.reports-close-pagination div{justify-content:space-between}.reports-close-pagination button{flex:1}}
 .reports-daily-close-card{overflow:hidden}
 .reports-close-period-switch{display:flex;gap:7px;flex-wrap:wrap}
 .reports-close-period-switch button{border:1px solid #dce5ef;background:#fff;border-radius:999px;padding:8px 12px;font-weight:900;font-size:12px;color:#475569;cursor:pointer}

@@ -49,8 +49,8 @@ function TrendBadge({ value }) {
 
 export default function ReportsWorkspace({ onNavigate }) {
   const defaults = defaultDates();
-  const [fromDate] = useState(defaults.from);
-  const [toDate] = useState(defaults.to);
+  const [fromDate, setFromDate] = useState(defaults.from);
+  const [toDate, setToDate] = useState(defaults.to);
   const [closePeriod, setClosePeriod] = useState('daily');
   const [closePage, setClosePage] = useState(1);
   const [data, setData] = useState(null);
@@ -92,7 +92,11 @@ export default function ReportsWorkspace({ onNavigate }) {
   const closeRows = dailyCloseReport.rows || [];
   const closeTotalPages = Math.max(1, Math.ceil(closeRows.length / 10));
   const closeVisibleRows = closeRows.slice((closePage - 1) * 10, closePage * 10);
-  const closePeriodLabel = closePeriod === 'monthly' ? 'Month' : closePeriod === 'yearly' ? 'Year' : 'Day';
+  const closePeriodMeta = closePeriod === 'monthly'
+    ? { name: 'Monthly', bucket: 'Month', title: 'Monthly Close စာရင်းချုပ်', range: 'Month range preview' }
+    : closePeriod === 'yearly'
+      ? { name: 'Yearly', bucket: 'Year', title: 'Yearly Close စာရင်းချုပ်', range: 'Year range preview' }
+      : { name: 'Daily', bucket: 'Day', title: 'Daily Close စာရင်းချုပ်', range: 'Daily transaction preview' };
   const cards = useMemo(() => [
     { label: 'Sales Revenue', value: money(summary.revenue), icon: ReceiptText, tone: 'green', trend: summary.revenueChange },
     { label: 'Sales Profit', value: money(summary.salesProfit), icon: TrendingUp, tone: 'blue', trend: summary.profitChange },
@@ -110,19 +114,25 @@ export default function ReportsWorkspace({ onNavigate }) {
     setClosePage(1);
   }, [closePeriod, closeRows.length]);
 
+  const setCloseToday = () => {
+    const today = day(new Date());
+    setFromDate(today);
+    setToDate(today);
+  };
+
   const exportDailyCloseExcel = () => {
     if (!dailyCloseReport.rows?.length) return;
     const rows = [
       ['Metric', 'Value'],
-      ['Period Type', dailyCloseReport.period || closePeriod],
+      ['Period Type', closePeriodMeta.name],
       ['From', dailyCloseReport.from || fromDate],
       ['To', dailyCloseReport.to || toDate],
       ['Income Total', dailyCloseReport.totals?.incomeTotal || 0],
       ['Expense Total', dailyCloseReport.totals?.expenseTotal || 0],
       ['Net Profit', dailyCloseReport.totals?.netProfit || 0],
       [],
-      ['Daily Close Summary', dailyCloseReport.period || closePeriod],
-      [closePeriodLabel, 'Sale POS Income', 'Service POS Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Income Total', 'Sale POS Cost', 'Service POS Cost', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Expense Total', 'Net Profit', 'Closed Days'],
+      [`${closePeriodMeta.name} Transactions`, dailyCloseReport.period || closePeriod],
+      [closePeriodMeta.bucket, 'Sale POS Income', 'Service POS Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Income Total', 'Sale POS Cost', 'Service POS Cost', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Expense Total', 'Net Profit', 'Closed Days'],
       ...(dailyCloseReport.rows || []).map((row) => [
         row.bucket,
         row.salePosIncome,
@@ -147,7 +157,7 @@ export default function ReportsWorkspace({ onNavigate }) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `daily-close-summary-${dailyCloseReport.period || closePeriod}-${dailyCloseReport.from || fromDate}-to-${dailyCloseReport.to || toDate}.xls`;
+    anchor.download = `${closePeriod}-close-transactions-${dailyCloseReport.from || fromDate}-to-${dailyCloseReport.to || toDate}.xls`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -167,8 +177,8 @@ export default function ReportsWorkspace({ onNavigate }) {
     <section className="reports-card reports-daily-close-card">
       <header>
         <div>
-          <b>Daily Close စာရင်းချုပ်</b>
-          <small>Sale POS, Service POS, Money Service Fee နှင့် Other Records ဝင်ငွေ/ထွက်ငွေ စုစည်းချက်</small>
+          <b>{closePeriodMeta.title}</b>
+          <small>{closePeriodMeta.range} · Sale POS, Service POS, Money Service Fee နှင့် Other Records ဝင်ငွေ/ထွက်ငွေ စုစည်းချက်</small>
         </div>
         <div className="reports-close-period-switch">
           <button type="button" className={closePeriod === 'daily' ? 'active' : ''} onClick={() => setClosePeriod('daily')}>Daily</button>
@@ -177,17 +187,23 @@ export default function ReportsWorkspace({ onNavigate }) {
           <button type="button" className="export" onClick={exportDailyCloseExcel} disabled={!dailyCloseReport.rows?.length}><Download size={16} /> Export to Excel</button>
         </div>
       </header>
+      <div className="reports-close-filter-row">
+        <button type="button" onClick={setCloseToday}>Today</button>
+        <label><CalendarDays size={16} /><span>From</span><input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value || defaults.from)} /></label>
+        <label><CalendarDays size={16} /><span>To</span><input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value || defaults.to)} /></label>
+        <small>{closePeriodMeta.name}: {fromDate} → {toDate}</small>
+      </div>
       <div className="reports-close-total-grid">
-        <article><span>Income Total</span><b className="positive">{money(dailyCloseReport.totals?.incomeTotal)}</b></article>
-        <article><span>Expense Total</span><b className="negative">{money(dailyCloseReport.totals?.expenseTotal)}</b></article>
-        <article><span>Net Profit</span><b className={Number(dailyCloseReport.totals?.netProfit || 0) >= 0 ? 'positive' : 'negative'}>{money(dailyCloseReport.totals?.netProfit)}</b></article>
-        <article><span>Closed Days</span><b>{Number(dailyCloseReport.totals?.closedDays || 0).toLocaleString()}</b></article>
+        <article><span>{closePeriodMeta.name} Income Total</span><b className="positive">{money(dailyCloseReport.totals?.incomeTotal)}</b></article>
+        <article><span>{closePeriodMeta.name} Expense Total</span><b className="negative">{money(dailyCloseReport.totals?.expenseTotal)}</b></article>
+        <article><span>{closePeriodMeta.name} Net Profit</span><b className={Number(dailyCloseReport.totals?.netProfit || 0) >= 0 ? 'positive' : 'negative'}>{money(dailyCloseReport.totals?.netProfit)}</b></article>
+        <article><span>{closePeriod === 'daily' ? 'Closed Days' : closePeriodMeta.name === 'Monthly' ? 'Closed Months' : 'Closed Years'}</span><b>{Number(dailyCloseReport.totals?.closedDays || 0).toLocaleString()}</b></article>
       </div>
       <div className="reports-table-wrap reports-wide-table-wrap">
         <table className="reports-table reports-close-table">
           <thead>
             <tr>
-              <th rowSpan="2">{closePeriodLabel}</th>
+              <th rowSpan="2">{closePeriodMeta.bucket}</th>
               <th colSpan="7">INCOME များ</th>
               <th colSpan="6">Expense များ</th>
               <th rowSpan="2">Net Profit</th>
