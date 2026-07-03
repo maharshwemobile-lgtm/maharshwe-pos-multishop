@@ -231,6 +231,7 @@ async function buildOverview(shopId, businessDate) {
     pendingRepairs,
     repairFinanceRows,
     expenseRows,
+    expenseBreakdownRows,
     otherIncomeRows,
     otherIncomeBreakdownRows,
     recentExpenses,
@@ -294,6 +295,19 @@ async function buildOverview(shopId, businessDate) {
       `SELECT COALESCE(SUM(amount),0) AS total,COUNT(*)::int AS count
          FROM business_expenses
         WHERE shop_id=$1::uuid AND expense_date=$2::date`,
+      shopId,
+      businessDate,
+    ),
+    prisma.$queryRawUnsafe(
+      `SELECT COALESCE(NULLIF(category,''), 'Expense') AS label,
+              category,
+              COALESCE(SUM(amount),0) AS amount,
+              COUNT(*)::int AS count
+         FROM business_expenses
+        WHERE shop_id=$1::uuid AND expense_date=$2::date
+        GROUP BY COALESCE(NULLIF(category,''), 'Expense'), category
+        ORDER BY amount DESC, label ASC
+        LIMIT 8`,
       shopId,
       businessDate,
     ),
@@ -439,6 +453,14 @@ async function buildOverview(shopId, businessDate) {
         .filter((row) => row.amount > 0),
       todayProfit,
       todayExpense,
+      expenseBreakdown: (expenseBreakdownRows || [])
+        .map((row) => ({
+          label: clean(row.label || row.category || 'Expense', 80),
+          category: row.category || 'EXPENSE',
+          amount: number(row.amount),
+          count: Number(row.count || 0),
+        }))
+        .filter((row) => row.amount > 0),
       receivable: number(receivable._sum.balance),
       payable: supplier.payable,
       supplierPaidToday: supplier.paidToday,
