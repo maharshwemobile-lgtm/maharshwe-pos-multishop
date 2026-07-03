@@ -48,6 +48,158 @@ async function readManifest() {
   return { manifest, filePath: resolvedFile };
 }
 
+function jsonReplacer(_key, value) {
+  if (typeof value === 'bigint') return value.toString();
+  if (value && typeof value === 'object' && typeof value.toJSON === 'function') return value.toJSON();
+  return value;
+}
+
+function safeFileSegment(value) {
+  return String(value || 'shop')
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'shop';
+}
+
+async function buildTenantBackup(shopId) {
+  const [
+    shop,
+    settings,
+    users,
+    categories,
+    products,
+    moneyAccounts,
+    customers,
+    stockMovements,
+    sales,
+    payments,
+    repairs,
+    moneyServiceTransactions,
+    auditLogs,
+  ] = await Promise.all([
+    prisma.shop.findUnique({
+      where: { id: shopId },
+      select: {
+        id: true,
+        slug: true,
+        code: true,
+        name: true,
+        phone: true,
+        address: true,
+        logoUrl: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.shopSettings.findUnique({ where: { shopId } }),
+    prisma.user.findMany({
+      where: { shopId },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+        role: true,
+        permissions: true,
+        active: true,
+        authProvider: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.category.findMany({ where: { shopId }, orderBy: { name: 'asc' } }),
+    prisma.product.findMany({
+      where: { shopId },
+      include: {
+        category: true,
+        variants: {
+          include: { category: true, inventoryBalance: true },
+          orderBy: { variantName: 'asc' },
+        },
+      },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.moneyAccount.findMany({ where: { shopId }, orderBy: { name: 'asc' } }),
+    prisma.customer.findMany({ where: { shopId }, orderBy: { createdAt: 'desc' }, take: 5000 }),
+    prisma.stockMovement.findMany({
+      where: { shopId },
+      include: {
+        productVariant: { include: { product: true } },
+        user: { select: { id: true, username: true, name: true, role: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    }),
+    prisma.sale.findMany({
+      where: { shopId },
+      include: {
+        items: true,
+        payments: true,
+        customer: true,
+        staff: { select: { id: true, username: true, name: true, role: true } },
+      },
+      orderBy: { soldAt: 'desc' },
+      take: 3000,
+    }),
+    prisma.payment.findMany({ where: { shopId }, orderBy: { createdAt: 'desc' }, take: 5000 }),
+    prisma.repair.findMany({
+      where: { shopId },
+      include: {
+        payments: true,
+        statusHistory: true,
+        technician: { select: { id: true, username: true, name: true, role: true } },
+      },
+      orderBy: { receivedAt: 'desc' },
+      take: 3000,
+    }),
+    prisma.moneyServiceTransaction.findMany({
+      where: { shopId },
+      include: {
+        account: true,
+        user: { select: { id: true, username: true, name: true, role: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    }),
+    prisma.auditLog.findMany({
+      where: { shopId },
+      include: { user: { select: { id: true, username: true, name: true, role: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    }),
+  ]);
+
+  if (!shop) {
+    const error = new Error('Shop not found');
+    error.status = 404;
+    throw error;
+  }
+
+  return {
+    ok: true,
+    scope: 'tenant',
+    exportedAt: new Date().toISOString(),
+    warning: 'Tenant-scoped JSON export. System database dumps are restricted to super admin only.',
+    shop,
+    settings,
+    users,
+    categories,
+    products,
+    moneyAccounts,
+    customers,
+    stockMovements,
+    sales,
+    payments,
+    repairs,
+    moneyServiceTransactions,
+    auditLogs,
+  };
+}
+
 function attachBackupStatusApi(app) {
   const access = [requireAuth, requireShopUser, requireBackupAdmin];
 
@@ -160,6 +312,35 @@ function attachBackupStatusApi(app) {
         healthy: false,
         status: 'ERROR',
         message: error.message || 'Backup status check failed',
+      });
+    }
+  });
+
+  app.get('/api/backups/download', ...access, async (req, res) => {
+    try {
+      if (req.auth?.role === 'SUPER_ADMIN' && String(req.query.scope || '') === 'system') {
+        const { filePath } = await readManifest();
+        return res.download(filePath, path.basename(filePath));
+      }
+
+      if (!req.auth?.shopId) {
+        return res.status(403).json({ ok: false, message: 'Tenant backup download requires an active shop' });
+      }
+
+      const backup = await buildTenantBackup(req.auth.shopId);
+      const tenant = safeFileSegment(backup.shop.code || backup.shop.slug || backup.shop.id);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `mahar-pos-tenant-${tenant}-${timestamp}.json`;
+      const body = JSON.stringify(backup, jsonReplacer, 2);
+
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(body);
+    } catch (error) {
+      console.error('Backup download API:', error);
+      return res.status(error.status || 500).json({
+        ok: false,
+        message: error.message || 'Backup download failed',
       });
     }
   });
