@@ -91,10 +91,26 @@ const staffSchema = z.object({
   staffTitle: z.string().trim().max(80).nullable().optional(),
 });
 
+const createStaffSchema = z.object({
+  username: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(180).optional().or(z.literal("")),
+  name: z.string().trim().min(1).max(180),
+  password: z.string().min(8).max(200),
+  role: z.enum(["SHOP_ADMIN", "CASHIER"]).default("CASHIER"),
+  branchId: z.string().trim().max(120).nullable().optional(),
+  staffTitle: z.string().trim().max(80).nullable().optional(),
+  permissions: z.record(z.any()).optional(),
+  active: z.boolean().default(true),
+});
+
 const resetPasswordSchema = z.object({
   password: z.string().min(8).max(200),
   mustChange: z.boolean().default(true),
 });
+
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
 function publicStaff(user) {
   const permissions = settingsObject(user.permissions);
@@ -410,6 +426,63 @@ async function updateStaff(req, res) {
   res.json({ ok: true, user: publicStaff(user) });
 }
 
+async function createStaff(req, res) {
+  const parsed = createStaffSchema.safeParse(req.body || {});
+  if (!parsed.success) return res.status(400).json({ ok: false, message: "Invalid staff", errors: parsed.error.flatten().fieldErrors });
+
+  const shopId = req.auth.shopId;
+  const input = parsed.data;
+  const normalizedUsername = normalizeUsername(input.username);
+  const email = normalizeUsername(input.email || "");
+  const existing = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { shopId, normalizedUsername },
+        ...(email ? [{ email }] : []),
+      ],
+    },
+    select: { id: true },
+  });
+  if (existing) return res.status(409).json({ ok: false, message: "Username or email already exists" });
+
+  const permissions = {
+    ...(input.permissions || {}),
+    branchId: input.branchId || "",
+    staffTitle: input.staffTitle || (input.role === "SHOP_ADMIN" ? "Admin" : "Cashier"),
+  };
+
+  const user = await prisma.user.create({
+    data: {
+      shopId,
+      username: input.username.trim(),
+      normalizedUsername,
+      email: email || null,
+      name: input.name.trim(),
+      role: input.role,
+      active: input.active !== false,
+      permissions,
+      passwordHash: await bcrypt.hash(input.password, 12),
+      passwordMustChange: true,
+      authProvider: "password",
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      name: true,
+      role: true,
+      permissions: true,
+      active: true,
+      authProvider: true,
+      lastLoginAt: true,
+      createdAt: true,
+    },
+  });
+
+  await audit(req, "SHOP_STAFF_CREATED", "user", user.id, { username: user.username, role: user.role, branchId: permissions.branchId });
+  res.status(201).json({ ok: true, user: publicStaff(user) });
+}
+
 async function resetStaffPassword(req, res) {
   const parsed = resetPasswordSchema.safeParse(req.body || {});
   if (!parsed.success) return res.status(400).json({ ok: false, message: "Invalid password reset", errors: parsed.error.flatten().fieldErrors });
@@ -436,6 +509,7 @@ function attachShopAdminBranchControlApi(app) {
   app.get("/api/shop-admin/branches/overview", requireAuth, requireShopAdmin, overview);
   app.post("/api/shop-admin/branches", requireAuth, requireShopAdmin, createBranch);
   app.patch("/api/shop-admin/branches/:branchId", requireAuth, requireShopAdmin, updateBranch);
+  app.post("/api/shop-admin/staff", requireAuth, requireShopAdmin, createStaff);
   app.patch("/api/shop-admin/staff/:userId", requireAuth, requireShopAdmin, updateStaff);
   app.patch("/api/shop-admin/staff/:userId/password", requireAuth, requireShopAdmin, resetStaffPassword);
 }

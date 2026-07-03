@@ -140,7 +140,7 @@ async function buildTenantBackup(shopId) {
         items: true,
         payments: true,
         customer: true,
-        staff: { select: { id: true, username: true, name: true, role: true } },
+        user: { select: { id: true, username: true, name: true, role: true } },
       },
       orderBy: { soldAt: 'desc' },
       take: 3000,
