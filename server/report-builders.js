@@ -86,7 +86,7 @@ function buildProductReports(activeSales) {
     topProducts: [...products.values()]
       .map((row) => ({ ...row, revenue: round(row.revenue), profit: round(row.profit) }))
       .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 15),
+      .slice(0, 10),
     categories: [...categories.values()]
       .map((row) => ({ ...row, revenue: round(row.revenue), profit: round(row.profit) }))
       .sort((a, b) => b.revenue - a.revenue),

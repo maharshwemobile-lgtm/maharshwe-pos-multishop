@@ -12,7 +12,6 @@ import {
   Loader2,
   PackageSearch,
   ReceiptText,
-  RefreshCw,
   Smartphone,
   TrendingUp,
   Users,
@@ -32,8 +31,12 @@ function defaultDates() {
   return { from: day(from), to: day(to) };
 }
 
-function csvCell(value) {
-  return `"${String(value ?? '').replaceAll('"', '""')}"`;
+function excelCell(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 }
 
 function TrendBadge({ value }) {
@@ -44,22 +47,12 @@ function TrendBadge({ value }) {
   </span>;
 }
 
-function setPreset(name, setFromDate, setToDate) {
-  const now = new Date();
-  const from = new Date(now);
-  if (name === 'today') from.setHours(0, 0, 0, 0);
-  if (name === '7d') from.setDate(from.getDate() - 6);
-  if (name === '30d') from.setDate(from.getDate() - 29);
-  if (name === 'month') from.setDate(1);
-  setFromDate(day(from));
-  setToDate(day(now));
-}
-
 export default function ReportsWorkspace({ onNavigate }) {
   const defaults = defaultDates();
-  const [fromDate, setFromDate] = useState(defaults.from);
-  const [toDate, setToDate] = useState(defaults.to);
+  const [fromDate] = useState(defaults.from);
+  const [toDate] = useState(defaults.to);
   const [closePeriod, setClosePeriod] = useState('daily');
+  const [closePage, setClosePage] = useState(1);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -95,6 +88,11 @@ export default function ReportsWorkspace({ onNavigate }) {
   const summary = data?.summary || {};
   const miniMart = data?.miniMart || {};
   const dailyCloseReport = data?.dailyCloseReport || { rows: [], totals: {} };
+  const topProductRows = useMemo(() => (data?.topProducts || []).slice(0, 10), [data?.topProducts]);
+  const closeRows = dailyCloseReport.rows || [];
+  const closeTotalPages = Math.max(1, Math.ceil(closeRows.length / 10));
+  const closeVisibleRows = closeRows.slice((closePage - 1) * 10, closePage * 10);
+  const closePeriodLabel = closePeriod === 'monthly' ? 'Month' : closePeriod === 'yearly' ? 'Year' : 'Day';
   const cards = useMemo(() => [
     { label: 'Sales Revenue', value: money(summary.revenue), icon: ReceiptText, tone: 'green', trend: summary.revenueChange },
     { label: 'Sales Profit', value: money(summary.salesProfit), icon: TrendingUp, tone: 'blue', trend: summary.profitChange },
@@ -106,30 +104,25 @@ export default function ReportsWorkspace({ onNavigate }) {
 
   const maxTrend = Math.max(1, ...(data?.trend || []).map((row) => Math.max(row.revenue, row.received)));
   const paymentTotal = (data?.paymentMix || []).reduce((sum, row) => sum + Number(row.amount || 0), 0) || 1;
-  const maxProductRevenue = Math.max(1, ...(data?.topProducts || []).map((row) => Number(row.revenue || 0)));
+  const maxProductRevenue = Math.max(1, ...topProductRows.map((row) => Number(row.revenue || 0)));
 
-  const exportCsv = () => {
-    if (!data) return;
+  useEffect(() => {
+    setClosePage(1);
+  }, [closePeriod, closeRows.length]);
+
+  const exportDailyCloseExcel = () => {
+    if (!dailyCloseReport.rows?.length) return;
     const rows = [
-      ['Mahar POS Business Report'],
-      ['From', fromDate, 'To', toDate],
-      [],
       ['Metric', 'Value'],
-      ['Sales Revenue', summary.revenue],
-      ['Sales Profit', summary.salesProfit],
-      ['Payments Received', summary.totalReceived],
-      ['Repair Received', summary.repairReceived],
-      ['Customer Receivable', summary.receivable],
-      ['Inventory Cost Value', summary.inventoryCostValue],
-      ['Invoices', summary.invoices],
-      ['Units Sold', summary.unitsSold],
-      [],
-      ['Top Products'],
-      ['Product', 'Variant', 'Category', 'Quantity', 'Revenue', 'Profit'],
-      ...(data.topProducts || []).map((row) => [row.name, row.variant, row.category, row.quantity, row.revenue, row.profit]),
+      ['Period Type', dailyCloseReport.period || closePeriod],
+      ['From', dailyCloseReport.from || fromDate],
+      ['To', dailyCloseReport.to || toDate],
+      ['Income Total', dailyCloseReport.totals?.incomeTotal || 0],
+      ['Expense Total', dailyCloseReport.totals?.expenseTotal || 0],
+      ['Net Profit', dailyCloseReport.totals?.netProfit || 0],
       [],
       ['Daily Close Summary', dailyCloseReport.period || closePeriod],
-      ['Period', 'Sale POS Income', 'Service POS Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Income Total', 'Sale POS Outcome/Cost', 'Service POS Outcome/Cost', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Expense Total', 'Net Profit', 'Closed Days'],
+      [closePeriodLabel, 'Sale POS Income', 'Service POS Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Income Total', 'Sale POS Cost', 'Service POS Cost', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Expense Total', 'Net Profit', 'Closed Days'],
       ...(dailyCloseReport.rows || []).map((row) => [
         row.bucket,
         row.salePosIncome,
@@ -148,65 +141,18 @@ export default function ReportsWorkspace({ onNavigate }) {
         row.netProfit,
         row.closedDays,
       ]),
-      ...(miniMart.enabled ? [
-        [],
-        ['Mini Mart Daily Sales'],
-        ['Date', 'Invoices', 'Units', 'Revenue', 'Profit'],
-        ...(miniMart.dailySales || []).map((row) => [row.date, row.invoices, row.units, row.revenue, row.profit]),
-        [],
-        ['Mini Mart Expiry Report'],
-        ['Product', 'Variant', 'Expiry Date', 'Days Until Expiry', 'Stock', 'Unit'],
-        ...(miniMart.expiryReport || []).map((row) => [row.name, row.variant, row.expiryDate, row.daysUntilExpiry, row.quantity, row.unit]),
-        [],
-        ['Mini Mart Low Stock Report'],
-        ['Product', 'Variant', 'Current Stock', 'Alert Qty', 'Unit'],
-        ...(miniMart.lowStockReport || []).map((row) => [row.name, row.variant, row.quantity, row.minAlertQuantity, row.unit]),
-        [],
-        ['Mini Mart Supplier Purchase Report'],
-        ['Supplier Code', 'Supplier', 'Receipts', 'Amount'],
-        ...(miniMart.supplierPurchaseReport || []).map((row) => [row.supplierCode, row.supplierName, row.receiptCount, row.amount]),
-        [],
-        ['Mini Mart Profit Report'],
-        ['Revenue', miniMart.profitReport?.revenue || 0],
-        ['Cost', miniMart.profitReport?.cost || 0],
-        ['Profit', miniMart.profitReport?.profit || 0],
-        ['Margin %', miniMart.profitReport?.margin || 0],
-      ] : []),
-      [],
-      ['Staff Performance'],
-      ['Staff', 'Invoices', 'Units', 'Revenue', 'Profit'],
-      ...(data.staff || []).map((row) => [row.name, row.invoices, row.units, row.revenue, row.profit]),
     ];
-    const blob = new Blob([rows.map((row) => row.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><table>${rows.map((row) => `<tr>${row.map((cell) => `<td>${excelCell(cell)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `mahar-pos-report-${fromDate}-${toDate}.csv`;
+    anchor.download = `daily-close-summary-${dailyCloseReport.period || closePeriod}-${dailyCloseReport.from || fromDate}-to-${dailyCloseReport.to || toDate}.xls`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
 
   return <section className="reports-page">
-    <div className="reports-page-heading reports-page-actions-only">
-      <div className="reports-heading-actions">
-        <button type="button" onClick={load} disabled={loading}><RefreshCw size={18} /> Refresh</button>
-        <button type="button" className="primary" onClick={exportCsv} disabled={!data}><Download size={18} /> Export CSV</button>
-      </div>
-    </div>
-
-    <div className="reports-period-bar">
-      <div className="reports-preset-buttons">
-        <button type="button" onClick={() => setPreset('today', setFromDate, setToDate)}>Today</button>
-        <button type="button" onClick={() => setPreset('7d', setFromDate, setToDate)}>7 Days</button>
-        <button type="button" onClick={() => setPreset('30d', setFromDate, setToDate)}>30 Days</button>
-        <button type="button" onClick={() => setPreset('month', setFromDate, setToDate)}>This Month</button>
-      </div>
-      <label><CalendarDays size={17} /><input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
-      <span>to</span>
-      <label><CalendarDays size={17} /><input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
-      {data?.period ? <small>{data.period.days} days compared with previous period</small> : null}
-    </div>
-
     {message ? <div className="reports-message">{message}</div> : null}
 
     <div className="reports-summary-grid">
@@ -228,6 +174,7 @@ export default function ReportsWorkspace({ onNavigate }) {
           <button type="button" className={closePeriod === 'daily' ? 'active' : ''} onClick={() => setClosePeriod('daily')}>Daily</button>
           <button type="button" className={closePeriod === 'monthly' ? 'active' : ''} onClick={() => setClosePeriod('monthly')}>Monthly</button>
           <button type="button" className={closePeriod === 'yearly' ? 'active' : ''} onClick={() => setClosePeriod('yearly')}>Yearly</button>
+          <button type="button" className="export" onClick={exportDailyCloseExcel} disabled={!dailyCloseReport.rows?.length}><Download size={16} /> Export to Excel</button>
         </div>
       </header>
       <div className="reports-close-total-grid">
@@ -240,7 +187,7 @@ export default function ReportsWorkspace({ onNavigate }) {
         <table className="reports-table reports-close-table">
           <thead>
             <tr>
-              <th rowSpan="2">Period</th>
+              <th rowSpan="2">{closePeriodLabel}</th>
               <th colSpan="7">INCOME များ</th>
               <th colSpan="6">Expense များ</th>
               <th rowSpan="2">Net Profit</th>
@@ -263,7 +210,7 @@ export default function ReportsWorkspace({ onNavigate }) {
             </tr>
           </thead>
           <tbody>
-            {(dailyCloseReport.rows || []).map((row) => (
+            {closeVisibleRows.map((row) => (
               <tr key={row.bucket}>
                 <td><b>{row.bucket}</b><small>{row.saleCount || 0} sales</small></td>
                 <td>{money(row.salePosIncome)}</td>
@@ -286,6 +233,14 @@ export default function ReportsWorkspace({ onNavigate }) {
             {!dailyCloseReport.rows?.length ? <tr><td colSpan="16"><div className="reports-empty">No Daily Close summary data in this date range.</div></td></tr> : null}
           </tbody>
         </table>
+      </div>
+      <div className="reports-close-pagination">
+        <span>Showing {closeVisibleRows.length} of {closeRows.length} · 10 item per page</span>
+        <div>
+          <button type="button" disabled={closePage <= 1} onClick={() => setClosePage((value) => Math.max(1, value - 1))}>Previous</button>
+          <b>Page {closePage} / {closeTotalPages}</b>
+          <button type="button" disabled={closePage >= closeTotalPages} onClick={() => setClosePage((value) => Math.min(closeTotalPages, value + 1))}>Next</button>
+        </div>
       </div>
     </section>
 
@@ -321,10 +276,10 @@ export default function ReportsWorkspace({ onNavigate }) {
 
     <div className="reports-secondary-grid">
       <section className="reports-card">
-        <header><div><b>Top Products</b><small>Ranked by revenue</small></div><PackageSearch size={21} /></header>
+        <header><div><b>Top Products</b><small>ရောင်းအားကောင်းဆုံး 10 ခု</small></div><PackageSearch size={21} /></header>
         <div className="reports-table-wrap"><table className="reports-table"><thead><tr><th>Product</th><th>Qty</th><th>Revenue</th><th>Profit</th></tr></thead><tbody>
-          {(data?.topProducts || []).map((row) => <tr key={`${row.name}-${row.variant}`}><td><b>{row.name}</b><small>{row.variant || row.category}</small><div className="reports-product-bar"><i style={{ width: `${row.revenue / maxProductRevenue * 100}%` }} /></div></td><td>{row.quantity}</td><td>{money(row.revenue)}</td><td className="positive">{money(row.profit)}</td></tr>)}
-          {!data?.topProducts?.length ? <tr><td colSpan="4"><div className="reports-empty">No product sales.</div></td></tr> : null}
+          {topProductRows.map((row) => <tr key={`${row.name}-${row.variant}`}><td><b>{row.name}</b><small>{row.variant || row.category}</small><div className="reports-product-bar"><i style={{ width: `${row.revenue / maxProductRevenue * 100}%` }} /></div></td><td>{row.quantity}</td><td>{money(row.revenue)}</td><td className="positive">{money(row.profit)}</td></tr>)}
+          {!topProductRows.length ? <tr><td colSpan="4"><div className="reports-empty">No product sales.</div></td></tr> : null}
         </tbody></table></div>
       </section>
 
