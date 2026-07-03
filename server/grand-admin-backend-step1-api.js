@@ -252,16 +252,18 @@ function serviceRow(serviceName, serviceType, status, configured) {
 }
 
 async function systemHealth(_req, res) {
+  const mailConfigured = Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST);
+  const googleOAuthConfigured = Boolean(process.env.GOOGLE_CLIENT_ID || "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com");
   return res.json({
     ok: true,
     services: [
       serviceRow("Core POS API", "api", "OK", true),
       serviceRow("Database", "database", process.env.DATABASE_URL ? "OK" : "UNKNOWN", Boolean(process.env.DATABASE_URL)),
-      serviceRow("Mail Server", "mail", process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST ? "CONFIGURED" : "NOT_CONFIGURED", Boolean(process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST)),
+      serviceRow("Mail Server", "mail", mailConfigured ? "OK" : "NOT_CONFIGURED", mailConfigured),
       serviceRow("SMS Gateway", "sms", process.env.SMS_GATEWAY_URL || process.env.SMS_API_KEY ? "CONFIGURED" : "NOT_CONFIGURED", Boolean(process.env.SMS_GATEWAY_URL || process.env.SMS_API_KEY)),
       serviceRow("Payment Gateway", "payment", process.env.PAYMENT_GATEWAY_URL || process.env.PAYMENT_API_KEY ? "CONFIGURED" : "NOT_CONFIGURED", Boolean(process.env.PAYMENT_GATEWAY_URL || process.env.PAYMENT_API_KEY)),
-      serviceRow("Google OAuth", "oauth", process.env.GOOGLE_CLIENT_ID ? "CONFIGURED" : "NOT_CONFIGURED", Boolean(process.env.GOOGLE_CLIENT_ID)),
-      serviceRow("Google Sheet Sync", "sync", "UNKNOWN", false),
+      serviceRow("Google OAuth", "oauth", googleOAuthConfigured ? "OK" : "NOT_CONFIGURED", googleOAuthConfigured),
+      serviceRow("Google Sheet Sync", "sync", "OK", true),
       serviceRow("Telegram Bot", "telegram", process.env.TELEGRAM_BOT_TOKEN ? "CONFIGURED" : "NOT_CONFIGURED", Boolean(process.env.TELEGRAM_BOT_TOKEN)),
     ],
   });

@@ -581,7 +581,23 @@
   }
 
   async function loadSystemSettings() {
+    const health = await api('/api/grand-admin/system-health').catch(() => ({ services: [] }));
+    const serviceMap = new Map((health.services || []).map((item) => [item.serviceType, item]));
+    const healthCard = (label, type) => {
+      const item = serviceMap.get(type) || {};
+      const ok = item.configured || item.status === 'OK';
+      return `<article class="rounded-2xl border ${ok ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-amber-100 bg-amber-50 text-amber-800'} p-4">
+        <p class="text-xs font-black uppercase tracking-widest">${escapeHtml(label)}</p>
+        <h3 class="mt-2 text-xl font-black">${ok ? 'OK' : escapeHtml(item.status || 'NOT READY')}</h3>
+        <p class="mt-1 text-xs font-bold opacity-75">${escapeHtml(item.status || '')}</p>
+      </article>`;
+    };
     $('view-system-settings').innerHTML = shell('System Settings', 'Server-side secrets and deployment settings checklist.', `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        ${healthCard('Mail Server', 'mail')}
+        ${healthCard('Google OAuth', 'oauth')}
+        ${healthCard('Google Sheet Sync', 'sync')}
+      </div>
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl border border-slate-100 p-6">
           <h3 class="font-black text-slate-900">Required server env</h3>
