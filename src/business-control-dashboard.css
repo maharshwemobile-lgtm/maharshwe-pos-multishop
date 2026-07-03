@@ -204,16 +204,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 7px;
+  font-size: 6.5px;
   font-weight: 450;
   line-height: 1;
   color: var(--app-muted, #68776f);
 }
 .bc-metric-copy .bc-metric-breakdown em b {
   flex: 0 0 auto;
-  color: var(--app-muted, #68776f);
-  font-size: 7px;
-  font-weight: 550;
+  color: var(--app-text, #10241a);
+  font-size: 9px;
+  font-weight: 850;
   line-height: 1;
 }
 
