@@ -30,7 +30,7 @@
 .reports-close-total-grid span{display:block;color:#64748b;font-size:12px}
 .reports-close-total-grid b{display:block;margin-top:4px;font-size:17px}
 .reports-wide-table-wrap{max-width:100%;overflow:auto}
-.reports-close-table{min-width:1580px}
+.reports-close-table{min-width:2050px}
 .reports-close-table th{text-align:center;white-space:nowrap}
 .reports-close-table td{white-space:nowrap;text-align:right}
 .reports-close-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1}

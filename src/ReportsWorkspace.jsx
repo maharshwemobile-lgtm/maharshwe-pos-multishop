@@ -132,7 +132,7 @@ export default function ReportsWorkspace({ onNavigate }) {
       ['Net Profit', dailyCloseReport.totals?.netProfit || 0],
       [],
       [`${closePeriodMeta.name} Transactions`, dailyCloseReport.period || closePeriod],
-      [closePeriodMeta.bucket, 'Sale POS Income', 'Service POS Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Income Total', 'Sale POS Cost', 'Service POS Cost', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Expense Total', 'Net Profit', 'Closed Days'],
+      [closePeriodMeta.bucket, 'Sale POS Income', 'Service POS Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Other Other Income', 'Other Income Subtotal', 'Income Total', 'Sale POS Cost', 'Service POS Cost', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Other Other Expense', 'Other Expense Subtotal', 'Expense Total', 'Net Profit', 'Closed Days'],
       ...(dailyCloseReport.rows || []).map((row) => [
         row.bucket,
         row.salePosIncome,
@@ -141,12 +141,16 @@ export default function ReportsWorkspace({ onNavigate }) {
         row.otherSaleIncome,
         row.otherServiceIncome,
         row.otherTopupIncome,
+        row.otherOtherIncome,
+        row.otherIncomeSubtotal,
         row.incomeTotal,
         row.salePosExpense,
         row.servicePosExpense,
         row.otherSaleExpense,
         row.otherServiceExpense,
         row.otherTopupExpense,
+        row.otherOtherExpense,
+        row.otherExpenseSubtotal,
         row.expenseTotal,
         row.netProfit,
         row.closedDays,
@@ -206,8 +210,8 @@ export default function ReportsWorkspace({ onNavigate }) {
           <thead>
             <tr>
               <th rowSpan="2">{closePeriodMeta.bucket}</th>
-              <th colSpan="7">INCOME များ</th>
-              <th colSpan="6">Expense များ</th>
+              <th colSpan="9">INCOME များ</th>
+              <th colSpan="8">Expense များ</th>
               <th rowSpan="2">Net Profit</th>
               <th rowSpan="2">Closed</th>
             </tr>
@@ -218,12 +222,16 @@ export default function ReportsWorkspace({ onNavigate }) {
               <th>Other Sale ဝင်ငွေ</th>
               <th>Other Service ဝင်ငွေ</th>
               <th>Other ငွေဖြည့်ကဒ် ဝင်ငွေ</th>
+              <th>Other အခြား ဝင်ငွေ</th>
+              <th>Other ဝင်ငွေ စုစုပေါင်း</th>
               <th>Total</th>
               <th>Sale POS Cost</th>
               <th>Service POS Cost</th>
               <th>Other Sale အထွက်</th>
               <th>Other Service အထွက်</th>
               <th>Other ငွေဖြည့်ကဒ် အထွက်</th>
+              <th>Other အခြား ထွက်ငွေ</th>
+              <th>Other ထွက်ငွေ စုစုပေါင်း</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -237,18 +245,22 @@ export default function ReportsWorkspace({ onNavigate }) {
                 <td>{money(row.otherSaleIncome)}</td>
                 <td>{money(row.otherServiceIncome)}</td>
                 <td>{money(row.otherTopupIncome)}</td>
+                <td>{money(row.otherOtherIncome)}</td>
+                <td><strong className="positive">{money(row.otherIncomeSubtotal)}</strong></td>
                 <td><strong className="positive">{money(row.incomeTotal)}</strong></td>
                 <td>{money(row.salePosExpense)}</td>
                 <td>{money(row.servicePosExpense)}</td>
                 <td>{money(row.otherSaleExpense)}</td>
                 <td>{money(row.otherServiceExpense)}</td>
                 <td>{money(row.otherTopupExpense)}</td>
+                <td>{money(row.otherOtherExpense)}</td>
+                <td><strong className="negative">{money(row.otherExpenseSubtotal)}</strong></td>
                 <td><strong className="negative">{money(row.expenseTotal)}</strong></td>
                 <td><strong className={Number(row.netProfit || 0) >= 0 ? 'positive' : 'negative'}>{money(row.netProfit)}</strong></td>
                 <td>{Number(row.closedDays || 0) > 0 ? <CheckCircle2 size={17} /> : '-'}</td>
               </tr>
             ))}
-            {!dailyCloseReport.rows?.length ? <tr><td colSpan="16"><div className="reports-empty">No Daily Close summary data in this date range.</div></td></tr> : null}
+            {!dailyCloseReport.rows?.length ? <tr><td colSpan="20"><div className="reports-empty">No Daily Close summary data in this date range.</div></td></tr> : null}
           </tbody>
         </table>
       </div>

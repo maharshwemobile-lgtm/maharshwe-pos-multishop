@@ -31,6 +31,7 @@ const DEFAULT_INCOME_CATEGORIES = [
   'အခြား Service ဝင်ငွေ',
   'အခြား အရောင်းပိုင် ဝင်ငွေ',
   'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ',
+  'အခြား အခြား ဝင်ငွေ',
 ];
 
 async function ensureDefaultIncomeCategories(shopId, userId) {

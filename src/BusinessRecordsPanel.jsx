@@ -26,11 +26,13 @@ const DEFAULT_INCOME_OPTIONS = [
   { name: 'အခြား Service ဝင်ငွေ', value: 'အခြား Service ဝင်ငွေ' },
   { name: 'အခြား အရောင်းပိုင် ဝင်ငွေ', value: 'အခြား အရောင်းပိုင် ဝင်ငွေ' },
   { name: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ', value: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ' },
+  { name: 'အခြား အခြား ဝင်ငွေ', value: 'အခြား အခြား ဝင်ငွေ' },
 ];
 const DEFAULT_EXPENSE_OPTIONS = [
   'အခြား Service ထွက်ငွေ',
   'အခြား အရောင်းပိုင်း ထွက်ငွေ',
   'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
+  'အခြား အခြား ထွက်ငွေ',
 ];
 const DEFAULT_INCOME_CATEGORY = DEFAULT_INCOME_OPTIONS[0].value;
 const DEFAULT_EXPENSE_CATEGORY = DEFAULT_EXPENSE_OPTIONS[0];

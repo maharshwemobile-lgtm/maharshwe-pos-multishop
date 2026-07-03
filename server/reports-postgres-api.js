@@ -98,12 +98,14 @@ const OTHER_INCOME_CATEGORY_KEYS = {
   otherServiceIncome: 'အခြား Service ဝင်ငွေ',
   otherSaleIncome: 'အခြား အရောင်းပိုင် ဝင်ငွေ',
   otherTopupIncome: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ',
+  otherOtherIncome: 'အခြား အခြား ဝင်ငွေ',
 };
 
 const OTHER_EXPENSE_CATEGORY_KEYS = {
   otherServiceExpense: 'အခြား Service ထွက်ငွေ',
   otherSaleExpense: 'အခြား အရောင်းပိုင်း ထွက်ငွေ',
   otherTopupExpense: 'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
+  otherOtherExpense: 'အခြား အခြား ထွက်ငွေ',
 };
 
 function closePeriod(value) {
@@ -133,9 +135,13 @@ function emptyCloseRow(bucket) {
     otherSaleIncome: 0,
     otherServiceIncome: 0,
     otherTopupIncome: 0,
+    otherOtherIncome: 0,
+    otherIncomeSubtotal: 0,
     otherSaleExpense: 0,
     otherServiceExpense: 0,
     otherTopupExpense: 0,
+    otherOtherExpense: 0,
+    otherExpenseSubtotal: 0,
     incomeTotal: 0,
     expenseTotal: 0,
     netProfit: 0,
@@ -223,7 +229,8 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
       `SELECT ${recordBucket} AS bucket,
               COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceIncome",
               COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleIncome",
-              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupIncome"
+              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupIncome",
+              COALESCE(SUM(CASE WHEN category=$7 THEN amount ELSE 0 END),0) AS "otherOtherIncome"
          FROM business_other_income
         WHERE shop_id=$1::uuid
           AND income_date >= $2::date
@@ -235,12 +242,14 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
       OTHER_INCOME_CATEGORY_KEYS.otherServiceIncome,
       OTHER_INCOME_CATEGORY_KEYS.otherSaleIncome,
       OTHER_INCOME_CATEGORY_KEYS.otherTopupIncome,
+      OTHER_INCOME_CATEGORY_KEYS.otherOtherIncome,
     ).catch(() => []),
     prisma.$queryRawUnsafe(
       `SELECT ${expenseBucket} AS bucket,
               COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceExpense",
               COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleExpense",
-              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupExpense"
+              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupExpense",
+              COALESCE(SUM(CASE WHEN category=$7 THEN amount ELSE 0 END),0) AS "otherOtherExpense"
          FROM business_expenses
         WHERE shop_id=$1::uuid
           AND expense_date >= $2::date
@@ -252,6 +261,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
       OTHER_EXPENSE_CATEGORY_KEYS.otherServiceExpense,
       OTHER_EXPENSE_CATEGORY_KEYS.otherSaleExpense,
       OTHER_EXPENSE_CATEGORY_KEYS.otherTopupExpense,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherOtherExpense,
     ).catch(() => []),
     prisma.$queryRawUnsafe(
       `SELECT ${closeBucket} AS bucket,
@@ -287,11 +297,13 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     row.otherSaleIncome = round(raw.otherSaleIncome);
     row.otherServiceIncome = round(raw.otherServiceIncome);
     row.otherTopupIncome = round(raw.otherTopupIncome);
+    row.otherOtherIncome = round(raw.otherOtherIncome);
   });
   mergeCloseRows(map, expenseRows, (row, raw) => {
     row.otherSaleExpense = round(raw.otherSaleExpense);
     row.otherServiceExpense = round(raw.otherServiceExpense);
     row.otherTopupExpense = round(raw.otherTopupExpense);
+    row.otherOtherExpense = round(raw.otherOtherExpense);
   });
   mergeCloseRows(map, closingRows, (row, raw) => {
     row.closedDays = Number(raw.closedDays || 0);
@@ -300,12 +312,14 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
 
   const rows = [...map.values()]
     .map((row) => {
-      const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee
-        + row.otherSaleIncome + row.otherServiceIncome + row.otherTopupIncome;
-      const expenseTotal = row.salePosExpense + row.servicePosExpense
-        + row.otherSaleExpense + row.otherServiceExpense + row.otherTopupExpense;
+      const otherIncomeSubtotal = row.otherSaleIncome + row.otherServiceIncome + row.otherTopupIncome + row.otherOtherIncome;
+      const otherExpenseSubtotal = row.otherSaleExpense + row.otherServiceExpense + row.otherTopupExpense + row.otherOtherExpense;
+      const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee + otherIncomeSubtotal;
+      const expenseTotal = row.salePosExpense + row.servicePosExpense + otherExpenseSubtotal;
       return {
         ...row,
+        otherIncomeSubtotal: round(otherIncomeSubtotal),
+        otherExpenseSubtotal: round(otherExpenseSubtotal),
         incomeTotal: round(incomeTotal),
         expenseTotal: round(expenseTotal),
         netProfit: round(incomeTotal - expenseTotal),
@@ -328,9 +342,13 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     otherSaleIncome: 0,
     otherServiceIncome: 0,
     otherTopupIncome: 0,
+    otherOtherIncome: 0,
+    otherIncomeSubtotal: 0,
     otherSaleExpense: 0,
     otherServiceExpense: 0,
     otherTopupExpense: 0,
+    otherOtherExpense: 0,
+    otherExpenseSubtotal: 0,
     incomeTotal: 0,
     expenseTotal: 0,
     netProfit: 0,
