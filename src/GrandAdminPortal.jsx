@@ -214,8 +214,6 @@ export default function GrandAdminPortal() {
         <HealthPill label="SMS Gateway" item={overview?.health?.thirdParty?.smsGateway} />
         <HealthPill label="Payment Gateway" item={overview?.health?.thirdParty?.paymentGateway} />
         <HealthPill label="Mail Server" item={overview?.health?.thirdParty?.mailServer} />
-        <HealthPill label="Google OAuth" item={overview?.health?.thirdParty?.googleOAuth} />
-        <HealthPill label="Google Sheet Sync" item={overview?.health?.thirdParty?.googleSheetSync} />
       </section>
 
       <section className="grand-card">
@@ -242,11 +240,7 @@ export default function GrandAdminPortal() {
                 <tr key={shop.id}>
                   <td><b>{shop.name}</b><span>{shop.tenantId} · {shop.slug}</span></td>
                   <td>{shop.businessType}</td>
-                  <td>
-                    <i className={statusTone(shop.subscription?.status)}>{shop.subscription?.planLabel || shop.subscription?.status || '-'}</i>
-                    <span>{shop.subscription?.planType ? `Type: ${shop.subscription.planType}` : 'Type: unknown'}</span>
-                    <span>{shop.subscription?.endsAt ? `Ends ${dateText(shop.subscription.endsAt)}` : '-'}</span>
-                  </td>
+                  <td><i className={statusTone(shop.subscription?.status)}>{shop.subscription?.status || '-'}</i><span>{shop.subscription?.endsAt ? `Ends ${dateText(shop.subscription.endsAt)}` : '-'}</span></td>
                   <td><span>{shop.metrics.users} users · {shop.metrics.products} products</span><span>{shop.metrics.sales} sales</span></td>
                   <td><i className={shop.adminPortalEnabled ? 'green' : 'red'}>{shop.adminPortalEnabled ? 'Enabled' : 'Disabled'}</i></td>
                   <td><i className={shop.active ? 'green' : 'red'}>{shop.active ? 'Active' : 'Suspended'}</i></td>
