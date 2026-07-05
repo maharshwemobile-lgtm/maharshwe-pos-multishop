@@ -85,7 +85,8 @@ function buildProductReports(activeSales) {
   return {
     topProducts: [...products.values()]
       .map((row) => ({ ...row, revenue: round(row.revenue), profit: round(row.profit) }))
-      .sort((a, b) => b.revenue - a.revenue)
+      .filter((row) => Number(row.quantity || 0) > 0)
+      .sort((a, b) => Number(b.quantity || 0) - Number(a.quantity || 0) || Number(b.revenue || 0) - Number(a.revenue || 0))
       .slice(0, 10),
     categories: [...categories.values()]
       .map((row) => ({ ...row, revenue: round(row.revenue), profit: round(row.profit) }))

@@ -15,7 +15,7 @@ import {
 import { apiFetch, clearSession, getSession } from './phase2Api';
 import './price-discount-page.css';
 
-const LIMIT = 200;
+const LIMIT = 10;
 
 function money(value) {
   const amount = Number(value || 0);

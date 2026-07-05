@@ -326,14 +326,15 @@ function attachPushNotificationsApi(app) {
 
   app.get('/api/notifications', ...access, wrap(async (req, res) => {
     const limit = Math.min(50, Math.max(1, Number.parseInt(req.query.limit || '20', 10) || 20));
+    const where = { shopId: req.auth.shopId, userId: req.auth.userId, eventType: 'ADMIN_POS_WEB_PUSH' };
     const [notifications, unreadCount] = await Promise.all([
       prisma.appNotification.findMany({
-        where: { shopId: req.auth.shopId, userId: req.auth.userId },
+        where,
         orderBy: { createdAt: 'desc' },
         take: limit,
       }),
       prisma.appNotification.count({
-        where: { shopId: req.auth.shopId, userId: req.auth.userId, isRead: false },
+        where: { ...where, isRead: false },
       }),
     ]);
     res.json({
