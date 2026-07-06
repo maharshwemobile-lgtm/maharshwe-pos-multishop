@@ -5,9 +5,6 @@ const { requireAuth, requireShopUser, requireWritableSubscription } = require('.
 
 const DATASETS = {
   remittances: 'Remittances',
-  'money-service': 'MoneyService',
-  billers: 'Billers',
-  'biller-transactions': 'Biller Transactions',
   'sale-history': 'Sale History',
   'other-income': 'Other Income',
   'service-income': 'Service Income',
@@ -15,7 +12,6 @@ const DATASETS = {
   stock: 'STOCK',
   'user-audit': 'User audit',
   'repair-records': 'Repair Records',
-  'daily-report': 'Daily Report',
 };
 
 const GOOGLE_HOSTS = new Set(['script.google.com', 'script.googleusercontent.com']);

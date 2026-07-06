@@ -4,9 +4,6 @@ const { requireAuth, requireShopUser } = require('./auth-api');
 
 const DATASETS = {
   remittances: { tab: 'Remittances' },
-  'money-service': { tab: 'MoneyService' },
-  billers: { tab: 'Billers' },
-  'biller-transactions': { tab: 'Biller Transactions' },
   'sale-history': { tab: 'Sale History' },
   'other-income': { tab: 'Other Income' },
   'service-income': { tab: 'Service Income' },
@@ -14,7 +11,6 @@ const DATASETS = {
   'daily-closing': { tab: 'Daily Closing' },
   stock: { tab: 'STOCK' },
   'user-audit': { tab: 'User audit' },
-  'daily-report': { tab: 'Daily Report' },
 };
 
 const SERVICE_PREFIX = '__SERVICE_INCOME__:';
