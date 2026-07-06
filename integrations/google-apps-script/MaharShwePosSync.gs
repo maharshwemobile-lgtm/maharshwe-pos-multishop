@@ -1,12 +1,18 @@
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
+  ['money-service', 'MoneyService'],
+  ['billers', 'Billers'],
+  ['biller-transactions', 'Biller Transactions'],
   ['sale-history', 'Sale History'],
   ['other-income', 'Other Income'],
   ['service-income', 'Service Income'],
   ['expense', 'Expense'],
   ['stock', 'STOCK'],
   ['user-audit', 'User audit'],
+  ['repair-records', 'Repair Records'],
+  ['daily-report', 'Daily Report'],
 ];
+const POS_AUTO_RECORD_TAB = 'AUTO RECORD';
 
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -21,7 +27,7 @@ function doGet(e) {
   return jsonResponse({
     ok: true,
     service: 'MaharShwe POS Google Sheet Sync',
-    tabs: POS_DATASETS.map(function (item) { return item[1]; }),
+    tabs: POS_DATASETS.map(function (item) { return item[1]; }).concat([POS_AUTO_RECORD_TAB]),
     time: new Date().toISOString(),
   });
 }
@@ -39,6 +45,7 @@ function doPost(e) {
     }
     const row = liveEventRow(payload);
     upsertRow(tabName, 'Event ID', row);
+    upsertRow(POS_AUTO_RECORD_TAB, 'Event ID', Object.assign({ 'Source Tab': tabName }, row));
     return jsonResponse({ ok: true, tab: tabName, eventId: payload.eventId });
   } catch (error) {
     return jsonResponse({ ok: false, message: error.message || String(error) });
@@ -49,6 +56,7 @@ function setupMaharShwePosSync() {
   POS_DATASETS.forEach(function (item) {
     ensureSheet(item[1]);
   });
+  ensureSheet(POS_AUTO_RECORD_TAB);
   return 'Tabs ready';
 }
 
