@@ -326,10 +326,14 @@ function BillerSaleForm({ settings, onSaved }) {
   const biller = billers.find((item) => item.id === form.billerId);
   const isAtomEload = /atom\s*eload/i.test(biller?.name || '');
   const amountValue = Number(form.amount || 0);
-  const adjustPercent = Number(form.balanceAdjustPercent || 0);
-  const balanceEffectAmount = form.balanceAdjustMode === 'ADD_PERCENT'
+  const defaultAdjustMode = biller?.saleAdjustMode || 'NONE';
+  const defaultAdjustPercent = Number(biller?.saleAdjustPercent || 0);
+  const useCustomAdjust = form.balanceAdjustMode !== 'NONE' || Number(form.balanceAdjustPercent || 0) > 0;
+  const effectiveAdjustMode = useCustomAdjust ? form.balanceAdjustMode : defaultAdjustMode;
+  const adjustPercent = useCustomAdjust ? Number(form.balanceAdjustPercent || 0) : defaultAdjustPercent;
+  const balanceEffectAmount = effectiveAdjustMode === 'ADD_PERCENT'
     ? amountValue * (1 + adjustPercent / 100)
-    : form.balanceAdjustMode === 'SUBTRACT_PERCENT'
+    : effectiveAdjustMode === 'SUBTRACT_PERCENT'
       ? amountValue * (1 - adjustPercent / 100)
       : amountValue;
   const currentBalance = Number(biller?.currentBalance || 0);
@@ -394,6 +398,9 @@ function BillerSaleForm({ settings, onSaved }) {
       </div>
 
       {isAtomEload ? <div className="msc-message compact">ATOM Eload သည် provider က နောက်မှလာကောက်နိုင်သော အကြွေး flow ဖြစ်လို့ balance မလုံလည်း မှတ်လို့ရပါတယ်။</div> : null}
+      {defaultAdjustMode !== 'NONE' && defaultAdjustPercent > 0 ? <div className="msc-message compact">
+        Formula: {defaultAdjustMode === 'SUBTRACT_PERCENT' ? 'ရောင်းပြီး ပြန်ဝင် %' : 'ပိုလျော့ %'} {defaultAdjustPercent}% · Balance deduct {money(balanceEffectAmount || 0)}
+      </div> : null}
 
       <details className="msc-advanced-panel">
         <summary>Advanced / Optional</summary>
@@ -481,6 +488,9 @@ function BillerAdjustmentForm({ settings, onSaved }) {
   const [form, setForm] = useState({ billerId: '', amount: '', direction: 'ADD', note: '' });
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const biller = billers.find((item) => item.id === form.billerId);
+  const rawAmount = Number(form.amount || 0);
+  const previewBalance = Number(biller?.currentBalance || 0) + (form.direction === 'SUBTRACT' ? -rawAmount : rawAmount);
   useEffect(() => setForm((current) => ({ ...current, billerId: current.billerId || billers[0]?.id || '' })), [billers.length]);
   const submit = async (event) => {
     event.preventDefault();
@@ -493,7 +503,7 @@ function BillerAdjustmentForm({ settings, onSaved }) {
     setBusy(true);
     try {
       await apiFetch('/api/biller-transactions/adjustment', { method: 'POST', body: { billerId: form.billerId, amount, note: form.note } });
-      setMessage('Balance adjusted');
+      setMessage('Balance adjustment သိမ်းပြီးပါပြီ');
       setForm((current) => ({ ...current, amount: '', note: '' }));
       await onSaved?.();
     } catch (error) {
@@ -503,7 +513,7 @@ function BillerAdjustmentForm({ settings, onSaved }) {
     }
   };
   return <section className="msc-clean-card">
-    <header><div><span>BALANCE ADJUST</span><h3>Manual Balance Adjust</h3><p>Balance မှားနေချိန် / provider settlement ပြင်ချိန် note နဲ့ပြင်ပါ။</p></div></header>
+    <header><div><span>BALANCE ADJUST</span><h3>Bill / Eload Balance Adjustment</h3><p>လက်ကျန်မှားနေချိန်၊ provider settlement ပြင်ချိန်မှာ မှတ်ချက်နဲ့ + / - ပြင်ပါ။</p></div></header>
     <form className="msc-clean-form" onSubmit={submit}>
       {message ? <div className="msc-message">{message}</div> : null}
       <div className="msc-form-row">
@@ -514,23 +524,40 @@ function BillerAdjustmentForm({ settings, onSaved }) {
         <label><span>Amount</span><input type="number" min="1" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })}/></label>
         <label><span>Reason / Note *</span><input value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} placeholder="Why adjust?"/></label>
       </div>
+      <div className="msc-total-strip msc-adjust-preview">
+        <div><span>Current Balance</span><b>{money(biller?.currentBalance)}</b></div>
+        <div><span>Adjust</span><b>{form.direction === 'SUBTRACT' ? '-' : '+'}{money(rawAmount)}</b></div>
+        <div><span>After Balance</span><b>{money(previewBalance)}</b></div>
+      </div>
       <footer><button className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} Save Adjust</button></footer>
     </form>
   </section>;
 }
 
-function BillerSetup({ onSaved }) {
-  const [form, setForm] = useState({ name: '', type: 'ELOAD', openingBalance: '' });
+function BillerSetup({ settings, onSaved }) {
+  const billers = (settings?.billers || []).filter((item) => item.isActive !== false);
+  const [form, setForm] = useState({ name: '', type: 'ELOAD', openingBalance: '', saleAdjustMode: 'NONE', saleAdjustPercent: '' });
+  const [formulaDrafts, setFormulaDrafts] = useState({});
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [savingId, setSavingId] = useState('');
+  const formulaKey = billers.map((item) => `${item.id}:${item.saleAdjustMode || 'NONE'}:${item.saleAdjustPercent || 0}`).join('|');
+
+  useEffect(() => {
+    setFormulaDrafts(Object.fromEntries(billers.map((item) => [item.id, {
+      saleAdjustMode: item.saleAdjustMode || 'NONE',
+      saleAdjustPercent: String(item.saleAdjustPercent || ''),
+    }])));
+  }, [formulaKey]);
+
   const submit = async (event) => {
     event.preventDefault();
     setMessage('');
     if (!form.name.trim()) return setMessage('Biller name လိုပါတယ်');
     setBusy(true);
     try {
-      await apiFetch('/api/billers', { method: 'POST', body: { ...form, openingBalance: Number(form.openingBalance || 0) } });
-      setForm({ name: '', type: 'ELOAD', openingBalance: '' });
+      await apiFetch('/api/billers', { method: 'POST', body: { ...form, openingBalance: Number(form.openingBalance || 0), saleAdjustPercent: Number(form.saleAdjustPercent || 0) } });
+      setForm({ name: '', type: 'ELOAD', openingBalance: '', saleAdjustMode: 'NONE', saleAdjustPercent: '' });
       setMessage('Biller created');
       await onSaved?.();
     } catch (error) {
@@ -539,8 +566,31 @@ function BillerSetup({ onSaved }) {
       setBusy(false);
     }
   };
+
+  const updateFormulaDraft = (id, patch) => setFormulaDrafts((current) => ({ ...current, [id]: { ...(current[id] || {}), ...patch } }));
+  const saveFormula = async (biller) => {
+    const draft = formulaDrafts[biller.id] || {};
+    setSavingId(biller.id);
+    setMessage('');
+    try {
+      await apiFetch(`/api/billers/${biller.id}`, {
+        method: 'PUT',
+        body: {
+          saleAdjustMode: draft.saleAdjustMode || 'NONE',
+          saleAdjustPercent: Number(draft.saleAdjustPercent || 0),
+        },
+      });
+      setMessage('Biller formula saved');
+      await onSaved?.();
+    } catch (error) {
+      setMessage(error.message || 'Formula save failed');
+    } finally {
+      setSavingId('');
+    }
+  };
+
   return <section className="msc-clean-card">
-    <header><div><span>BILLER SETUP</span><h3>Create / Manage Billers</h3><p>NearMe, Atom, Mytel, MPT, U9 စသည်တို့ကို tenant အလိုက်သီးသန့်ထားပါသည်။</p></div></header>
+    <header><div><span>BILLER SETUP</span><h3>Create / Manage Billers</h3><p>Biller တစ်ခုချင်းစီအတွက် ရောင်းပြီး ပြန်ဝင် % formula ကို သီးသန့်ထားနိုင်ပါတယ်။ ဥပမာ 1000 ရောင်းရင် 1 ကျပ် ပြန်ဝင် = 0.1%။</p></div></header>
     <form className="msc-clean-form" onSubmit={submit}>
       {message ? <div className="msc-message">{message}</div> : null}
       <div className="msc-form-row">
@@ -549,9 +599,28 @@ function BillerSetup({ onSaved }) {
       </div>
       <div className="msc-form-row">
         <label><span>Opening Balance</span><input type="number" min="0" value={form.openingBalance} onChange={(event) => setForm({ ...form, openingBalance: event.target.value })}/></label>
+        <label><span>Default Formula</span><select value={form.saleAdjustMode} onChange={(event) => setForm({ ...form, saleAdjustMode: event.target.value })}><option value="NONE">No formula</option><option value="SUBTRACT_PERCENT">ရောင်းပြီး ပြန်ဝင် %</option><option value="ADD_PERCENT">ပိုလျော့ %</option></select></label>
+      </div>
+      <div className="msc-form-row">
+        <label><span>Formula %</span><input type="number" min="0" max="100" step="0.0001" value={form.saleAdjustPercent} onChange={(event) => setForm({ ...form, saleAdjustPercent: event.target.value })} placeholder="0.1"/></label>
         <button type="submit" className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <Plus size={17}/>} Add Biller</button>
       </div>
     </form>
+    <div className="msc-biller-formula-list">
+      {billers.map((item) => {
+        const draft = formulaDrafts[item.id] || { saleAdjustMode: item.saleAdjustMode || 'NONE', saleAdjustPercent: String(item.saleAdjustPercent || '') };
+        return <article key={item.id}>
+          <span><b>{item.name}</b><small>{item.type} · Balance {money(item.currentBalance)}</small></span>
+          <select value={draft.saleAdjustMode} onChange={(event) => updateFormulaDraft(item.id, { saleAdjustMode: event.target.value })}>
+            <option value="NONE">No formula</option>
+            <option value="SUBTRACT_PERCENT">ရောင်းပြီး ပြန်ဝင် %</option>
+            <option value="ADD_PERCENT">ပိုလျော့ %</option>
+          </select>
+          <input type="number" min="0" max="100" step="0.0001" value={draft.saleAdjustPercent} onChange={(event) => updateFormulaDraft(item.id, { saleAdjustPercent: event.target.value })} placeholder="0.1"/>
+          <button type="button" onClick={() => saveFormula(item)} disabled={savingId === item.id}>{savingId === item.id ? <Loader2 className="msc-spin" size={15}/> : <CheckCircle2 size={15}/>} Save</button>
+        </article>;
+      })}
+    </div>
   </section>;
 }
 
@@ -575,7 +644,7 @@ function BillerBalanceReport({ settings, onSaved }) {
   useEffect(() => { load(); }, [from, to, settings.billers?.length]);
   return <div className="msc-clean-layout">
     <div className="msc-clean-side">
-      <BillerSetup onSaved={async () => { await onSaved?.(); await load(); }}/>
+      <BillerSetup settings={settings} onSaved={async () => { await onSaved?.(); await load(); }}/>
       <BillerAdjustmentForm settings={settings} onSaved={async () => { await onSaved?.(); await load(); }}/>
       <FinanceCatalogSettingsV23 embedded/>
     </div>
@@ -683,6 +752,7 @@ export default function MoneyServiceCenterV23() {
       <button className={view === 'transfer' ? 'active' : ''} onClick={() => setView('transfer')}><CircleDollarSign size={18}/><span>Money Transfer</span></button>
       <button className={view === 'bill' ? 'active' : ''} onClick={() => setView('bill')}><Banknote size={18}/><span>Bill / Eload</span></button>
       <button className={view === 'refill' ? 'active' : ''} onClick={() => setView('refill')}><ArrowDownToLine size={18}/><span>Refill</span></button>
+      <button className={view === 'adjust' ? 'active' : ''} onClick={() => setView('adjust')}><Plus size={18}/><span>Adjust</span></button>
       <button className={view === 'balance' ? 'active' : ''} onClick={() => setView('balance')}><History size={18}/><span>Balance Report</span></button>
     </nav>
 
@@ -724,6 +794,7 @@ export default function MoneyServiceCenterV23() {
 
     {view === 'bill' ? <BillerSaleForm settings={settings} onSaved={refresh}/> : null}
     {view === 'refill' ? <BillerRefillForm settings={settings} onSaved={refresh}/> : null}
+    {view === 'adjust' ? <BillerAdjustmentForm settings={settings} onSaved={refresh}/> : null}
     {view === 'balance' ? <BillerBalanceReport settings={settings} onSaved={refresh}/> : null}
     {detailId ? <TransactionDetail id={detailId} settings={settings} onClose={() => setDetailId('')} onChanged={refresh}/> : null}
   </section>;
