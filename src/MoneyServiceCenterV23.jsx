@@ -331,6 +331,11 @@ function BillerSaleForm({ settings, onSaved }) {
   const useCustomAdjust = form.balanceAdjustMode !== 'NONE' || Number(form.balanceAdjustPercent || 0) > 0;
   const effectiveAdjustMode = useCustomAdjust ? form.balanceAdjustMode : defaultAdjustMode;
   const adjustPercent = useCustomAdjust ? Number(form.balanceAdjustPercent || 0) : defaultAdjustPercent;
+  const effectMultiplier = effectiveAdjustMode === 'ADD_PERCENT'
+    ? (1 + adjustPercent / 100)
+    : effectiveAdjustMode === 'SUBTRACT_PERCENT'
+      ? Math.max(0, 1 - adjustPercent / 100)
+      : 1;
   const balanceEffectAmount = effectiveAdjustMode === 'ADD_PERCENT'
     ? amountValue * (1 + adjustPercent / 100)
     : effectiveAdjustMode === 'SUBTRACT_PERCENT'
@@ -338,10 +343,19 @@ function BillerSaleForm({ settings, onSaved }) {
       : amountValue;
   const currentBalance = Number(biller?.currentBalance || 0);
   const afterBalance = currentBalance - Number(balanceEffectAmount || 0);
+  const afterBalanceValue = form.amount === '' ? '' : String(Math.round((afterBalance + Number.EPSILON) * 100) / 100);
 
   useEffect(() => setForm((current) => ({ ...current, billerId: current.billerId || billers[0]?.id || '', paymentAccountId: current.paymentAccountId || accounts[0]?.id || '' })), [billers.length, accounts.length]);
 
   const chooseBiller = (billerId) => setForm((current) => ({ ...current, billerId }));
+  const fillAmountFromAfterBalance = (value) => {
+    if (value === '') return setForm((current) => ({ ...current, amount: '' }));
+    const desiredAfterBalance = Number(value);
+    if (!Number.isFinite(desiredAfterBalance)) return;
+    const multiplier = effectMultiplier > 0 ? effectMultiplier : 1;
+    const calculatedAmount = Math.max(0, (currentBalance - desiredAfterBalance) / multiplier);
+    setForm((current) => ({ ...current, amount: String(Math.round((calculatedAmount + Number.EPSILON) * 100) / 100) }));
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -394,7 +408,10 @@ function BillerSaleForm({ settings, onSaved }) {
           <input type="number" min="1" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} placeholder="0" autoFocus />
         </label>
         <div className="msc-biller-live-card current"><span>ယခင်လက်ကျန်</span><b>{money(currentBalance)}</b></div>
-        <div className={`msc-biller-live-card ${afterBalance < 0 ? 'negative' : 'after'}`}><span>ရောင်းပြီး ကျန်လက်ကျန်</span><b>{money(afterBalance)}</b></div>
+        <label className={`msc-biller-live-card editable ${afterBalance < 0 ? 'negative' : 'after'}`}>
+          <span>ရောင်းပြီး ကျန်လက်ကျန်</span>
+          <input type="number" value={afterBalanceValue} onChange={(event) => fillAmountFromAfterBalance(event.target.value)} placeholder={money(currentBalance)} />
+        </label>
       </div>
 
       {isAtomEload ? <div className="msc-message compact">ATOM Eload သည် provider က နောက်မှလာကောက်နိုင်သော အကြွေး flow ဖြစ်လို့ balance မလုံလည်း မှတ်လို့ရပါတယ်။</div> : null}
