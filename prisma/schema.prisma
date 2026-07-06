@@ -85,6 +85,20 @@ enum MoneyFeeMode {
   MANUAL
 }
 
+enum BillerType {
+  TOPUP_CARD
+  ELOAD
+  BILL_PAYMENT
+  OTHER
+}
+
+enum BillerTransactionType {
+  OPENING
+  REFILL
+  SOLD
+  ADJUSTMENT
+}
+
 model Shop {
   id           String   @id @default(uuid()) @db.Uuid
   slug         String   @unique
@@ -105,6 +119,8 @@ model Shop {
   inventoryBalances        InventoryBalance[]
   moneyAccounts            MoneyAccount[]
   moneyServiceTransactions MoneyServiceTransaction[]
+  billers                  Biller[]
+  billerTransactions       BillerTransaction[]
   payments                 Payment[]
   productVariants          ProductVariant[]
   products                 Product[]
@@ -165,6 +181,7 @@ model User {
   appNotifications         AppNotification[]          @relation("AppNotificationUser")
   auditLogs                AuditLog[]                 @relation("AuditLogUser")
   moneyServiceTransactions MoneyServiceTransaction[]  @relation("MoneyServiceUser")
+  billerTransactions       BillerTransaction[]        @relation("BillerTransactionStaff")
   pushTokens               UserPushToken[]            @relation("UserPushTokens")
   repairPayments           RepairPayment[]            @relation("RepairPaymentReceiver")
   repairStatusChanges      RepairStatusHistory[]      @relation("RepairStatusChanger")
@@ -501,6 +518,7 @@ model MoneyAccount {
   updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   serviceTransactions MoneyServiceTransaction[]
+  billerTransactions  BillerTransaction[]
   shop                Shop                      @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, name])
@@ -539,6 +557,63 @@ model MoneyServiceTransaction {
   @@index([shopId, type, createdAt])
   @@index([shopId, userId, createdAt])
   @@map("money_service_transactions")
+}
+
+model Biller {
+  id             String   @id @default(uuid()) @db.Uuid
+  shopId         String   @map("shop_id") @db.Uuid
+  branchId       String?  @map("branch_id") @db.Uuid
+  name           String
+  type           BillerType
+  openingBalance Decimal  @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  currentBalance Decimal  @default(0) @map("current_balance") @db.Decimal(14, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  shop         Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  transactions BillerTransaction[]
+
+  @@unique([shopId, branchId, name])
+  @@index([shopId, isActive])
+  @@index([shopId, branchId])
+  @@map("billers")
+}
+
+model BillerTransaction {
+  id              String                @id @default(uuid()) @db.Uuid
+  shopId          String                @map("shop_id") @db.Uuid
+  branchId        String?               @map("branch_id") @db.Uuid
+  billerId        String                @map("biller_id") @db.Uuid
+  transactionType BillerTransactionType @map("transaction_type")
+  amount          Decimal               @db.Decimal(14, 2)
+  balanceEffectAmount Decimal           @default(0) @map("balance_effect_amount") @db.Decimal(14, 2)
+  balanceAdjustMode String?             @map("balance_adjust_mode")
+  balanceAdjustPercent Decimal          @default(0) @map("balance_adjust_percent") @db.Decimal(8, 4)
+  costAmount      Decimal?              @map("cost_amount") @db.Decimal(14, 2)
+  profitAmount    Decimal?              @map("profit_amount") @db.Decimal(14, 2)
+  customerPhone   String?               @map("customer_phone")
+  paymentMethod   String?               @map("payment_method")
+  paymentAccountId String?              @map("payment_account_id") @db.Uuid
+  paymentStatus   PaymentStatus         @default(PAID) @map("payment_status")
+  paidAmount      Decimal               @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  dueAmount       Decimal               @default(0) @map("due_amount") @db.Decimal(14, 2)
+  dueDate         DateTime?             @map("due_date") @db.Date
+  staffId         String?               @map("staff_id") @db.Uuid
+  note            String?
+  transactionDate DateTime              @default(now()) @map("transaction_date") @db.Timestamptz(6)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  biller         Biller        @relation(fields: [billerId], references: [id], onDelete: Cascade)
+  shop           Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  paymentAccount MoneyAccount? @relation(fields: [paymentAccountId], references: [id], onDelete: SetNull)
+  staff          User?         @relation("BillerTransactionStaff", fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, branchId, transactionDate])
+  @@index([shopId, billerId, transactionDate])
+  @@index([shopId, transactionType, transactionDate])
+  @@map("biller_transactions")
 }
 
 model DailyClosing {

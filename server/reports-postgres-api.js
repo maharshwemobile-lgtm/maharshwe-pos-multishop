@@ -132,6 +132,12 @@ function emptyCloseRow(bucket) {
     servicePosExpense: 0,
     servicePosProfit: 0,
     moneyServiceFee: 0,
+    billOpeningBalance: 0,
+    billRefill: 0,
+    billSoldVolume: 0,
+    billAdjustment: 0,
+    billClosingBalance: 0,
+    billEloadProfit: 0,
     otherSaleIncome: 0,
     otherServiceIncome: 0,
     otherTopupIncome: 0,
@@ -170,6 +176,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
   const saleBucket = bucketExpression(saleDate, period);
   const repairBucket = bucketExpression(repairDate, period);
   const serviceBucket = bucketExpression(serviceDate, period);
+  const billerBucket = bucketExpression('transaction_date', period);
   const recordBucket = bucketExpression('income_date', period);
   const expenseBucket = bucketExpression('expense_date', period);
   const closeBucket = bucketExpression('closing_date', period);
@@ -178,6 +185,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     saleRows,
     repairRows,
     moneyServiceRows,
+    billerRows,
     incomeRows,
     expenseRows,
     closingRows,
@@ -221,6 +229,26 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
           AND ${serviceDate} >= $2::date
           AND ${serviceDate} <= $3::date
         GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `WITH scoped AS (
+          SELECT ${billerBucket} AS bucket, transaction_type, amount, COALESCE(profit_amount,0) AS profit_amount
+            FROM biller_transactions
+           WHERE shop_id=$1::uuid
+             AND transaction_date::date >= $2::date
+             AND transaction_date::date <= $3::date
+        )
+        SELECT bucket,
+               0::numeric AS "billOpeningBalance",
+               COALESCE(SUM(amount) FILTER (WHERE transaction_type='REFILL'),0) AS "billRefill",
+               COALESCE(SUM(amount) FILTER (WHERE transaction_type='SOLD'),0) AS "billSoldVolume",
+               COALESCE(SUM(COALESCE(NULLIF(balance_effect_amount,0),amount)) FILTER (WHERE transaction_type='SOLD'),0) AS "billBalanceSold",
+               COALESCE(SUM(amount) FILTER (WHERE transaction_type='ADJUSTMENT'),0) AS "billAdjustment",
+               COALESCE(SUM(profit_amount) FILTER (WHERE transaction_type='SOLD'),0) AS "billEloadProfit"
+          FROM scoped GROUP BY 1`,
       shopId,
       fromDay,
       toDay,
@@ -293,6 +321,14 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
   mergeCloseRows(map, moneyServiceRows, (row, raw) => {
     row.moneyServiceFee = round(raw.moneyServiceFee);
   });
+  mergeCloseRows(map, billerRows, (row, raw) => {
+    row.billOpeningBalance = round(raw.billOpeningBalance);
+    row.billRefill = round(raw.billRefill);
+    row.billSoldVolume = round(raw.billSoldVolume);
+    row.billBalanceSold = round(raw.billBalanceSold);
+    row.billAdjustment = round(raw.billAdjustment);
+    row.billEloadProfit = round(raw.billEloadProfit);
+  });
   mergeCloseRows(map, incomeRows, (row, raw) => {
     row.otherSaleIncome = round(raw.otherSaleIncome);
     row.otherServiceIncome = round(raw.otherServiceIncome);
@@ -312,12 +348,18 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
 
   const rows = [...map.values()]
     .map((row) => {
+      const billTopupIncome = Number(row.billSoldVolume || 0);
+      row.otherTopupIncome = round(Number(row.otherTopupIncome || 0) + billTopupIncome);
       const otherIncomeSubtotal = row.otherSaleIncome + row.otherServiceIncome + row.otherTopupIncome + row.otherOtherIncome;
       const otherExpenseSubtotal = row.otherSaleExpense + row.otherServiceExpense + row.otherTopupExpense + row.otherOtherExpense;
-      const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee + otherIncomeSubtotal;
+      const billOpeningBalance = row.billOpeningBalance;
+      const billClosingBalance = billOpeningBalance + row.billRefill - (row.billBalanceSold || row.billSoldVolume) + row.billAdjustment;
+      const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee + row.billEloadProfit + otherIncomeSubtotal;
       const expenseTotal = row.salePosExpense + row.servicePosExpense + otherExpenseSubtotal;
       return {
         ...row,
+        billOpeningBalance: round(billOpeningBalance),
+        billClosingBalance: round(billClosingBalance),
         otherIncomeSubtotal: round(otherIncomeSubtotal),
         otherExpenseSubtotal: round(otherExpenseSubtotal),
         incomeTotal: round(incomeTotal),
@@ -339,6 +381,13 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     servicePosExpense: 0,
     servicePosProfit: 0,
     moneyServiceFee: 0,
+    billOpeningBalance: 0,
+    billRefill: 0,
+    billSoldVolume: 0,
+    billBalanceSold: 0,
+    billAdjustment: 0,
+    billClosingBalance: 0,
+    billEloadProfit: 0,
     otherSaleIncome: 0,
     otherServiceIncome: 0,
     otherTopupIncome: 0,
@@ -427,6 +476,18 @@ async function buildMiniMartReports({ shopId, from, to, activeSales, inventory, 
 
 function attachReportsPostgresApi(app) {
   const access = [requireAuth, requireShopUser, requireReportAccess];
+
+  app.get('/api/reports/daily-close', ...access, async (req, res) => {
+    try {
+      const date = String(req.query.date || new Date().toISOString().slice(0, 10)).slice(0, 10);
+      const start = new Date(`${date}T00:00:00.000+06:30`);
+      const end = new Date(`${date}T23:59:59.999+06:30`);
+      const report = await buildDailyCloseReport(req.auth.shopId, start, end, 'daily');
+      return res.json({ ok: true, date, report });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Daily close report failed' });
+    }
+  });
 
   app.get('/api/reports/business', ...access, async (req, res) => {
     try {

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { apiFetch, clearSession, getSession } from '../phase2Api';
 import ProjectUserAccessSettings from './ProjectUserAccessSettings.jsx';
+import GoogleSheetIntegrationSettingsV23 from './GoogleSheetIntegrationSettingsV23.jsx';
 import './project-settings.css';
 
 const SECTIONS = [
@@ -25,7 +26,7 @@ const SECTIONS = [
   { id: 'slip', label: 'Slip Information', icon: FileText },
   { id: 'business', label: 'Shop Info', icon: Building2 },
   { id: 'appearance', label: 'Appearance & Language', icon: Languages },
-  { id: 'api', label: 'API Configure', icon: Code2 },
+  { id: 'api', label: 'Google Sheet', icon: Code2 },
   { id: 'users', label: 'Users & Access', icon: UserCog },
   { id: 'system', label: 'System Settings', icon: Database },
 ];
@@ -287,17 +288,7 @@ export default function ProjectSettingsCenter() {
           <div className="ps-actions"><button className="ps-primary" type="button" onClick={() => save('appearance')} disabled={!canManage || saving === 'appearance'}>{saving === 'appearance' ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>} Save Appearance</button></div>
         </section> : null}
 
-        {data && section === 'api' ? <section className="ps-panel">
-          <SectionHeader icon={Code2} title="API Configure" description="Google Sheet GET / POST links only. Tokens and passwords are not displayed."/>
-          <div className="ps-form">
-            <Toggle label="Enable Google Sheet API" checked={forms.api.googleSheets.enabled} onChange={(value) => updateForm('api', { googleSheets: { ...forms.api.googleSheets, enabled: value } })} disabled={!canManage}/>
-            <Field label="GET URL"><input value={forms.api.googleSheets.getUrl || ''} onChange={(event) => updateForm('api', { googleSheets: { ...forms.api.googleSheets, getUrl: event.target.value } })} placeholder="https://script.google.com/macros/s/.../exec?action=list" disabled={!canManage}/></Field>
-            <Field label="POST URL"><input value={forms.api.googleSheets.postUrl || ''} onChange={(event) => updateForm('api', { googleSheets: { ...forms.api.googleSheets, postUrl: event.target.value } })} placeholder="https://script.google.com/macros/s/.../exec" disabled={!canManage}/></Field>
-            <Field label="Timeout (milliseconds)"><input type="number" min="1000" max="60000" value={forms.api.googleSheets.timeoutMs} onChange={(event) => updateForm('api', { googleSheets: { ...forms.api.googleSheets, timeoutMs: Number(event.target.value) } })} disabled={!canManage}/></Field>
-            {forms.api.googleSheets.lastTest ? <div className={`ps-api-result ${forms.api.googleSheets.lastTest.ok ? 'good' : 'bad'}`}><b>{forms.api.googleSheets.lastTest.method} · HTTP {forms.api.googleSheets.lastTest.status || 0}</b><span>{forms.api.googleSheets.lastTest.ok ? 'Connection successful' : 'Connection failed'}</span><small>{forms.api.googleSheets.lastTest.testedAt}</small><pre>{forms.api.googleSheets.lastTest.responsePreview || '-'}</pre></div> : null}
-          </div>
-          <div className="ps-actions split"><button className="ps-primary" type="button" onClick={() => save('api')} disabled={!canManage || saving === 'api'}>{saving === 'api' ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>} Save API</button><button type="button" onClick={() => testApi('GET')} disabled={!canManage || apiTesting}><Globe2 size={18}/> {apiTesting === 'GET' ? 'Testing...' : 'Test GET'}</button><button type="button" onClick={() => testApi('POST')} disabled={!canManage || apiTesting}><Code2 size={18}/> {apiTesting === 'POST' ? 'Testing...' : 'Test POST'}</button></div>
-        </section> : null}
+        {data && section === 'api' ? <GoogleSheetIntegrationSettingsV23/> : null}
 
         {data && section === 'users' ? <ProjectUserAccessSettings notify={notify}/> : null}
 

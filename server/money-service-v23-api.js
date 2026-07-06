@@ -37,6 +37,37 @@ const collectSchema = z.object({
   paymentMethodId: uuid.optional().nullable(),
   note: z.string().trim().max(300).optional(),
 });
+const billerSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  type: z.enum(['TOPUP_CARD', 'ELOAD', 'BILL_PAYMENT', 'OTHER']).default('OTHER'),
+  branchId: z.union([uuid, z.literal(''), z.null()]).optional(),
+  openingBalance: z.coerce.number().min(0).max(100000000000).default(0),
+  currentBalance: z.coerce.number().min(0).max(100000000000).optional(),
+  isActive: z.boolean().optional(),
+});
+const billerPatchSchema = billerSchema.partial();
+const billerTxBaseSchema = z.object({
+  billerId: uuid,
+  branchId: z.union([uuid, z.literal(''), z.null()]).optional(),
+  amount: z.coerce.number().positive().max(100000000000),
+  balanceAdjustMode: z.enum(['NONE', 'ADD_PERCENT', 'SUBTRACT_PERCENT']).default('NONE'),
+  balanceAdjustPercent: z.coerce.number().min(0).max(100).optional().default(0),
+  costAmount: z.coerce.number().min(0).max(100000000000).optional().nullable(),
+  profitAmount: z.coerce.number().min(-100000000000).max(100000000000).optional().nullable(),
+  customerPhone: z.string().trim().max(80).optional().nullable(),
+  paymentMethod: z.string().trim().max(80).optional().nullable(),
+  paymentAccountId: z.union([uuid, z.literal(''), z.null()]).optional(),
+  paymentTiming: z.enum(['PAID_NOW', 'PAY_LATER', 'PARTIAL']).default('PAID_NOW'),
+  paidAmount: z.coerce.number().min(0).max(100000000000).optional(),
+  dueDate: z.string().trim().max(20).optional().nullable(),
+  staffId: z.union([uuid, z.literal(''), z.null()]).optional(),
+  note: z.string().trim().max(500).optional().nullable(),
+  transactionDate: z.string().trim().max(40).optional().nullable(),
+});
+const adjustmentSchema = billerTxBaseSchema.extend({
+  amount: z.coerce.number().min(-100000000000).max(100000000000).refine((value) => value !== 0, 'Adjustment amount cannot be zero'),
+  note: z.string().trim().min(1).max(500),
+});
 
 let schemaPromise;
 
@@ -50,7 +81,9 @@ function parse(schema, value) {
   return result.data;
 }
 const number = (value) => Number(value || 0);
+const round = (value) => Math.round((number(value) + Number.EPSILON) * 100) / 100;
 const clean = (value, max = 500) => String(value ?? '').trim().slice(0, max) || null;
+const maybeUuid = (value) => value || null;
 function field(row, ...names) {
   for (const name of names) {
     if (row?.[name] !== undefined) return row[name];
@@ -91,6 +124,42 @@ async function ensureSchema() {
         payment_method_id UUID REFERENCES finance_payment_methods(id) ON DELETE SET NULL,account_id UUID REFERENCES money_accounts(id) ON DELETE SET NULL,
         amount NUMERIC(14,2) NOT NULL,note TEXT,collected_by_id UUID REFERENCES users(id) ON DELETE SET NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
+      await tx.$executeRawUnsafe(`DO $$ BEGIN
+        CREATE TYPE "BillerType" AS ENUM ('TOPUP_CARD','ELOAD','BILL_PAYMENT','OTHER');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+      await tx.$executeRawUnsafe(`DO $$ BEGIN
+        CREATE TYPE "BillerTransactionType" AS ENUM ('OPENING','REFILL','SOLD','ADJUSTMENT');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+      await tx.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS billers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,branch_id UUID NULL,
+        name TEXT NOT NULL,type "BillerType" NOT NULL DEFAULT 'OTHER',opening_balance NUMERIC(14,2) NOT NULL DEFAULT 0,
+        current_balance NUMERIC(14,2) NOT NULL DEFAULT 0,is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+      await tx.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS billers_shop_branch_name_unique ON billers(shop_id,COALESCE(branch_id,'00000000-0000-0000-0000-000000000000'::uuid),LOWER(name))`);
+      await tx.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS billers_shop_active_idx ON billers(shop_id,is_active)`);
+      await tx.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS biller_transactions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,branch_id UUID NULL,
+        biller_id UUID NOT NULL REFERENCES billers(id) ON DELETE CASCADE,transaction_type "BillerTransactionType" NOT NULL,
+        amount NUMERIC(14,2) NOT NULL,cost_amount NUMERIC(14,2) NULL,profit_amount NUMERIC(14,2) NULL,
+        customer_phone TEXT NULL,payment_method TEXT NULL,payment_account_id UUID NULL REFERENCES money_accounts(id) ON DELETE SET NULL,
+        staff_id UUID NULL REFERENCES users(id) ON DELETE SET NULL,note TEXT NULL,transaction_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+      await tx.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS biller_transactions_shop_branch_date_idx ON biller_transactions(shop_id,branch_id,transaction_date)`);
+      await tx.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS biller_transactions_shop_biller_date_idx ON biller_transactions(shop_id,biller_id,transaction_date)`);
+      await tx.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS biller_transactions_shop_type_date_idx ON biller_transactions(shop_id,transaction_type,transaction_date)`);
+      await tx.$executeRawUnsafe(`ALTER TABLE biller_transactions
+        ADD COLUMN IF NOT EXISTS payment_status "PaymentStatus" NOT NULL DEFAULT 'PAID',
+        ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS due_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS due_date DATE NULL`);
+      await tx.$executeRawUnsafe(`ALTER TABLE biller_transactions
+        ADD COLUMN IF NOT EXISTS balance_effect_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS balance_adjust_mode TEXT NULL,
+        ADD COLUMN IF NOT EXISTS balance_adjust_percent NUMERIC(8,4) NOT NULL DEFAULT 0`);
+      await tx.$executeRawUnsafe(`UPDATE biller_transactions SET balance_effect_amount=amount WHERE balance_effect_amount=0`);
+      await tx.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS biller_transactions_shop_payment_status_idx ON biller_transactions(shop_id,payment_status,due_date,transaction_date DESC)`);
       return true;
     }, { maxWait: 5000, timeout: 30000 }).catch((error) => { schemaPromise = null; throw error; });
   }
@@ -116,6 +185,101 @@ async function seedPaymentMethods(shopId, userId) {
       VALUES($1::uuid,$2::uuid,$3,$4,$5,$6::uuid,$7,TRUE,$8,$9::uuid,NOW(),NOW()) ON CONFLICT DO NOTHING`,
       crypto.randomUUID(), shopId, account.name, code, account.type === 'CASH' ? 'CASH' : 'WALLET', account.id, account.type !== 'CASH', accounts.indexOf(account) + 1, userId);
   }
+}
+
+const DEFAULT_BILLERS = [
+  ['NearMe', 'TOPUP_CARD'],
+  ['Atom', 'TOPUP_CARD'],
+  ['Mytel', 'TOPUP_CARD'],
+  ['MPT', 'TOPUP_CARD'],
+  ['U9', 'TOPUP_CARD'],
+  ['MPT Eload', 'ELOAD'],
+  ['Mytel Eload', 'ELOAD'],
+  ['ATOM ELOAD', 'ELOAD'],
+];
+
+async function seedBillers(shopId) {
+  await ensureSchema();
+  const existing = await prisma.$queryRawUnsafe('SELECT COUNT(*)::int AS count FROM billers WHERE shop_id=$1::uuid', shopId);
+  if (Number(existing[0]?.count || 0) > 0) return;
+  for (const [name, type] of DEFAULT_BILLERS) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO billers(id,shop_id,name,type,opening_balance,current_balance,is_active,created_at,updated_at)
+       VALUES($1::uuid,$2::uuid,$3,$4::"BillerType",0,0,TRUE,NOW(),NOW()) ON CONFLICT DO NOTHING`,
+      crypto.randomUUID(), shopId, name, type,
+    );
+  }
+}
+
+function billerJson(row) {
+  return {
+    id: row.id,
+    branchId: row.branchId || row.branchid || null,
+    name: row.name,
+    type: row.type,
+    openingBalance: number(row.openingBalance ?? row.openingbalance),
+    currentBalance: number(row.currentBalance ?? row.currentbalance),
+    isActive: row.isActive ?? row.isactive ?? true,
+    createdAt: row.createdAt || row.createdat,
+    updatedAt: row.updatedAt || row.updatedat,
+  };
+}
+
+function billerTxJson(row) {
+  return {
+    id: row.id,
+    billerId: row.billerId || row.billerid,
+    billerName: row.billerName || row.billername || '',
+    billerType: row.billerType || row.billertype || '',
+    branchId: row.branchId || row.branchid || null,
+    transactionType: row.transactionType || row.transactiontype,
+    amount: number(row.amount),
+    balanceEffectAmount: number(row.balanceEffectAmount ?? row.balanceeffectamount ?? row.amount),
+    balanceAdjustMode: row.balanceAdjustMode || row.balanceadjustmode || 'NONE',
+    balanceAdjustPercent: number(row.balanceAdjustPercent ?? row.balanceadjustpercent),
+    costAmount: row.costAmount === null || row.costamount === null ? null : number(row.costAmount ?? row.costamount),
+    profitAmount: row.profitAmount === null || row.profitamount === null ? null : number(row.profitAmount ?? row.profitamount),
+    customerPhone: row.customerPhone || row.customerphone || '',
+    paymentMethod: row.paymentMethod || row.paymentmethod || '',
+    paymentAccountId: row.paymentAccountId || row.paymentaccountid || null,
+    paymentAccountName: row.paymentAccountName || row.paymentaccountname || '',
+    paymentStatus: row.paymentStatus || row.paymentstatus || 'PAID',
+    paidAmount: number(row.paidAmount ?? row.paidamount),
+    dueAmount: number(row.dueAmount ?? row.dueamount),
+    dueDate: row.dueDate || row.duedate || null,
+    staffId: row.staffId || row.staffid || null,
+    staffName: row.staffName || row.staffname || row.staffUsername || row.staffusername || '',
+    note: row.note || '',
+    transactionDate: row.transactionDate || row.transactiondate,
+    createdAt: row.createdAt || row.createdat,
+  };
+}
+
+async function findBillerForUpdate(tx, shopId, billerId) {
+  const rows = await tx.$queryRawUnsafe(
+    `SELECT id,shop_id AS "shopId",branch_id AS "branchId",name,type,opening_balance AS "openingBalance",current_balance AS "currentBalance",is_active AS "isActive"
+       FROM billers WHERE id=$1::uuid AND shop_id=$2::uuid FOR UPDATE`,
+    billerId, shopId,
+  );
+  const biller = rows[0];
+  if (!biller) throw new ApiError(404, 'Biller not found');
+  if (biller.isActive === false) throw new ApiError(409, 'Biller is inactive');
+  return biller;
+}
+
+async function applyPaymentAccountChange(tx, shopId, accountId, delta) {
+  if (!accountId || Math.abs(delta) <= 0.005) return null;
+  const account = await tx.moneyAccount.findFirst({ where: { id: accountId, shopId, active: true } });
+  if (!account) throw new ApiError(404, 'Payment account not found');
+  const after = number(account.balance) + delta;
+  if (after < -0.005) throw new ApiError(409, `${account.name} balance is not enough`);
+  await tx.moneyAccount.update({ where: { id: account.id }, data: { balance: after } });
+  return { id: account.id, name: account.name, before: number(account.balance), after };
+}
+
+function txDate(input) {
+  const date = input ? new Date(input) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date() : date;
 }
 
 async function getRates(shopId) {
@@ -173,11 +337,15 @@ function attachMoneyServiceV23Api(app) {
   app.get('/api/money-service/settings', ...read, async (req, res) => {
     try {
       await seedPaymentMethods(req.auth.shopId, req.auth.userId);
-      const [rates, methods, accounts] = await Promise.all([
+      await seedBillers(req.auth.shopId);
+      const [rates, methods, accounts, billers, staff] = await Promise.all([
         getRates(req.auth.shopId),
         prisma.$queryRawUnsafe(`SELECT m.id,m.name,m.code,m.kind,m.account_id AS "accountId",m.supports_money_service AS "supportsMoneyService",m.active,a.type AS "accountType",a.balance
           FROM finance_payment_methods m LEFT JOIN money_accounts a ON a.id=m.account_id WHERE m.shop_id=$1::uuid ORDER BY m.supports_money_service DESC,m.sort_order,LOWER(m.name)`, req.auth.shopId),
         prisma.moneyAccount.findMany({ where: { shopId: req.auth.shopId, active: true }, select: { id: true, name: true, type: true, balance: true }, orderBy: [{ type: 'asc' }, { name: 'asc' }] }),
+        prisma.$queryRawUnsafe(`SELECT id,branch_id AS "branchId",name,type,opening_balance AS "openingBalance",current_balance AS "currentBalance",is_active AS "isActive",created_at AS "createdAt",updated_at AS "updatedAt"
+          FROM billers WHERE shop_id=$1::uuid ORDER BY is_active DESC,LOWER(name)`, req.auth.shopId),
+        prisma.user.findMany({ where: { shopId: req.auth.shopId, active: true }, select: { id: true, name: true, username: true, role: true }, orderBy: { name: 'asc' } }),
       ]);
       return res.json({
         ok: true,
@@ -190,6 +358,8 @@ function attachMoneyServiceV23Api(app) {
           balance: number(row.balance),
         })),
         accounts: accounts.map((row) => ({ ...row, balance: number(row.balance) })),
+        billers: billers.map(billerJson),
+        staff: staff.map((row) => ({ ...row, label: row.name || row.username })),
       });
     } catch (error) { return res.status(500).json({ ok: false, message: error.message || 'Money Service settings failed' }); }
   });
@@ -246,6 +416,158 @@ function attachMoneyServiceV23Api(app) {
       const payments = await prisma.$queryRawUnsafe(`SELECT p.id,p.amount,p.note,p.created_at AS "createdAt",a.name AS "accountName",m.name AS "paymentMethodName",u.name AS "collectedBy" FROM money_service_payments_v2 p LEFT JOIN money_accounts a ON a.id=p.account_id LEFT JOIN finance_payment_methods m ON m.id=p.payment_method_id LEFT JOIN users u ON u.id=p.collected_by_id WHERE p.transaction_id=$1::uuid ORDER BY p.created_at DESC`, id);
       return res.json({ ok: true, transaction: rowJson(rows[0]), payments: payments.map((row) => ({ ...row, amount: number(row.amount) })) });
     } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Transaction detail failed' }); }
+  });
+
+  app.get('/api/billers', ...read, async (req, res) => {
+    try {
+      await seedBillers(req.auth.shopId);
+      const rows = await prisma.$queryRawUnsafe(`SELECT id,branch_id AS "branchId",name,type,opening_balance AS "openingBalance",current_balance AS "currentBalance",is_active AS "isActive",created_at AS "createdAt",updated_at AS "updatedAt"
+        FROM billers WHERE shop_id=$1::uuid ORDER BY is_active DESC,LOWER(name)`, req.auth.shopId);
+      return res.json({ ok: true, billers: rows.map(billerJson) });
+    } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Billers load failed' }); }
+  });
+
+  app.post('/api/billers', ...write, async (req, res) => {
+    try {
+      await ensureSchema();
+      const input = parse(billerSchema, req.body || {});
+      const id = crypto.randomUUID();
+      const currentBalance = input.currentBalance ?? input.openingBalance;
+      await prisma.$executeRawUnsafe(`INSERT INTO billers(id,shop_id,branch_id,name,type,opening_balance,current_balance,is_active,created_at,updated_at)
+        VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5::"BillerType",$6,$7,$8,NOW(),NOW())`,
+        id, req.auth.shopId, maybeUuid(input.branchId), input.name, input.type, input.openingBalance, currentBalance, input.isActive !== false);
+      await audit(req, 'BILLER_CREATED', id, { name: input.name, type: input.type });
+      return res.status(201).json({ ok: true, message: 'Biller created', biller: { id, ...input, currentBalance } });
+    } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller create failed', details: error.details }); }
+  });
+
+  app.put('/api/billers/:id', ...write, async (req, res) => {
+    try {
+      await ensureSchema();
+      const id = parse(uuid, req.params.id);
+      const input = parse(billerPatchSchema, req.body || {});
+      const existing = await prisma.$queryRawUnsafe('SELECT id FROM billers WHERE id=$1::uuid AND shop_id=$2::uuid LIMIT 1', id, req.auth.shopId);
+      if (!existing[0]) throw new ApiError(404, 'Biller not found');
+      await prisma.$executeRawUnsafe(`UPDATE billers SET
+        name=COALESCE($3,name),type=COALESCE($4::"BillerType",type),branch_id=$5::uuid,
+        opening_balance=COALESCE($6,opening_balance),current_balance=COALESCE($7,current_balance),
+        is_active=COALESCE($8,is_active),updated_at=NOW()
+        WHERE id=$1::uuid AND shop_id=$2::uuid`,
+        id, req.auth.shopId, input.name ?? null, input.type ?? null, maybeUuid(input.branchId), input.openingBalance ?? null, input.currentBalance ?? null, input.isActive ?? null);
+      await audit(req, 'BILLER_UPDATED', id, input);
+      return res.json({ ok: true, message: 'Biller updated' });
+    } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller update failed', details: error.details }); }
+  });
+
+  app.delete('/api/billers/:id', ...write, async (req, res) => {
+    try {
+      const id = parse(uuid, req.params.id);
+      const result = await prisma.$executeRawUnsafe('UPDATE billers SET is_active=FALSE,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', id, req.auth.shopId);
+      if (!result) throw new ApiError(404, 'Biller not found');
+      await audit(req, 'BILLER_DEACTIVATED', id, {});
+      return res.json({ ok: true, message: 'Biller deactivated' });
+    } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller deactivate failed' }); }
+  });
+
+  async function createBillerTransaction(req, res, transactionType) {
+    try {
+      await seedBillers(req.auth.shopId);
+      const schema = transactionType === 'ADJUSTMENT' ? adjustmentSchema : billerTxBaseSchema;
+      const input = parse(schema, req.body || {});
+      const id = crypto.randomUUID();
+      const result = await prisma.$transaction(async (tx) => {
+        const biller = await findBillerForUpdate(tx, req.auth.shopId, input.billerId);
+        const current = number(biller.currentBalance);
+        const adjustPercent = transactionType === 'SOLD' ? number(input.balanceAdjustPercent) : 0;
+        const adjustMode = transactionType === 'SOLD' ? (input.balanceAdjustMode || 'NONE') : 'NONE';
+        const effectRaw = adjustMode === 'ADD_PERCENT'
+          ? input.amount * (1 + adjustPercent / 100)
+          : adjustMode === 'SUBTRACT_PERCENT'
+            ? input.amount * (1 - adjustPercent / 100)
+            : input.amount;
+        const balanceEffectAmount = transactionType === 'SOLD' ? round(Math.max(0, effectRaw)) : input.amount;
+        const balanceDelta = transactionType === 'SOLD' ? -balanceEffectAmount : input.amount;
+        const closing = current + balanceDelta;
+        const isProviderCreditBiller = /atom\s*eload/i.test(biller.name || '');
+        if (transactionType === 'SOLD' && closing < -0.005 && !isProviderCreditBiller) throw new ApiError(409, 'Biller balance is not enough');
+        const profit = input.profitAmount ?? (transactionType === 'SOLD' && input.costAmount !== null && input.costAmount !== undefined ? input.amount - number(input.costAmount) : 0);
+        const isCreditSale = transactionType === 'SOLD' && input.paymentTiming === 'PAY_LATER';
+        const paidAmount = transactionType === 'SOLD'
+          ? (isCreditSale ? 0 : input.paymentTiming === 'PARTIAL' ? Math.min(input.amount, number(input.paidAmount)) : input.amount)
+          : 0;
+        const dueAmount = transactionType === 'SOLD' ? Math.max(0, input.amount - paidAmount) : 0;
+        const paymentStatus = dueAmount <= 0.005 ? 'PAID' : paidAmount > 0 ? 'PARTIAL' : 'PENDING';
+        const accountDelta = transactionType === 'SOLD' ? paidAmount : transactionType === 'REFILL' ? -input.amount : 0;
+        const account = await applyPaymentAccountChange(tx, req.auth.shopId, maybeUuid(input.paymentAccountId), accountDelta);
+        await tx.$executeRawUnsafe(`INSERT INTO biller_transactions(id,shop_id,branch_id,biller_id,transaction_type,amount,balance_effect_amount,balance_adjust_mode,balance_adjust_percent,cost_amount,profit_amount,customer_phone,payment_method,payment_account_id,payment_status,paid_amount,due_amount,due_date,staff_id,note,transaction_date,created_at,updated_at)
+          VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::"BillerTransactionType",$6,$7,$8,$9,$10,$11,$12,$13,$14::uuid,$15::"PaymentStatus",$16,$17,$18::date,$19::uuid,$20,$21::timestamptz,NOW(),NOW())`,
+          id, req.auth.shopId, maybeUuid(input.branchId) || biller.branchId || null, biller.id, transactionType, input.amount, balanceEffectAmount, adjustMode, adjustPercent, input.costAmount ?? null, profit,
+          clean(input.customerPhone,80), clean(input.paymentMethod,80), maybeUuid(input.paymentAccountId), paymentStatus, paidAmount, dueAmount, input.dueDate || null, maybeUuid(input.staffId), clean(input.note), txDate(input.transactionDate));
+        if (transactionType === 'OPENING') {
+          await tx.$executeRawUnsafe('UPDATE billers SET opening_balance=opening_balance+$3,current_balance=$4,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, req.auth.shopId, input.amount, closing);
+        } else {
+          await tx.$executeRawUnsafe('UPDATE billers SET current_balance=$3,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, req.auth.shopId, closing);
+        }
+        return { id, billerId: biller.id, billerName: biller.name, transactionType, amount: input.amount, balanceEffectAmount, balanceAdjustMode: adjustMode, balanceAdjustPercent: adjustPercent, profitAmount: profit, paidAmount, dueAmount, paymentStatus, beforeBalance: current, closingBalance: closing, account };
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
+      await audit(req, `BILLER_${transactionType}_CREATED`, id, result);
+      await queueGoogleSheetSync({ shopId: req.auth.shopId, dataset: 'money-service', action: `BILLER_${transactionType}`, entityId: id, payload: result });
+      return res.status(201).json({ ok: true, message: `${transactionType} saved`, transaction: result });
+    } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller transaction failed', details: error.details }); }
+  }
+
+  app.post('/api/biller-transactions/opening', ...write, (req, res) => createBillerTransaction(req, res, 'OPENING'));
+  app.post('/api/biller-transactions/refill', ...write, (req, res) => createBillerTransaction(req, res, 'REFILL'));
+  app.post('/api/biller-transactions/sold', ...write, (req, res) => createBillerTransaction(req, res, 'SOLD'));
+  app.post('/api/biller-transactions/adjustment', ...write, (req, res) => createBillerTransaction(req, res, 'ADJUSTMENT'));
+
+  app.get('/api/biller-transactions', ...read, async (req, res) => {
+    try {
+      await ensureSchema();
+      const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit || '20', 10) || 20));
+      const rows = await prisma.$queryRawUnsafe(`SELECT t.id,t.biller_id AS "billerId",b.name AS "billerName",b.type AS "billerType",t.branch_id AS "branchId",t.transaction_type AS "transactionType",
+        t.amount,t.balance_effect_amount AS "balanceEffectAmount",t.balance_adjust_mode AS "balanceAdjustMode",t.balance_adjust_percent AS "balanceAdjustPercent",
+        t.cost_amount AS "costAmount",t.profit_amount AS "profitAmount",t.customer_phone AS "customerPhone",t.payment_method AS "paymentMethod",
+        t.payment_status AS "paymentStatus",t.paid_amount AS "paidAmount",t.due_amount AS "dueAmount",t.due_date AS "dueDate",
+        t.payment_account_id AS "paymentAccountId",a.name AS "paymentAccountName",t.staff_id AS "staffId",u.name AS "staffName",u.username AS "staffUsername",
+        t.note,t.transaction_date AS "transactionDate",t.created_at AS "createdAt"
+        FROM biller_transactions t JOIN billers b ON b.id=t.biller_id
+        LEFT JOIN money_accounts a ON a.id=t.payment_account_id LEFT JOIN users u ON u.id=t.staff_id
+        WHERE t.shop_id=$1::uuid ORDER BY t.transaction_date DESC LIMIT $2`, req.auth.shopId, limit);
+      return res.json({ ok: true, transactions: rows.map(billerTxJson) });
+    } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller transactions load failed' }); }
+  });
+
+  app.get('/api/reports/biller-balance', ...read, async (req, res) => {
+    try {
+      await seedBillers(req.auth.shopId);
+      const startDate = String(req.query.startDate || new Date().toISOString().slice(0, 10)).slice(0, 10);
+      const endDate = String(req.query.endDate || startDate).slice(0, 10);
+      const rows = await prisma.$queryRawUnsafe(`SELECT b.id,b.name,b.type,
+        (b.opening_balance + COALESCE(SUM(CASE WHEN t.transaction_date::date < $2::date THEN CASE WHEN t.transaction_type IN ('REFILL','ADJUSTMENT') THEN t.amount WHEN t.transaction_type='SOLD' THEN -COALESCE(NULLIF(t.balance_effect_amount,0),t.amount) ELSE 0 END ELSE 0 END),0)) AS "openingBalance",
+        COALESCE(SUM(CASE WHEN t.transaction_type='REFILL' AND t.transaction_date::date BETWEEN $2::date AND $3::date THEN t.amount ELSE 0 END),0) AS refill,
+        COALESCE(SUM(CASE WHEN t.transaction_type='SOLD' AND t.transaction_date::date BETWEEN $2::date AND $3::date THEN t.amount ELSE 0 END),0) AS sold,
+        COALESCE(SUM(CASE WHEN t.transaction_type='SOLD' AND t.transaction_date::date BETWEEN $2::date AND $3::date THEN COALESCE(NULLIF(t.balance_effect_amount,0),t.amount) ELSE 0 END),0) AS "balanceSold",
+        COALESCE(SUM(CASE WHEN t.transaction_type='ADJUSTMENT' AND t.transaction_date::date BETWEEN $2::date AND $3::date THEN t.amount ELSE 0 END),0) AS adjustment,
+        COALESCE(SUM(CASE WHEN t.transaction_type='SOLD' AND t.transaction_date::date BETWEEN $2::date AND $3::date THEN COALESCE(t.profit_amount,0) ELSE 0 END),0) AS profit
+        FROM billers b LEFT JOIN biller_transactions t ON t.biller_id=b.id AND t.shop_id=b.shop_id
+        WHERE b.shop_id=$1::uuid AND b.is_active=TRUE GROUP BY b.id,b.name,b.type,b.opening_balance ORDER BY LOWER(b.name)`,
+        req.auth.shopId, startDate, endDate);
+      const reportRows = rows.map((row) => {
+        const opening = number(row.openingBalance ?? row.openingbalance);
+        const refill = number(row.refill);
+        const sold = number(row.sold);
+        const balanceSold = number(row.balanceSold ?? row.balancesold ?? row.sold);
+        const adjustment = number(row.adjustment);
+        return { id: row.id, billerName: row.name, type: row.type, openingBalance: round(opening), refill: round(refill), sold: round(sold), balanceSold: round(balanceSold), adjustment: round(adjustment), closingBalance: round(opening + refill - balanceSold + adjustment), profit: round(row.profit) };
+      });
+      const totals = reportRows.reduce((acc, row) => {
+        acc.openingBalance += row.openingBalance; acc.refill += row.refill; acc.sold += row.sold; acc.balanceSold += row.balanceSold; acc.adjustment += row.adjustment; acc.closingBalance += row.closingBalance; acc.profit += row.profit;
+        return acc;
+      }, { openingBalance: 0, refill: 0, sold: 0, balanceSold: 0, adjustment: 0, closingBalance: 0, profit: 0 });
+      for (const key of Object.keys(totals)) totals[key] = round(totals[key]);
+      return res.json({ ok: true, startDate, endDate, rows: reportRows, totals });
+    } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller balance report failed' }); }
   });
 
   app.post('/api/money-service/transactions', ...write, async (req, res) => {

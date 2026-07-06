@@ -13,8 +13,8 @@ import {
   FileText,
   History,
   Loader2,
+  Plus,
   Search,
-  Settings2,
   Wallet,
   X,
 } from 'lucide-react';
@@ -43,6 +43,7 @@ const EMPTY = {
 };
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
+const todayDate = () => new Date().toISOString().slice(0, 10);
 const formatDate = (value) => value ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '-';
 const serviceTitle = (mode) => (mode === 'CASH_OUT' ? 'Cash Out' : 'Transfer');
 const paymentText = (status) => ({ PAID: 'Done', PARTIAL: 'Partial', PENDING: 'Pending' }[status] || status || 'Done');
@@ -301,10 +302,302 @@ function TransactionTable({ rows, onOpen }) {
   </section>;
 }
 
+const BILLER_TYPES = [
+  ['TOPUP_CARD', 'Top-up Card'],
+  ['ELOAD', 'Eload'],
+  ['BILL_PAYMENT', 'Bill Payment'],
+  ['OTHER', 'Other'],
+];
+
+function AccountSelect({ accounts, value, onChange, label = 'Payment Account' }) {
+  return <label><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)}>
+    <option value="">No account adjustment</option>
+    {(accounts || []).map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}
+  </select></label>;
+}
+
+function BillerSaleForm({ settings, onSaved }) {
+  const billers = (settings.billers || []).filter((item) => item.isActive !== false);
+  const accounts = settings.accounts || [];
+  const staff = settings.staff || [];
+  const [form, setForm] = useState({ billerId: '', amount: '', balanceAdjustMode: 'NONE', balanceAdjustPercent: '', costAmount: '', profitAmount: '', customerPhone: '', paymentMethod: 'CASH', paymentAccountId: '', paymentTiming: 'PAID_NOW', paidAmount: '', dueDate: '', staffId: '', note: '' });
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const biller = billers.find((item) => item.id === form.billerId);
+  const isAtomEload = /atom\s*eload/i.test(biller?.name || '');
+  const amountValue = Number(form.amount || 0);
+  const adjustPercent = Number(form.balanceAdjustPercent || 0);
+  const balanceEffectAmount = form.balanceAdjustMode === 'ADD_PERCENT'
+    ? amountValue * (1 + adjustPercent / 100)
+    : form.balanceAdjustMode === 'SUBTRACT_PERCENT'
+      ? amountValue * (1 - adjustPercent / 100)
+      : amountValue;
+  const currentBalance = Number(biller?.currentBalance || 0);
+  const afterBalance = currentBalance - Number(balanceEffectAmount || 0);
+
+  useEffect(() => setForm((current) => ({ ...current, billerId: current.billerId || billers[0]?.id || '', paymentAccountId: current.paymentAccountId || accounts[0]?.id || '' })), [billers.length, accounts.length]);
+
+  const chooseBiller = (billerId) => setForm((current) => ({ ...current, billerId }));
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setMessage('');
+    const amount = Number(form.amount || 0);
+    if (!form.billerId) return setMessage('Biller ရွေးပါ');
+    if (amount <= 0) return setMessage('ရောင်းချသည့် ပမာဏ ထည့်ပါ');
+    setBusy(true);
+    try {
+      await apiFetch('/api/biller-transactions/sold', {
+        method: 'POST',
+        body: {
+          ...form,
+          amount,
+          balanceAdjustPercent: Number(form.balanceAdjustPercent || 0),
+          paidAmount: form.paidAmount === '' ? 0 : Number(form.paidAmount),
+          costAmount: form.costAmount === '' ? null : Number(form.costAmount),
+          profitAmount: form.profitAmount === '' ? null : Number(form.profitAmount),
+        },
+      });
+      setMessage('ဘေ / Eload ရောင်းချမှု သိမ်းပြီးပါပြီ');
+      setForm((current) => ({ ...current, amount: '', costAmount: '', profitAmount: '', customerPhone: '', paidAmount: '', dueDate: '', note: '' }));
+      await onSaved?.();
+    } catch (error) {
+      setMessage(error.message || 'Bill / Eload sale failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return <section className="msc-clean-card msc-biller-sale-card">
+    <header><div><span>BILL / ELOAD SALE</span><h3>ဘေ / Eload ရောင်းချမှု</h3><p>ရောင်းချပမာဏနဲ့ ကျန်လက်ကျန်ကို အဓိကပြပါမယ်။ Product Sale ထဲမရောပါ။</p></div></header>
+    <form className="msc-clean-form msc-biller-simple-form" onSubmit={submit}>
+      {message ? <div className="msc-message">{message}</div> : null}
+
+      <div className="msc-biller-pick-grid">
+        {billers.map((item) => {
+          const active = item.id === form.billerId;
+          return <button type="button" key={item.id} className={active ? 'active' : ''} onClick={() => chooseBiller(item.id)}>
+            <span>{item.name}</span>
+            <b>{money(item.currentBalance)}</b>
+            <small>{item.type}</small>
+          </button>;
+        })}
+      </div>
+
+      <div className="msc-biller-main-row">
+        <label className="msc-biller-amount-field">
+          <span>ရောင်းချသည့် ပမာဏ *</span>
+          <input type="number" min="1" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} placeholder="0" autoFocus />
+        </label>
+        <div className="msc-biller-live-card current"><span>ယခင်လက်ကျန်</span><b>{money(currentBalance)}</b></div>
+        <div className={`msc-biller-live-card ${afterBalance < 0 ? 'negative' : 'after'}`}><span>ရောင်းပြီး ကျန်လက်ကျန်</span><b>{money(afterBalance)}</b></div>
+      </div>
+
+      {isAtomEload ? <div className="msc-message compact">ATOM Eload သည် provider က နောက်မှလာကောက်နိုင်သော အကြွေး flow ဖြစ်လို့ balance မလုံလည်း မှတ်လို့ရပါတယ်။</div> : null}
+
+      <details className="msc-advanced-panel">
+        <summary>Advanced / Optional</summary>
+        <div className="msc-payment-line">
+          <label className={form.paymentTiming === 'PAID_NOW' ? 'active' : ''}><input type="radio" checked={form.paymentTiming === 'PAID_NOW'} onChange={() => setForm({ ...form, paymentTiming: 'PAID_NOW', paidAmount: '', dueDate: '' })}/> Paid now</label>
+          <label className={form.paymentTiming === 'PAY_LATER' ? 'active warning' : ''}><input type="radio" checked={form.paymentTiming === 'PAY_LATER'} onChange={() => setForm({ ...form, paymentTiming: 'PAY_LATER', paymentMethod: 'CREDIT', paymentAccountId: '' })}/> Credit / Collect later</label>
+          <label className={form.paymentTiming === 'PARTIAL' ? 'active warning' : ''}><input type="radio" checked={form.paymentTiming === 'PARTIAL'} onChange={() => setForm({ ...form, paymentTiming: 'PARTIAL' })}/> Partial</label>
+        </div>
+        {form.paymentTiming !== 'PAID_NOW' ? <div className="msc-form-row">
+          {form.paymentTiming === 'PARTIAL' ? <label><span>Paid Amount</span><input type="number" min="0" value={form.paidAmount} onChange={(event) => setForm({ ...form, paidAmount: event.target.value })}/></label> : <label><span>Credit Amount</span><input readOnly value={form.amount ? money(form.amount) : ''} placeholder="Amount will become due"/></label>}
+          <label><span>Due Date</span><input type="date" value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })}/></label>
+        </div> : null}
+        <div className="msc-form-row">
+          <label><span>Payment Method</span><input value={form.paymentMethod} onChange={(event) => setForm({ ...form, paymentMethod: event.target.value })} placeholder="Cash / KPay / Wave"/></label>
+          {form.paymentTiming === 'PAY_LATER' ? <label><span>Payment Account</span><input readOnly value="No cash received yet"/></label> : <AccountSelect accounts={accounts} value={form.paymentAccountId} onChange={(value) => setForm({ ...form, paymentAccountId: value })}/>}
+        </div>
+        <div className="msc-form-row">
+          <label><span>Cost Amount</span><input type="number" min="0" value={form.costAmount} onChange={(event) => setForm({ ...form, costAmount: event.target.value })} placeholder="Optional"/></label>
+          <label><span>Profit Amount</span><input type="number" value={form.profitAmount} onChange={(event) => setForm({ ...form, profitAmount: event.target.value })} placeholder="Auto from amount - cost or 0"/></label>
+        </div>
+        <div className="msc-form-row">
+          <label><span>Balance Adjust Rule</span><select value={form.balanceAdjustMode} onChange={(event) => setForm({ ...form, balanceAdjustMode: event.target.value })}>
+            <option value="NONE">No % adjust</option>
+            <option value="SUBTRACT_PERCENT">Balance deduct less by %</option>
+            <option value="ADD_PERCENT">Balance deduct more by %</option>
+          </select></label>
+          <label><span>Adjust %</span><input type="number" min="0" max="100" step="0.01" value={form.balanceAdjustPercent} onChange={(event) => setForm({ ...form, balanceAdjustPercent: event.target.value })} placeholder="0"/></label>
+        </div>
+        <div className="msc-form-row">
+          <label><span>Staff</span><select value={form.staffId} onChange={(event) => setForm({ ...form, staffId: event.target.value })}><option value="">No staff</option>{staff.map((item) => <option value={item.id} key={item.id}>{item.label || item.name || item.username}</option>)}</select></label>
+          <label><span>Phone / Reference</span><input value={form.customerPhone} onChange={(event) => setForm({ ...form, customerPhone: event.target.value })} placeholder="Optional"/></label>
+        </div>
+        <label className="msc-single-field"><span>Note</span><input value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })}/></label>
+      </details>
+
+      <footer><button className="primary" disabled={busy || !form.billerId || amountValue <= 0}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} Save Sale</button></footer>
+    </form>
+  </section>;
+}
+
+function BillerRefillForm({ settings, onSaved }) {
+  const billers = (settings.billers || []).filter((item) => item.isActive !== false);
+  const accounts = settings.accounts || [];
+  const [form, setForm] = useState({ billerId: '', amount: '', paymentAccountId: '', note: '' });
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setForm((current) => ({ ...current, billerId: current.billerId || billers[0]?.id || '', paymentAccountId: current.paymentAccountId || accounts[0]?.id || '' })), [billers.length, accounts.length]);
+  const submit = async (event) => {
+    event.preventDefault();
+    setMessage('');
+    const amount = Number(form.amount || 0);
+    if (!form.billerId) return setMessage('Biller ရွေးပါ');
+    if (amount <= 0) return setMessage('Refill amount must be greater than 0');
+    setBusy(true);
+    try {
+      await apiFetch('/api/biller-transactions/refill', { method: 'POST', body: { ...form, amount, note: form.note || null } });
+      setMessage('Biller refill saved');
+      setForm((current) => ({ ...current, amount: '', note: '' }));
+      await onSaved?.();
+    } catch (error) {
+      setMessage(error.message || 'Refill failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return <section className="msc-clean-card">
+    <header><div><span>BILL / ELOAD REFILL</span><h3>ဘေ / Eload Refill</h3><p>Refill သည် income မဟုတ်ပါ။ Selected wallet/account ထဲမှ balance လျော့မည်။</p></div></header>
+    <form className="msc-clean-form" onSubmit={submit}>
+      {message ? <div className="msc-message">{message}</div> : null}
+      <div className="msc-form-row">
+        <label><span>Biller *</span><select value={form.billerId} onChange={(event) => setForm({ ...form, billerId: event.target.value })}><option value="">Choose biller</option>{billers.map((item) => <option value={item.id} key={item.id}>{item.name} · {money(item.currentBalance)}</option>)}</select></label>
+        <label><span>Refill Amount *</span><input type="number" min="1" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })}/></label>
+      </div>
+      <div className="msc-form-row">
+        <AccountSelect accounts={accounts} value={form.paymentAccountId} onChange={(value) => setForm({ ...form, paymentAccountId: value })} label="Pay from Account"/>
+        <label><span>Note</span><input value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })}/></label>
+      </div>
+      <footer><button className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} Save Refill</button></footer>
+    </form>
+  </section>;
+}
+
+function BillerAdjustmentForm({ settings, onSaved }) {
+  const billers = (settings.billers || []).filter((item) => item.isActive !== false);
+  const [form, setForm] = useState({ billerId: '', amount: '', direction: 'ADD', note: '' });
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setForm((current) => ({ ...current, billerId: current.billerId || billers[0]?.id || '' })), [billers.length]);
+  const submit = async (event) => {
+    event.preventDefault();
+    setMessage('');
+    const raw = Number(form.amount || 0);
+    if (!form.billerId) return setMessage('Biller ရွေးပါ');
+    if (raw <= 0) return setMessage('Adjust amount must be greater than 0');
+    if (!form.note.trim()) return setMessage('Reason / note လိုပါတယ်');
+    const amount = form.direction === 'SUBTRACT' ? -raw : raw;
+    setBusy(true);
+    try {
+      await apiFetch('/api/biller-transactions/adjustment', { method: 'POST', body: { billerId: form.billerId, amount, note: form.note } });
+      setMessage('Balance adjusted');
+      setForm((current) => ({ ...current, amount: '', note: '' }));
+      await onSaved?.();
+    } catch (error) {
+      setMessage(error.message || 'Balance adjust failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return <section className="msc-clean-card">
+    <header><div><span>BALANCE ADJUST</span><h3>Manual Balance Adjust</h3><p>Balance မှားနေချိန် / provider settlement ပြင်ချိန် note နဲ့ပြင်ပါ။</p></div></header>
+    <form className="msc-clean-form" onSubmit={submit}>
+      {message ? <div className="msc-message">{message}</div> : null}
+      <div className="msc-form-row">
+        <label><span>Biller</span><select value={form.billerId} onChange={(event) => setForm({ ...form, billerId: event.target.value })}>{billers.map((item) => <option value={item.id} key={item.id}>{item.name} · {money(item.currentBalance)}</option>)}</select></label>
+        <label><span>Direction</span><select value={form.direction} onChange={(event) => setForm({ ...form, direction: event.target.value })}><option value="ADD">Add balance</option><option value="SUBTRACT">Subtract balance</option></select></label>
+      </div>
+      <div className="msc-form-row">
+        <label><span>Amount</span><input type="number" min="1" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })}/></label>
+        <label><span>Reason / Note *</span><input value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} placeholder="Why adjust?"/></label>
+      </div>
+      <footer><button className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} Save Adjust</button></footer>
+    </form>
+  </section>;
+}
+
+function BillerSetup({ onSaved }) {
+  const [form, setForm] = useState({ name: '', type: 'ELOAD', openingBalance: '' });
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const submit = async (event) => {
+    event.preventDefault();
+    setMessage('');
+    if (!form.name.trim()) return setMessage('Biller name လိုပါတယ်');
+    setBusy(true);
+    try {
+      await apiFetch('/api/billers', { method: 'POST', body: { ...form, openingBalance: Number(form.openingBalance || 0) } });
+      setForm({ name: '', type: 'ELOAD', openingBalance: '' });
+      setMessage('Biller created');
+      await onSaved?.();
+    } catch (error) {
+      setMessage(error.message || 'Biller create failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return <section className="msc-clean-card">
+    <header><div><span>BILLER SETUP</span><h3>Create / Manage Billers</h3><p>NearMe, Atom, Mytel, MPT, U9 စသည်တို့ကို tenant အလိုက်သီးသန့်ထားပါသည်။</p></div></header>
+    <form className="msc-clean-form" onSubmit={submit}>
+      {message ? <div className="msc-message">{message}</div> : null}
+      <div className="msc-form-row">
+        <label><span>Biller Name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Example: NearMe"/></label>
+        <label><span>Type</span><select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>{BILLER_TYPES.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+      </div>
+      <div className="msc-form-row">
+        <label><span>Opening Balance</span><input type="number" min="0" value={form.openingBalance} onChange={(event) => setForm({ ...form, openingBalance: event.target.value })}/></label>
+        <button type="submit" className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <Plus size={17}/>} Add Biller</button>
+      </div>
+    </form>
+  </section>;
+}
+
+function BillerBalanceReport({ settings, onSaved }) {
+  const [from, setFrom] = useState(todayDate());
+  const [to, setTo] = useState(todayDate());
+  const [report, setReport] = useState({ rows: [], totals: {} });
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const load = async () => {
+    setLoading(true);
+    setMessage('');
+    try {
+      setReport(await apiFetch(`/api/reports/biller-balance?startDate=${from}&endDate=${to}`));
+    } catch (error) {
+      setMessage(error.message || 'Balance report failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, [from, to, settings.billers?.length]);
+  return <div className="msc-clean-layout">
+    <div className="msc-clean-side">
+      <BillerSetup onSaved={async () => { await onSaved?.(); await load(); }}/>
+      <BillerAdjustmentForm settings={settings} onSaved={async () => { await onSaved?.(); await load(); }}/>
+      <FinanceCatalogSettingsV23 embedded/>
+    </div>
+    <section className="msc-clean-card msc-table-card">
+      <header><div><span>BALANCE REPORT</span><h3>Bill / Eload လက်ကျန်</h3><p>Closing Balance = Opening + Refill - Sold + Adjustment</p></div><div className="msc-history-tools"><input type="date" value={from} onChange={(event) => setFrom(event.target.value)}/><input type="date" value={to} onChange={(event) => setTo(event.target.value)}/><button type="button" onClick={load}>{loading ? <Loader2 className="msc-spin" size={17}/> : <Search size={17}/>} Load</button></div></header>
+      {message ? <div className="msc-message">{message}</div> : null}
+      <div className="msc-table-wrap">
+        <table>
+          <thead><tr><th>Biller Name</th><th>Opening Balance</th><th>Refill</th><th>Sold Volume</th><th>Balance Deduct</th><th>Adjustment</th><th>Closing Balance</th><th>Profit</th></tr></thead>
+          <tbody>{(report.rows || []).map((row) => <tr key={row.id}><td><b>{row.billerName}</b><small>{row.type}</small></td><td>{money(row.openingBalance)}</td><td>{money(row.refill)}</td><td>{money(row.sold)}</td><td>{money(row.balanceSold)}</td><td>{money(row.adjustment)}</td><td><b>{money(row.closingBalance)}</b></td><td className="positive">{money(row.profit)}</td></tr>)}</tbody>
+          <tfoot><tr><th>Total</th><th>{money(report.totals?.openingBalance)}</th><th>{money(report.totals?.refill)}</th><th>{money(report.totals?.sold)}</th><th>{money(report.totals?.balanceSold)}</th><th>{money(report.totals?.adjustment)}</th><th>{money(report.totals?.closingBalance)}</th><th>{money(report.totals?.profit)}</th></tr></tfoot>
+        </table>
+      </div>
+    </section>
+  </div>;
+}
+
 export default function MoneyServiceCenterV23() {
-  const [view, setView] = useState('ledger');
+  const [view, setView] = useState('transfer');
   const [settings, setSettings] = useState({ rates: {}, paymentMethods: [], accounts: [] });
   const [dashboard, setDashboard] = useState({ summary: {}, recent: [] });
+  const [billerSummary, setBillerSummary] = useState({ rows: [], totals: {} });
   const [history, setHistory] = useState({ transactions: [], totalPages: 1 });
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
@@ -316,6 +609,10 @@ export default function MoneyServiceCenterV23() {
 
   const loadSettings = async () => setSettings(await apiFetch('/api/money-service/settings'));
   const loadDashboard = async () => setDashboard(await apiFetch('/api/money-service/dashboard'));
+  const loadBillerSummary = async () => {
+    const today = todayDate();
+    setBillerSummary(await apiFetch(`/api/reports/biller-balance?startDate=${today}&endDate=${today}`));
+  };
   const loadHistory = async () => {
     const params = new URLSearchParams({ page: String(page), limit: '10' });
     if (query.trim()) params.set('q', query.trim());
@@ -327,7 +624,7 @@ export default function MoneyServiceCenterV23() {
     setLoading(true);
     setMessage('');
     try {
-      await Promise.all([loadSettings(), loadDashboard(), loadHistory()]);
+      await Promise.all([loadSettings(), loadDashboard(), loadBillerSummary(), loadHistory()]);
     } catch (error) {
       setMessage(error.message || 'Load failed');
     } finally {
@@ -341,6 +638,12 @@ export default function MoneyServiceCenterV23() {
 
   const rows = history.transactions || [];
   const summary = dashboard.summary || {};
+  const billerTotals = billerSummary.totals || {};
+  const billerRows = billerSummary.rows || [];
+  const billerBalanceTotal = billerRows.reduce((total, row) => total + Number(row.closingBalance || 0), 0);
+  const topBiller = billerRows
+    .slice()
+    .sort((left, right) => Number(right.sold || 0) - Number(left.sold || 0))[0];
 
   const exportHistory = async () => {
     setExporting(true);
@@ -377,21 +680,29 @@ export default function MoneyServiceCenterV23() {
     </header>
 
     <nav className="msc-nav clean">
-      <button className={view === 'ledger' ? 'active' : ''} onClick={() => setView('ledger')}><CircleDollarSign size={18}/><span>Ledger</span></button>
-      <button className={view === 'history' ? 'active' : ''} onClick={() => setView('history')}><History size={18}/><span>History</span></button>
-      <button className={view === 'settings' ? 'active' : ''} onClick={() => setView('settings')}><Settings2 size={18}/><span>Wallet Link</span></button>
+      <button className={view === 'transfer' ? 'active' : ''} onClick={() => setView('transfer')}><CircleDollarSign size={18}/><span>Money Transfer</span></button>
+      <button className={view === 'bill' ? 'active' : ''} onClick={() => setView('bill')}><Banknote size={18}/><span>Bill / Eload</span></button>
+      <button className={view === 'refill' ? 'active' : ''} onClick={() => setView('refill')}><ArrowDownToLine size={18}/><span>Refill</span></button>
+      <button className={view === 'balance' ? 'active' : ''} onClick={() => setView('balance')}><History size={18}/><span>Balance Report</span></button>
     </nav>
 
     {message ? <div className="msc-message">{message}</div> : null}
 
-    {view !== 'settings' ? <section className="msc-postgres-summary">
+    {view === 'transfer' ? <section className="msc-postgres-summary">
       <article><Banknote/><span>Today Fees</span><b>{money(summary.todayFee)}</b><small>{summary.todayCount || 0} PostgreSQL rows</small></article>
       <article><ArrowUpFromLine/><span>Transfer</span><b>{money(summary.todayTransferAmount)}</b><small>Wallet out / Cash in</small></article>
       <article><ArrowDownToLine/><span>Cash Out</span><b>{money(summary.todayCashOutAmount)}</b><small>Customer wallet in / Cash out</small></article>
       <article><Wallet/><span>Pending Due</span><b>{money(summary.totalDue)}</b><small>{summary.pendingCount || 0} pending</small></article>
     </section> : null}
 
-    {view === 'ledger' ? <div className="msc-clean-layout">
+    {view !== 'transfer' ? <section className="msc-postgres-summary biller-only">
+      <article><Banknote/><span>Bill / Eload Sold Today</span><b>{money(billerTotals.sold)}</b><small>Separate from Product Sales</small></article>
+      <article><ArrowDownToLine/><span>Bill / Eload Refill Today</span><b>{money(billerTotals.refill)}</b><small>Balance top-up only</small></article>
+      <article><Wallet/><span>Total Biller Balance</span><b>{money(billerBalanceTotal)}</b><small>{billerRows.length} active billers</small></article>
+      <article><History/><span>Top Biller Today</span><b>{topBiller?.billerName || '-'}</b><small>{topBiller ? money(topBiller.sold) : 'No sale yet'}</small></article>
+    </section> : null}
+
+    {view === 'transfer' ? <div className="msc-clean-layout">
       <MoneyServiceForm settings={settings} onSaved={async (transaction) => { setDetailId(transaction.id); await refresh(); }}/>
       <div className="msc-clean-side">
         <section className="msc-clean-card">
@@ -401,7 +712,7 @@ export default function MoneyServiceCenterV23() {
       </div>
     </div> : null}
 
-    {view === 'history' ? <section className="msc-history">
+    {view === 'transfer' ? <section className="msc-history">
       <div className="msc-history-tools">
         <div><Search size={17}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Transaction no, name, phone"/></div>
         <select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All Status</option><option value="PENDING">Pending</option><option value="PARTIAL">Partial</option><option value="PAID">Done</option></select>
@@ -411,7 +722,9 @@ export default function MoneyServiceCenterV23() {
       <div className="msc-pagination"><button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft/></button><span>Page {page} / {history.totalPages || 1}</span><button disabled={page >= (history.totalPages || 1)} onClick={() => setPage(page + 1)}><ChevronRight/></button></div>
     </section> : null}
 
-    {view === 'settings' ? <FinanceCatalogSettingsV23 embedded/> : null}
+    {view === 'bill' ? <BillerSaleForm settings={settings} onSaved={refresh}/> : null}
+    {view === 'refill' ? <BillerRefillForm settings={settings} onSaved={refresh}/> : null}
+    {view === 'balance' ? <BillerBalanceReport settings={settings} onSaved={refresh}/> : null}
     {detailId ? <TransactionDetail id={detailId} settings={settings} onClose={() => setDetailId('')} onChanged={refresh}/> : null}
   </section>;
 }

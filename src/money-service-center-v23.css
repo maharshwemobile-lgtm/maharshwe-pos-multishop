@@ -31,7 +31,7 @@
 /* PostgreSQL-only Money Service cleanup */
 .msc-heading>div>p{margin:4px 0 0;max-width:900px;color:var(--text-muted,#64748b);line-height:1.55}
 .msc-heading>button{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border,#dfe4ea);border-radius:10px;background:var(--card,#fff);color:inherit;padding:10px 14px;font-weight:850}
-.msc-nav.clean{grid-template-columns:repeat(3,minmax(0,1fr))}
+.msc-nav.clean{grid-template-columns:repeat(4,minmax(0,1fr))}
 .msc-postgres-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .msc-postgres-summary article{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto auto;gap:3px 11px;padding:15px;border:1px solid var(--border,#dfe4ea);border-radius:15px;background:var(--card,#fff);box-shadow:0 7px 22px rgba(15,23,42,.05)}
 .msc-postgres-summary article>svg{grid-row:1/4;width:44px;height:44px;padding:10px;border-radius:12px;background:#dcfce7;color:#15803d}
@@ -70,3 +70,22 @@
 .dark .msc-total-strip,.dark .msc-optional-clean{background:#10223d;border-color:#1e3555}.dark .msc-clean-card>header,.dark .msc-clean-form footer{border-color:#1e3555}.dark .msc-clean-card>header p,.dark .msc-clean-form label span,.dark .msc-postgres-summary span,.dark .msc-postgres-summary small{color:#9fb0c7}
 @media(max-width:1100px){.msc-clean-layout{grid-template-columns:1fr}.msc-postgres-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.msc-nav.clean,.msc-postgres-summary,.msc-form-row,.msc-service-switch,.msc-total-strip{grid-template-columns:1fr}.msc-clean-card>header{display:grid}.msc-payment-line{display:grid}.msc-payment-line label{justify-content:center}.msc-clean-form footer{display:grid;grid-template-columns:1fr}.msc-clean-form footer button{width:100%}}
+
+.msc-biller-sale-card>header{background:linear-gradient(135deg,rgba(22,163,74,.08),rgba(59,130,246,.06))}
+.msc-biller-simple-form{gap:14px}
+.msc-biller-pick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px}
+.msc-biller-pick-grid button{min-height:74px;padding:10px;border:1px solid var(--border,#dfe4ea);border-radius:13px;background:var(--input-bg,#fff);color:inherit;text-align:left;display:grid;gap:3px;cursor:pointer}
+.msc-biller-pick-grid button.active{border-color:#16a34a;background:#ecfdf5;box-shadow:0 0 0 3px rgba(22,163,74,.09)}
+.msc-biller-pick-grid span,.msc-biller-pick-grid b,.msc-biller-pick-grid small{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msc-biller-pick-grid span{font-size:13px;font-weight:950}.msc-biller-pick-grid b{font-size:15px;color:#15803d}.msc-biller-pick-grid small{font-size:10px;color:var(--text-muted,#64748b);font-weight:850}
+.msc-biller-main-row{display:grid;grid-template-columns:minmax(220px,1.1fr) repeat(2,minmax(150px,.75fr));gap:10px;align-items:stretch}
+.msc-biller-amount-field input{min-height:62px!important;font-size:28px;font-weight:950;letter-spacing:.01em}
+.msc-biller-live-card{display:grid;align-content:center;gap:4px;padding:12px 14px;border:1px solid var(--border,#dfe4ea);border-radius:13px;background:#f8fafc}
+.msc-biller-live-card span{font-size:11px;font-weight:900;color:#64748b}.msc-biller-live-card b{font-size:20px;line-height:1.1}.msc-biller-live-card.after{background:#f0fdf4;border-color:#bbf7d0;color:#166534}.msc-biller-live-card.negative{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
+.msc-message.compact{padding:8px 10px;font-size:12px}
+.msc-advanced-panel{border:1px dashed rgba(100,116,139,.35);border-radius:13px;background:#94a3b80f;padding:10px 12px}
+.msc-advanced-panel summary{cursor:pointer;font-size:12px;font-weight:950;color:var(--text-muted,#64748b)}
+.msc-advanced-panel .msc-payment-line,.msc-advanced-panel .msc-form-row,.msc-advanced-panel .msc-single-field{margin-top:10px}
+.dark .msc-biller-pick-grid button,.dark .msc-biller-live-card,.dark .msc-advanced-panel{background:#0b1b33;border-color:#1e3555}.dark .msc-biller-pick-grid button.active{background:#102a1b;border-color:#166534}.dark .msc-biller-live-card span,.dark .msc-biller-pick-grid small,.dark .msc-advanced-panel summary{color:#9fb0c7}.dark .msc-biller-live-card.after{background:#102a1b}.dark .msc-biller-live-card.negative{background:#2a1708}
+@media(max-width:820px){.msc-biller-main-row{grid-template-columns:1fr}.msc-biller-amount-field input{min-height:54px!important;font-size:24px}.msc-biller-pick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.msc-biller-pick-grid{grid-template-columns:1fr}.msc-biller-live-card b{font-size:18px}}
