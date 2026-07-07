@@ -328,7 +328,9 @@ async function registerHandler(req, res) {
       message: "Account already exists. Please login.",
     });
   }
-  const trialEndsAt = addDays(now, 7);
+  const trialDays = Number(process.env.SELF_REGISTER_TRIAL_DAYS || 30);
+  const safeTrialDays = Number.isFinite(trialDays) && trialDays >= 1 && trialDays <= 365 ? Math.floor(trialDays) : 30;
+  const trialEndsAt = addDays(now, safeTrialDays);
 
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -344,7 +346,7 @@ async function registerHandler(req, res) {
           businessType,
           phone: input.phone || null,
           address: input.address || null,
-          active: false,
+          active: true,
         },
       });
 
@@ -354,7 +356,7 @@ async function registerHandler(req, res) {
           status: "TRIAL",
           startsAt: now,
           endsAt: trialEndsAt,
-          notes: "7-day free trial created during self-registration",
+          notes: `${safeTrialDays}-day free trial created during self-registration`,
         },
       });
 
@@ -363,8 +365,8 @@ async function registerHandler(req, res) {
           shopId: shop.id,
           receiptHeader: input.shopName.trim(),
           settings: {
-            tenant: { selfRegistered: true, tenantId: code, trialDays: 7, businessType, createdAt: now.toISOString() },
-            platform: { adminPortalEnabled: false, portalEnabledByGrandAdmin: false },
+            tenant: { selfRegistered: true, tenantId: code, trialDays: safeTrialDays, businessType, createdAt: now.toISOString() },
+            platform: { adminPortalEnabled: true, portalEnabledByGrandAdmin: true },
           },
         },
       });
@@ -408,7 +410,7 @@ async function registerHandler(req, res) {
 
     return res.status(201).json({
       ok: true,
-      message: "Tenant registered. Grand Super Admin approval is required before login.",
+      message: `${safeTrialDays}-day free trial active. You can login now.`,
       tenant: publicShop(created.user.shop),
       user: publicUser(created.user),
     });

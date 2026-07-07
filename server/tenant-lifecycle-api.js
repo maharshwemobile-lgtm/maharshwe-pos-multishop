@@ -772,7 +772,7 @@ function attachTenantLifecycleApi(app) {
 
     try {
       const now = new Date();
-      const trialDays = input.trialDays || 7;
+      const trialDays = input.trialDays || 30;
       const created = await prisma.$transaction(async (tx) => {
         const slug = await uniqueShopSlug(input.slug || input.name, tx);
         if (isHiddenTenantSlug(slug)) {
@@ -807,7 +807,7 @@ function attachTenantLifecycleApi(app) {
               create: {
                 settings: {
                   adminPortal: {
-                    planLabel: '7 Day Trial',
+                    planLabel: '1 Month Free Trial',
                     supportTier: 'STANDARD',
                     featurePreset: 'FULL',
                     featureFlags: defaultFeatureFlags(),

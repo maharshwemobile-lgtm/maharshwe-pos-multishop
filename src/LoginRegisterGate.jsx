@@ -363,7 +363,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Register လုပ်နေသည်...' : 'ရွေးပြီး Register ပြီး Dashboard ဝင်မည်'}</button>
             <button type="button" className="ms-login-secondary" disabled={loading} onClick={() => { setPendingGoogleCredential(''); switchMode('login'); }}>Google Login ပြန်လုပ်မည်</button>
           </form>
-          <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 7 ရက် Trial အခမဲ့ သုံးနိုင်သည်</p>
+          <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
         </section>
       </main>
     );
@@ -427,7 +427,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <input type="tel" name="phone" value={registerForm.phone} onChange={(event) => { setRegisterForm({ ...registerForm, phone: event.target.value }); setError(''); }} placeholder="09xxxxxxxxx" />
             </label>
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဖွင့်နေသည်...' : 'အကောင့်ဖွင့်မည်'}</button>
-            <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 7 ရက် Trial အခမဲ့ သုံးနိုင်သည်</p>
+            <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
             <p className="ms-login-footer">အကောင့်ရှိပြီးသားလား? <button type="button" onClick={() => switchMode('login')}>Login ဝင်ရန်</button></p>
           </form>
         )}
