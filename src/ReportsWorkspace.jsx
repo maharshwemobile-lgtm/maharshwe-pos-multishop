@@ -132,33 +132,23 @@ export default function ReportsWorkspace({ onNavigate }) {
       ['Net Profit', dailyCloseReport.totals?.netProfit || 0],
       [],
       [`${closePeriodMeta.name} Transactions`, dailyCloseReport.period || closePeriod],
-      [closePeriodMeta.bucket, 'Sale POS Income', 'Service POS Income', 'Money Service Fee', 'Bill / Eload Opening', 'Bill / Eload Refill', 'Bill / Eload Sold Volume', 'Bill / Eload Closing Balance', 'Bill / Eload Profit', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Other Other Income', 'Other Income Subtotal', 'Income Total', 'Sale POS Cost', 'Service POS Cost', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Other Other Expense', 'Other Expense Subtotal', 'Expense Total', 'Net Profit', 'Closed Days'],
+      [closePeriodMeta.bucket, 'Product Sales', 'Service Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Other Other Income', 'Other Income Subtotal', 'Income Total', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Other Other Expense', 'Other Expense Subtotal'],
       ...(dailyCloseReport.rows || []).map((row) => [
         row.bucket,
         row.salePosIncome,
         row.servicePosIncome,
         row.moneyServiceFee,
-        row.billOpeningBalance,
-        row.billRefill,
-        row.billSoldVolume,
-        row.billClosingBalance,
-        row.billEloadProfit,
         row.otherSaleIncome,
         row.otherServiceIncome,
         row.otherTopupIncome,
         row.otherOtherIncome,
         row.otherIncomeSubtotal,
         row.incomeTotal,
-        row.salePosExpense,
-        row.servicePosExpense,
         row.otherSaleExpense,
         row.otherServiceExpense,
         row.otherTopupExpense,
         row.otherOtherExpense,
         row.otherExpenseSubtotal,
-        row.expenseTotal,
-        row.netProfit,
-        row.closedDays,
       ]),
     ];
     const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><table>${rows.map((row) => `<tr>${row.map((cell) => `<td>${excelCell(cell)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
@@ -216,6 +206,49 @@ export default function ReportsWorkspace({ onNavigate }) {
         <table className="reports-table reports-close-table">
           <thead>
             <tr>
+              <th>{closePeriodMeta.bucket}</th>
+              <th>Product Sales</th>
+              <th>Service Income</th>
+              <th>Money Service Fee</th>
+              <th>Other Sale Income</th>
+              <th>Other Service Income</th>
+              <th>Other Top-up Income</th>
+              <th>Other Other Income</th>
+              <th>Other Income Subtotal</th>
+              <th>Income Total</th>
+              <th>Other Sale Expense</th>
+              <th>Other Service Expense</th>
+              <th>Other Top-up Expense</th>
+              <th>Other Other Expense</th>
+              <th>Other Expense Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {closeVisibleRows.map((row) => (
+              <tr key={`compact-${row.bucket}`}>
+                <td><b>{row.bucket}</b></td>
+                <td>{money(row.salePosIncome)}</td>
+                <td>{money(row.servicePosIncome)}</td>
+                <td>{money(row.moneyServiceFee)}</td>
+                <td>{money(row.otherSaleIncome)}</td>
+                <td>{money(row.otherServiceIncome)}</td>
+                <td>{money(row.otherTopupIncome)}</td>
+                <td>{money(row.otherOtherIncome)}</td>
+                <td><strong className="positive">{money(row.otherIncomeSubtotal)}</strong></td>
+                <td><strong className="positive">{money(row.incomeTotal)}</strong></td>
+                <td>{money(row.otherSaleExpense)}</td>
+                <td>{money(row.otherServiceExpense)}</td>
+                <td>{money(row.otherTopupExpense)}</td>
+                <td>{money(row.otherOtherExpense)}</td>
+                <td><strong className="negative">{money(row.otherExpenseSubtotal)}</strong></td>
+              </tr>
+            ))}
+            {!dailyCloseReport.rows?.length ? <tr><td colSpan="15"><div className="reports-empty">No Daily Close summary data in this date range.</div></td></tr> : null}
+          </tbody>
+        </table>
+        <table className="reports-table reports-close-table" style={{ display: 'none' }}>
+          <thead>
+            <tr>
               <th rowSpan="2">{closePeriodMeta.bucket}</th>
               <th colSpan="5">Bill / Eload Balance</th>
               <th colSpan="9">INCOME များ</th>
@@ -227,8 +260,8 @@ export default function ReportsWorkspace({ onNavigate }) {
               <th>Bill Opening</th>
               <th>Bill Refill</th>
               <th>Bill Sold</th>
+              <th>Bill Adjustment</th>
               <th>Bill Closing</th>
-              <th>Bill Profit</th>
               <th>Sale POS</th>
               <th>Service POS</th>
               <th>Money Service Fee</th>
@@ -255,8 +288,8 @@ export default function ReportsWorkspace({ onNavigate }) {
                 <td>{money(row.billOpeningBalance)}</td>
                 <td>{money(row.billRefill)}</td>
                 <td>{money(row.billSoldVolume)}</td>
+                <td>{money(row.billAdjustment)}</td>
                 <td>{money(row.billClosingBalance)}</td>
-                <td className="positive">{money(row.billEloadProfit)}</td>
                 <td>{money(row.salePosIncome)}</td>
                 <td>{money(row.servicePosIncome)}</td>
                 <td>{money(row.moneyServiceFee)}</td>

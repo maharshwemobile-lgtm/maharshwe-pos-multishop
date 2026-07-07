@@ -1,30 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { CreditCard, Loader2, RefreshCw, Wallet } from 'lucide-react';
+import { CreditCard, Edit3, Loader2, Plus, RefreshCw, Trash2, Wallet } from 'lucide-react';
 import { apiFetch } from './phase2Api';
 import { money, today } from './phase10PurchasingUtils';
 
 export default function Phase10PayablesPanel({ notify, onError }) {
   const [rows, setRows] = useState([]);
+  const [manualRows, setManualRows] = useState([]);
   const [summary, setSummary] = useState({});
+  const [manualSummary, setManualSummary] = useState({});
   const [accounts, setAccounts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [selected, setSelected] = useState(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [form, setForm] = useState({ paymentDate: today(), amount: '', method: 'CASH', moneyAccountId: '', reference: '', note: '' });
+  const [manualForm, setManualForm] = useState({ id: '', supplierId: '', payableDate: today(), amount: '', note: '' });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [manualSaving, setManualSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [payableData, accountData] = await Promise.all([
+      const [payableData, accountData, supplierData, manualData] = await Promise.all([
         apiFetch(`/api/purchasing/payables?page=${page}&limit=10&outstandingOnly=true`),
         apiFetch('/api/payments/accounts?page=1&limit=50'),
+        apiFetch('/api/purchasing/suppliers?page=1&limit=100&active=true'),
+        apiFetch('/api/purchasing/manual-payables?page=1&limit=50'),
       ]);
       setRows(payableData.payables || []);
       setSummary(payableData.summary || {});
       setAccounts(accountData.accounts || []);
+      setSuppliers(supplierData?.suppliers || []);
+      setManualRows(manualData?.manualPayables || []);
+      setManualSummary(manualData?.summary || {});
       setTotal(Number(payableData.total || payableData.count || payableData.payables?.length || 0));
       setTotalPages(Math.max(1, Number(payableData.totalPages || Math.ceil(Number(payableData.total || payableData.payables?.length || 0) / 10) || 1)));
     } catch (error) { onError(error); } finally { setLoading(false); }
@@ -55,6 +65,52 @@ export default function Phase10PayablesPanel({ notify, onError }) {
     } catch (error) { onError(error); } finally { setSaving(false); }
   };
 
+  const resetManualForm = () => setManualForm({ id: '', supplierId: '', payableDate: today(), amount: '', note: '' });
+
+  const editManual = (row) => {
+    setManualForm({
+      id: row.id,
+      supplierId: row.supplierId,
+      payableDate: String(row.payableDate || '').slice(0, 10) || today(),
+      amount: String(Number(row.amount || 0)),
+      note: row.note || '',
+    });
+  };
+
+  const submitManual = async () => {
+    const amount = Number(manualForm.amount || 0);
+    if (!manualForm.supplierId) return notify('error', 'Supplier ရွေးပါ။');
+    if (amount < 0) return notify('error', 'Payable amount must be zero or more.');
+    setManualSaving(true);
+    try {
+      const route = manualForm.id ? `/api/purchasing/manual-payables/${manualForm.id}` : '/api/purchasing/manual-payables';
+      const method = manualForm.id ? 'PATCH' : 'POST';
+      await apiFetch(route, {
+        method,
+        body: {
+          supplierId: manualForm.supplierId,
+          payableDate: manualForm.payableDate,
+          amount,
+          note: manualForm.note || null,
+        },
+      });
+      notify('success', manualForm.id ? 'Supplier debt updated.' : 'Supplier debt recorded.');
+      resetManualForm();
+      await load();
+    } catch (error) { onError(error); } finally { setManualSaving(false); }
+  };
+
+  const deleteManual = async (row) => {
+    if (!window.confirm(`${row.supplierName} payable record ဖျက်မလား?`)) return;
+    setManualSaving(true);
+    try {
+      await apiFetch(`/api/purchasing/manual-payables/${row.id}`, { method: 'DELETE' });
+      notify('success', 'Supplier debt record deleted.');
+      if (manualForm.id === row.id) resetManualForm();
+      await load();
+    } catch (error) { onError(error); } finally { setManualSaving(false); }
+  };
+
   return <div className="p10-op-grid">
     <section className="purchasing-card p10-op-list-card">
       <header><div><Wallet size={20}/></div><span><h3>Supplier Payables</h3><p>Received goods minus returns and payments</p></span><button type="button" className="icon-button" onClick={load}><RefreshCw className={loading ? 'purchasing-spin' : ''} size={18}/></button></header>
@@ -82,6 +138,21 @@ export default function Phase10PayablesPanel({ notify, onError }) {
         <label className="p10-field"><span>Note</span><textarea rows="3" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}/></label>
         <button type="button" className="p10-primary-button" onClick={submit} disabled={!selected || saving}>{saving ? <Loader2 className="purchasing-spin" size={18}/> : <CreditCard size={18}/>} Save Payment</button>
       </div>
+    </section>
+
+    <section className="purchasing-card p10-op-form-card">
+      <header><div><Plus size={20}/></div><span><h3>Manual Supplier Debt</h3><p>ဆိုင်က supplier ကို ပေးရန် အကြွေး amount ကို create / edit လုပ်ရန်</p></span></header>
+      <div className="p10-summary-row"><span><small>Manual Supplier Payable</small><b>{money(manualSummary.outstanding)}</b></span><span><small>Records</small><b>{manualRows.length}</b></span></div>
+      <div className="p10-form-body">
+        <label className="p10-field"><span>Supplier</span><select value={manualForm.supplierId} onChange={(e) => setManualForm({ ...manualForm, supplierId: e.target.value })}><option value="">Select supplier</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplierCode} · {supplier.name}</option>)}</select></label>
+        <label className="p10-field"><span>Date</span><input type="date" value={manualForm.payableDate} onChange={(e) => setManualForm({ ...manualForm, payableDate: e.target.value })}/></label>
+        <label className="p10-field"><span>Supplier payable amount</span><input type="number" min="0" value={manualForm.amount} onChange={(e) => setManualForm({ ...manualForm, amount: e.target.value })} placeholder="ဆိုင်က ပေးရန် amount"/></label>
+        <label className="p10-field"><span>Note</span><textarea rows="2" value={manualForm.note} onChange={(e) => setManualForm({ ...manualForm, note: e.target.value })} placeholder="Opening debt / old payable / correction"/></label>
+        <button type="button" className="p10-primary-button" onClick={submitManual} disabled={manualSaving}>{manualSaving ? <Loader2 className="purchasing-spin" size={18}/> : <Plus size={18}/>} {manualForm.id ? 'Update Supplier Debt' : 'Save Supplier Debt'}</button>
+        {manualForm.id ? <button type="button" className="p10-small-button" onClick={resetManualForm} disabled={manualSaving}>Cancel Edit</button> : null}
+      </div>
+      <div className="p10-table-wrap"><table className="p10-table"><thead><tr><th>Supplier</th><th>Date</th><th>Payable</th><th>Note</th><th></th></tr></thead><tbody>{manualRows.map((row) => <tr key={row.id}><td>{row.supplierCode} · {row.supplierName}</td><td>{String(row.payableDate || '').slice(0,10)}</td><td><b>{money(row.amount)}</b></td><td>{row.note || '-'}</td><td><div className="credit-row-actions"><button type="button" onClick={() => editManual(row)}><Edit3 size={15}/> Edit</button><button type="button" onClick={() => deleteManual(row)}><Trash2 size={15}/> Delete</button></div></td></tr>)}</tbody></table></div>
+      {!manualRows.length && !loading ? <div className="purchasing-empty"><Wallet size={28}/><b>No manual supplier debt records</b></div> : null}
     </section>
   </div>;
 }

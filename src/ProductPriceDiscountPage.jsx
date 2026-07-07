@@ -16,6 +16,7 @@ import { apiFetch, clearSession, getSession } from './phase2Api';
 import './price-discount-page.css';
 
 const LIMIT = 10;
+const PRODUCT_FETCH_LIMIT = 100;
 
 function money(value) {
   const amount = Number(value || 0);
@@ -69,7 +70,6 @@ export default function ProductPriceDiscountPage() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -109,13 +109,12 @@ export default function ProductPriceDiscountPage() {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+      const params = new URLSearchParams({ page: '1', limit: String(PRODUCT_FETCH_LIMIT) });
       if (query.trim()) params.set('q', query.trim());
       if (categoryId) params.set('categoryId', categoryId);
       const data = await apiFetch(`/api/products?${params.toString()}`);
       setProducts(data.products || []);
       setTotal(data.total || 0);
-      setTotalPages(Math.max(1, data.totalPages || 1));
     } catch (error) {
       handleError(error);
     } finally {
@@ -128,7 +127,7 @@ export default function ProductPriceDiscountPage() {
   useEffect(() => {
     const timer = window.setTimeout(loadProducts, 180);
     return () => window.clearTimeout(timer);
-  }, [query, categoryId, page]);
+  }, [query, categoryId]);
 
   useEffect(() => {
     setPage(1);
@@ -166,6 +165,18 @@ export default function ProductPriceDiscountPage() {
     if (groupType === 'model' && groupValue && row.productModel !== groupValue) return false;
     return true;
   }), [rows, categoryId, groupType, groupValue]);
+
+  const visibleRows = useMemo(() => (
+    filteredRows.slice((page - 1) * LIMIT, page * LIMIT)
+  ), [filteredRows, page]);
+
+  const displayTotalPages = useMemo(() => (
+    Math.max(1, Math.ceil(filteredRows.length / LIMIT))
+  ), [filteredRows.length]);
+
+  useEffect(() => {
+    setPage((value) => Math.min(value, displayTotalPages));
+  }, [displayTotalPages]);
 
   const selectedRows = useMemo(() => filteredRows.filter((row) => selectedIds.includes(row.id)), [filteredRows, selectedIds]);
 
@@ -243,7 +254,7 @@ export default function ProductPriceDiscountPage() {
   };
 
   const selectVisible = () => {
-    setSelectedIds(filteredRows.map((row) => row.id));
+    setSelectedIds(visibleRows.map((row) => row.id));
   };
 
   const clearSelected = () => {
@@ -340,8 +351,8 @@ export default function ProductPriceDiscountPage() {
           </label>
           <div>
             <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
-            <b>{page} / {totalPages}</b>
-            <button type="button" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next</button>
+            <b>{page} / {displayTotalPages}</b>
+            <button type="button" disabled={page >= displayTotalPages} onClick={() => setPage((value) => Math.min(displayTotalPages, value + 1))}>Next</button>
           </div>
         </div>
 
@@ -435,7 +446,7 @@ export default function ProductPriceDiscountPage() {
                 <tr><td colSpan={showCost ? 10 : 7}><div className="price-empty"><PackageSearch size={36} /><b>Product မတွေ့ပါ</b><span>Search / Category / Group ပြောင်းကြည့်ပါ။</span></div></td></tr>
               ) : null}
 
-              {!loading && filteredRows.map((row) => {
+              {!loading && visibleRows.map((row) => {
                 const stock = Number(row.inventory?.quantity || 0);
                 const low = Number(row.inventory?.minAlertQuantity || 0) > 0 && stock <= Number(row.inventory?.minAlertQuantity || 0);
                 const selling = Number(row.standardSellingPrice || 0);
@@ -471,7 +482,7 @@ export default function ProductPriceDiscountPage() {
         </div>
 
         <footer className="price-footer">
-          <span>Total {total} products · Showing {filteredRows.length} variants · Selected {selectedRows.length}</span>
+          <span>Total {total} products · Showing {visibleRows.length} of {filteredRows.length} variants · Selected {selectedRows.length}</span>
           {!showCost ? <b>Cost / Minimum Price ကြည့်ရန် viewCost permission လိုအပ်ပါတယ်။</b> : null}
         </footer>
       </section>

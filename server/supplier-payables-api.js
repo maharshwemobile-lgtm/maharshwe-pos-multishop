@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { z } = require('zod');
 const {
   prisma,
   access,
@@ -13,6 +14,37 @@ const {
 } = require('./purchasing-completion-core');
 
 const number = (value) => Number(value || 0);
+
+const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const text = (max = 1000) => z.union([z.string().trim().max(max), z.literal(''), z.null()]).optional();
+const manualPayableSchema = z.object({
+  supplierId: z.string().uuid(),
+  payableDate: dateSchema,
+  amount: z.coerce.number().finite().min(0),
+  note: text(1000),
+});
+
+async function ensureManualPayablesTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS supplier_manual_payables (
+      id UUID PRIMARY KEY,
+      shop_id UUID NOT NULL,
+      supplier_id UUID NOT NULL,
+      payable_date DATE NOT NULL,
+      amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+      note TEXT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_by_id UUID NULL,
+      updated_by_id UUID NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS supplier_manual_payables_shop_supplier_idx
+      ON supplier_manual_payables(shop_id, supplier_id, active, payable_date DESC)
+  `);
+}
 
 async function orderPayable(db, shopId, orderId, lock = false) {
   const rows = await db.$queryRawUnsafe(
@@ -52,6 +84,178 @@ async function orderPayable(db, shopId, orderId, lock = false) {
 }
 
 function attachSupplierPayablesApi(app) {
+  app.get('/api/purchasing/manual-payables', ...access.read, wrap(async (req, res) => {
+    await assertCompletionTablesReady();
+    await ensureManualPayablesTable();
+    const page = Math.max(1, Number.parseInt(req.query.page || '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit || '20', 10) || 20));
+    const search = String(req.query.q || '').trim();
+    const params = [req.auth.shopId];
+    const filters = ['mp.shop_id=$1::uuid', 'mp.active=TRUE'];
+    if (search) {
+      params.push(`%${search}%`);
+      filters.push(`(s.name ILIKE $${params.length} OR s.supplier_code ILIKE $${params.length} OR mp.note ILIKE $${params.length})`);
+    }
+    const countRows = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS total
+         FROM supplier_manual_payables mp
+         JOIN suppliers s ON s.id=mp.supplier_id AND s.shop_id=mp.shop_id
+        WHERE ${filters.join(' AND ')}`,
+      ...params,
+    );
+    const summaryRows = await prisma.$queryRawUnsafe(
+      `SELECT COALESCE(SUM(mp.amount),0) AS outstanding
+         FROM supplier_manual_payables mp
+         JOIN suppliers s ON s.id=mp.supplier_id AND s.shop_id=mp.shop_id
+        WHERE ${filters.join(' AND ')}`,
+      ...params,
+    );
+    const offset = (page - 1) * limit;
+    params.push(limit, offset);
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT mp.id,
+              mp.supplier_id AS "supplierId",
+              s.supplier_code AS "supplierCode",
+              s.name AS "supplierName",
+              mp.payable_date AS "payableDate",
+              mp.amount,
+              mp.note,
+              mp.created_at AS "createdAt",
+              mp.updated_at AS "updatedAt"
+         FROM supplier_manual_payables mp
+         JOIN suppliers s ON s.id=mp.supplier_id AND s.shop_id=mp.shop_id
+        WHERE ${filters.join(' AND ')}
+        ORDER BY mp.payable_date DESC, mp.updated_at DESC
+        LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      ...params,
+    );
+    const total = Number(countRows[0]?.total || 0);
+    res.json({
+      ok: true,
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      summary: { outstanding: number(summaryRows[0]?.outstanding) },
+      manualPayables: rows,
+    });
+  }));
+
+  app.post('/api/purchasing/manual-payables', ...access.write, wrap(async (req, res) => {
+    await assertCompletionTablesReady();
+    await ensureManualPayablesTable();
+    const input = parse(manualPayableSchema, req.body || {}, 'Invalid supplier payable request');
+    const result = await serializable(async (tx) => {
+      const supplierRows = await tx.$queryRawUnsafe(
+        `SELECT id,supplier_code AS "supplierCode",name
+           FROM suppliers
+          WHERE id=$1::uuid AND shop_id=$2::uuid AND active=TRUE
+          LIMIT 1`,
+        input.supplierId,
+        req.auth.shopId,
+      );
+      if (!supplierRows[0]) throw new ApiError(404, 'Supplier was not found');
+      const id = crypto.randomUUID();
+      const rows = await tx.$queryRawUnsafe(
+        `INSERT INTO supplier_manual_payables (
+           id,shop_id,supplier_id,payable_date,amount,note,active,created_by_id,updated_by_id,created_at,updated_at
+         ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4::date,$5,$6,TRUE,$7::uuid,$7::uuid,NOW(),NOW())
+         RETURNING id,supplier_id AS "supplierId",payable_date AS "payableDate",amount,note,created_at AS "createdAt",updated_at AS "updatedAt"`,
+        id,
+        req.auth.shopId,
+        input.supplierId,
+        input.payableDate,
+        input.amount,
+        input.note || null,
+        req.auth.userId,
+      );
+      await audit(tx, req, 'SUPPLIER_MANUAL_PAYABLE_CREATED', 'supplier_manual_payable', id, {
+        supplier: supplierRows[0],
+        amount: input.amount,
+        payableDate: input.payableDate,
+        note: input.note || null,
+      });
+      return { ...rows[0], supplierCode: supplierRows[0].supplierCode, supplierName: supplierRows[0].name };
+    });
+    res.status(201).json({ ok: true, manualPayable: result });
+  }));
+
+  app.patch('/api/purchasing/manual-payables/:id', ...access.write, wrap(async (req, res) => {
+    await assertCompletionTablesReady();
+    await ensureManualPayablesTable();
+    const input = parse(manualPayableSchema, req.body || {}, 'Invalid supplier payable request');
+    const result = await serializable(async (tx) => {
+      const currentRows = await tx.$queryRawUnsafe(
+        `SELECT mp.id,mp.supplier_id AS "supplierId",mp.payable_date AS "payableDate",mp.amount,mp.note,
+                s.supplier_code AS "supplierCode",s.name AS "supplierName"
+           FROM supplier_manual_payables mp
+           JOIN suppliers s ON s.id=mp.supplier_id AND s.shop_id=mp.shop_id
+          WHERE mp.id=$1::uuid AND mp.shop_id=$2::uuid AND mp.active=TRUE
+          LIMIT 1`,
+        req.params.id,
+        req.auth.shopId,
+      );
+      if (!currentRows[0]) throw new ApiError(404, 'Manual supplier payable was not found');
+      const supplierRows = await tx.$queryRawUnsafe(
+        `SELECT id,supplier_code AS "supplierCode",name
+           FROM suppliers
+          WHERE id=$1::uuid AND shop_id=$2::uuid AND active=TRUE
+          LIMIT 1`,
+        input.supplierId,
+        req.auth.shopId,
+      );
+      if (!supplierRows[0]) throw new ApiError(404, 'Supplier was not found');
+      const rows = await tx.$queryRawUnsafe(
+        `UPDATE supplier_manual_payables
+            SET supplier_id=$3::uuid,payable_date=$4::date,amount=$5,note=$6,updated_by_id=$7::uuid,updated_at=NOW()
+          WHERE id=$1::uuid AND shop_id=$2::uuid AND active=TRUE
+          RETURNING id,supplier_id AS "supplierId",payable_date AS "payableDate",amount,note,created_at AS "createdAt",updated_at AS "updatedAt"`,
+        req.params.id,
+        req.auth.shopId,
+        input.supplierId,
+        input.payableDate,
+        input.amount,
+        input.note || null,
+        req.auth.userId,
+      );
+      await audit(tx, req, 'SUPPLIER_MANUAL_PAYABLE_UPDATED', 'supplier_manual_payable', req.params.id, {
+        before: currentRows[0],
+        after: { ...rows[0], supplierCode: supplierRows[0].supplierCode, supplierName: supplierRows[0].name },
+      });
+      return { ...rows[0], supplierCode: supplierRows[0].supplierCode, supplierName: supplierRows[0].name };
+    });
+    res.json({ ok: true, manualPayable: result });
+  }));
+
+  app.delete('/api/purchasing/manual-payables/:id', ...access.write, wrap(async (req, res) => {
+    await assertCompletionTablesReady();
+    await ensureManualPayablesTable();
+    const result = await serializable(async (tx) => {
+      const currentRows = await tx.$queryRawUnsafe(
+        `SELECT id,supplier_id AS "supplierId",amount,note
+           FROM supplier_manual_payables
+          WHERE id=$1::uuid AND shop_id=$2::uuid AND active=TRUE
+          LIMIT 1`,
+        req.params.id,
+        req.auth.shopId,
+      );
+      if (!currentRows[0]) throw new ApiError(404, 'Manual supplier payable was not found');
+      await tx.$executeRawUnsafe(
+        `UPDATE supplier_manual_payables
+            SET active=FALSE,updated_by_id=$3::uuid,updated_at=NOW()
+          WHERE id=$1::uuid AND shop_id=$2::uuid`,
+        req.params.id,
+        req.auth.shopId,
+        req.auth.userId,
+      );
+      await audit(tx, req, 'SUPPLIER_MANUAL_PAYABLE_DELETED', 'supplier_manual_payable', req.params.id, {
+        before: currentRows[0],
+      });
+      return currentRows[0];
+    });
+    res.json({ ok: true, deleted: result });
+  }));
+
   app.get('/api/purchasing/payables', ...access.read, wrap(async (req, res) => {
     await assertCompletionTablesReady();
     const page = Math.max(1, Number.parseInt(req.query.page || '1', 10) || 1);

@@ -25,6 +25,11 @@ const collectionSchema = z.object({
   note: text(300),
 });
 
+const balanceEditSchema = z.object({
+  balance: z.coerce.number().finite().min(0),
+  note: text(300),
+});
+
 class ApiError extends Error {
   constructor(status, message, details) {
     super(message);
@@ -114,6 +119,45 @@ function saleJson(sale) {
   };
 }
 
+function debtEventJson(event) {
+  const details = event.details || {};
+  if (event.action === 'CUSTOMER_CREDIT_COLLECTED') {
+    const amount = number(details.amount);
+    if (amount <= 0) return null;
+    return {
+      id: event.id,
+      type: 'REPAID',
+      label: 'Customer repayment',
+      date: event.createdAt,
+      amount,
+      method: details.method || '-',
+      reference: details.reference || '',
+      note: details.note || '',
+      balanceBefore: number(details.balanceBefore),
+      balanceAfter: number(details.balanceAfter),
+      manual: Boolean(details.manualCollection),
+    };
+  }
+  if (event.action === 'CUSTOMER_CREDIT_BALANCE_EDITED') {
+    const difference = number(details.difference);
+    if (Math.abs(difference) <= 0.005) return null;
+    return {
+      id: event.id,
+      type: difference >= 0 ? 'BORROWED' : 'ADJUSTED_DOWN',
+      label: difference >= 0 ? 'Manual debt added' : 'Manual debt reduced',
+      date: event.createdAt,
+      amount: Math.abs(difference),
+      method: 'MANUAL',
+      reference: '',
+      note: details.note || '',
+      balanceBefore: number(details.balanceBefore),
+      balanceAfter: number(details.balanceAfter),
+      manual: true,
+    };
+  }
+  return null;
+}
+
 function attachCustomerCreditPostgresApi(app) {
   const read = [requireAuth, requireShopUser, requireCustomerAccess];
   const write = [requireAuth, requireShopUser, requireWritableSubscription, requireCustomerAccess];
@@ -190,21 +234,51 @@ function attachCustomerCreditPostgresApi(app) {
 
   app.get('/api/customers/:id', ...read, wrap(async (req, res) => {
     const id = parse(uuid, req.params.id);
-    const customer = await prisma.customer.findFirst({
-      where: { id, shopId: req.auth.shopId },
-      include: {
-        sales: {
-          orderBy: { soldAt: 'desc' },
-          take: 50,
-          include: {
-            user: { select: { name: true, username: true } },
-            items: { orderBy: { createdAt: 'asc' } },
-            payments: { orderBy: { paidAt: 'desc' } },
+    const [customer, debtAuditLogs] = await prisma.$transaction([
+      prisma.customer.findFirst({
+        where: { id, shopId: req.auth.shopId },
+        include: {
+          sales: {
+            orderBy: { soldAt: 'desc' },
+            take: 50,
+            include: {
+              user: { select: { name: true, username: true } },
+              items: { orderBy: { createdAt: 'asc' } },
+              payments: { orderBy: { paidAt: 'desc' } },
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.auditLog.findMany({
+        where: {
+          shopId: req.auth.shopId,
+          entityType: 'customer',
+          entityId: id,
+          action: { in: ['CUSTOMER_CREDIT_BALANCE_EDITED', 'CUSTOMER_CREDIT_COLLECTED'] },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      }),
+    ]);
     if (!customer) throw new ApiError(404, 'Customer not found');
+    const creditSaleEvents = customer.sales
+      .filter((sale) => sale.paymentMethod === 'CREDIT' || sale.paymentStatus === 'PENDING' || sale.paymentStatus === 'PARTIAL')
+      .map((sale) => ({
+        id: `sale-${sale.id}`,
+        type: 'BORROWED',
+        label: 'Credit sale',
+        date: sale.soldAt,
+        amount: number(sale.total),
+        method: 'CREDIT',
+        reference: sale.invoiceNumber,
+        note: sale.paymentStatus,
+        balanceBefore: null,
+        balanceAfter: null,
+        manual: false,
+      }));
+    const auditEvents = debtAuditLogs.map(debtEventJson).filter(Boolean);
+    const debtHistory = [...creditSaleEvents, ...auditEvents]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     res.json({
       ok: true,
@@ -216,6 +290,7 @@ function attachCustomerCreditPostgresApi(app) {
         balance: number(customer.balance),
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
+        debtHistory,
         sales: customer.sales.map(saleJson),
       },
     });
@@ -250,6 +325,40 @@ function attachCustomerCreditPostgresApi(app) {
     res.json({ ok: true, customer: { ...customer, balance: number(customer.balance) } });
   }));
 
+  app.patch('/api/customers/:id/balance', ...write, wrap(async (req, res) => {
+    const id = parse(uuid, req.params.id);
+    const input = parse(balanceEditSchema, req.body || {});
+    const result = await serializable(async (tx) => {
+      const existing = await tx.customer.findFirst({ where: { id, shopId: req.auth.shopId } });
+      if (!existing) throw new ApiError(404, 'Customer not found');
+      const balanceBefore = number(existing.balance);
+      const customer = await tx.customer.update({
+        where: { id },
+        data: { balance: input.balance },
+      });
+      await tx.auditLog.create({
+        data: {
+          shopId: req.auth.shopId,
+          userId: req.auth.userId,
+          action: 'CUSTOMER_CREDIT_BALANCE_EDITED',
+          entityType: 'customer',
+          entityId: id,
+          details: {
+            customerName: existing.name,
+            balanceBefore,
+            balanceAfter: number(customer.balance),
+            difference: number(customer.balance) - balanceBefore,
+            note: clean(input.note),
+          },
+          ipAddress: req.ip || null,
+          userAgent: req.headers['user-agent'] || null,
+        },
+      });
+      return customer;
+    });
+    res.json({ ok: true, customer: { ...result, balance: number(result.balance) } });
+  }));
+
   app.post('/api/customers/:id/collect', ...write, wrap(async (req, res) => {
     const customerId = parse(uuid, req.params.id);
     const input = parse(collectionSchema, req.body || {});
@@ -279,7 +388,6 @@ function attachCustomerCreditPostgresApi(app) {
         include: { payments: true },
         orderBy: { soldAt: 'asc' },
       });
-      if (!pendingSales.length) throw new ApiError(409, 'No pending credit sale found for this customer');
 
       let remaining = input.amount;
       const allocations = [];
@@ -313,7 +421,13 @@ function attachCustomerCreditPostgresApi(app) {
       }
 
       if (remaining > 0.005) {
-        throw new ApiError(409, 'Collection could not be fully allocated to pending sales', { remaining });
+        allocations.push({
+          saleId: null,
+          invoice: 'MANUAL_CUSTOMER_DEBT',
+          amount: remaining,
+          manual: true,
+        });
+        remaining = 0;
       }
 
       const updated = await tx.customer.update({
@@ -336,6 +450,7 @@ function attachCustomerCreditPostgresApi(app) {
             note: clean(input.note),
             balanceBefore,
             balanceAfter: number(updated.balance),
+            manualCollection: allocations.some((allocation) => allocation.manual === true),
             allocations,
           },
           ipAddress: req.ip || null,

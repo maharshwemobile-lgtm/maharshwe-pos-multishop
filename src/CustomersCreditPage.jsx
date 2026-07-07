@@ -146,6 +146,64 @@ function CollectionModal({ customer, onClose, onSaved }) {
   );
 }
 
+function BalanceEditModal({ customer, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    balance: String(Number(customer.balance || 0)),
+    note: '',
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const before = Number(customer.balance || 0);
+  const after = Number(form.balance || 0);
+  const diff = after - before;
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (after < 0 || !Number.isFinite(after)) return setError('Debt amount must be zero or more.');
+    setBusy(true);
+    setError('');
+    try {
+      await apiFetch(`/api/customers/${customer.id}/balance`, {
+        method: 'PATCH',
+        body: { balance: after, note: form.note || null },
+      });
+      await onSaved('Customer debt balance updated');
+    } catch (requestError) {
+      setError(requestError.message || 'Balance update failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="credit-modal-backdrop" onMouseDown={(event) => {
+      if (event.target === event.currentTarget && !busy) onClose();
+    }}>
+      <section className="credit-modal" role="dialog" aria-modal="true">
+        <header>
+          <div className="credit-modal-icon credit-tone-orange"><CircleDollarSign size={24} /></div>
+          <div><h3>Edit Customer Debt</h3><p>{customer.name} · customer owes shop</p></div>
+          <button type="button" className="credit-icon-button" onClick={onClose} disabled={busy}><X size={20} /></button>
+        </header>
+        <form onSubmit={submit} className="credit-form">
+          <div className="credit-balance-preview">
+            <div><span>Current</span><b>{money(before)}</b></div>
+            <div className={diff >= 0 ? '' : 'credit-payment-change'}><span>Change</span><b>{diff >= 0 ? '+' : ''}{money(diff)}</b></div>
+            <div><span>New Debt</span><b>{money(after)}</b></div>
+          </div>
+          <label className="credit-field"><span>Customer owes shop amount *</span><input type="number" min="0" step="1" value={form.balance} onChange={(event) => setForm({ ...form, balance: event.target.value })} autoFocus required /></label>
+          <label className="credit-field"><span>Reason / Note</span><textarea rows="2" value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} placeholder="Opening balance, correction, old debt..." /></label>
+          {error ? <div className="credit-form-error">{error}</div> : null}
+          <footer>
+            <button type="button" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="credit-submit" disabled={busy}>{busy ? <Loader2 className="credit-spin" size={18} /> : <CheckCircle2 size={18} />} Save Debt</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 function DetailModal({ customer, loading, onClose, onCollect, onEdit, onOpenHistory }) {
   return (
     <div className="credit-modal-backdrop" onMouseDown={(event) => {
@@ -168,6 +226,26 @@ function DetailModal({ customer, loading, onClose, onCollect, onEdit, onOpenHist
               <button type="button" onClick={() => onEdit(customer)}><Edit3 size={17} /> Edit Customer</button>
               <button type="button" onClick={() => onOpenHistory(customer)}><History size={17} /> Open Sales History</button>
               <button type="button" className="primary" onClick={() => onCollect(customer)} disabled={Number(customer.balance || 0) <= 0}><Banknote size={17} /> Collect Payment</button>
+            </div>
+            <div className="credit-section-title">Debt History</div>
+            <div className="credit-history-wrap">
+              <table className="credit-history-table">
+                <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Reference</th><th>Method</th><th>Balance</th><th>Note</th></tr></thead>
+                <tbody>
+                  {(customer.debtHistory || []).map((event) => (
+                    <tr key={event.id}>
+                      <td>{formatDate(event.date)}</td>
+                      <td><span className={`credit-status ${event.type === 'REPAID' || event.type === 'ADJUSTED_DOWN' ? 'clear' : 'owing'}`}>{event.type === 'REPAID' ? 'Paid / ဆပ်' : event.type === 'ADJUSTED_DOWN' ? 'Reduced' : 'Borrowed / ယူ'}</span></td>
+                      <td><b className={event.type === 'REPAID' || event.type === 'ADJUSTED_DOWN' ? '' : 'credit-outstanding'}>{event.type === 'REPAID' || event.type === 'ADJUSTED_DOWN' ? '-' : '+'}{money(event.amount)}</b></td>
+                      <td>{event.reference || '-'}</td>
+                      <td>{event.method || '-'}</td>
+                      <td>{event.balanceAfter === null || event.balanceAfter === undefined ? '-' : money(event.balanceAfter)}</td>
+                      <td>{event.note || event.label || '-'}</td>
+                    </tr>
+                  ))}
+                  {!customer.debtHistory?.length ? <tr><td colSpan="7"><div className="credit-empty"><FileText size={26} /><span>No debt history yet.</span></div></td></tr> : null}
+                </tbody>
+              </table>
             </div>
             <div className="credit-section-title">Recent Sales</div>
             <div className="credit-history-wrap">
@@ -208,6 +286,7 @@ export default function CustomersCreditPage({ onNavigate }) {
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [collectionCustomer, setCollectionCustomer] = useState(null);
+  const [balanceCustomer, setBalanceCustomer] = useState(null);
 
   const notify = (type, text) => {
     setMessage({ type, text });
@@ -281,6 +360,13 @@ export default function CustomersCreditPage({ onNavigate }) {
     await refreshDetail();
   };
 
+  const afterBalanceEdit = async (text) => {
+    setBalanceCustomer(null);
+    notify('success', text);
+    await load();
+    await refreshDetail();
+  };
+
   const openSalesHistory = (customer) => {
     window.sessionStorage.setItem('mahar-pos-sales-history-query', customer.phone || customer.name);
     onNavigate?.('Sales History');
@@ -326,7 +412,7 @@ export default function CustomersCreditPage({ onNavigate }) {
                   <td>{customer.repairCount}</td>
                   <td><b className={customer.balance > 0 ? 'credit-outstanding' : ''}>{money(customer.balance)}</b></td>
                   <td><span className={`credit-status ${customer.balance > 0 ? 'owing' : 'clear'}`}>{customer.balance > 0 ? 'Owing' : 'Clear'}</span></td>
-                  <td><div className="credit-row-actions"><button type="button" onClick={() => openDetail(customer)}><History size={15} /> View</button><button type="button" onClick={() => setEditor({ customer })}><Edit3 size={15} /> Edit</button><button type="button" className="collect" onClick={() => setCollectionCustomer(customer)} disabled={customer.balance <= 0}><Banknote size={15} /> Collect</button></div></td>
+                  <td><div className="credit-row-actions"><button type="button" onClick={() => openDetail(customer)}><History size={15} /> View</button><button type="button" onClick={() => setEditor({ customer })}><Edit3 size={15} /> Edit</button><button type="button" onClick={() => setBalanceCustomer(customer)}><CircleDollarSign size={15} /> Debt</button><button type="button" className="collect" onClick={() => setCollectionCustomer(customer)} disabled={customer.balance <= 0}><Banknote size={15} /> Collect</button></div></td>
                 </tr>
               ))}
               {!data.customers?.length && !loading ? <tr><td colSpan="8"><div className="credit-empty"><Users size={30} /><span>No customers found.</span></div></td></tr> : null}
@@ -344,6 +430,7 @@ export default function CustomersCreditPage({ onNavigate }) {
       {message ? <div className={`credit-toast credit-toast-${message.type}`}>{message.text}</div> : null}
       {editor ? <CustomerModal editor={editor} onClose={() => setEditor(null)} onSaved={afterSaved} /> : null}
       {collectionCustomer ? <CollectionModal customer={collectionCustomer} onClose={() => setCollectionCustomer(null)} onSaved={afterCollection} /> : null}
+      {balanceCustomer ? <BalanceEditModal customer={balanceCustomer} onClose={() => setBalanceCustomer(null)} onSaved={afterBalanceEdit} /> : null}
       {detailId ? <DetailModal customer={detail} loading={detailLoading} onClose={() => { setDetailId(''); setDetail(null); }} onCollect={setCollectionCustomer} onEdit={(customer) => setEditor({ customer })} onOpenHistory={openSalesHistory} /> : null}
     </section>
   );

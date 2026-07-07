@@ -121,6 +121,12 @@ function bucketExpression(dateExpression, period) {
   return `TO_CHAR(${dateExpression}, 'YYYY-MM-DD')`;
 }
 
+function bucketStartExpression(dateExpression, period) {
+  if (period === 'monthly') return `DATE_TRUNC('month', ${dateExpression})::date`;
+  if (period === 'yearly') return `DATE_TRUNC('year', ${dateExpression})::date`;
+  return `${dateExpression}::date`;
+}
+
 function emptyCloseRow(bucket) {
   return {
     bucket,
@@ -177,6 +183,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
   const repairBucket = bucketExpression(repairDate, period);
   const serviceBucket = bucketExpression(serviceDate, period);
   const billerBucket = bucketExpression('transaction_date', period);
+  const billerBucketStart = bucketStartExpression('transaction_date', period);
   const recordBucket = bucketExpression('income_date', period);
   const expenseBucket = bucketExpression('expense_date', period);
   const closeBucket = bucketExpression('closing_date', period);
@@ -234,21 +241,47 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
       toDay,
     ).catch(() => []),
     prisma.$queryRawUnsafe(
-      `WITH scoped AS (
-          SELECT ${billerBucket} AS bucket, transaction_type, amount, COALESCE(profit_amount,0) AS profit_amount
+      `WITH buckets AS (
+          SELECT DISTINCT ${billerBucket} AS bucket,
+                 ${billerBucketStart} AS bucket_start
+            FROM biller_transactions
+           WHERE shop_id=$1::uuid
+             AND transaction_date::date >= $2::date
+             AND transaction_date::date <= $3::date
+        ),
+        scoped AS (
+          SELECT ${billerBucket} AS bucket,
+                 transaction_type,
+                 amount,
+                 COALESCE(balance_effect_amount,0) AS balance_effect_amount,
+                 COALESCE(profit_amount,0) AS profit_amount
             FROM biller_transactions
            WHERE shop_id=$1::uuid
              AND transaction_date::date >= $2::date
              AND transaction_date::date <= $3::date
         )
-        SELECT bucket,
-               0::numeric AS "billOpeningBalance",
-               COALESCE(SUM(amount) FILTER (WHERE transaction_type='REFILL'),0) AS "billRefill",
-               COALESCE(SUM(amount) FILTER (WHERE transaction_type='SOLD'),0) AS "billSoldVolume",
-               COALESCE(SUM(COALESCE(NULLIF(balance_effect_amount,0),amount)) FILTER (WHERE transaction_type='SOLD'),0) AS "billBalanceSold",
-               COALESCE(SUM(amount) FILTER (WHERE transaction_type='ADJUSTMENT'),0) AS "billAdjustment",
-               COALESCE(SUM(profit_amount) FILTER (WHERE transaction_type='SOLD'),0) AS "billEloadProfit"
-          FROM scoped GROUP BY 1`,
+        SELECT b.bucket,
+               (
+                 COALESCE((SELECT SUM(opening_balance) FROM billers WHERE shop_id=$1::uuid AND is_active=TRUE),0)
+                 + COALESCE((
+                    SELECT SUM(CASE
+                      WHEN t2.transaction_type IN ('REFILL','ADJUSTMENT') THEN t2.amount
+                      WHEN t2.transaction_type='SOLD' THEN -COALESCE(NULLIF(t2.balance_effect_amount,0),t2.amount)
+                      ELSE 0
+                    END)
+                    FROM biller_transactions t2
+                    WHERE t2.shop_id=$1::uuid
+                      AND t2.transaction_date::date < b.bucket_start
+                 ),0)
+               ) AS "billOpeningBalance",
+               COALESCE(SUM(s.amount) FILTER (WHERE s.transaction_type='REFILL'),0) AS "billRefill",
+               COALESCE(SUM(s.amount) FILTER (WHERE s.transaction_type='SOLD'),0) AS "billSoldVolume",
+               COALESCE(SUM(COALESCE(NULLIF(s.balance_effect_amount,0),s.amount)) FILTER (WHERE s.transaction_type='SOLD'),0) AS "billBalanceSold",
+               COALESCE(SUM(s.amount) FILTER (WHERE s.transaction_type='ADJUSTMENT'),0) AS "billAdjustment",
+               COALESCE(SUM(s.profit_amount) FILTER (WHERE s.transaction_type='SOLD'),0) AS "billEloadProfit"
+          FROM buckets b
+          LEFT JOIN scoped s ON s.bucket=b.bucket
+         GROUP BY b.bucket,b.bucket_start`,
       shopId,
       fromDay,
       toDay,
@@ -348,8 +381,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
 
   const rows = [...map.values()]
     .map((row) => {
-      const billTopupIncome = Number(row.billSoldVolume || 0);
-      row.otherTopupIncome = round(Number(row.otherTopupIncome || 0) + billTopupIncome);
+      row.otherTopupIncome = round(Number(row.otherTopupIncome || 0) + Number(row.billSoldVolume || 0));
       const otherIncomeSubtotal = row.otherSaleIncome + row.otherServiceIncome + row.otherTopupIncome + row.otherOtherIncome;
       const otherExpenseSubtotal = row.otherSaleExpense + row.otherServiceExpense + row.otherTopupExpense + row.otherOtherExpense;
       const billOpeningBalance = row.billOpeningBalance;
