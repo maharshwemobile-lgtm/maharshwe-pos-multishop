@@ -417,8 +417,10 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
             {GOOGLE_CLIENT_ID ? (
               <>
-                <div className="ms-login-divider"><span>Google ဖြင့် အမြန် Register</span></div>
-                <div className="ms-login-google" ref={googleButtonRef} />
+                <div className="ms-login-google-register">
+                  <b>Google ဖြင့် အမြန် Register</b>
+                  <div className="ms-login-google" ref={googleButtonRef} />
+                </div>
                 <div className="ms-login-divider"><span>သို့မဟုတ် manual register</span></div>
               </>
             ) : null}
