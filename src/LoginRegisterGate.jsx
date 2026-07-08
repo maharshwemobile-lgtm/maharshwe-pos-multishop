@@ -415,15 +415,6 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="မဟာရွှေဆိုင်" autoFocus />
             </label>
             <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
-            {GOOGLE_CLIENT_ID ? (
-              <>
-                <div className="ms-login-google-register">
-                  <b>Google ဖြင့် အမြန် Register</b>
-                  <div className="ms-login-google" ref={googleButtonRef} />
-                </div>
-                <div className="ms-login-divider"><span>သို့မဟုတ် manual register</span></div>
-              </>
-            ) : null}
             <label>
               <span>Email / Username <b>*</b></span>
               <input name="username" value={registerForm.username} onChange={(event) => { setRegisterForm({ ...registerForm, username: event.target.value }); setError(''); }} placeholder="email@example.com သို့မဟုတ် username" autoComplete="username" />
@@ -440,6 +431,15 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဖွင့်နေသည်...' : 'အကောင့်ဖွင့်မည်'}</button>
             <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
             <p className="ms-login-footer">အကောင့်ရှိပြီးသားလား? <button type="button" onClick={() => switchMode('login')}>Login ဝင်ရန်</button></p>
+            {GOOGLE_CLIENT_ID ? (
+              <>
+                <div className="ms-login-divider"><span>သို့မဟုတ်</span></div>
+                <div className="ms-login-google-register">
+                  <b>Google ဖြင့် အမြန် Register</b>
+                  <div className="ms-login-google" ref={googleButtonRef} />
+                </div>
+              </>
+            ) : null}
           </form>
         )}
         <LoginFooterActions onForgotPassword={() => setError('Password reset လိုအပ်ပါက Telegram Support မှ Admin ကိုဆက်သွယ်ပါ။')} />
