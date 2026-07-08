@@ -94,6 +94,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       const session = await googleLogin({
         credential,
         shopSlug: loginForm.shopSlug.trim() || undefined,
+        businessType: mode === 'register' ? registerForm.businessType || 'PHONE_SHOP' : undefined,
       });
       onSession?.(session);
     } catch (requestError) {
@@ -115,7 +116,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
   };
 
   useEffect(() => {
-    if (mode !== 'login' || !GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
+    if (!['login', 'register'].includes(mode) || !GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
     let cancelled = false;
 
     const renderGoogleButton = () => {
@@ -130,7 +131,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         theme: 'outline',
         size: 'large',
         width: 320,
-        text: 'signin_with',
+        text: mode === 'register' ? 'signup_with' : 'signin_with',
         locale: 'my',
       });
     };
@@ -157,7 +158,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     };
     document.body.appendChild(script);
     return () => { cancelled = true; };
-  }, [mode, loginForm.shopSlug, onSession]);
+  }, [mode, loginForm.shopSlug, registerForm.businessType, onSession]);
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
@@ -414,6 +415,13 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="မဟာရွှေဆိုင်" autoFocus />
             </label>
             <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
+            {GOOGLE_CLIENT_ID ? (
+              <>
+                <div className="ms-login-divider"><span>Google ဖြင့် အမြန် Register</span></div>
+                <div className="ms-login-google" ref={googleButtonRef} />
+                <div className="ms-login-divider"><span>သို့မဟုတ် manual register</span></div>
+              </>
+            ) : null}
             <label>
               <span>Email / Username <b>*</b></span>
               <input name="username" value={registerForm.username} onChange={(event) => { setRegisterForm({ ...registerForm, username: event.target.value }); setError(''); }} placeholder="email@example.com သို့မဟုတ် username" autoComplete="username" />
