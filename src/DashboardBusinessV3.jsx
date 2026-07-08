@@ -124,7 +124,7 @@ export default function DashboardBusinessV3({ onNavigate }) {
   const maxTrend = useMemo(() => Math.max(1, ...trend.map((item) => Number(item.sales || 0))), [trend]);
 
   const metrics = [
-    { icon: Wallet, label: "Today's Total Income", value: dashboard.todayTotalIncome, detail: isMiniMart ? 'Sales + Other Income' : 'Sales + Repair + Service + Other Income', tone: 'green' },
+    { icon: Wallet, label: "Today's Total Income", value: dashboard.todayTotalIncome, detail: isMiniMart ? `Sales + Other + TopUp (${money(dashboard.billEloadSoldVolume)})` : `Sales + Repair + Service + Other + TopUp (${money(dashboard.billEloadSoldVolume)})`, tone: 'green' },
     { icon: ShoppingCart, label: 'Product Sales Income', value: dashboard.todaySaleIncome, detail: `${Number(dashboard.todayOrders || 0)} sale orders`, tone: 'blue' },
     { icon: TrendingUp, label: 'Product Sales Profit', value: dashboard.productProfit, detail: 'Product gross profit', tone: 'green' },
     !isMiniMart ? { icon: Wrench, label: 'Repair Income', value: dashboard.repairIncome, detail: `${Number(dashboard.repairPayments || 0)} repair payments + Service Income`, tone: 'gold' } : null,
