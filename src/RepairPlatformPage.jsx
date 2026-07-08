@@ -46,6 +46,8 @@ const blankIntake = {
   notes: '',
 };
 
+const DEVICE_SUGGESTION_KEY = 'mahar-pos-repair-device-suggestions-v1';
+
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 
 function formatDate(value) {
@@ -87,7 +89,68 @@ function IntakeModal({ onClose, onSaved, notify }) {
   const [form, setForm] = useState(blankIntake);
   const [saving, setSaving] = useState(false);
   const [showOptional, setShowOptional] = useState(false);
+  const [suggestions, setSuggestions] = useState({ brands: [], models: [], pairs: [] });
   const field = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  useEffect(() => {
+    let mounted = true;
+    const readLocalSuggestions = () => {
+      try {
+        return JSON.parse(window.localStorage.getItem(DEVICE_SUGGESTION_KEY) || '{}');
+      } catch {
+        return {};
+      }
+    };
+    const mergeUnique = (...lists) => Array.from(new Set(lists.flat().map((item) => String(item || '').trim()).filter(Boolean))).slice(0, 140);
+    const mergePairs = (...lists) => {
+      const map = new Map();
+      lists.flat().forEach((item) => {
+        const brand = String(item?.brand || '').trim();
+        const model = String(item?.model || '').trim();
+        if (brand && model) map.set(`${brand.toLowerCase()}::${model.toLowerCase()}`, { brand, model });
+      });
+      return Array.from(map.values()).slice(0, 180);
+    };
+    const local = readLocalSuggestions();
+    const apply = (remote = {}) => {
+      if (!mounted) return;
+      setSuggestions({
+        brands: mergeUnique(remote.brands, local.brands),
+        models: mergeUnique(remote.models, local.models),
+        pairs: mergePairs(remote.pairs, local.pairs),
+      });
+    };
+    apply();
+    apiFetch('/api/repair-platform/device-suggestions')
+      .then((response) => apply(response || {}))
+      .catch(() => apply());
+    return () => { mounted = false; };
+  }, []);
+
+  const modelSuggestions = useMemo(() => {
+    const brand = form.deviceBrand.trim().toLowerCase();
+    if (!brand) return suggestions.models;
+    const matched = suggestions.pairs
+      .filter((item) => String(item.brand || '').trim().toLowerCase() === brand)
+      .map((item) => item.model);
+    return Array.from(new Set([...matched, ...suggestions.models])).filter(Boolean).slice(0, 120);
+  }, [form.deviceBrand, suggestions]);
+
+  const rememberDeviceSuggestion = (payload) => {
+    const brand = String(payload.deviceBrand || '').trim();
+    const model = String(payload.deviceModel || '').trim();
+    if (!brand && !model) return;
+    try {
+      const existing = JSON.parse(window.localStorage.getItem(DEVICE_SUGGESTION_KEY) || '{}');
+      const brands = Array.from(new Set([brand, ...(existing.brands || [])].filter(Boolean))).slice(0, 80);
+      const models = Array.from(new Set([model, ...(existing.models || [])].filter(Boolean))).slice(0, 120);
+      const pairs = [{ brand, model }, ...(existing.pairs || [])].filter((item) => item.brand && item.model);
+      const pairMap = new Map(pairs.map((item) => [`${String(item.brand).toLowerCase()}::${String(item.model).toLowerCase()}`, item]));
+      window.localStorage.setItem(DEVICE_SUGGESTION_KEY, JSON.stringify({ brands, models, pairs: Array.from(pairMap.values()).slice(0, 160) }));
+    } catch {
+      // Suggestions are a convenience only; never block repair intake.
+    }
+  };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -101,6 +164,7 @@ function IntakeModal({ onClose, onSaved, notify }) {
       };
       delete payload.accessoriesText;
       const response = await apiFetch('/api/repair-platform/intake', { method: 'POST', body: payload });
+      rememberDeviceSuggestion(payload);
       notify('success', `Repair ID: ${response.repair.repairNumber}`);
       onSaved(response.repair);
     } catch (error) {
@@ -117,11 +181,17 @@ function IntakeModal({ onClose, onSaved, notify }) {
         <button type="button" onClick={onClose}><X size={20} /></button>
       </header>
       <form className="repair-form" onSubmit={submit}>
+        <datalist id="repair-device-brand-suggestions">
+          {suggestions.brands.map((brand) => <option key={brand} value={brand} />)}
+        </datalist>
+        <datalist id="repair-device-model-suggestions">
+          {modelSuggestions.map((model) => <option key={model} value={model} />)}
+        </datalist>
         <div className="repair-form-grid">
           <label>Customer Name<input value={form.customerName} onChange={(event) => field('customerName', event.target.value)} required /></label>
           <label>Customer ဖုန်းနံပါတ်<input value={form.customerPhone} onChange={(event) => field('customerPhone', event.target.value)} /></label>
-          <label>Device Brand<input value={form.deviceBrand} onChange={(event) => field('deviceBrand', event.target.value)} placeholder="Vivo / Oppo / Redmi" /></label>
-          <label>Device Model<input value={form.deviceModel} onChange={(event) => field('deviceModel', event.target.value)} required /></label>
+          <label>Device Brand<input list="repair-device-brand-suggestions" value={form.deviceBrand} onChange={(event) => field('deviceBrand', event.target.value)} placeholder="Vivo / Oppo / Redmi" autoComplete="off" /></label>
+          <label>Device Model<input list="repair-device-model-suggestions" value={form.deviceModel} onChange={(event) => field('deviceModel', event.target.value)} placeholder={form.deviceBrand ? `${form.deviceBrand} model` : 'Y28 / A3x / Note 13'} autoComplete="off" required /></label>
           <label>Estimated Cost<input type="number" min="0" value={form.estimatedCost} onChange={(event) => field('estimatedCost', event.target.value)} /></label>
           <label>Deposit<input type="number" min="0" value={form.deposit} onChange={(event) => field('deposit', event.target.value)} /></label>
           <label className="span-2">Problem<textarea value={form.problem} onChange={(event) => field('problem', event.target.value)} required /></label>
@@ -397,8 +467,17 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
   return (
     <section className="repair-platform-page">
       <div className="repair-page-heading repair-page-actions-only">
-        <div><button type="button" onClick={load}><RefreshCw size={18} /> Refresh</button><button className="primary" type="button" onClick={() => setShowIntake(true)}><Plus size={18} /> New Repair</button></div>
+        <div><button type="button" onClick={load}><RefreshCw size={18} /> Refresh</button><button className="primary" type="button" onClick={() => setShowIntake(true)}><Plus size={18} /> Add Repair</button></div>
       </div>
+
+      <section className="repair-add-entry-card">
+        <div>
+          <span>PHONE REPAIR INTAKE</span>
+          <h3>ဖုန်းပြင် စာရင်းသွင်းရန်</h3>
+          <p>Customer, Brand, Model, ပြင်ရမည့်ပြဿနာကိုဖြည့်ပြီး Repair ID အသစ်ထုတ်ပါ။ Brand / Model ကို တစ်ခါထည့်ပြီးရင် နောက်တစ်ခါ suggestion အနေနဲ့ပြပါမယ်။</p>
+        </div>
+        <button className="primary" type="button" onClick={() => setShowIntake(true)}><Plus size={19} /> Add Repair / စာရင်းသွင်းမည်</button>
+      </section>
 
       <div className="repair-summary-grid">
         {summaryCards.map(({ label, value, icon: Icon, tone }) => <article key={label}><div className={`tone-${tone}`}><Icon size={22} /></div><span>{label}</span><b>{Number(value).toLocaleString()}</b></article>)}

@@ -4,6 +4,62 @@
 .repair-quick-launcher>button{flex:0 0 auto;background:#fff7ed!important;border-color:#fed7aa!important;color:#b45309!important}
 @media(max-width:620px){.repair-quick-launcher{align-items:stretch;flex-direction:column}.repair-quick-launcher>button{width:100%}}
 
+.repair-add-entry-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:16px;
+  border:1px solid #fed7aa;
+  border-radius:16px;
+  background:linear-gradient(135deg,#fff7ed,#ffffff);
+  box-shadow:0 10px 26px rgba(245,158,11,.1);
+}
+.repair-add-entry-card span{
+  display:block;
+  color:#b45309;
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+.repair-add-entry-card h3{
+  margin:3px 0 5px;
+  font-size:18px;
+  color:#0f172a;
+}
+.repair-add-entry-card p{
+  margin:0;
+  color:#64748b;
+  font-size:13px;
+  line-height:1.55;
+}
+.repair-add-entry-card button{
+  flex:0 0 auto;
+  min-height:46px;
+  border:1px solid #f59e0b;
+  border-radius:12px;
+  background:#f59e0b;
+  color:#fff;
+  padding:0 16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-weight:950;
+  cursor:pointer;
+  box-shadow:0 12px 22px rgba(245,158,11,.2);
+}
+.dark .repair-add-entry-card{
+  background:linear-gradient(135deg,#332b16,#0b1b33);
+  border-color:#92400e;
+}
+.dark .repair-add-entry-card h3{color:#e5eef8}
+.dark .repair-add-entry-card p{color:#9fb0c7}
+@media(max-width:720px){
+  .repair-add-entry-card{align-items:stretch;flex-direction:column}
+  .repair-add-entry-card button{width:100%}
+}
+
 /* PR45: status action visibility */
 .repair-status-save-button{
   min-height:48px!important;
