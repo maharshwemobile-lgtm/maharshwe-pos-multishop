@@ -25,13 +25,13 @@
   margin-bottom:22px;
 }
 .ms-login-brand img{
-  width:min(220px,82%);
+  width:min(132px,46%);
   height:auto;
-  max-height:150px;
+  max-height:96px;
   object-fit:contain;
-  margin-bottom:14px;
+  margin-bottom:12px;
   animation:ms-login-logo-pop 1.8s ease-in-out infinite;
-  filter:drop-shadow(0 12px 22px rgba(15,118,110,.16));
+  filter:drop-shadow(0 8px 16px rgba(15,118,110,.14));
 }
 @keyframes ms-login-logo-pop{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
 .ms-login-brand h1{
