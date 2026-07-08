@@ -2,7 +2,7 @@ const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser } = require('./auth-api');
 
-const DEFAULT_LOGO = 'https://raw.githubusercontent.com/maharshwemobile-lgtm/maharshwe.shop/main/mahar-pos-logo.png';
+const DEFAULT_LOGO = 'https://app.maharshwe.shop/mahar-pos-logo.svg';
 
 function object(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
