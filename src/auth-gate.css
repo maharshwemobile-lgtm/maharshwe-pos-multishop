@@ -123,11 +123,11 @@
 }
 
 .ms-auth-logo-link img{
-  width:52px;
-  height:52px;
+  width:72px;
+  height:72px;
   object-fit:contain;
-  padding:6px;
-  border-radius:18px;
+  padding:4px;
+  border-radius:22px;
   background:rgba(255,255,255,.15);
   box-shadow:0 14px 32px rgba(0,0,0,.22);
 }

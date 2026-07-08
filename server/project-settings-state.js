@@ -1,6 +1,6 @@
 const { prisma } = require('./prisma');
 
-const PROJECT_LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png';
+const PROJECT_LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png?v=20260708-brand-logo';
 
 const DEFAULTS = {
   business: { subtitle: 'Mobile Software & Hardware Expert', secondaryPhone: '', townshipRegion: '', website: '', googleMapUrl: '', kbzPayNumber: '', wavePayNumber: '', repairPrefix: '' },
