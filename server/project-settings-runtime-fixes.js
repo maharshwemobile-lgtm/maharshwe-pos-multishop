@@ -1,7 +1,7 @@
 const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
 
-const PROJECT_LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.svg';
+const PROJECT_LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png';
 
 function plainObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};

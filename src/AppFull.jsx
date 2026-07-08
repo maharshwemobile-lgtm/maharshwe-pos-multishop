@@ -196,12 +196,16 @@ async function refreshCurrentSession() {
   return next;
 }
 
-function effectiveLogo() {
+function effectiveBrandLogo() {
   return PROJECT_LOGO_URL;
 }
 
+function effectiveBusinessLogo(settings) {
+  return safeText(settings?.business?.logoUrl, PROJECT_LOGO_URL);
+}
+
 function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = true }) {
-  const logo = effectiveLogo();
+  const logo = effectiveBusinessLogo(settings);
   const businessSubtitle = isMiniMartBusiness(user) ? 'Mini Mart POS & Inventory' : safeText(settings?.business?.subtitle, 'Mobile Shop Management');
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -212,7 +216,7 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
   };
   return <aside className={`sidebar phase9-sidebar ${open ? 'is-open' : 'is-closing'}`} aria-label="Main navigation">
     <button type="button" className="phase9-sidebar-close" onClick={onClose} aria-label="Close menu"><X size={20}/></button>
-    <div className="brand"><img src={logo} alt="Mahar POS"/><div><b>{safeText(settings?.business?.name, 'Mahar POS')}</b><span>{businessSubtitle}</span></div></div>
+    <div className="brand"><img src={logo} alt="Business logo"/><div><b>{safeText(settings?.business?.name, 'Mahar POS')}</b><span>{businessSubtitle}</span></div></div>
     <nav>
       {visibleMenu.map((item) => <button key={item.name} onClick={() => onSelect(item.name)} className={page === item.name ? 'active' : ''}><item.icon size={22} color={page === item.name ? '#fff' : '#94a3b8'} strokeWidth={2}/><span>{item.label || item.name}</span></button>)}
       <button onClick={handleLogout} style={{ marginTop: 'auto', color: '#ef4444' }}><LogOut size={22} color="#ef4444" strokeWidth={2}/><span>Logout</span></button>
@@ -260,7 +264,7 @@ function AppMenuTour({ open, isMobile, onOpenMenu, onDismiss, user }) {
 function Topbar({ page, toggle, settings, user, menuOpen }) {
   const safePage = validPageName(page);
   const title = pageTitleFor(safePage, user);
-  const logo = effectiveLogo();
+  const logo = effectiveBrandLogo();
   const isDashboard = safePage === 'Dashboard';
   const isRepair = safePage === 'Repairs';
   const miniMart = isMiniMartBusiness(user);
@@ -285,7 +289,7 @@ function Topbar({ page, toggle, settings, user, menuOpen }) {
       {menuOpen ? <X size={24}/> : <Menu size={24}/>}
       <span>{menuOpen ? 'Close' : 'Menu'}</span>
     </button>
-    <img src={logo} alt="Mahar POS logo" style={{width:52,height:52,borderRadius:14,objectFit:'contain'}}/>
+    <img className="topbar-brand-logo" src={logo} alt="Mahar POS logo" style={{width:52,height:52,borderRadius:14,objectFit:'contain'}}/>
     <div className="topbar-title-copy">
       {phaseLabel ? <span className="topbar-phase-label">{phaseLabel}</span> : null}
       <h1>{title}</h1>
@@ -293,7 +297,7 @@ function Topbar({ page, toggle, settings, user, menuOpen }) {
     </div>
     <div style={{marginLeft:'auto'}}/>
     <PushNotificationControl/>
-    <div className="profile"><img src={logo} alt="Mahar POS" style={{width:48,height:48,borderRadius:'50%',objectFit:'contain'}}/><div><b>{safeText(user?.name, 'Mahar POS User')}</b><small>{safeText(user?.role, 'Secure Login')}</small></div></div>
+    <div className="profile topbar-user-profile"><div><b>{safeText(user?.name, 'Mahar POS User')}</b><small>{safeText(user?.role, 'Secure Login')}</small></div></div>
   </header>;
 }
 
