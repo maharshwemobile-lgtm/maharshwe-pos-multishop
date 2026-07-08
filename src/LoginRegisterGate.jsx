@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { changePassword, clearSession, googleLogin, login, registerTenant } from './phase2Api';
 import { PROJECT_LOGO_URL } from './projectBrand';
+import LoginFooterActions from './LoginFooterActions.jsx';
 import './login-register-gate.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
@@ -431,6 +432,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             <p className="ms-login-footer">အကောင့်ရှိပြီးသားလား? <button type="button" onClick={() => switchMode('login')}>Login ဝင်ရန်</button></p>
           </form>
         )}
+        <LoginFooterActions onForgotPassword={() => setError('Password reset လိုအပ်ပါက Telegram Support မှ Admin ကိုဆက်သွယ်ပါ။')} />
       </section>
     </main>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyRound, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import { getSession, googleLogin, login, registerTenant, subscribeSession } from './phase2Api';
+import LoginFooterActions from './LoginFooterActions.jsx';
 import './auth-gate.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
@@ -429,6 +430,7 @@ export default function GoogleAuthGate({ children }) {
           </div>
 
           <footer className="ms-auth-footer">
+            <LoginFooterActions onForgotPassword={() => setError('Password reset လိုအပ်ပါက Telegram Support မှ Admin ကိုဆက်သွယ်ပါ။')} />
             © 2026 Mahar Shwe Mobile POS. Powered by PostgreSQL Architecture.
           </footer>
         </section>
