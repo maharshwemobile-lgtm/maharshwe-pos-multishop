@@ -1,16 +1,22 @@
 {
-  "name": "မဟာရွှေ Mobile & IT",
-  "short_name": "မဟာရွှေ",
-  "description": "Mahar Shwe Mobile & IT business management app",
+  "name": "Mahar POS",
+  "short_name": "Mahar POS",
+  "description": "Mahar POS mobile phone sale and service management app",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#06100e",
+  "background_color": "#ffffff",
   "theme_color": "#13a36f",
   "icons": [
     {
-      "src": "./maharshwe-logo.png",
-      "sizes": "400x400",
+      "src": "./mahar-pos-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./mahar-pos-logo-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }

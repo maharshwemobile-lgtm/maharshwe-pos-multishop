@@ -1,5 +1,5 @@
 (() => {
-  const LOGO_URL = window.MS_THEME_LOGO_URL || './maharshwe-logo.png';
+  const LOGO_URL = window.MS_THEME_LOGO_URL || './mahar-pos-logo.png';
   const REMOTE_LOGO_RE = /raw\.githubusercontent\.com\/maharshwemobile-lgtm\/DataForPublic|avatars\.githubusercontent\.com/i;
   const PAGE_SIZE = 10;
 

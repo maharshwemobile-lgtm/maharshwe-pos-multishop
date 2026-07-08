@@ -45,8 +45,8 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(self.registration.showNotification(title, {
     body,
-    icon: '/maharshwe-logo.png',
-    badge: '/maharshwe-logo.png',
+    icon: '/mahar-pos-logo.png',
+    badge: '/mahar-pos-logo-192.png',
     tag,
     data: { url },
   }));
