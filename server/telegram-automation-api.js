@@ -365,12 +365,16 @@ function attachTelegramAutomationApi(app) {
     const next = {
       ...current,
       enabled: input.enabled,
-      botUsername: clean(input.botUsername, 80).replace(/^@/, ''),
-      chatId: clean(input.chatId, 80),
       saleNotifications: input.saleNotifications,
       dailyReportEnabled: input.dailyReportEnabled,
       dailyReportTime: input.dailyReportTime,
     };
+    if (Object.prototype.hasOwnProperty.call(input, 'botUsername') && input.botUsername !== undefined) {
+      next.botUsername = clean(input.botUsername, 80).replace(/^@/, '');
+    }
+    if (Object.prototype.hasOwnProperty.call(input, 'chatId') && input.chatId !== undefined) {
+      next.chatId = clean(input.chatId, 80);
+    }
     if (input.clearBotToken) {
       next.botToken = '';
       next.botTokenLast4 = '';

@@ -1,12 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BellRing, Bot, CheckCircle2, Loader2, Save, Send, ShieldCheck, UserRound } from 'lucide-react';
+import { BellRing, CheckCircle2, Loader2, Save, Send, ShieldCheck, UserRound } from 'lucide-react';
 import { apiFetch } from '../phase2Api';
 
 const EMPTY = {
   enabled: false,
-  botToken: '',
-  botUsername: '',
-  chatId: '',
   saleNotifications: false,
   dailyReportEnabled: false,
   dailyReportTime: '21:00',
@@ -29,14 +26,11 @@ export default function TelegramAutomationSettings() {
       setMeta(telegram);
       setForm({
         enabled: Boolean(telegram.enabled),
-        botToken: '',
-        botUsername: telegram.botUsername || '',
-        chatId: telegram.chatId || '',
         saleNotifications: Boolean(telegram.saleNotifications),
         dailyReportEnabled: Boolean(telegram.dailyReportEnabled),
         dailyReportTime: telegram.dailyReportTime || '21:00',
       });
-      setMessage(telegram.hasBotToken ? 'Telegram bot ချိတ်ပြီးပါပြီ။' : 'Telegram bot token ထည့်ပြီး Save နှိပ်ပါ။');
+      setMessage(telegram.loginWidgetReady ? 'Telegram ချိတ်ရန် အသင့်ဖြစ်ပါပြီ။' : 'Telegram bot setup ကို admin/server ဖက်မှာ အရင်ချိတ်ထားရန်လိုပါတယ်။');
     } catch (error) {
       setMessage(error.message || 'Telegram settings load failed');
     } finally {
@@ -55,11 +49,7 @@ export default function TelegramAutomationSettings() {
       try {
         const response = await apiFetch('/api/project-settings/api/telegram/connect-login', { method: 'POST', body: user });
         setMeta(response.telegram || {});
-        setForm((current) => ({
-          ...current,
-          enabled: true,
-          chatId: response.telegram?.chatId || current.chatId,
-        }));
+        setForm((current) => ({ ...current, enabled: true }));
         setMessage('ဒီ POS user ကို Telegram နဲ့ချိတ်ပြီးပါပြီ။');
       } catch (error) {
         setMessage(error.message || 'Telegram connect failed');
@@ -87,18 +77,16 @@ export default function TelegramAutomationSettings() {
   const save = async () => {
     setBusy('save');
     try {
-      const body = {
-        enabled: form.enabled,
-        botUsername: form.botUsername,
-        chatId: form.chatId,
-        saleNotifications: form.saleNotifications,
-        dailyReportEnabled: form.dailyReportEnabled,
-        dailyReportTime: form.dailyReportTime,
-        ...(form.botToken.trim() ? { botToken: form.botToken.trim() } : {}),
-      };
-      const response = await apiFetch('/api/project-settings/api/telegram', { method: 'PUT', body });
+      const response = await apiFetch('/api/project-settings/api/telegram', {
+        method: 'PUT',
+        body: {
+          enabled: form.enabled,
+          saleNotifications: form.saleNotifications,
+          dailyReportEnabled: form.dailyReportEnabled,
+          dailyReportTime: form.dailyReportTime,
+        },
+      });
       setMeta(response.telegram || {});
-      setForm((current) => ({ ...current, botToken: '' }));
       setMessage('Telegram settings သိမ်းပြီးပါပြီ။');
     } catch (error) {
       setMessage(error.message || 'Telegram settings save failed');
@@ -133,9 +121,7 @@ export default function TelegramAutomationSettings() {
     }
   };
 
-  const botReady = Boolean(meta.hasBotToken && form.botUsername);
   const userConnected = Boolean(meta.currentUserTelegram);
-  const botLink = form.botUsername ? `https://t.me/${form.botUsername.replace(/^@/, '')}` : '';
 
   return (
     <section className="ps-panel telegram-simple-settings">
@@ -143,8 +129,8 @@ export default function TelegramAutomationSettings() {
         <div>
           <BellRing size={21} />
           <span>
-            <h3>Telegram Auto Notification</h3>
-            <p>Sale ထွက်တိုင်း Telegram ပို့မယ်။ ညဘက်မှာ Daily Report ကို auto ပို့မယ်။</p>
+            <h3>Telegram Notification</h3>
+            <p>Telegram ချိတ်ပြီး Sale notification နဲ့ Daily report ကို ပို့မယ်။</p>
           </span>
         </div>
         <button className="ps-icon-button" type="button" onClick={load} disabled={busy === 'load'} title="Reload">
@@ -156,12 +142,12 @@ export default function TelegramAutomationSettings() {
 
       <div className="project-google-status">
         <div>
-          <Bot size={20} />
-          <span><small>Bot</small><b>{botReady ? 'Ready' : 'Need Setup'}</b></span>
+          <ShieldCheck size={20} />
+          <span><small>System</small><b>{meta.loginWidgetReady ? 'Ready' : 'Need Admin Setup'}</b></span>
         </div>
         <div>
           <UserRound size={20} />
-          <span><small>User Link</small><b>{userConnected ? 'Connected' : 'Not Connected'}</b></span>
+          <span><small>Telegram User</small><b>{userConnected ? 'Connected' : 'Not Connected'}</b></span>
         </div>
         <div>
           <BellRing size={20} />
@@ -171,37 +157,9 @@ export default function TelegramAutomationSettings() {
 
       <div className="ps-form">
         <div className="project-google-guide">
-          <div><b>1</b><span><strong>Bot ထည့်</strong><small>BotFather token + bot username ထည့်ပြီး Save နှိပ်ပါ။</small></span></div>
-          <div><b>2</b><span><strong>Telegram ချိတ်</strong><small>Login as Telegram နှိပ်ရင် ဒီ POS user ကို auto မှတ်ပါမယ်။</small></span></div>
-          <div><b>3</b><span><strong>Auto ပို့</strong><small>Sale notification / Daily report ကို ON ထားပါ။</small></span></div>
-        </div>
-
-        <div className="ps-grid-2">
-          <label className="ps-field">
-            <span>Bot Token</span>
-            <input
-              type="password"
-              value={form.botToken}
-              onChange={(event) => update({ botToken: event.target.value })}
-              placeholder={meta.hasBotToken ? `Saved · ****${meta.botTokenLast4 || ''}` : 'BotFather token ထည့်ပါ'}
-            />
-          </label>
-
-          <label className="ps-field">
-            <span>Bot Username</span>
-            <input
-              value={form.botUsername}
-              onChange={(event) => update({ botUsername: event.target.value.replace(/^@/, '') })}
-              placeholder="your_bot_username"
-            />
-          </label>
-        </div>
-
-        <div className="ps-actions">
-          <button className="ps-primary" type="button" onClick={save} disabled={busy === 'save'}>
-            {busy === 'save' ? <Loader2 className="ps-spin" size={18} /> : <Save size={18} />} Save
-          </button>
-          {botLink ? <button type="button" onClick={() => window.open(botLink, '_blank', 'noopener,noreferrer')}>Open Bot</button> : null}
+          <div><b>1</b><span><strong>Telegram Login</strong><small>ဒီ POS user ကို Telegram account နဲ့ချိတ်ပါ။</small></span></div>
+          <div><b>2</b><span><strong>Sale ပို့မယ်</strong><small>Sale voucher ထွက်တိုင်း Telegram ကို auto ပို့ပါမယ်။</small></span></div>
+          <div><b>3</b><span><strong>Daily Report</strong><small>နေ့ကုန်စာရင်းကို သတ်မှတ်ချိန်မှာ auto ပို့ပါမယ်။</small></span></div>
         </div>
 
         <div className="gs-code-card">
@@ -209,20 +167,20 @@ export default function TelegramAutomationSettings() {
           {userConnected ? (
             <p>ချိတ်ပြီးသား: Telegram ID {meta.currentUserTelegram.telegramId}{meta.currentUserTelegram.name ? ` · ${meta.currentUserTelegram.name}` : ''}</p>
           ) : (
-            <p>ဒီ user ကို Telegram နဲ့ချိတ်ရန် အောက်က Login button ကိုနှိပ်ပါ။</p>
+            <p>အောက်က Telegram login button ကိုနှိပ်ပါ။ Chat ID ကို system က auto မှတ်ပါမယ်။</p>
           )}
           <div ref={widgetRef} />
-          {!meta.loginWidgetReady ? <small>Bot Token + Bot Username သိမ်းပြီးမှ Login button ပေါ်ပါမယ်။</small> : null}
+          {!meta.loginWidgetReady ? <small>Bot setup ကို admin/server ဖက်မှာ ချိတ်ပြီးမှ Telegram login button ပေါ်ပါမယ်။</small> : null}
         </div>
 
         <div className="ps-grid-2">
           <label className="ps-switch-row">
-            <span><b>Telegram ကိုဖွင့်မယ်</b><small>OFF ဖြစ်ရင် အကုန်မပို့ပါ။</small></span>
+            <span><b>Telegram ကိုဖွင့်မယ်</b><small>OFF ဖြစ်ရင် notification မပို့ပါ။</small></span>
             <input type="checkbox" checked={form.enabled} onChange={(event) => update({ enabled: event.target.checked })} />
           </label>
 
           <label className="ps-switch-row">
-            <span><b>Sale တစ်ခါထွက်တိုင်း ပို့မယ်</b><small>Voucher confirm ပြီးတာနဲ့ Telegram ပို့ပါမယ်။</small></span>
+            <span><b>Sale တစ်ခါထွက်တိုင်း ပို့မယ်</b><small>Voucher confirm ပြီးတာနဲ့ ပို့ပါမယ်။</small></span>
             <input type="checkbox" checked={form.saleNotifications} onChange={(event) => update({ saleNotifications: event.target.checked })} />
           </label>
 
@@ -236,24 +194,16 @@ export default function TelegramAutomationSettings() {
             <input type="time" value={form.dailyReportTime} onChange={(event) => update({ dailyReportTime: event.target.value })} />
           </label>
         </div>
-
-        <details className="gs-code-card">
-          <summary>Manual Chat ID / Group ID ထည့်ချင်ရင် နှိပ်ပါ</summary>
-          <label className="ps-field">
-            <span>Chat ID / Group ID</span>
-            <input value={form.chatId} onChange={(event) => update({ chatId: event.target.value })} placeholder="Telegram user/group chat id" />
-          </label>
-        </details>
       </div>
 
       <div className="ps-actions">
         <button className="ps-primary" type="button" onClick={save} disabled={busy === 'save'}>
-          {busy === 'save' ? <Loader2 className="ps-spin" size={18} /> : <Save size={18} />} Save All
+          {busy === 'save' ? <Loader2 className="ps-spin" size={18} /> : <Save size={18} />} Save
         </button>
-        <button type="button" onClick={test} disabled={busy === 'test'}>
+        <button type="button" onClick={test} disabled={busy === 'test' || !meta.loginWidgetReady}>
           {busy === 'test' ? <Loader2 className="ps-spin" size={18} /> : <Send size={18} />} Test ပို့မယ်
         </button>
-        <button type="button" onClick={sendDailyReport} disabled={busy === 'report'}>
+        <button type="button" onClick={sendDailyReport} disabled={busy === 'report' || !meta.loginWidgetReady}>
           {busy === 'report' ? <Loader2 className="ps-spin" size={18} /> : <BellRing size={18} />} Daily Report စမ်းပို့မယ်
         </button>
       </div>
