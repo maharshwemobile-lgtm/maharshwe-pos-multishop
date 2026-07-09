@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Clipboard, Code2, Copy, Globe2, Loader2, RefreshCw, Save, Send, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Code2, Copy, Globe2, Loader2, RefreshCw, Save, Send, ShieldCheck } from 'lucide-react';
 import { apiFetch, getSession } from '../phase2Api';
 import GOOGLE_APPS_SCRIPT from '../../integrations/google-apps-script/MaharShwePosSync.gs?raw';
 import './project-operations-v23.css';
@@ -67,11 +67,10 @@ export default function GoogleSheetIntegrationSettingsV23() {
   const [message, setMessage] = useState('');
   const effectiveShopSlug = shop?.slug || shop?.shopSlug || fallbackShopSlug || '';
 
-  const scriptProperties = useMemo(() => [
-    `POS_BASE_URL=${appBaseUrl}`,
-    `POS_SHOP_SLUG=${effectiveShopSlug || 'YOUR_SHOP_SLUG'}`,
-    `POS_SYNC_SECRET=${form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'}`,
-  ].join('\n'), [appBaseUrl, effectiveShopSlug, form.secret]);
+  const configuredAppsScript = useMemo(() => GOOGLE_APPS_SCRIPT
+    .replace('__POS_BASE_URL__', appBaseUrl)
+    .replace('__POS_SHOP_SLUG__', effectiveShopSlug || 'YOUR_SHOP_SLUG')
+    .replace('__POS_SYNC_SECRET__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, effectiveShopSlug, form.secret]);
 
   const load = async () => {
     setLoading(true);
@@ -163,7 +162,7 @@ export default function GoogleSheetIntegrationSettingsV23() {
         <Globe2 size={23}/>
         <span>
           <b>Google Sheet Configure</b>
-          <small>Apps Script code နဲ့ Script Properties ကို copy လုပ်ပြီး Web App URL တစ်ခုတည်း paste လုပ်ရုံနဲ့ ချိတ်နိုင်ပါတယ်။</small>
+          <small>Apps Script Code တစ်ခုပဲ Copy လုပ်ပါ။ Web App URL တစ်ခုပဲ paste လုပ်ရုံနဲ့ ချိတ်နိုင်ပါတယ်။</small>
         </span>
       </div>
       {loading ? <Loader2 className="project-operations-spin" size={20}/> : <ShieldCheck size={20}/>}
@@ -176,24 +175,18 @@ export default function GoogleSheetIntegrationSettingsV23() {
         <b>သုံးနည်းအကျဉ်း</b>
         <ol>
           <li>Google Sheet ဖွင့် → Extensions → Apps Script ကိုဝင်ပါ။</li>
-          <li>အောက်က Apps Script Code ကို Copy လုပ်ပြီး paste ပါ။</li>
-          <li>Script Properties ထဲမှာ POS_BASE_URL, POS_SHOP_SLUG, POS_SYNC_SECRET ကို Copy Properties နဲ့ထည့်ပါ။</li>
+          <li>Copy Apps Script Code ကိုနှိပ်ပြီး Apps Script ထဲ paste ပါ။</li>
           <li>Deploy → New deployment → Web app → Anyone with the link ဖြင့် deploy ပါ။</li>
-          <li>ရလာတဲ့ Web App URL ကို Web App URL ထဲ paste → Enable → Save → Test POST/GET နှိပ်ပါ။</li>
+          <li>ရလာတဲ့ Web App URL ကို Web App URL ထဲ paste → Enable → Save → Test POST နှိပ်ပါ။</li>
         </ol>
       </div>
 
       <div className="project-google-guide-actions">
-        <button type="button" onClick={() => notifyCopy(GOOGLE_APPS_SCRIPT, 'Apps Script code copied')}><Code2 size={16}/> Copy Apps Script Code</button>
+        <button type="button" onClick={() => notifyCopy(configuredAppsScript, 'Apps Script code copied')}><Code2 size={16}/> Copy Apps Script Code</button>
       </div>
     </div>
 
     <div className="project-google-copy-grid">
-      <article className="project-google-copy-box wide">
-        <span>Script Properties ထဲထည့်ရန်</span>
-        <pre>{scriptProperties}</pre>
-        <button type="button" onClick={() => notifyCopy(scriptProperties, 'Script Properties copied')}><Clipboard size={15}/> Copy Properties</button>
-      </article>
       <CopyBox label="Shop Slug" value={effectiveShopSlug || 'YOUR_SHOP_SLUG'} onCopy={notifyCopy}/>
     </div>
 
@@ -211,20 +204,13 @@ export default function GoogleSheetIntegrationSettingsV23() {
         <input type="url" value={form.postUrl || ''} onChange={(event) => update({ postUrl: event.target.value, getUrl: event.target.value })} placeholder="https://script.google.com/macros/s/.../exec"/>
       </label>
 
-      <div className="project-google-grid">
-        <label>
-          <span>Sync Secret</span>
-          <input type="text" value={form.secret || ''} readOnly/>
-          <small>ဒီ secret ကို Script Properties ထဲက POS_SYNC_SECRET အနေနဲ့ paste လုပ်ပါ။ Manual generate မလိုပါဘူး။</small>
-        </label>
-        <label>
-          <span>Timeout (milliseconds)</span>
-          <input type="number" min="1000" max="60000" value={form.timeoutMs || 10000} onChange={(event) => update({ timeoutMs: Number(event.target.value) })}/>
-        </label>
-      </div>
+      <label>
+        <span>Timeout (milliseconds)</span>
+        <input type="number" min="1000" max="60000" value={form.timeoutMs || 10000} onChange={(event) => update({ timeoutMs: Number(event.target.value) })}/>
+      </label>
 
       <div className="project-google-status">
-        <div><CheckCircle2 size={18}/><span><small>Secret</small><b>{form.secretConfigured ? 'Ready' : form.secret ? 'Prepared' : 'Not ready'}</b></span></div>
+        <div><CheckCircle2 size={18}/><span><small>Apps Script</small><b>{form.secret ? 'Ready' : 'Preparing'}</b></span></div>
         <div><Send size={18}/><span><small>Pending</small><b>{counts.PENDING || 0}</b></span></div>
         <div><RefreshCw size={18}/><span><small>Failed</small><b>{counts.FAILED || 0}</b></span></div>
       </div>

@@ -1,3 +1,9 @@
+const POS_CONFIG = {
+  BASE_URL: '__POS_BASE_URL__',
+  SHOP_SLUG: '__POS_SHOP_SLUG__',
+  SYNC_SECRET: '__POS_SYNC_SECRET__',
+};
+
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
   ['sale-history', 'Sale History'],
@@ -179,6 +185,13 @@ function ensureHeaders(sheet, incomingHeaders) {
 }
 
 function getRequiredProperty(name) {
+  const configMap = {
+    POS_BASE_URL: POS_CONFIG.BASE_URL,
+    POS_SHOP_SLUG: POS_CONFIG.SHOP_SLUG,
+    POS_SYNC_SECRET: POS_CONFIG.SYNC_SECRET,
+  };
+  const configured = configMap[name];
+  if (configured && configured.indexOf('__') !== 0) return configured;
   const value = PropertiesService.getScriptProperties().getProperty(name);
   if (!value) throw new Error(name + ' is not configured in Script Properties');
   return value;
@@ -248,11 +261,9 @@ function normalizeRepairStatusForPos_(value) {
 }
 
 function postRepairStatusToPos_(repairId, status, rawStatus) {
-  var props = PropertiesService.getScriptProperties();
-  var baseUrl = String(props.getProperty('POS_BASE_URL') || '').replace(/\/$/, '');
-  var shopSlug = String(props.getProperty('POS_SHOP_SLUG') || '').trim();
-  var secret = String(props.getProperty('POS_SYNC_SECRET') || '').trim();
-  if (!baseUrl || !shopSlug || !secret) throw new Error('POS_BASE_URL, POS_SHOP_SLUG, POS_SYNC_SECRET are required');
+  var baseUrl = String(getRequiredProperty('POS_BASE_URL') || '').replace(/\/$/, '');
+  var shopSlug = String(getRequiredProperty('POS_SHOP_SLUG') || '').trim();
+  var secret = String(getRequiredProperty('POS_SYNC_SECRET') || '').trim();
 
   var response = UrlFetchApp.fetch(baseUrl + '/api/project-settings/integrations/google-sheet/repair-status', {
     method: 'post',
