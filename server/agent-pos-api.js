@@ -15,6 +15,10 @@ const DEFAULT_AGENT = Object.freeze({
   timeoutMs: 15000,
   apiKeyHash: '',
   apiKeyLast4: '',
+  aiProvider: 'none',
+  aiModel: '',
+  aiApiKey: '',
+  aiKeyLast4: '',
   lastTest: null,
 });
 
@@ -31,6 +35,18 @@ const settingsSchema = z.object({
   timeoutMs: z.coerce.number().int().min(3000).max(60000).default(15000),
   incomingApiKey: z.string().trim().min(12).max(200).optional().or(z.literal('')),
   clearApiKey: z.boolean().optional(),
+  aiProvider: z.enum(['none', 'gemini', 'openai']).default('none'),
+  aiModel: cleanText(120),
+  aiApiKey: z.string().trim().min(10).max(500).optional().or(z.literal('')),
+  clearAiKey: z.boolean().optional(),
+});
+
+const parseSchema = z.object({
+  shopSlug: z.string().trim().min(1).max(160).optional(),
+  kind: z.enum(['product', 'ledger']).default('product'),
+  text: cleanText(4000),
+  imageBase64: cleanText(8_000_000),
+  mimeType: cleanText(80),
 });
 
 const recordSchema = z.object({
@@ -116,6 +132,10 @@ function safeAgent(agent) {
     timeoutMs: Number(agent.timeoutMs || DEFAULT_AGENT.timeoutMs),
     hasApiKey: Boolean(agent.apiKeyHash),
     apiKeyLast4: agent.apiKeyLast4 || '',
+    aiProvider: agent.aiProvider || 'none',
+    aiModel: agent.aiModel || '',
+    hasAiKey: Boolean(agent.aiApiKey),
+    aiKeyLast4: agent.aiKeyLast4 || '',
     lastTest: agent.lastTest || null,
   };
 }
@@ -276,6 +296,136 @@ async function insertProduct(tx, shopId, record) {
   return { id: product.id, variantId: variant.id, type: 'product', name, openingStock: initial };
 }
 
+function extractJson(text) {
+  const value = clean(text, 200000);
+  if (!value) throw new ApiError(502, 'AI returned an empty response');
+  try {
+    return JSON.parse(value);
+  } catch {
+    const fenced = value.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = fenced?.[1] || value.slice(value.indexOf('{'), value.lastIndexOf('}') + 1);
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      throw new ApiError(502, 'AI response was not valid JSON', { preview: value.slice(0, 600) });
+    }
+  }
+}
+
+function buildAgentPrompt(kind, text) {
+  const base = [
+    'You are a Mahar POS data extraction assistant.',
+    'Return JSON only. No markdown. No explanation.',
+    'Use numbers only for amount/price/stock fields. If unknown, use 0 or empty string.',
+  ];
+  if (kind === 'ledger') {
+    base.push(
+      'Extract income and expense records for a POS shop.',
+      'Schema: {"records":[{"type":"income|expense","date":"YYYY-MM-DD","category":"","source":"","amount":0,"method":"CASH","note":""}]}',
+      'Allowed type values are income and expense only.',
+    );
+  } else {
+    base.push(
+      'Extract product stock records for a mobile phone shop.',
+      'Schema: {"records":[{"type":"product","name":"","brand":"","model":"","variantName":"Default","sku":"","barcode":"","category":"","unit":"","costPrice":0,"sellingPrice":0,"minimumSellingPrice":0,"openingStock":0,"minAlertQuantity":0,"note":""}]}',
+      'Allowed type value is product only.',
+    );
+  }
+  base.push(`Input text:\n${clean(text, 4000) || '(image only)'}`);
+  return base.join('\n');
+}
+
+function normalizeAiRecords(parsed, kind) {
+  const records = Array.isArray(parsed?.records) ? parsed.records : (parsed?.record ? [parsed.record] : []);
+  const allowed = kind === 'ledger' ? new Set(['income', 'other_income', 'expense']) : new Set(['product']);
+  return records.slice(0, 50).map((record) => ({
+    ...record,
+    type: allowed.has(record?.type) ? record.type : (kind === 'ledger' ? 'income' : 'product'),
+  }));
+}
+
+async function postJson(url, options) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 30000);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    const text = await response.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
+    if (!response.ok) {
+      throw new ApiError(response.status >= 400 && response.status < 600 ? 502 : 500, 'AI provider request failed', {
+        status: response.status,
+        providerMessage: data?.error?.message || data?.message || text.slice(0, 500),
+      });
+    }
+    return data;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function callOpenAi(agent, input) {
+  const prompt = buildAgentPrompt(input.kind, input.text);
+  const content = [{ type: 'input_text', text: prompt }];
+  if (input.imageBase64) {
+    content.push({
+      type: 'input_image',
+      image_url: `data:${clean(input.mimeType, 80) || 'image/jpeg'};base64,${input.imageBase64}`,
+    });
+  }
+  const data = await postJson('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    timeoutMs: Number(agent.timeoutMs || 30000),
+    headers: {
+      Authorization: `Bearer ${agent.aiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: clean(agent.aiModel, 120) || 'gpt-4.1-mini',
+      input: [{ role: 'user', content }],
+      text: { format: { type: 'json_object' } },
+    }),
+  });
+  const outputText = data.output_text
+    || data.output?.flatMap((item) => item.content || []).find((item) => item.type === 'output_text' || item.type === 'text')?.text
+    || '';
+  return extractJson(outputText);
+}
+
+async function callGemini(agent, input) {
+  const prompt = buildAgentPrompt(input.kind, input.text);
+  const parts = [{ text: prompt }];
+  if (input.imageBase64) {
+    parts.push({
+      inlineData: {
+        mimeType: clean(input.mimeType, 80) || 'image/jpeg',
+        data: input.imageBase64,
+      },
+    });
+  }
+  const model = encodeURIComponent(clean(agent.aiModel, 120) || 'gemini-1.5-flash');
+  const key = encodeURIComponent(agent.aiApiKey);
+  const data = await postJson(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+    method: 'POST',
+    timeoutMs: Number(agent.timeoutMs || 30000),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { responseMimeType: 'application/json' },
+    }),
+  });
+  return extractJson(data.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('\n') || '');
+}
+
+async function parseWithAi(agent, input) {
+  const provider = clean(agent.aiProvider || 'none', 20);
+  if (provider === 'none') throw new ApiError(400, 'Select Gemini or OpenAI first');
+  if (!agent.aiApiKey) throw new ApiError(400, 'AI API key is not configured');
+  if (!input.text && !input.imageBase64) throw new ApiError(400, 'Text or imageBase64 is required');
+  const parsed = provider === 'gemini' ? await callGemini(agent, input) : await callOpenAi(agent, input);
+  return { ...parsed, records: normalizeAiRecords(parsed, input.kind) };
+}
+
 module.exports = function attachAgentPosApi(app) {
   const settingsAccess = [requireAuth, requireShopUser, requireWritableSubscription, requireSettingsManager];
 
@@ -285,6 +435,7 @@ module.exports = function attachAgentPosApi(app) {
       ok: true,
       agent: safeAgent(agent),
       incomingEndpoint: 'https://api.maharshwe.shop/api/agent/records',
+      parseEndpoint: 'https://api.maharshwe.shop/api/project-settings/api/agent/parse',
       sample: {
         headers: { 'x-agent-api-key': 'YOUR_AGENT_KEY' },
         body: { shopSlug: req.auth.shopSlug || 'your-shop-slug', records: [{ type: 'income', source: 'Daily sales note', amount: 10000 }] },
@@ -302,6 +453,8 @@ module.exports = function attachAgentPosApi(app) {
       enabled: input.enabled,
       endpointUrl: clean(input.endpointUrl, 500),
       timeoutMs: input.timeoutMs,
+      aiProvider: input.aiProvider,
+      aiModel: clean(input.aiModel, 120),
     };
     if (input.clearApiKey) {
       next.apiKeyHash = '';
@@ -309,6 +462,13 @@ module.exports = function attachAgentPosApi(app) {
     } else if (input.incomingApiKey) {
       next.apiKeyHash = hashKey(input.incomingApiKey);
       next.apiKeyLast4 = input.incomingApiKey.slice(-4);
+    }
+    if (input.clearAiKey || input.aiProvider === 'none') {
+      next.aiApiKey = '';
+      next.aiKeyLast4 = '';
+    } else if (input.aiApiKey) {
+      next.aiApiKey = input.aiApiKey;
+      next.aiKeyLast4 = input.aiApiKey.slice(-4);
     }
     await prisma.$transaction(async (tx) => saveAgent(tx, req.auth.shopId, next), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     res.json({ ok: true, agent: safeAgent(next), message: 'Agent API settings saved' });
@@ -324,6 +484,22 @@ module.exports = function attachAgentPosApi(app) {
     const next = { ...agent, lastTest };
     await prisma.$transaction(async (tx) => saveAgent(tx, req.auth.shopId, next), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     res.status(lastTest.ok ? 200 : 400).json({ ok: lastTest.ok, test: lastTest, agent: safeAgent(next) });
+  }));
+
+  app.post('/api/project-settings/api/agent/parse', ...settingsAccess, wrap(async (req, res) => {
+    const parsed = parseSchema.safeParse(req.body || {});
+    if (!parsed.success) throw new ApiError(400, 'Invalid AI parse request', parsed.error.flatten().fieldErrors);
+    const agent = await loadAgentByShopId(req.auth.shopId);
+    const result = await parseWithAi(agent, parsed.data);
+    res.json({ ok: true, provider: agent.aiProvider, kind: parsed.data.kind, parsed: result });
+  }));
+
+  app.post('/api/agent/parse', wrap(async (req, res) => {
+    const parsed = parseSchema.safeParse(req.body || {});
+    if (!parsed.success) throw new ApiError(400, 'Invalid AI parse request', parsed.error.flatten().fieldErrors);
+    const { shop, agent } = await authenticateAgent(req);
+    const result = await parseWithAi(agent, parsed.data);
+    res.json({ ok: true, shopSlug: shop.slug, provider: agent.aiProvider, kind: parsed.data.kind, parsed: result });
   }));
 
   app.post('/api/agent/records', wrap(async (req, res) => {
