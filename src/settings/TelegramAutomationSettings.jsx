@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BellRing, CheckCircle2, Copy, Loader2, Save, Send, ShieldCheck } from 'lucide-react';
+import { BellRing, Bot, CheckCircle2, Loader2, Save, Send, ShieldCheck, UserRound } from 'lucide-react';
 import { apiFetch } from '../phase2Api';
 
 const EMPTY = {
@@ -36,7 +36,7 @@ export default function TelegramAutomationSettings() {
         dailyReportEnabled: Boolean(telegram.dailyReportEnabled),
         dailyReportTime: telegram.dailyReportTime || '21:00',
       });
-      setMessage(telegram.hasBotToken ? `Telegram Bot saved · ****${telegram.botTokenLast4 || ''}` : 'Telegram Bot Token မသတ်မှတ်ရသေးပါ။');
+      setMessage(telegram.hasBotToken ? 'Telegram bot ချိတ်ပြီးပါပြီ။' : 'Telegram bot token ထည့်ပြီး Save နှိပ်ပါ။');
     } catch (error) {
       setMessage(error.message || 'Telegram settings load failed');
     } finally {
@@ -55,14 +55,19 @@ export default function TelegramAutomationSettings() {
       try {
         const response = await apiFetch('/api/project-settings/api/telegram/connect-login', { method: 'POST', body: user });
         setMeta(response.telegram || {});
-        setForm((current) => ({ ...current, enabled: true, chatId: response.telegram?.chatId || current.chatId }));
-        setMessage(response.message || 'Telegram connected');
+        setForm((current) => ({
+          ...current,
+          enabled: true,
+          chatId: response.telegram?.chatId || current.chatId,
+        }));
+        setMessage('ဒီ POS user ကို Telegram နဲ့ချိတ်ပြီးပါပြီ။');
       } catch (error) {
         setMessage(error.message || 'Telegram connect failed');
       } finally {
         setBusy('');
       }
     };
+
     const script = document.createElement('script');
     script.async = true;
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
@@ -72,6 +77,7 @@ export default function TelegramAutomationSettings() {
     script.setAttribute('data-request-access', 'write');
     script.setAttribute('data-onauth', `${callbackName}(user)`);
     widgetRef.current.appendChild(script);
+
     return () => {
       delete window[callbackName];
       if (widgetRef.current) widgetRef.current.innerHTML = '';
@@ -93,7 +99,7 @@ export default function TelegramAutomationSettings() {
       const response = await apiFetch('/api/project-settings/api/telegram', { method: 'PUT', body });
       setMeta(response.telegram || {});
       setForm((current) => ({ ...current, botToken: '' }));
-      setMessage(response.message || 'Telegram settings saved');
+      setMessage('Telegram settings သိမ်းပြီးပါပြီ။');
     } catch (error) {
       setMessage(error.message || 'Telegram settings save failed');
     } finally {
@@ -106,7 +112,7 @@ export default function TelegramAutomationSettings() {
     try {
       const response = await apiFetch('/api/project-settings/api/telegram/test', { method: 'POST', body: {} });
       setMeta(response.telegram || {});
-      setMessage(response.message || 'Telegram test sent');
+      setMessage(response.message || 'Test message ပို့ပြီးပါပြီ။');
     } catch (error) {
       setMessage(error.message || 'Telegram test failed');
     } finally {
@@ -119,7 +125,7 @@ export default function TelegramAutomationSettings() {
     try {
       const response = await apiFetch('/api/project-settings/api/telegram/send-daily-report', { method: 'POST', body: {} });
       setMeta((current) => ({ ...current, lastReportDate: response.date, lastReportSentAt: new Date().toISOString() }));
-      setMessage(response.message || 'Daily report sent');
+      setMessage(response.message || 'Daily report ပို့ပြီးပါပြီ။');
     } catch (error) {
       setMessage(error.message || 'Daily report failed');
     } finally {
@@ -127,113 +133,129 @@ export default function TelegramAutomationSettings() {
     }
   };
 
-  const copy = async (value) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setMessage('Copied');
-    } catch {
-      setMessage(value);
-    }
-  };
-
+  const botReady = Boolean(meta.hasBotToken && form.botUsername);
+  const userConnected = Boolean(meta.currentUserTelegram);
   const botLink = form.botUsername ? `https://t.me/${form.botUsername.replace(/^@/, '')}` : '';
 
   return (
-    <section className="ps-panel">
+    <section className="ps-panel telegram-simple-settings">
       <header className="ps-panel-head">
         <div>
           <BellRing size={21} />
           <span>
-            <h3>Login as Telegram / Auto Sale Report</h3>
-            <p>Telegram နဲ့ connect လုပ်တာနဲ့ ဒီ POS user ကို Telegram ID / Chat ID နဲ့မှတ်ထားမယ်။ Sale တစ်ခါပြီးတိုင်း Telegram ပို့ပြီး Daily Report auto ပို့နိုင်ပါတယ်။</p>
+            <h3>Telegram Auto Notification</h3>
+            <p>Sale ထွက်တိုင်း Telegram ပို့မယ်။ ညဘက်မှာ Daily Report ကို auto ပို့မယ်။</p>
           </span>
         </div>
-        <button className="ps-icon-button" type="button" onClick={load} disabled={busy === 'load'}>
+        <button className="ps-icon-button" type="button" onClick={load} disabled={busy === 'load'} title="Reload">
           {busy === 'load' ? <Loader2 className="ps-spin" size={18} /> : <CheckCircle2 size={18} />}
         </button>
       </header>
 
       {message ? <div className="gs-message"><ShieldCheck size={16} /> {message}</div> : null}
-      {meta.currentUserTelegram ? (
-        <div className="gs-message">
-          <ShieldCheck size={16} />
-          Connected POS User · Telegram ID {meta.currentUserTelegram.telegramId}
-          {meta.currentUserTelegram.name ? ` · ${meta.currentUserTelegram.name}` : ''}
+
+      <div className="project-google-status">
+        <div>
+          <Bot size={20} />
+          <span><small>Bot</small><b>{botReady ? 'Ready' : 'Need Setup'}</b></span>
         </div>
-      ) : (
-        <div className="gs-message">
-          <ShieldCheck size={16} />
-          Not connected yet. Press Login as Telegram to save this POS user with Telegram Chat ID.
+        <div>
+          <UserRound size={20} />
+          <span><small>User Link</small><b>{userConnected ? 'Connected' : 'Not Connected'}</b></span>
         </div>
-      )}
+        <div>
+          <BellRing size={20} />
+          <span><small>Auto Send</small><b>{form.enabled ? 'ON' : 'OFF'}</b></span>
+        </div>
+      </div>
 
-      <div className="ps-form ps-grid-2">
-        <label className="ps-switch-row">
-          <span><b>Enable Telegram</b><small>ON ထားမှ Sale notification / Daily report ပို့ပါမယ်။</small></span>
-          <input type="checkbox" checked={form.enabled} onChange={(event) => update({ enabled: event.target.checked })} />
-        </label>
+      <div className="ps-form">
+        <div className="project-google-guide">
+          <div><b>1</b><span><strong>Bot ထည့်</strong><small>BotFather token + bot username ထည့်ပြီး Save နှိပ်ပါ။</small></span></div>
+          <div><b>2</b><span><strong>Telegram ချိတ်</strong><small>Login as Telegram နှိပ်ရင် ဒီ POS user ကို auto မှတ်ပါမယ်။</small></span></div>
+          <div><b>3</b><span><strong>Auto ပို့</strong><small>Sale notification / Daily report ကို ON ထားပါ။</small></span></div>
+        </div>
 
-        <label className="ps-field">
-          <span>Telegram Bot Token</span>
-          <input type="password" value={form.botToken} onChange={(event) => update({ botToken: event.target.value })} placeholder={meta.hasBotToken ? `Saved · ****${meta.botTokenLast4 || ''}` : '123456789:ABC...'} />
-          <small>BotFather ကရတဲ့ token. Browser ထဲကို token ပြန်မပြပါ။</small>
-        </label>
+        <div className="ps-grid-2">
+          <label className="ps-field">
+            <span>Bot Token</span>
+            <input
+              type="password"
+              value={form.botToken}
+              onChange={(event) => update({ botToken: event.target.value })}
+              placeholder={meta.hasBotToken ? `Saved · ****${meta.botTokenLast4 || ''}` : 'BotFather token ထည့်ပါ'}
+            />
+          </label>
 
-        <label className="ps-field">
-          <span>Bot Username</span>
-          <input value={form.botUsername} onChange={(event) => update({ botUsername: event.target.value.replace(/^@/, '') })} placeholder="your_bot_username" />
-          <small>Telegram Login widget သုံးချင်ရင် bot username လိုပါတယ်။</small>
-        </label>
+          <label className="ps-field">
+            <span>Bot Username</span>
+            <input
+              value={form.botUsername}
+              onChange={(event) => update({ botUsername: event.target.value.replace(/^@/, '') })}
+              placeholder="your_bot_username"
+            />
+          </label>
+        </div>
 
-        <label className="ps-field">
-          <span>Chat ID / Group ID</span>
-          <input value={form.chatId} onChange={(event) => update({ chatId: event.target.value })} placeholder="Telegram user/group chat id" />
-          <small>Manual ထည့်လို့ရသလို Telegram Login widget နဲ့ connect လုပ်ရင် auto ဖြည့်ပေးပါမယ်။</small>
-        </label>
-
-        <label className="ps-switch-row">
-          <span><b>Sale Auto Send</b><small>Sale POS မှာ voucher တစ်ခါထွက်တိုင်း Telegram ကို auto ပို့မယ်။</small></span>
-          <input type="checkbox" checked={form.saleNotifications} onChange={(event) => update({ saleNotifications: event.target.checked })} />
-        </label>
-
-        <label className="ps-switch-row">
-          <span><b>Daily Auto Report</b><small>နေ့တိုင်း သတ်မှတ်ချိန်ရောက်ရင် Daily Report ပို့မယ်။</small></span>
-          <input type="checkbox" checked={form.dailyReportEnabled} onChange={(event) => update({ dailyReportEnabled: event.target.checked })} />
-        </label>
-
-        <label className="ps-field">
-          <span>Daily Report Time</span>
-          <input type="time" value={form.dailyReportTime} onChange={(event) => update({ dailyReportTime: event.target.value })} />
-          <small>Myanmar time အတိုင်းပို့ပါမယ်။ ဥပမာ 21:00 = ည ၉ နာရီ။</small>
-        </label>
-
-        <div className="ps-field">
-          <span>Login as Telegram</span>
-          <div ref={widgetRef} />
-          {!meta.loginWidgetReady ? <small>Bot Token + Bot Username Save လုပ်ပြီးမှ Telegram Login button ပေါ်ပါမယ်။</small> : <small>Login နှိပ်တာနဲ့ ဒီ POS user ကို Telegram Chat ID နဲ့ auto မှတ်ထားပါမယ်။</small>}
+        <div className="ps-actions">
+          <button className="ps-primary" type="button" onClick={save} disabled={busy === 'save'}>
+            {busy === 'save' ? <Loader2 className="ps-spin" size={18} /> : <Save size={18} />} Save
+          </button>
           {botLink ? <button type="button" onClick={() => window.open(botLink, '_blank', 'noopener,noreferrer')}>Open Bot</button> : null}
         </div>
+
+        <div className="gs-code-card">
+          <div><b>Login as Telegram</b></div>
+          {userConnected ? (
+            <p>ချိတ်ပြီးသား: Telegram ID {meta.currentUserTelegram.telegramId}{meta.currentUserTelegram.name ? ` · ${meta.currentUserTelegram.name}` : ''}</p>
+          ) : (
+            <p>ဒီ user ကို Telegram နဲ့ချိတ်ရန် အောက်က Login button ကိုနှိပ်ပါ။</p>
+          )}
+          <div ref={widgetRef} />
+          {!meta.loginWidgetReady ? <small>Bot Token + Bot Username သိမ်းပြီးမှ Login button ပေါ်ပါမယ်။</small> : null}
+        </div>
+
+        <div className="ps-grid-2">
+          <label className="ps-switch-row">
+            <span><b>Telegram ကိုဖွင့်မယ်</b><small>OFF ဖြစ်ရင် အကုန်မပို့ပါ။</small></span>
+            <input type="checkbox" checked={form.enabled} onChange={(event) => update({ enabled: event.target.checked })} />
+          </label>
+
+          <label className="ps-switch-row">
+            <span><b>Sale တစ်ခါထွက်တိုင်း ပို့မယ်</b><small>Voucher confirm ပြီးတာနဲ့ Telegram ပို့ပါမယ်။</small></span>
+            <input type="checkbox" checked={form.saleNotifications} onChange={(event) => update({ saleNotifications: event.target.checked })} />
+          </label>
+
+          <label className="ps-switch-row">
+            <span><b>Daily Report ပို့မယ်</b><small>နေ့တိုင်း သတ်မှတ်ချိန်မှာ ပို့ပါမယ်။</small></span>
+            <input type="checkbox" checked={form.dailyReportEnabled} onChange={(event) => update({ dailyReportEnabled: event.target.checked })} />
+          </label>
+
+          <label className="ps-field">
+            <span>Daily Report Time</span>
+            <input type="time" value={form.dailyReportTime} onChange={(event) => update({ dailyReportTime: event.target.value })} />
+          </label>
+        </div>
+
+        <details className="gs-code-card">
+          <summary>Manual Chat ID / Group ID ထည့်ချင်ရင် နှိပ်ပါ</summary>
+          <label className="ps-field">
+            <span>Chat ID / Group ID</span>
+            <input value={form.chatId} onChange={(event) => update({ chatId: event.target.value })} placeholder="Telegram user/group chat id" />
+          </label>
+        </details>
       </div>
 
       <div className="ps-actions">
         <button className="ps-primary" type="button" onClick={save} disabled={busy === 'save'}>
-          {busy === 'save' ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>} Save Telegram
+          {busy === 'save' ? <Loader2 className="ps-spin" size={18} /> : <Save size={18} />} Save All
         </button>
         <button type="button" onClick={test} disabled={busy === 'test'}>
-          {busy === 'test' ? <Loader2 className="ps-spin" size={18}/> : <Send size={18}/>} Send Test
+          {busy === 'test' ? <Loader2 className="ps-spin" size={18} /> : <Send size={18} />} Test ပို့မယ်
         </button>
         <button type="button" onClick={sendDailyReport} disabled={busy === 'report'}>
-          {busy === 'report' ? <Loader2 className="ps-spin" size={18}/> : <BellRing size={18}/>} Send Daily Report Now
+          {busy === 'report' ? <Loader2 className="ps-spin" size={18} /> : <BellRing size={18} />} Daily Report စမ်းပို့မယ်
         </button>
-      </div>
-
-      <div className="gs-code-card">
-        <div><b>Setup Note</b><button type="button" onClick={() => copy('1) BotFather မှ bot token ယူပါ\\n2) Bot username ထည့်ပါ\\n3) Save Telegram နှိပ်ပါ\\n4) Login / Connect as Telegram နှိပ်ပါ သို့မဟုတ် Chat ID ထည့်ပါ\\n5) Sale Auto Send / Daily Auto Report ON ထားပါ')}><Copy size={15}/> Copy</button></div>
-        <pre>{`1) BotFather မှ bot token ယူပါ
-2) Bot username ထည့်ပါ
-3) Save Telegram နှိပ်ပါ
-4) Login / Connect as Telegram နှိပ်ပါ သို့မဟုတ် Chat ID ထည့်ပါ
-5) Sale Auto Send / Daily Auto Report ON ထားပါ`}</pre>
       </div>
     </section>
   );
