@@ -17,6 +17,7 @@ const DEFAULT_TELEGRAM = Object.freeze({
   chatId: '',
   linkedTelegramId: '',
   linkedTelegramName: '',
+  linkedUsers: {},
   saleNotifications: false,
   dailyReportEnabled: false,
   dailyReportTime: '21:00',
@@ -107,7 +108,9 @@ function mergeTelegram(raw) {
   return { ...DEFAULT_TELEGRAM, ...plainObject(raw) };
 }
 
-function safeTelegram(settings) {
+function safeTelegram(settings, userId = '') {
+  const linkedUsers = plainObject(settings.linkedUsers);
+  const currentUserTelegram = userId ? plainObject(linkedUsers[userId]) : {};
   return {
     enabled: Boolean(settings.enabled),
     botUsername: settings.botUsername || '',
@@ -116,6 +119,14 @@ function safeTelegram(settings) {
     botTokenLast4: settings.botTokenLast4 || '',
     linkedTelegramId: settings.linkedTelegramId || '',
     linkedTelegramName: settings.linkedTelegramName || '',
+    currentUserTelegram: currentUserTelegram.telegramId ? {
+      telegramId: currentUserTelegram.telegramId || '',
+      chatId: currentUserTelegram.chatId || '',
+      name: currentUserTelegram.name || '',
+      username: currentUserTelegram.username || '',
+      linkedAt: currentUserTelegram.linkedAt || null,
+    } : null,
+    linkedUserCount: Object.keys(linkedUsers).length,
     saleNotifications: Boolean(settings.saleNotifications),
     dailyReportEnabled: Boolean(settings.dailyReportEnabled),
     dailyReportTime: settings.dailyReportTime || DEFAULT_TELEGRAM.dailyReportTime,
@@ -343,7 +354,7 @@ function attachTelegramAutomationApi(app) {
 
   app.get('/api/project-settings/api/telegram', ...access, wrap(async (req, res) => {
     const settings = await loadTelegramSettings(req.auth.shopId);
-    res.json({ ok: true, telegram: safeTelegram(settings) });
+    res.json({ ok: true, telegram: safeTelegram(settings, req.auth.userId) });
   }));
 
   app.put('/api/project-settings/api/telegram', ...access, wrap(async (req, res) => {
@@ -377,7 +388,7 @@ function attachTelegramAutomationApi(app) {
         hasChatId: Boolean(next.chatId),
       });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    res.json({ ok: true, telegram: safeTelegram(next), message: 'Telegram automation settings saved' });
+    res.json({ ok: true, telegram: safeTelegram(next, req.auth.userId), message: 'Telegram automation settings saved' });
   }));
 
   app.post('/api/project-settings/api/telegram/test', ...access, wrap(async (req, res) => {
@@ -385,7 +396,7 @@ function attachTelegramAutomationApi(app) {
     const result = await sendTelegramMessage(settings, `✅ Mahar POS Telegram connected\nShop: ${req.auth.shopSlug || req.auth.shopId}\nTime: ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Yangon' })}`);
     const next = { ...settings, lastTest: { ok: true, messageId: result?.message_id || null, testedAt: new Date().toISOString() } };
     await prisma.$transaction((tx) => saveTelegramSettings(tx, req.auth.shopId, next));
-    res.json({ ok: true, telegram: safeTelegram(next), message: 'Telegram test message sent' });
+    res.json({ ok: true, telegram: safeTelegram(next, req.auth.userId), message: 'Telegram test message sent' });
   }));
 
   app.post('/api/project-settings/api/telegram/send-daily-report', ...access, wrap(async (req, res) => {
@@ -399,18 +410,32 @@ function attachTelegramAutomationApi(app) {
     const current = await loadTelegramSettings(req.auth.shopId);
     verifyTelegramLogin(parsed.data, current.botToken);
     const fullName = [parsed.data.first_name, parsed.data.last_name].map((part) => clean(part, 120)).filter(Boolean).join(' ') || clean(parsed.data.username, 120) || `Telegram ${parsed.data.id}`;
+    const telegramId = clean(parsed.data.id, 80);
+    const linkedUsers = plainObject(current.linkedUsers);
     const next = {
       ...current,
       enabled: true,
-      chatId: clean(parsed.data.id, 80),
-      linkedTelegramId: clean(parsed.data.id, 80),
+      chatId: current.chatId || telegramId,
+      linkedUsers: {
+        ...linkedUsers,
+        [req.auth.userId]: {
+          userId: req.auth.userId,
+          username: req.auth.username || '',
+          telegramId,
+          chatId: telegramId,
+          name: fullName,
+          telegramUsername: clean(parsed.data.username, 120),
+          linkedAt: new Date().toISOString(),
+        },
+      },
+      linkedTelegramId: telegramId,
       linkedTelegramName: fullName,
     };
     await prisma.$transaction(async (tx) => {
       await saveTelegramSettings(tx, req.auth.shopId, next);
-      await audit(tx, req, 'TELEGRAM_LOGIN_CONNECTED', { telegramId: next.linkedTelegramId, telegramName: next.linkedTelegramName });
+      await audit(tx, req, 'TELEGRAM_LOGIN_CONNECTED', { userId: req.auth.userId, telegramId: next.linkedTelegramId, telegramName: next.linkedTelegramName });
     });
-    res.json({ ok: true, telegram: safeTelegram(next), message: 'Telegram account connected' });
+    res.json({ ok: true, telegram: safeTelegram(next, req.auth.userId), message: 'Telegram account connected to this POS user' });
   }));
 }
 

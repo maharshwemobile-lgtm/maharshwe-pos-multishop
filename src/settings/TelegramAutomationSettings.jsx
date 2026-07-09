@@ -144,8 +144,8 @@ export default function TelegramAutomationSettings() {
         <div>
           <BellRing size={21} />
           <span>
-            <h3>Telegram Automation</h3>
-            <p>Sale တစ်ခါပြီးတိုင်း Telegram ပို့ရန်၊ ညဘက် Daily Auto Report ပို့ရန်၊ Telegram account connect လုပ်ရန်။</p>
+            <h3>Login as Telegram / Auto Sale Report</h3>
+            <p>Telegram နဲ့ connect လုပ်တာနဲ့ ဒီ POS user ကို Telegram ID / Chat ID နဲ့မှတ်ထားမယ်။ Sale တစ်ခါပြီးတိုင်း Telegram ပို့ပြီး Daily Report auto ပို့နိုင်ပါတယ်။</p>
           </span>
         </div>
         <button className="ps-icon-button" type="button" onClick={load} disabled={busy === 'load'}>
@@ -154,6 +154,18 @@ export default function TelegramAutomationSettings() {
       </header>
 
       {message ? <div className="gs-message"><ShieldCheck size={16} /> {message}</div> : null}
+      {meta.currentUserTelegram ? (
+        <div className="gs-message">
+          <ShieldCheck size={16} />
+          Connected POS User · Telegram ID {meta.currentUserTelegram.telegramId}
+          {meta.currentUserTelegram.name ? ` · ${meta.currentUserTelegram.name}` : ''}
+        </div>
+      ) : (
+        <div className="gs-message">
+          <ShieldCheck size={16} />
+          Not connected yet. Press Login as Telegram to save this POS user with Telegram Chat ID.
+        </div>
+      )}
 
       <div className="ps-form ps-grid-2">
         <label className="ps-switch-row">
@@ -196,9 +208,9 @@ export default function TelegramAutomationSettings() {
         </label>
 
         <div className="ps-field">
-          <span>Login / Connect as Telegram</span>
+          <span>Login as Telegram</span>
           <div ref={widgetRef} />
-          {!meta.loginWidgetReady ? <small>Bot Token + Bot Username Save လုပ်ပြီးမှ Telegram Login widget ပေါ်ပါမယ်။</small> : <small>Login နှိပ်ပြီးတာနဲ့ Chat ID auto connect ဖြစ်ပါမယ်။</small>}
+          {!meta.loginWidgetReady ? <small>Bot Token + Bot Username Save လုပ်ပြီးမှ Telegram Login button ပေါ်ပါမယ်။</small> : <small>Login နှိပ်တာနဲ့ ဒီ POS user ကို Telegram Chat ID နဲ့ auto မှတ်ထားပါမယ်။</small>}
           {botLink ? <button type="button" onClick={() => window.open(botLink, '_blank', 'noopener,noreferrer')}>Open Bot</button> : null}
         </div>
       </div>

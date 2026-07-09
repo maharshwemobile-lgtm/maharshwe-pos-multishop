@@ -14,6 +14,7 @@ import {
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
+  BellRing,
   UserCog,
 } from 'lucide-react';
 import { apiFetch, clearSession, getSession } from '../phase2Api';
@@ -28,7 +29,8 @@ const SECTIONS = [
   { id: 'slip', label: 'Slip Information', icon: FileText },
   { id: 'business', label: 'Shop Info', icon: Building2 },
   { id: 'appearance', label: 'Appearance & Language', icon: Languages },
-  { id: 'api', label: 'Google Sheet', icon: Code2 },
+  { id: 'telegram', label: 'Telegram', icon: BellRing },
+  { id: 'api', label: 'Google Sheet / AI', icon: Code2 },
   { id: 'users', label: 'Users & Access', icon: UserCog },
   { id: 'system', label: 'System Settings', icon: Database },
 ];
@@ -290,7 +292,9 @@ export default function ProjectSettingsCenter() {
           <div className="ps-actions"><button className="ps-primary" type="button" onClick={() => save('appearance')} disabled={!canManage || saving === 'appearance'}>{saving === 'appearance' ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>} Save Appearance</button></div>
         </section> : null}
 
-        {data && section === 'api' ? <><GoogleSheetIntegrationSettingsV23/><TelegramAutomationSettings/><AgentApiSettings/></> : null}
+        {data && section === 'telegram' ? <TelegramAutomationSettings/> : null}
+
+        {data && section === 'api' ? <><GoogleSheetIntegrationSettingsV23/><AgentApiSettings/></> : null}
 
         {data && section === 'users' ? <ProjectUserAccessSettings notify={notify}/> : null}
 
