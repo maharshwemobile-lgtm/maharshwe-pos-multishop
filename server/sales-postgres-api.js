@@ -8,6 +8,7 @@ const {
   requireWritableSubscription,
 } = require('./auth-api');
 const { queuePush, sendPushToShop } = require('./push-notifications-api');
+const { notifyTelegramSale } = require('./telegram-automation-api');
 
 const uuid = z.string().uuid();
 const money = z.coerce.number().finite().min(0);
@@ -520,6 +521,11 @@ function attachSalesPostgresApi(app) {
         data: { source: 'sale-credit', saleId: result.id },
       }), 'customer credit push');
     }
+
+    queuePush(() => notifyTelegramSale({
+      shopId: req.auth.shopId,
+      sale: result,
+    }), 'telegram sale notification');
 
     res.status(201).json({ ok: true, message: 'Sale completed', sale: result });
   }));
