@@ -508,9 +508,11 @@ function attachProjectSettingsPostgresApi(app) {
     await prisma.$transaction(async (tx) => {
       const raw = await currentRawSettings(tx, req.auth.shopId);
       const previous = merge(DEFAULTS.api.googleSheets, plainObject(plainObject(raw.api).googleSheets));
+      const currentApi = plainObject(raw.api);
       await saveRawSettings(tx, req.auth.shopId, {
         ...raw,
         api: {
+          ...currentApi,
           googleSheets: {
             ...googleSheets,
             lastTest: previous.lastTest || null,

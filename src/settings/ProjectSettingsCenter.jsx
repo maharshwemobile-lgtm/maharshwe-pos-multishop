@@ -19,6 +19,7 @@ import {
 import { apiFetch, clearSession, getSession } from '../phase2Api';
 import ProjectUserAccessSettings from './ProjectUserAccessSettings.jsx';
 import GoogleSheetIntegrationSettingsV23 from './GoogleSheetIntegrationSettingsV23.jsx';
+import AgentApiSettings from './AgentApiSettings.jsx';
 import './project-settings.css';
 
 const SECTIONS = [
@@ -288,7 +289,7 @@ export default function ProjectSettingsCenter() {
           <div className="ps-actions"><button className="ps-primary" type="button" onClick={() => save('appearance')} disabled={!canManage || saving === 'appearance'}>{saving === 'appearance' ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>} Save Appearance</button></div>
         </section> : null}
 
-        {data && section === 'api' ? <GoogleSheetIntegrationSettingsV23/> : null}
+        {data && section === 'api' ? <><GoogleSheetIntegrationSettingsV23/><AgentApiSettings/></> : null}
 
         {data && section === 'users' ? <ProjectUserAccessSettings notify={notify}/> : null}
 

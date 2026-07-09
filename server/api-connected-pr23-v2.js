@@ -54,6 +54,7 @@ const attachProjectSettingsPreferencesWrite = require('./project-settings-prefer
 const attachProjectSettingsBusinessWrite = require('./project-settings-business-write');
 const attachProjectSettingsAppearanceWrite = require('./project-settings-appearance-write');
 const attachProjectFunctionAccessMiddleware = require('./project-function-access-middleware');
+const attachAgentPosApi = require('./agent-pos-api');
 const attachHardDbApi = require('./hard-db-api');
 const attachProductImportApi = require('./product-import-api');
 const attachProductCrudApi = require('./product-crud-api');
@@ -103,6 +104,7 @@ if (isPostgreSql) {
   attachProjectFunctionAccessMiddleware(app);
   attachGoogleSheetSyncV23Extension(app);
   attachGoogleSheetSyncApi(app);
+  attachAgentPosApi(app);
   attachFinanceSettingsV23Api(app);
   attachMoneyServiceV23Guards(app);
   attachMoneyServiceRatesV23Api(app);
