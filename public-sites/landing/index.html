@@ -1,474 +1,1057 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="my">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mahar POS - POS, VPN, Automation & Excel Template for Myanmar Shops</title>
-  <meta name="description" content="Mahar POS သည် ဖုန်းဆိုင်၊ Service Center နှင့် ဆိုင်လုပ်ငန်းများအတွက် POS Software, VPN Service, Telegram Automation Bot, Google Sheets / Excel Report Template များကို တစ်နေရာတည်းမှ ဝန်ဆောင်မှုပေးသော Mahar Shwe Mobile business system ဖြစ်ပါသည်။">
-  <meta name="keywords" content="Mahar POS, POS Software Myanmar, ဖုန်းဆိုင် POS, Phone Shop POS, VPN Myanmar, Telegram Bot Automation, Excel Template Myanmar, Google Sheets Automation, Repair Shop System, Mahar Shwe Mobile">
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-  <link rel="canonical" href="https://maharshwe.shop/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mahar POS — Cloud POS System for Shops and Businesses</title>
+<meta name="description" content="Mahar POS ဖြင့် အရောင်း၊ Stock၊ Repair Service၊ Money Service၊ ဝင်ငွေ၊ အသုံးစရိတ်နှင့် လုပ်ငန်းအစီရင်ခံစာများကို တစ်နေရာတည်းမှ စီမံခန့်ခွဲပါ။">
+<link rel="canonical" href="https://maharshwe.shop/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mahar POS">
+<meta property="og:title" content="Mahar POS — Cloud POS System for Shops and Businesses">
+<meta property="og:description" content="Mahar POS ဖြင့် အရောင်း၊ Stock၊ Repair Service၊ Money Service၊ ဝင်ငွေ၊ အသုံးစရိတ်နှင့် လုပ်ငန်းအစီရင်ခံစာများကို တစ်နေရာတည်းမှ စီမံခန့်ခွဲပါ။">
+<meta property="og:url" content="https://maharshwe.shop/">
+<meta property="og:image" content="https://maharshwe.shop/mahar-pos-logo.png">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mahar POS — Cloud POS System for Shops and Businesses">
+<meta name="twitter:description" content="အရောင်း၊ Stock၊ Repair Service၊ Money Service၊ Reports — Cloud POS တစ်ခုတည်းဖြင့်။">
+<meta name="twitter:image" content="https://maharshwe.shop/mahar-pos-logo.png">
+<link rel="icon" href="https://maharshwe.shop/mahar-pos-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Mahar POS",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "url": "https://maharshwe.shop/",
+  "description": "Cloud POS System for shops and businesses in Myanmar — Sale, Stock, Repair Service, Money Service, Income/Expense and Reports.",
+  "offers": [
+    {"@type":"Offer","name":"Free Trial","price":"0","priceCurrency":"MMK"},
+    {"@type":"Offer","name":"Monthly","price":"50000","priceCurrency":"MMK"},
+    {"@type":"Offer","name":"3 Months","price":"140000","priceCurrency":"MMK"},
+    {"@type":"Offer","name":"Yearly","price":"500000","priceCurrency":"MMK"}
+  ]
+}
+</script>
+<style>
+/* ============ Design tokens ============ */
+:root{
+  --ink:#0E1B2C;          /* deep ink navy — primary text & dark panels */
+  --ink-soft:#31435C;     /* secondary text */
+  --paper:#F7F8FB;        /* page background */
+  --card:#FFFFFF;
+  --line:#E3E8F0;
+  --gold:#C9950B;         /* "Shwe" gold — brand accent */
+  --gold-soft:#F6E8C3;
+  --gold-deep:#8F6A05;
+  --jade:#0E8A5F;         /* active / success */
+  --jade-soft:#DDF3EA;
+  --danger:#C4432B;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow:0 8px 28px rgba(14,27,44,.08);
+  --shadow-lg:0 18px 50px rgba(14,27,44,.14);
+  --font-body:"Noto Sans Myanmar", "Sora", sans-serif;
+  --font-display:"Sora", "Noto Sans Myanmar", sans-serif;
+  --nav-h:68px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-h) + 12px)}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+body{
+  font-family:var(--font-body);
+  color:var(--ink);
+  background:var(--paper);
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.container{width:min(1160px, 92%);margin-inline:auto}
+h1,h2,h3{font-family:var(--font-display);line-height:1.35}
+.section{padding:88px 0}
+@media(max-width:640px){.section{padding:64px 0}}
 
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Mahar POS">
-  <meta property="og:title" content="Mahar POS - POS, VPN, Automation & Excel Template">
-  <meta property="og:description" content="ဆိုင်လုပ်ငန်းအတွက် POS, VPN, Telegram Bot Automation, Excel Report Template များ။">
-  <meta property="og:url" content="https://maharshwe.shop/">
-  <meta property="og:image" content="https://maharshwe.shop/mahar-pos-logo.png">
+/* Section eyebrow — voucher-tag signature */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-deep);background:var(--gold-soft);
+  padding:6px 14px;border-radius:4px;position:relative;margin-bottom:16px;
+}
+.eyebrow::before,.eyebrow::after{
+  content:"";position:absolute;top:50%;width:10px;height:10px;border-radius:50%;
+  background:var(--paper);transform:translateY(-50%);
+}
+.eyebrow::before{left:-5px}.eyebrow::after{right:-5px}
+.sec-title{font-size:clamp(1.5rem, 3.2vw, 2.2rem);font-weight:700;margin-bottom:12px}
+.sec-sub{color:var(--ink-soft);max-width:640px;margin-bottom:44px}
+.center{text-align:center}
+.center .sec-sub{margin-inline:auto}
 
-  <style>
-    :root{
-      --dark:#07111f;
-      --dark2:#0b1d35;
-      --blue:#2563eb;
-      --cyan:#06b6d4;
-      --green:#16a34a;
-      --gold:#f59e0b;
-      --text:#0f172a;
-      --muted:#64748b;
-      --soft:#f8fafc;
-      --line:#e2e8f0;
-      --white:#ffffff;
-      --shadow:0 24px 60px rgba(15,23,42,.14);
-      --radius:26px;
-    }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--text);background:white;line-height:1.65}
-    a{text-decoration:none;color:inherit}
-    .container{max-width:1180px;margin:0 auto;padding:0 20px}
-    .topbar{position:sticky;top:0;z-index:50;background:rgba(7,17,31,.95);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.12)}
-    .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
-    .brand{display:flex;align-items:center;gap:12px;color:white;font-weight:950}
-    .brand img{width:46px;height:46px;border-radius:14px;background:white;object-fit:contain;padding:3px}
-    .brand small{display:block;color:#bfdbfe;font-size:12px;margin-top:-4px}
-    .links{display:flex;gap:8px;align-items:center;overflow:auto;white-space:nowrap}
-    .links a{font-size:13px;font-weight:900;color:#dbeafe;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:9px 12px}
-    .links a:hover{background:white;color:#1d4ed8}
-    .appbtn{background:linear-gradient(135deg,var(--blue),var(--cyan))!important;color:white!important;border:none!important}
-    .hero{color:white;padding:88px 0 72px;background:
-      radial-gradient(circle at 18% 18%,rgba(37,99,235,.38),transparent 34%),
-      radial-gradient(circle at 82% 20%,rgba(6,182,212,.28),transparent 32%),
-      linear-gradient(135deg,#07111f,#0b1d35 56%,#0f172a)}
-    .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:36px;align-items:center}
-    .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.16);padding:9px 14px;color:#dbeafe;font-weight:950;font-size:13px}
-    .dot{width:10px;height:10px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 6px rgba(34,197,94,.18)}
-    h1{font-size:clamp(40px,6vw,74px);line-height:1.06;margin:22px 0 18px;letter-spacing:-1.5px}
-    h2{font-size:clamp(30px,4vw,48px);line-height:1.15;margin:16px 0 12px;letter-spacing:-.8px}
-    h3{margin:0 0 8px;font-size:22px}
-    .lead{font-size:18px;color:#dbeafe;max-width:760px}
-    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 20px;border-radius:999px;font-weight:950;border:1px solid transparent}
-    .btn-primary{background:white;color:#1d4ed8}
-    .btn-blue{background:linear-gradient(135deg,var(--blue),var(--cyan));color:white}
-    .btn-dark{background:#0f172a;color:white}
-    .btn-ghost{background:rgba(255,255,255,.1);color:white;border-color:rgba(255,255,255,.18)}
-    .hero-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:34px;padding:24px;box-shadow:var(--shadow);backdrop-filter:blur(12px)}
-    .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .mini{background:white;color:var(--text);border-radius:22px;padding:18px}
-    .mini strong{font-size:32px;display:block;line-height:1}
-    .mini span{color:var(--muted);font-size:13px;font-weight:850}
-    section{padding:76px 0}
-    .soft{background:var(--soft)}
-    .section-head{text-align:center;max-width:860px;margin:0 auto 38px}
-    .eyebrow{display:inline-flex;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:13px;font-weight:950;padding:8px 14px}
-    .sub{color:var(--muted);font-size:17px}
-    .products{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-    .product{background:white;border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:0 10px 30px rgba(15,23,42,.06);display:flex;flex-direction:column;gap:12px}
-    .icon{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;background:#eff6ff}
-    .product ul,.price-card ul{margin:0;padding-left:20px;color:var(--muted)}
-    .product p,.card p{color:var(--muted);margin:0}
-    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-    .card{background:white;border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
-    .pricing{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-    .price-card{background:white;border:1px solid var(--line);border-radius:28px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
-    .price-card.hot{border:2px solid var(--blue);background:#eff6ff;transform:translateY(-6px)}
-    .tag{display:inline-flex;font-size:12px;font-weight:950;text-transform:uppercase;letter-spacing:.3px;color:#1d4ed8;background:#dbeafe;border-radius:999px;padding:6px 10px;margin-bottom:10px}
-    .price{font-size:24px;font-weight:950;margin:8px 0}
-    .live-wrap{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:white;border-radius:34px;padding:28px;box-shadow:var(--shadow)}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0}
-    .stat{background:white;color:var(--text);border-radius:22px;padding:20px}
-    .stat strong{font-size:34px;display:block;line-height:1}
-    .stat span{color:var(--muted);font-size:13px;font-weight:850}
-    .shop-list{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .shop{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px;font-weight:900;color:white}
-    .qr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
-    .qr-card{background:white;border:1px solid var(--line);border-radius:22px;padding:16px;text-align:center;box-shadow:0 8px 24px rgba(15,23,42,.06)}
-    .qr-card img{width:100%;max-width:170px;aspect-ratio:1/1;object-fit:contain;border-radius:16px;background:#f8fafc;margin:auto;display:block}
-    .qr-card b{display:block;margin-top:10px}
-    .qr-card span{display:block;color:var(--muted);font-size:12px;word-break:break-all}
-    .qr-card.empty{text-align:left}
-    .dev-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:22px;align-items:start}
-    .dev-box{background:#0f172a;color:white;border-radius:32px;padding:28px}
-    .footer{background:#07111f;color:#cbd5e1;padding:34px 0}
-    .footer-grid{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
-    @media(max-width:980px){
-      .hero-grid,.dev-grid{grid-template-columns:1fr}
-      .products,.pricing{grid-template-columns:1fr 1fr}
-      .cards{grid-template-columns:1fr}
-      .stats,.shop-list,.qr-grid{grid-template-columns:1fr 1fr}
-    }
-    @media(max-width:560px){
-      .products,.pricing,.stats,.shop-list,.qr-grid,.mini-grid{grid-template-columns:1fr}
-      .nav{align-items:flex-start;flex-direction:column}
-      .hero{padding-top:54px}
-    }
-  </style>
+/* ============ Buttons ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 26px;border-radius:12px;font-weight:600;font-size:.95rem;
+  border:1.5px solid transparent;transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn-gold{background:linear-gradient(135deg,#E4AF1E,#C9950B);color:#1A1403;box-shadow:0 6px 18px rgba(201,149,11,.35)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(201,149,11,.45)}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{background:#fff;border-color:var(--ink)}
+.btn-ink{background:var(--ink);color:#fff}
+.btn-ink:hover{background:#1B2C44}
+.btn-outline-light{background:transparent;border-color:rgba(255,255,255,.4);color:#fff}
+.btn-outline-light:hover{background:rgba(255,255,255,.1)}
+
+/* ============ Navigation ============ */
+.nav{
+  position:sticky;top:0;z-index:100;height:var(--nav-h);
+  background:rgba(247,248,251,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{height:100%;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:1.1rem}
+.brand img{width:36px;height:36px;border-radius:8px;object-fit:cover}
+.brand span b{color:var(--gold-deep)}
+.nav-links{display:flex;align-items:center;gap:4px;list-style:none}
+.nav-links a{
+  padding:8px 13px;border-radius:8px;font-size:.9rem;font-weight:500;color:var(--ink-soft);
+  transition:background .15s,color .15s;
+}
+.nav-links a:hover{background:#fff;color:var(--ink)}
+.nav-links a.active{color:var(--gold-deep);background:var(--gold-soft)}
+.nav-cta{display:flex;align-items:center;gap:10px}
+.nav-cta .btn{padding:9px 18px;font-size:.88rem}
+.hamburger{
+  display:none;background:none;border:1.5px solid var(--line);border-radius:10px;
+  width:44px;height:44px;align-items:center;justify-content:center;
+}
+.hamburger svg{width:22px;height:22px;stroke:var(--ink)}
+.mobile-menu{
+  display:none;position:fixed;inset:var(--nav-h) 0 auto 0;z-index:99;
+  background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow-lg);
+  padding:16px 5%;flex-direction:column;gap:4px;
+}
+.mobile-menu.open{display:flex}
+.mobile-menu a{padding:13px 14px;border-radius:10px;font-weight:500;color:var(--ink-soft)}
+.mobile-menu a:hover,.mobile-menu a.active{background:var(--gold-soft);color:var(--gold-deep)}
+.mobile-menu .menu-cta{display:flex;gap:10px;margin-top:12px;padding-bottom:8px}
+.mobile-menu .menu-cta .btn{flex:1}
+@media(max-width:1020px){
+  .nav-links{display:none}
+  .nav-cta .btn-ghost{display:none}
+  .hamburger{display:inline-flex}
+}
+@media(max-width:560px){.nav-cta .btn-gold{display:none}}
+
+/* ============ Hero ============ */
+.hero{
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(900px 480px at 85% -10%, rgba(201,149,11,.16), transparent 60%),
+    radial-gradient(700px 420px at -10% 110%, rgba(14,138,95,.10), transparent 60%),
+    var(--ink);
+  color:#fff;padding:96px 0 110px;
+}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+@media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:48px}}
+.hero .pill{
+  display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:7px 16px;
+  font-size:.82rem;font-weight:500;color:#F0E4BE;margin-bottom:22px;
+}
+.hero h1{font-size:clamp(1.7rem, 4vw, 2.7rem);font-weight:800;line-height:1.45;margin-bottom:18px}
+.hero h1 .gold{background:linear-gradient(120deg,#F3CE5C,#C9950B);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:#B9C4D4;font-size:1.02rem;max-width:540px;margin-bottom:30px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:26px}
+.hero-badges{display:flex;flex-wrap:wrap;gap:10px}
+.hero-badges span{
+  display:inline-flex;align-items:center;gap:7px;font-size:.8rem;color:#CBD5E3;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  padding:6px 13px;border-radius:999px;
+}
+.hero-badges svg{width:14px;height:14px;stroke:#F3CE5C}
+
+/* Dashboard mockup */
+.mockup{
+  background:#101E31;border:1px solid rgba(255,255,255,.12);border-radius:18px;
+  box-shadow:0 30px 70px rgba(0,0,0,.45);overflow:hidden;
+  transform:rotate(.6deg);
+}
+@media(max-width:920px){.mockup{transform:none;max-width:560px;margin-inline:auto}}
+.mockup-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.mockup-bar i{width:10px;height:10px;border-radius:50%;display:block}
+.mockup-bar i:nth-child(1){background:#E5604C}.mockup-bar i:nth-child(2){background:#E4AF1E}.mockup-bar i:nth-child(3){background:#3FBF8A}
+.mockup-bar em{margin-left:auto;font-style:normal;font-size:.7rem;color:#7E8CA1;font-family:var(--font-display)}
+.mockup-body{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mtile{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px}
+.mtile small{display:block;font-size:.68rem;color:#8FA0B8;letter-spacing:.05em;margin-bottom:5px}
+.mtile strong{font-family:var(--font-display);font-size:1.15rem;color:#fff}
+.mtile .up{color:#54D6A4;font-size:.7rem;margin-left:7px}
+.mchart{grid-column:1 / -1;display:flex;align-items:flex-end;gap:7px;height:96px;padding:14px}
+.mchart b{flex:1;border-radius:5px 5px 0 0;background:linear-gradient(180deg,#E4AF1E,#8F6A05);opacity:.9;animation:rise 1s ease both}
+@keyframes rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.mchart b{transform-origin:bottom}
+.mrow{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 14px;font-size:.78rem;color:#C6D0DF}
+.mrow b{color:#54D6A4;font-weight:600}
+
+/* ============ Stats strip ============ */
+.stats{margin-top:-58px;position:relative;z-index:5}
+.stats-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);padding:28px;
+}
+@media(max-width:860px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{text-align:center;padding:10px}
+.stat b{font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2rem);font-weight:800;color:var(--ink);display:block}
+.stat b .plus{color:var(--gold)}
+.stat span{font-size:.85rem;color:var(--ink-soft)}
+.stat .skeleton{display:inline-block;width:64px;height:30px;border-radius:8px}
+.skeleton{background:linear-gradient(90deg,#EDF0F5 25%,#F7F8FB 50%,#EDF0F5 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* ============ Features ============ */
+.feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+@media(max-width:1000px){.feat-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.feat-grid{grid-template-columns:1fr}}
+.feat{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:24px 20px;transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.feat:hover{transform:translateY(-5px);box-shadow:var(--shadow);border-color:var(--gold)}
+.feat .icon{
+  width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--gold-soft);margin-bottom:15px;
+}
+.feat .icon svg{width:23px;height:23px;stroke:var(--gold-deep);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.feat h3{font-size:1rem;font-weight:700;margin-bottom:7px}
+.feat p{font-size:.85rem;color:var(--ink-soft);line-height:1.7}
+
+/* ============ How it works ============ */
+.how{background:var(--card);border-block:1px solid var(--line)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:step}
+@media(max-width:860px){.steps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.steps{grid-template-columns:1fr}}
+.step{
+  position:relative;background:var(--paper);border:1px solid var(--line);
+  border-radius:var(--radius);padding:26px 22px 22px;
+}
+.step::before{
+  counter-increment:step;content:counter(step, decimal-leading-zero);
+  font-family:var(--font-display);font-weight:800;font-size:.85rem;
+  color:var(--gold-deep);background:var(--gold-soft);
+  padding:4px 11px;border-radius:6px;display:inline-block;margin-bottom:13px;
+}
+.step h3{font-size:.98rem;font-weight:700;margin-bottom:6px}
+.step p{font-size:.85rem;color:var(--ink-soft)}
+
+/* ============ Guides ============ */
+.guide-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px}
+.guide-toolbar input{
+  flex:1;min-width:220px;padding:12px 16px;border:1.5px solid var(--line);border-radius:12px;
+  font-family:inherit;font-size:.9rem;background:#fff;
+}
+.guide-toolbar input:focus{outline:none;border-color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  padding:9px 16px;border-radius:999px;border:1.5px solid var(--line);background:#fff;
+  font-size:.82rem;font-weight:500;color:var(--ink-soft);transition:all .15s;
+}
+.chip:hover{border-color:var(--gold)}
+.chip.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.guide-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:36px}
+@media(max-width:900px){.guide-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:580px){.guide-grid{grid-template-columns:1fr}}
+.guide-card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;transition:transform .2s, box-shadow .2s;display:flex;flex-direction:column;
+}
+.guide-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.guide-cover{
+  height:110px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#13243B,#0E1B2C);
+}
+.guide-cover svg{width:38px;height:38px;stroke:#E4AF1E;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.guide-body{padding:19px 20px 22px;display:flex;flex-direction:column;gap:8px;flex:1}
+.guide-body .cat{font-size:.72rem;font-weight:700;letter-spacing:.08em;color:var(--gold-deep);text-transform:uppercase}
+.guide-body h3{font-size:.97rem;font-weight:700}
+.guide-body p{font-size:.84rem;color:var(--ink-soft);flex:1}
+.guide-body .more{font-size:.84rem;font-weight:600;color:var(--gold-deep)}
+
+/* ============ Shops ============ */
+.shops{background:var(--card);border-block:1px solid var(--line)}
+.shop-toolbar{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px;margin-bottom:26px}
+@media(max-width:760px){.shop-toolbar{grid-template-columns:1fr}}
+.shop-toolbar input,.shop-toolbar select{
+  padding:12px 15px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+  font-family:inherit;font-size:.9rem;color:var(--ink);
+}
+.shop-toolbar input:focus,.shop-toolbar select:focus{outline:none;border-color:var(--gold)}
+.shop-count{display:flex;align-items:center;gap:9px;font-size:.9rem;color:var(--ink-soft);margin-bottom:20px}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--jade);position:relative}
+.live-dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--jade);opacity:.5;animation:pulse 1.8s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.3);opacity:0}}
+.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:30px}
+@media(max-width:940px){.shop-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.shop-grid{grid-template-columns:1fr}}
+.shop-card{
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px;transition:transform .2s, box-shadow .2s;
+}
+.shop-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.shop-head{display:flex;align-items:center;gap:13px;margin-bottom:13px}
+.shop-logo{
+  width:48px;height:48px;border-radius:12px;background:var(--ink);color:#F3CE5C;
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);
+  font-weight:800;font-size:1.05rem;flex-shrink:0;overflow:hidden;
+}
+.shop-logo img{width:100%;height:100%;object-fit:cover}
+.shop-head h3{font-size:.98rem;font-weight:700;line-height:1.4}
+.shop-head small{font-size:.79rem;color:var(--ink-soft)}
+.shop-type{font-size:.83rem;color:var(--ink-soft);margin-bottom:14px}
+.shop-tags{display:flex;flex-wrap:wrap;gap:7px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;padding:4px 11px;border-radius:999px}
+.tag-active{background:var(--jade-soft);color:var(--jade)}
+.tag-verified{background:var(--gold-soft);color:var(--gold-deep)}
+.tag svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.shop-skeleton{height:158px;border-radius:var(--radius)}
+.state-box{
+  text-align:center;padding:52px 20px;background:var(--paper);border:1.5px dashed var(--line);
+  border-radius:var(--radius);color:var(--ink-soft);font-size:.92rem;
+}
+.state-box b{display:block;color:var(--ink);margin-bottom:5px;font-size:1rem}
+.load-more{display:flex;justify-content:center}
+.hidden{display:none !important}
+.sample-note{font-size:.78rem;color:var(--ink-soft);text-align:center;margin-top:16px}
+
+/* ============ Pricing ============ */
+.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:stretch}
+@media(max-width:1040px){.plans{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.plans{grid-template-columns:1fr}}
+.plan{
+  position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);
+  padding:28px 24px;display:flex;flex-direction:column;transition:transform .2s, box-shadow .2s;
+}
+.plan:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+.plan.best{border-color:var(--gold);box-shadow:0 12px 36px rgba(201,149,11,.18)}
+.plan-badges{position:absolute;top:-13px;left:0;right:0;display:flex;justify-content:center;gap:8px}
+.pbadge{font-size:.7rem;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.pbadge-gold{background:linear-gradient(135deg,#E4AF1E,#C9950B);color:#1A1403}
+.pbadge-jade{background:var(--jade);color:#fff}
+.plan h3{font-size:1.02rem;font-weight:700;margin-bottom:4px}
+.plan .dur{font-size:.8rem;color:var(--ink-soft);margin-bottom:14px}
+.plan .price{font-family:var(--font-display);font-size:1.75rem;font-weight:800;margin-bottom:4px}
+.plan .price small{font-size:.85rem;font-weight:600;color:var(--ink-soft)}
+.plan .desc{font-size:.83rem;color:var(--ink-soft);margin-bottom:16px}
+.plan ul{list-style:none;display:flex;flex-direction:column;gap:9px;font-size:.85rem;color:var(--ink-soft);margin-bottom:24px;flex:1}
+.plan ul li{display:flex;gap:9px;align-items:flex-start}
+.plan ul svg{width:16px;height:16px;flex-shrink:0;margin-top:4px;stroke:var(--jade);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.plan ul li.lock svg{stroke:var(--danger)}
+.plan .btn{width:100%}
+.pricing-note{text-align:center;font-size:.83rem;color:var(--ink-soft);margin-top:26px}
+
+/* ============ FAQ ============ */
+.faq{background:var(--card);border-block:1px solid var(--line)}
+.faq-list{max-width:780px;margin-inline:auto;display:flex;flex-direction:column;gap:12px}
+.faq-item{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.faq-q{
+  width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:19px 22px;background:none;border:none;text-align:left;
+  font-family:inherit;font-size:.95rem;font-weight:600;color:var(--ink);
+}
+.faq-q:focus-visible{outline:3px solid var(--gold);outline-offset:-3px}
+.faq-q svg{width:18px;height:18px;flex-shrink:0;stroke:var(--gold-deep);fill:none;stroke-width:2.2;stroke-linecap:round;transition:transform .25s}
+.faq-item.open .faq-q svg{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.faq-a p{padding:0 22px 20px;font-size:.88rem;color:var(--ink-soft)}
+
+/* ============ Contact ============ */
+.contact-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+@media(max-width:860px){.contact-grid{grid-template-columns:1fr}}
+.contact-card{
+  background:var(--ink);color:#fff;border-radius:20px;padding:40px 36px;
+  background-image:radial-gradient(500px 260px at 90% -20%, rgba(201,149,11,.25), transparent 60%);
+}
+.contact-card h3{font-size:1.35rem;font-weight:700;margin-bottom:10px}
+.contact-card p{color:#B9C4D4;font-size:.92rem;margin-bottom:26px}
+.contact-links{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.contact-links a{
+  display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.13);border-radius:13px;padding:14px 17px;
+  font-size:.9rem;font-weight:500;transition:background .15s;
+}
+.contact-links a:hover{background:rgba(255,255,255,.13)}
+.contact-links svg{width:19px;height:19px;stroke:#F3CE5C;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.contact-actions{display:flex;flex-wrap:wrap;gap:12px}
+.contact-side h2{margin-bottom:14px}
+
+/* ============ Footer ============ */
+footer{background:var(--ink);color:#93A2B8;padding:64px 0 30px;margin-top:0}
+.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:36px;margin-bottom:44px}
+@media(max-width:860px){.footer-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.footer-grid{grid-template-columns:1fr}}
+.footer-grid h4{color:#fff;font-family:var(--font-display);font-size:.9rem;margin-bottom:15px}
+.footer-grid ul{list-style:none;display:flex;flex-direction:column;gap:9px;font-size:.86rem}
+.footer-grid a:hover{color:#F3CE5C}
+.footer-brand p{font-size:.85rem;margin-top:13px;max-width:300px}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:.8rem}
+
+/* Upgrade modal (reusable premium-lock modal preview) */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(14,27,44,.6);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;z-index:200;padding:20px;
+}
+.modal-backdrop.open{display:flex}
+.modal{
+  background:#fff;border-radius:18px;max-width:430px;width:100%;padding:32px 28px;
+  box-shadow:var(--shadow-lg);text-align:center;
+}
+.modal .icon{width:56px;height:56px;border-radius:16px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.modal .icon svg{width:27px;height:27px;stroke:var(--gold-deep);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.modal h3{font-size:1.15rem;font-weight:700;margin-bottom:10px}
+.modal p{font-size:.88rem;color:var(--ink-soft);margin-bottom:24px}
+.modal .actions{display:flex;flex-direction:column;gap:10px}
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="container nav">
-      <a class="brand" href="#home">
-        <img src="/mahar-pos-logo.png" alt="Mahar POS Logo" onerror="this.style.display='none'">
-        <span>Mahar POS <small>POS • VPN • Automation • Excel Template</small></span>
-      </a>
-      <nav class="links">
-        <a href="#products">Products</a>
-        <a href="#pricing">စျေးနှုန်း</a>
-        <a href="#live">Live Shops</a>
-        <a href="#developer">Developer / QR</a>
-        <a href="#guide">Guide</a>
-        <a class="appbtn" href="https://app.maharshwe.shop">Open App</a>
-      </nav>
+
+<!-- ================= NAVIGATION ================= -->
+<nav class="nav" aria-label="Main navigation">
+  <div class="container nav-inner">
+    <a href="#home" class="brand">
+      <img src="https://maharshwe.shop/mahar-pos-logo.png" alt="Mahar POS logo" width="36" height="36">
+      <span>Mahar <b>POS</b></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#home" class="active">Home</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#guides">User Guide</a></li>
+      <li><a href="#shops">Active Shops</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="https://app.maharshwe.shop" class="btn btn-ghost">Login</a>
+      <a href="https://app.maharshwe.shop" class="btn btn-gold">Start Free Trial</a>
+      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
-  </header>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#home">Home</a>
+  <a href="#features">Features</a>
+  <a href="#guides">User Guide</a>
+  <a href="#shops">Active Shops</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#faq">FAQ</a>
+  <a href="#contact">Contact</a>
+  <div class="menu-cta">
+    <a href="https://app.maharshwe.shop" class="btn btn-ghost">Login</a>
+    <a href="https://app.maharshwe.shop" class="btn btn-gold">Start Free Trial</a>
+  </div>
+</div>
 
-  <main id="home">
-    <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <span class="pill"><span class="dot"></span> Mahar POS 1 Month Free Trial</span>
-          <h1>Mahar POS</h1>
-          <p class="lead">
-            ဖုန်းဆိုင်၊ Service Center နှင့် ဆိုင်လုပ်ငန်းများအတွက်
-            POS Software, VPN Service, Telegram Automation Bot, Google Sheets / Excel Report Template
-            များကို တစ်နေရာတည်းမှ စနစ်တကျ ရောင်းချပေးသော Mahar Shwe Mobile Business System ဖြစ်ပါသည်။
-          </p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="https://app.maharshwe.shop">POS App ဖွင့်ရန်</a>
-            <a class="btn btn-ghost" href="#products">Product ကြည့်ရန်</a>
-            <a class="btn btn-ghost" href="#pricing">စျေးနှုန်းကြည့်ရန်</a>
-          </div>
-        </div>
-
-        <div class="hero-card">
-          <div class="mini-grid">
-            <div class="mini"><strong data-live-stat="businessCount">--</strong><span>အသုံးပြုနေသောဆိုင်</span></div>
-            <div class="mini"><strong data-live-stat="products">--</strong><span>Product Records</span></div>
-            <div class="mini"><strong data-live-stat="repairs">--</strong><span>Repair Records</span></div>
-            <div class="mini"><strong>4-in-1</strong><span>POS + VPN + Bot + Template</span></div>
-          </div>
-          <p style="color:#dbeafe;margin:18px 0 0">
-            လူတိုင်းနားလည်လွယ်အောင် package အလိုက် ရှင်းပြထားပြီး၊ setup/support ပါဝင်သည်။
-          </p>
-        </div>
+<!-- ================= HERO ================= -->
+<header class="hero" id="home">
+  <div class="container hero-grid">
+    <div>
+      <span class="pill">✦ Secure Cloud POS · ၁ လ အခမဲ့ စမ်းသုံးနိုင်သည်</span>
+      <h1>Mahar POS — သင့်ဆိုင်လုပ်ငန်းကို <span class="gold">တစ်နေရာတည်းမှ</span> စီမံခန့်ခွဲပါ</h1>
+      <p>အရောင်း၊ Stock၊ ပြုပြင်ရေး၊ Money Service၊ ဝင်ငွေ၊ အသုံးစရိတ်နှင့် အစီရင်ခံစာများကို Cloud POS System တစ်ခုတည်းဖြင့် စီမံခန့်ခွဲနိုင်ပါသည်။</p>
+      <div class="hero-actions">
+        <a href="https://app.maharshwe.shop" class="btn btn-gold">၁ လ အခမဲ့ စတင်အသုံးပြုမည်</a>
+        <a href="#guides" class="btn btn-outline-light">အသုံးပြုနည်း ကြည့်မည်</a>
       </div>
-    </section>
-
-    <section id="products">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">Products / ရောင်းချသောဝန်ဆောင်မှုများ</span>
-          <h2>ဆိုင်လုပ်ငန်းအတွက် လိုအပ်တာတွေကို တစ်နေရာတည်းမှာ ရနိုင်ပါတယ်</h2>
-          <p class="sub">POS သီးသန့်၊ VPN သီးသန့်၊ Automation Bot သီးသန့်၊ Excel Template သီးသန့် — သို့မဟုတ် Package အဖြစ် ဝယ်ယူနိုင်ပါသည်။</p>
-        </div>
-
-        <div class="products">
-          <div class="product">
-            <div class="icon">🧾</div>
-            <h3>Mahar POS Software</h3>
-            <p>Sale, Stock, Repair, Money Service, Staff Permission, Daily Report များအတွက် Online POS System။</p>
-            <ul>
-              <li>ဖုန်းဆိုင် / Service Center အတွက်</li>
-              <li>Voucher, Stock, Report</li>
-              <li>Admin / Cashier Role</li>
-            </ul>
-            <a class="btn btn-blue" href="https://app.maharshwe.shop">POS App ကြည့်ရန်</a>
-          </div>
-
-          <div class="product">
-            <div class="icon">🛡️</div>
-            <h3>VPN Service</h3>
-            <p>Outline / Hiddify / V2Box စသည်ဖြင့် အသုံးပြုနိုင်သော VPN plan များကို ရောင်းချပေးပါသည်။</p>
-            <ul>
-              <li>1 Month / 2 Months</li>
-              <li>QR + Key ထုတ်ပေးခြင်း</li>
-              <li>Telegram မှ Auto Issue Flow</li>
-            </ul>
-            <a class="btn btn-blue" href="https://maharshwe.online/vpn/">VPN Page ကြည့်ရန်</a>
-          </div>
-
-          <div class="product">
-            <div class="icon">🤖</div>
-            <h3>Telegram Automation Bot</h3>
-            <p>Customer reply, voucher lookup, VPN approval, repair notification, stock/price answer များကို auto လုပ်ပေးနိုင်သည်။</p>
-            <ul>
-              <li>Customer Menu</li>
-              <li>Voucher Status Lookup</li>
-              <li>Admin Approval System</li>
-            </ul>
-            <a class="btn btn-blue" href="#developer">Automation Detail</a>
-          </div>
-
-          <div class="product">
-            <div class="icon">📊</div>
-            <h3>Excel / Google Sheets Template</h3>
-            <p>ဆိုင်အတွက် stock, sale, repair, VPN keys, credit, expense, audit, analysis report များကို template အဖြစ်ရနိုင်သည်။</p>
-            <ul>
-              <li>Grand Report Template</li>
-              <li>Stock / Credit / Audit</li>
-              <li>Analysis View ပါဝင်</li>
-            </ul>
-            <a class="btn btn-blue" href="#pricing">Template Package</a>
-          </div>
-        </div>
+      <div class="hero-badges">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg> Secure Cloud POS</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg> Mobile-Friendly</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> Credit Card မလိုပါ</span>
       </div>
-    </section>
-
-    <section id="pricing" class="soft">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">Pricing / စျေးရောင်းတဲ့နေရာ</span>
-          <h2>နားလည်လွယ်တဲ့ Package စနစ်</h2>
-          <p class="sub">Customer ကိုရှင်းပြရလွယ်အောင် Product တစ်ခုချင်းစီနဲ့ Bundle Package အဖြစ်ခွဲထားပါသည်။</p>
+    </div>
+    <div class="mockup" role="img" aria-label="Mahar POS dashboard preview">
+      <div class="mockup-bar"><i></i><i></i><i></i><em>app.maharshwe.shop — Dashboard</em></div>
+      <div class="mockup-body">
+        <div class="mtile"><small>ယနေ့ အရောင်း</small><strong>1,240,000 Ks<span class="up">▲ 12%</span></strong></div>
+        <div class="mtile"><small>Repair Jobs</small><strong>18 ခု<span class="up">▲ 4</span></strong></div>
+        <div class="mchart" aria-hidden="true">
+          <b style="height:38%;animation-delay:.05s"></b><b style="height:55%;animation-delay:.1s"></b>
+          <b style="height:44%;animation-delay:.15s"></b><b style="height:70%;animation-delay:.2s"></b>
+          <b style="height:58%;animation-delay:.25s"></b><b style="height:82%;animation-delay:.3s"></b>
+          <b style="height:66%;animation-delay:.35s"></b><b style="height:92%;animation-delay:.4s"></b>
         </div>
-
-        <div class="pricing">
-          <div class="price-card hot">
-            <span class="tag">Main Product</span>
-            <h3>POS Software</h3>
-            <div class="price">Quote / Demo</div>
-            <ul>
-              <li>Sale, Stock, Repair</li>
-              <li>Daily Report</li>
-              <li>Staff Permission</li>
-              <li>1 Month Free Trial</li>
-              <li>Setup + Training</li>
-            </ul>
-            <a class="btn btn-blue" href="https://app.maharshwe.shop">Demo ကြည့်ရန်</a>
-          </div>
-
-          <div class="price-card">
-            <span class="tag">VPN</span>
-            <h3>VPN Plan</h3>
-            <div class="price">3,000Ks / 5,000Ks</div>
-            <ul>
-              <li>1 Month - 3000 Ks</li>
-              <li>2 Months - 5000 Ks</li>
-              <li>VPN Free Trial - 2 Days</li>
-              <li>QR / Key Support</li>
-            </ul>
-            <a class="btn btn-dark" href="https://maharshwe.online/vpn/">VPN ဝယ်ရန်</a>
-          </div>
-
-          <div class="price-card">
-            <span class="tag">Automation</span>
-            <h3>Telegram Bot</h3>
-            <div class="price">Custom Setup</div>
-            <ul>
-              <li>Auto Customer Reply</li>
-              <li>Voucher Lookup</li>
-              <li>VPN Approval</li>
-              <li>Google Sheets Sync</li>
-            </ul>
-            <a class="btn btn-dark" href="#developer">Bot Detail</a>
-          </div>
-
-          <div class="price-card">
-            <span class="tag">Template</span>
-            <h3>Excel Template</h3>
-            <div class="price">Template Package</div>
-            <ul>
-              <li>Stock Sheet</li>
-              <li>Report Sheet</li>
-              <li>VPNKeys Sheet</li>
-              <li>Analysis View</li>
-            </ul>
-            <a class="btn btn-dark" href="#developer">Template Detail</a>
-          </div>
-        </div>
+        <div class="mrow"><span>Daily Close Report</span><b>✓ ပိတ်ပြီး</b></div>
+        <div class="mrow"><span>Stock Alert — Screen Protector</span><b style="color:#F3CE5C">Low</b></div>
       </div>
-    </section>
+    </div>
+  </div>
+</header>
 
-    <section id="live">
-      <div class="container">
-        <div class="live-wrap">
-          <span class="pill"><span class="dot"></span> Live Shops</span>
-          <h2 style="color:white">Mahar POS ကို အသုံးပြုနေသော ဆိုင်များ</h2>
-          <p style="color:#dbeafe;max-width:820px">
-            Public မှာ ဆိုင်အမည်နှင့် စုစုပေါင်းအရေအတွက်ကိုသာ ပြသပါသည်။ Customer ဖုန်း၊ email, sale detail မပြသပါ။
-          </p>
+<!-- ================= LIVE STATS ================= -->
+<section class="stats" aria-label="Live POS statistics">
+  <div class="container">
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat"><b data-stat="activeShops"><span class="skeleton"></span></b><span>Active Shops</span></div>
+      <div class="stat"><b data-stat="trialShops"><span class="skeleton"></span></b><span>Trial Shops</span></div>
+      <div class="stat"><b data-stat="registeredShops"><span class="skeleton"></span></b><span>Registered Shops</span></div>
+      <div class="stat"><b data-stat="locations"><span class="skeleton"></span></b><span>မြို့နယ်များ</span></div>
+    </div>
+  </div>
+</section>
 
-          <div class="stats">
-            <div class="stat"><strong data-live-stat="businessCount">--</strong><span>ဆိုင်အရေအတွက်</span></div>
-            <div class="stat"><strong data-live-stat="products">--</strong><span>ပစ္စည်းစာရင်း</span></div>
-            <div class="stat"><strong data-live-stat="repairs">--</strong><span>Repair Records</span></div>
-            <div class="stat"><strong data-live-updated>--</strong><span>နောက်ဆုံး Update</span></div>
-          </div>
+<!-- ================= FEATURES ================= -->
+<section class="section" id="features">
+  <div class="container center">
+    <span class="eyebrow">Main Features</span>
+    <h2 class="sec-title">ဆိုင်လုပ်ငန်းအတွက် လိုအပ်သမျှ တစ်နေရာတည်း</h2>
+    <p class="sec-sub">Sale POS မှ Report အထိ — Mahar POS တစ်ခုတည်းဖြင့် လုပ်ငန်းတစ်ခုလုံးကို စီမံနိုင်ပါသည်။</p>
+    <div class="feat-grid">
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M4 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.5a2 2 0 0 0 2-1.6L21.5 8H6.5"/><circle cx="10" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg></div><h3>Sale POS</h3><p>အရောင်း Voucher များကို လျင်မြန်စွာ ထုတ်၍ ရောင်းချနိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg></div><h3>Product Management</h3><p>ပစ္စည်းစာရင်း၊ စျေးနှုန်းနှင့် Category များကို စနစ်တကျ ထိန်းသိမ်းနိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M4 7v13h16V7"/><path d="M2 4h20v3H2z"/><path d="M10 11h4"/></svg></div><h3>Stock Management</h3><p>Stock In/Out နှင့် Low Stock Alert များဖြင့် လက်ကျန်ကို အချိန်နှင့်တပြေးညီ သိရှိနိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4L15 12l-3-3 2.7-2.7z"/></svg></div><h3>Repair Service POS</h3><p>ပြုပြင်ရေးအလုပ်များကို Job Ticket ဖြင့် လက်ခံ၊ Status ခြေရာခံနိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/></svg></div><h3>Money Service</h3><p>ငွေလွှဲ၊ ငွေဖြည့်နှင့် Money Service စာရင်းများကို တိကျစွာ မှတ်တမ်းတင်နိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></div><h3>ဝင်ငွေ / အသုံးစရိတ်</h3><p>နေ့စဉ် ဝင်ငွေနှင့် အသုံးစရိတ်များကို ခွဲခြားမှတ်တမ်းတင်၍ အမြတ်ကို ကြည့်နိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><h3>Daily Close Reports</h3><p>နေ့စဉ်ဆိုင်ပိတ်ချိန် စာရင်းရှင်း Report ကို အလိုအလျောက် ထုတ်ပေးသည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M8 20V10M12 20V4M16 20v-7"/><path d="M3 20h18"/></svg></div><h3>Monthly / Yearly Reports</h3><p>လစဉ်၊ နှစ်စဉ် ရောင်းအားနှင့် အမြတ် Report များကို လွယ်ကူစွာ ကြည့်နိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 11l1.5 1.5L21.5 9.5"/></svg></div><h3>Staff Role & Permission</h3><p>Admin, Cashier စသည့် Role အလိုက် ခွင့်ပြုချက်များ သတ်မှတ်နိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11l6 3v7"/><path d="M3 21h18"/></svg></div><h3>Multi-Shop Management</h3><p>ဆိုင်ခွဲများစွာကို Account တစ်ခုတည်းဖြင့် စီမံခန့်ခွဲနိုင်သည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><path d="M18 10a6 6 0 0 0-11.5-2A4.5 4.5 0 0 0 6 17h12a4 4 0 0 0 0-7z"/><path d="M12 12v5M9.5 14.5L12 12l2.5 2.5"/></svg></div><h3>Cloud Backup</h3><p>Data များကို Cloud ပေါ်တွင် လုံခြုံစွာ သိမ်းဆည်းထားပေးသည်။</p></div>
+      <div class="feat"><div class="icon"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M10 6h4M11 18h2"/></svg></div><h3>Mobile-Friendly Dashboard</h3><p>ဖုန်း၊ Tablet၊ Computer မည်သည့်စက်ဖြင့်မဆို အသုံးပြုနိုင်သည်။</p></div>
+    </div>
+  </div>
+</section>
 
-          <h3 style="margin-top:28px">နောက်ဆုံး Register လုပ်ထားသော ဆိုင်များ</h3>
-          <div class="shop-list" data-business-list>
-            <div class="shop">Loading...</div>
-          </div>
-        </div>
+<!-- ================= HOW IT WORKS ================= -->
+<section class="section how" id="how">
+  <div class="container center">
+    <span class="eyebrow">How Mahar POS Works</span>
+    <h2 class="sec-title">အဆင့် ၆ ဆင့်ဖြင့် စတင်အသုံးပြုပါ</h2>
+    <p class="sec-sub">မိနစ်အနည်းငယ်အတွင်း Account ဖွင့်ပြီး ရောင်းချမှုကို ချက်ချင်း စတင်နိုင်ပါသည်။</p>
+    <div class="steps">
+      <div class="step"><h3>Account Register လုပ်ပါ</h3><p>Email ဖြင့် Account အသစ် ဖွင့်ပါ။ Credit Card မလိုအပ်ပါ။</p></div>
+      <div class="step"><h3>Shop Information ဖြည့်ပါ</h3><p>ဆိုင်အမည်၊ တည်နေရာနှင့် လုပ်ငန်းအမျိုးအစားကို ထည့်သွင်းပါ။</p></div>
+      <div class="step"><h3>Product နှင့် Stock ထည့်ပါ</h3><p>ရောင်းချမည့် ပစ္စည်းများနှင့် လက်ကျန် Stock ကို စာရင်းသွင်းပါ။</p></div>
+      <div class="step"><h3>Staff Account ဖန်တီးပါ</h3><p>ဝန်ထမ်းများအတွက် Role နှင့် Permission သတ်မှတ်ပေးပါ။</p></div>
+      <div class="step"><h3>Sale POS မှ စတင်ရောင်းချပါ</h3><p>Voucher ထုတ်၍ ပထမဆုံး အရောင်းကို စတင်ပါ။</p></div>
+      <div class="step"><h3>Reports မှ စစ်ဆေးပါ</h3><p>ရောင်းအားနှင့် အမြတ်ကို Report များမှ နေ့စဉ် ကြည့်ရှုပါ။</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= USER GUIDES ================= -->
+<section class="section" id="guides">
+  <div class="container">
+    <span class="eyebrow">User Guide</span>
+    <h2 class="sec-title">အသုံးပြုနည်း လမ်းညွှန်များ</h2>
+    <p class="sec-sub">Account ဖွင့်နည်းမှ Subscription ပြောင်းနည်းအထိ — အဆင့်လိုက် လမ်းညွှန်များကို ဖတ်ရှုနိုင်ပါသည်။</p>
+    <div class="guide-toolbar">
+      <input type="search" id="guideSearch" placeholder="လမ်းညွှန် ရှာရန်..." aria-label="Search guides">
+      <div class="chips" id="guideChips">
+        <button class="chip active" data-cat="all">အားလုံး</button>
+        <button class="chip" data-cat="start">စတင်ခြင်း</button>
+        <button class="chip" data-cat="pos">POS အသုံးပြုနည်း</button>
+        <button class="chip" data-cat="manage">စီမံခန့်ခွဲမှု</button>
       </div>
-    </section>
+    </div>
+    <div class="guide-grid" id="guideGrid"></div>
+    <div class="state-box hidden" id="guideEmpty"><b>ရှာဖွေမှုနှင့် ကိုက်ညီသော လမ်းညွှန် မရှိပါ</b>အခြားစကားလုံးဖြင့် ပြန်ရှာကြည့်ပါ။</div>
+    <div class="load-more"><a href="/guides" class="btn btn-ink">အသုံးပြုနည်းအားလုံး ကြည့်မည်</a></div>
+  </div>
+</section>
 
-    <section id="developer" class="soft">
-      <div class="container dev-grid">
-        <div class="dev-box">
-          <span class="pill">Developer Detail</span>
-          <h2 style="color:white">Mahar POS Developer & Support</h2>
-          <p style="color:#dbeafe">
-            Mahar POS, VPN Service, Telegram Automation Bot, Excel / Google Sheets Template များကို
-            Mahar Shwe Mobile / Mahar POS Team မှ ဆိုင်လုပ်ငန်းများအတွက် setup, training, support ပေးနိုင်ပါသည်။
-          </p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="https://app.maharshwe.shop">POS App ဖွင့်ရန်</a>
-            <a class="btn btn-ghost" href="#payment-qr">Bank QR ကြည့်ရန်</a>
-          </div>
-        </div>
+<!-- ================= ACTIVE SHOPS ================= -->
+<section class="section shops" id="shops">
+  <div class="container">
+    <span class="eyebrow">Live Shops</span>
+    <h2 class="sec-title">Mahar POS အသုံးပြုနေသော ဆိုင်များ</h2>
+    <p class="sec-sub">ဆိုင်ရှင်များ ကိုယ်တိုင် ခွင့်ပြုထားသော ဆိုင်များကိုသာ ပြသပါသည်။ ဖုန်းနံပါတ်၊ Email နှင့် ရောင်းအားအချက်အလက်များကို လုံးဝ မဖော်ပြပါ။</p>
+    <div class="shop-toolbar">
+      <input type="search" id="shopSearch" placeholder="ဆိုင်အမည် ရှာရန်..." aria-label="Search shops">
+      <select id="shopLocation" aria-label="Filter by location"><option value="">တည်နေရာ အားလုံး</option></select>
+      <select id="shopType" aria-label="Filter by business type"><option value="">လုပ်ငန်းအမျိုးအစား အားလုံး</option></select>
+    </div>
+    <div class="shop-count"><span class="live-dot" aria-hidden="true"></span><span id="shopCount">ဆိုင်များ ရှာနေသည်...</span></div>
+    <div class="shop-grid" id="shopGrid">
+      <div class="skeleton shop-skeleton"></div>
+      <div class="skeleton shop-skeleton"></div>
+      <div class="skeleton shop-skeleton"></div>
+    </div>
+    <div class="state-box hidden" id="shopEmpty"><b>ပြသရန် ဆိုင် မရှိသေးပါ</b>ဆိုင်ရှင်များ Public ပြသရန် ခွင့်ပြုသည့်အခါ ဤနေရာတွင် ပေါ်လာပါမည်။</div>
+    <div class="state-box hidden" id="shopError"><b>ဆိုင်စာရင်း ခေတ္တ မရယူနိုင်ပါ</b>ခဏအကြာတွင် ပြန်လည် ကြိုးစားပေးပါ။</div>
+    <div class="load-more"><button class="btn btn-ghost hidden" id="shopLoadMore">နောက်ထပ် ကြည့်မည်</button></div>
+    <p class="sample-note hidden" id="shopSampleNote">* API ချိတ်ဆက်မှု မရသေး၍ နမူနာ ပြသထားခြင်း ဖြစ်သည်။</p>
+  </div>
+</section>
 
-        <div class="cards" style="grid-template-columns:1fr">
-          <div class="card">
-            <h3>Developer</h3>
-            <p>Mahar Shwe Mobile / Mahar POS Team</p>
-          </div>
-          <div class="card">
-            <h3>Build Focus</h3>
-            <p>Phone Shop POS, Repair System, Stock Management, VPN Sales Flow, Telegram Automation, Excel Report Template</p>
-          </div>
-          <div class="card">
-            <h3>Template Included</h3>
-            <p>STOCK, Mahar, AC, The Light, BOBO, Power9, VPNKeys, Analysis View, Audit Review, Credit, Money Service sheets.</p>
-          </div>
-        </div>
+<!-- ================= PRICING ================= -->
+<section class="section" id="pricing">
+  <div class="container center">
+    <span class="eyebrow">Pricing Plans</span>
+    <h2 class="sec-title">Subscription Plan များ</h2>
+    <p class="sec-sub">၁ လ အခမဲ့ စမ်းသုံးပြီးမှ သင့်ဆိုင်နှင့် ကိုက်ညီသော Plan ကို ရွေးချယ်ပါ။ Trial ကုန်ဆုံးသော်လည်း Data များ မပျောက်ပါ။</p>
+    <div class="plans">
+
+      <div class="plan">
+        <h3>၁ လ အခမဲ့</h3>
+        <div class="dur">One Month</div>
+        <div class="price">0 Ks</div>
+        <p class="desc">Premium Features များကို ၁ လ အခမဲ့ စမ်းသုံးနိုင်ပါသည်။</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Premium Features အားလုံး စမ်းသုံးနိုင်မည်</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Credit Card မလို</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Shop Data မပျောက်ပါ</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Trial ပြီးလျှင် Basic Functions ဆက်သုံးနိုင်မည်</li>
+          <li class="lock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Premium Functions အချို့ ပိတ်သွားမည်</li>
+        </ul>
+        <a href="https://app.maharshwe.shop" class="btn btn-ghost">အခမဲ့ စတင်မည်</a>
       </div>
 
-      <div class="container" id="payment-qr" style="margin-top:34px">
-        <div class="section-head">
-          <span class="eyebrow">Bank QR / Payment QR</span>
-          <h2>Developer / Payment QR များ</h2>
-          <p class="sub">POS About ထဲမှာပါသော Bank QR ပုံများကို landing page မှာလည်း ပြနိုင်အောင် ထည့်ထားပါသည်။</p>
-        </div>
-
-        <div class="qr-grid">
-          
-      <div class="qr-card empty">
-        <b>Bank / Payment QR</b>
-        <span>POS About ထဲက QR ပုံများကို payment-qrs folder ထဲထည့်ပါက ဒီနေရာမှာ ပြပါမည်။</span>
+      <div class="plan">
+        <h3>Monthly</h3>
+        <div class="dur">၁ လ</div>
+        <div class="price">50,000 Ks <small>/ လ</small></div>
+        <p class="desc">လစဉ် သက်တောင့်သက်သာ အသုံးပြုနိုင်သော Plan။</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Premium Features</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Sale, Stock & Product Management</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Repair Service POS</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Money Service</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Reports & Performance</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Staff Management</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Cloud Backup</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Customer Support</li>
+        </ul>
+        <a href="https://app.maharshwe.shop" class="btn btn-ink">Monthly Plan ရွေးမည်</a>
       </div>
-        </div>
+
+      <div class="plan">
+        <div class="plan-badges"><span class="pbadge pbadge-jade">10,000 Ks Save</span></div>
+        <h3>3 Months</h3>
+        <div class="dur">၃ လ</div>
+        <div class="price">140,000 Ks</div>
+        <p class="desc">၃ လစာ တစ်ကြိမ်တည်း ပေးချေ၍ ပိုသက်သာသော Plan။</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Monthly Plan Features အားလုံး</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>10,000 Ks သက်သာမှု</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Three-month access</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Priority Support</li>
+        </ul>
+        <a href="https://app.maharshwe.shop" class="btn btn-ink">3 Months Plan ရွေးမည်</a>
       </div>
-    </section>
 
-    <section id="guide">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">How to Buy / အသုံးပြုနည်း</span>
-          <h2>ဝယ်ယူရန် အဆင့်များ</h2>
-          <p class="sub">လူတိုင်းနားလည်လွယ်အောင် အဆင့်လိုက်ရှင်းပြထားပါသည်။</p>
-        </div>
-
-        <div class="cards">
-          <div class="card">
-            <h3>1. Package ရွေးပါ</h3>
-            <p>POS, VPN, Automation Bot, Excel Template ထဲမှ လိုအပ်တာကိုရွေးပါ။</p>
-          </div>
-          <div class="card">
-            <h3>2. Demo / Detail ကြည့်ပါ</h3>
-            <p>POS app, VPN plan, automation workflow, template sheet များကိုရှင်းပြပေးပါမည်။</p>
-          </div>
-          <div class="card">
-            <h3>3. Setup + Training</h3>
-            <p>အသုံးပြုနိုင်အောင် setup လုပ်ပေးပြီး staff/admin ကို သင်ပေးပါမည်။</p>
-          </div>
-        </div>
+      <div class="plan best">
+        <div class="plan-badges"><span class="pbadge pbadge-gold">Best Value</span><span class="pbadge pbadge-jade">100,000 Ks Save</span></div>
+        <h3>Yearly</h3>
+        <div class="dur">၁ နှစ်</div>
+        <div class="price">500,000 Ks</div>
+        <p class="desc">တစ်နှစ်စာ (600,000 Ks အစား) — 100,000 Ks သက်သာသည်။</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Premium Features အားလုံး</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>100,000 Ks သက်သာမှု</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>One-year access</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Priority Support</li>
+          <li><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>Custom Feature Request တစ်ကြိမ်</li>
+        </ul>
+        <a href="https://app.maharshwe.shop" class="btn btn-gold">Yearly Plan ရွေးမည်</a>
       </div>
-    </section>
 
-    <section style="padding:60px 0">
-      <div class="container">
-        <div class="live-wrap" style="text-align:center">
-          <h2 style="color:white">Mahar POS Package စတင်ဝယ်ယူလိုပါသလား?</h2>
-          <p style="color:#dbeafe">POS, VPN, Automation, Excel Template များကို ဆိုင်အခြေအနေအလိုက် ရွေးချယ်နိုင်ပါသည်။</p>
-          <div class="hero-actions" style="justify-content:center">
-            <a class="btn btn-primary" href="https://app.maharshwe.shop">POS App ဖွင့်ရန်</a>
-            <a class="btn btn-ghost" href="#payment-qr">Bank QR ကြည့်ရန်</a>
-            <a class="btn btn-ghost" href="https://maharshwe.online/vpn/">VPN Page</a>
-          </div>
-        </div>
+    </div>
+    <p class="pricing-note">Trial ကုန်ဆုံးပြီးနောက် Data များ မပျက်စီးပါ — Basic Functions ဆက်လက် အသုံးပြုနိုင်ပြီး Premium Functions များသာ ခေတ္တ ပိတ်ထားပါမည်။ <button id="previewModal" class="chip" style="margin-left:6px">Premium Lock နမူနာ ကြည့်ရန်</button></p>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section faq" id="faq">
+  <div class="container center">
+    <span class="eyebrow">FAQ</span>
+    <h2 class="sec-title">မေးလေ့ရှိသော မေးခွန်းများ</h2>
+    <p class="sec-sub">Mahar POS နှင့် ပတ်သက်၍ သိလိုသည်များကို ဤနေရာတွင် ဖြေကြားထားပါသည်။</p>
+    <div class="faq-list" id="faqList">
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Mahar POS ကို ဘယ်သူတွေ အသုံးပြုနိုင်ပါသလဲ။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>ဖုန်းဆိုင်၊ Service Center၊ Money Service ဆိုင်နှင့် ရောင်းချရေးလုပ်ငန်း အမျိုးမျိုးအတွက် ဒီဇိုင်းထုတ်ထားပါသည်။ ဆိုင်အသေးမှ ဆိုင်ခွဲများစွာရှိသော လုပ်ငန်းအထိ အသုံးပြုနိုင်ပါသည်။</p></div>
       </div>
-    </section>
-  </main>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">အခမဲ့ စမ်းသုံးကာလ ဘယ်လောက်ရပါသလဲ။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>Account ဖွင့်ပြီးသည်နှင့် Premium Features အားလုံးကို ၁ လ အခမဲ့ စမ်းသုံးနိုင်ပါသည်။ Credit Card ထည့်စရာ မလိုအပ်ပါ။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Trial ပြီးလျှင် Data များ ပျောက်သွားပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>မပျောက်ပါ။ Trial ကုန်ဆုံးသော်လည်း သင့်ဆိုင်၏ Data အားလုံးကို လုံခြုံစွာ ထိန်းသိမ်းထားပေးပြီး Login ဝင်၍ ကြည့်ရှုနိုင်ဆဲ ဖြစ်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Subscription မလုပ်လျှင် ဘာ Function များ ပိတ်သွားမလဲ။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>Advanced Reports၊ Multi-Shop Management၊ Custom Staff Permissions စသည့် Premium Functions များသာ ခေတ္တ ပိတ်သွားပါမည်။ Login၊ Data ကြည့်ရှုခြင်း၊ Product List နှင့် Basic Functions များကို ဆက်လက် အသုံးပြုနိုင်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">ဖုန်းနှင့် အသုံးပြုလို့ရပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>ရပါသည်။ Mahar POS သည် Mobile-Friendly ဖြစ်၍ ဖုန်း၊ Tablet နှင့် Computer မည်သည့်စက်မှမဆို Browser ဖြင့် အသုံးပြုနိုင်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">ဆိုင်ခွဲများစွာ အသုံးပြုလို့ရပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>ရပါသည်။ Multi-Shop Management ဖြင့် ဆိုင်ခွဲများစွာကို Account တစ်ခုတည်းမှ စီမံခန့်ခွဲနိုင်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Staff Permission သတ်မှတ်လို့ရပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>ရပါသည်။ Admin, Cashier စသည့် Role များ သတ်မှတ်နိုင်ပြီး ဝန်ထမ်းတစ်ဦးချင်းစီအတွက် ခွင့်ပြုချက်များကို ခွဲခြား သတ်မှတ်နိုင်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">အကူအညီလိုအပ်လျှင် ဘယ်လိုဆက်သွယ်ရမလဲ။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>Telegram Community သို့မဟုတ် Facebook Page မှတဆင့် ဆက်သွယ်နိုင်ပါသည်။ Setup နှင့် Training အတွက်လည်း Support Team မှ ကူညီပေးပါသည်။</p></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <footer class="footer">
-    <div class="container footer-grid">
+<!-- ================= CONTACT ================= -->
+<section class="section" id="contact">
+  <div class="container contact-grid">
+    <div class="contact-side">
+      <span class="eyebrow">Contact</span>
+      <h2 class="sec-title">စတင်ဖို့ အဆင်သင့်ဖြစ်ပြီလား?</h2>
+      <p class="sec-sub" style="margin-bottom:26px">မေးခွန်းရှိပါက Support Team ကို တိုက်ရိုက် ဆက်သွယ်နိုင်ပါသည် — သို့မဟုတ် ယခုပင် ၁ လ အခမဲ့ စတင်လိုက်ပါ။</p>
+      <div class="contact-actions">
+        <a href="https://app.maharshwe.shop" class="btn btn-gold">Start Free Trial</a>
+        <a href="https://app.maharshwe.shop" class="btn btn-ghost">Login</a>
+      </div>
+    </div>
+    <div class="contact-card">
+      <h3>Mahar POS Support</h3>
+      <p>Setup, Training နှင့် အသုံးပြုမှုဆိုင်ရာ အကူအညီများအတွက် ဆက်သွယ်ပါ။</p>
+      <div class="contact-links">
+        <!-- TODO: Replace # with real contact URLs / phone from the project config. Do not invent details. -->
+        <a href="#" data-contact="phone"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Contact Phone</a>
+        <a href="#" data-contact="telegram"><svg viewBox="0 0 24 24"><path d="M22 3L2 10.5l6 2.5M22 3l-4 18-7.5-6.5M22 3L8 13v6l3.5-3.5"/></svg>Telegram Community</a>
+        <a href="#" data-contact="facebook"><svg viewBox="0 0 24 24"><path d="M15 3h3v4h-3a1 1 0 0 0-1 1v3h4l-.5 4H14v7h-4v-7H7v-4h3V8a5 5 0 0 1 5-5z"/></svg>Facebook Page</a>
+      </div>
+      <a href="#" class="btn btn-outline-light" data-contact="telegram">Support ဆက်သွယ်ရန်</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#home" class="brand" style="color:#fff"><img src="https://maharshwe.shop/mahar-pos-logo.png" alt="Mahar POS logo" width="36" height="36"><span>Mahar <b style="color:#F3CE5C">POS</b></span></a>
+        <p>ဆိုင်လုပ်ငန်းများအတွက် Cloud POS System — အရောင်း၊ Stock၊ Repair၊ Money Service နှင့် Reports တစ်နေရာတည်း။</p>
+      </div>
       <div>
-        <b>Mahar POS</b><br>
-        <span>POS • VPN • Telegram Automation • Excel Template</span>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#guides">User Guide</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#shops">Active Shops</a></li>
+        </ul>
       </div>
-      <div>© 2026 Mahar POS. All rights reserved.</div>
+      <div>
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms and Conditions</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Account</h4>
+        <ul>
+          <li><a href="https://app.maharshwe.shop">Login</a></li>
+          <li><a href="https://app.maharshwe.shop">Register</a></li>
+          <li><a href="https://app.maharshwe.shop">Start Free Trial</a></li>
+        </ul>
+      </div>
     </div>
-  </footer>
+    <div class="footer-bottom">
+      <span>© <span id="year"></span> Mahar POS. All rights reserved.</span>
+      <span>Made for Myanmar shops · Secure Cloud POS</span>
+    </div>
+  </div>
+</footer>
 
-  <script>
-    (function () {
-      function setText(selector, value) {
-        document.querySelectorAll(selector).forEach(function (el) {
-          el.textContent = value;
-        });
+<!-- ================= PREMIUM LOCK MODAL (reusable preview) ================= -->
+<div class="modal-backdrop" id="upgradeModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="icon"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+    <h3 id="modalTitle">Premium Feature</h3>
+    <p>သင်၏ အခမဲ့ စမ်းသုံးကာလ ကုန်ဆုံးသွားပါပြီ။ ဤလုပ်ဆောင်ချက်ကို ဆက်လက်အသုံးပြုရန် Subscription Plan ရွေးချယ်ပါ။</p>
+    <div class="actions">
+      <a href="#pricing" class="btn btn-gold" id="modalPlans">View Plans</a>
+      <a href="#contact" class="btn btn-ghost" id="modalContact">Contact Support</a>
+      <button class="btn btn-ghost" id="modalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Mahar POS Landing — client script
+   Live data endpoints (implement server-side with 30–60s cache):
+     GET /api/public/stats
+     GET /api/public/shops/active?page=&limit=&businessType=&location=&search=
+     GET /api/public/guides
+   All fetches degrade gracefully to sample data / empty states.
+============================================================ */
+"use strict";
+document.getElementById("year").textContent = new Date().getFullYear();
+
+/* ---------- Mobile menu ---------- */
+const hamburger = document.getElementById("hamburger");
+const mobileMenu = document.getElementById("mobileMenu");
+hamburger.addEventListener("click", () => {
+  const open = mobileMenu.classList.toggle("open");
+  hamburger.setAttribute("aria-expanded", open);
+});
+mobileMenu.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
+  mobileMenu.classList.remove("open");
+  hamburger.setAttribute("aria-expanded", "false");
+}));
+
+/* ---------- Active section highlighting ---------- */
+const sections = [...document.querySelectorAll("section[id], header[id]")];
+const navLinks = [...document.querySelectorAll(".nav-links a, .mobile-menu a")];
+const highlight = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    navLinks.forEach(l => l.classList.toggle("active", l.getAttribute("href") === "#" + e.target.id));
+  });
+}, { rootMargin: "-40% 0px -55% 0px" });
+sections.forEach(s => highlight.observe(s));
+
+/* ---------- Live statistics ---------- */
+function animateCount(el, target) {
+  const dur = 1200, start = performance.now();
+  function tick(now) {
+    const p = Math.min((now - start) / dur, 1);
+    const v = Math.round(target * (1 - Math.pow(1 - p, 3)));
+    el.innerHTML = v.toLocaleString() + '<span class="plus">+</span>';
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+async function loadStats() {
+  const fallback = { activeShops: 25, trialShops: 10, registeredShops: 45, locations: 8 };
+  let data = null;
+  try {
+    const r = await fetch("/api/public/stats", { signal: AbortSignal.timeout(6000) });
+    if (r.ok) data = await r.json();
+  } catch (_) { /* fall back below */ }
+  const stats = data || fallback;
+  document.querySelectorAll("[data-stat]").forEach(el => {
+    const key = el.dataset.stat;
+    const v = Number(stats[key]);
+    if (Number.isFinite(v)) animateCount(el, v);
+    else el.textContent = "—";
+  });
+}
+loadStats();
+
+/* ---------- User guides (fetch /api/public/guides, fallback to static list) ---------- */
+const GUIDE_FALLBACK = [
+  { slug:"account-register-login", cat:"start",  catLabel:"စတင်ခြင်း", title:"Account Register နှင့် Login", desc:"Account အသစ်ဖွင့်နည်းနှင့် Login ဝင်နည်း အဆင့်လိုက် လမ်းညွှန်။" },
+  { slug:"business-profile-setup", cat:"start",  catLabel:"စတင်ခြင်း", title:"Business Profile Setup", desc:"ဆိုင်အချက်အလက်၊ Logo နှင့် တည်နေရာ ထည့်သွင်းနည်း။" },
+  { slug:"add-products",           cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Product ထည့်နည်း", desc:"ပစ္စည်းအသစ်၊ စျေးနှုန်းနှင့် Category ထည့်သွင်းနည်း။" },
+  { slug:"add-stock",              cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Stock ထည့်နည်း", desc:"Stock In/Out မှတ်တမ်းတင်နည်းနှင့် လက်ကျန် စစ်ဆေးနည်း။" },
+  { slug:"sale-pos-usage",         cat:"pos",    catLabel:"POS", title:"Sale POS အသုံးပြုနည်း", desc:"Voucher ထုတ်၍ အရောင်း စတင်ရောင်းချနည်း။" },
+  { slug:"repair-pos-usage",       cat:"pos",    catLabel:"POS", title:"Repair POS အသုံးပြုနည်း", desc:"ပြုပြင်ရေး Job လက်ခံနည်းနှင့် Status ခြေရာခံနည်း။" },
+  { slug:"money-service-usage",    cat:"pos",    catLabel:"POS", title:"Money Service အသုံးပြုနည်း", desc:"ငွေလွှဲနှင့် ငွေဖြည့် စာရင်း မှတ်တမ်းတင်နည်း။" },
+  { slug:"income-expense-usage",   cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Income / Expense အသုံးပြုနည်း", desc:"ဝင်ငွေနှင့် အသုံးစရိတ် စာရင်းသွင်းနည်း။" },
+  { slug:"daily-close-report",     cat:"pos",    catLabel:"POS", title:"Daily Close Report အသုံးပြုနည်း", desc:"နေ့စဉ် ဆိုင်ပိတ်ချိန် စာရင်းရှင်းနည်း။" },
+  { slug:"staff-role-permission",  cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Staff Role & Permission သတ်မှတ်နည်း", desc:"ဝန်ထမ်း Role နှင့် ခွင့်ပြုချက် သတ်မှတ်နည်း။" },
+  { slug:"multi-shop-usage",       cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Multi-Shop အသုံးပြုနည်း", desc:"ဆိုင်ခွဲများစွာကို Account တစ်ခုတည်းဖြင့် စီမံနည်း။" },
+  { slug:"change-subscription",    cat:"start",  catLabel:"စတင်ခြင်း", title:"Subscription Plan ပြောင်းနည်း", desc:"Plan ရွေးချယ်နည်းနှင့် Upgrade လုပ်နည်း။" },
+];
+const guideIcon = '<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h7l7 7v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z"/><path d="M13 3v7h7"/><path d="M8 14h8M8 17h5"/></svg>';
+let guides = GUIDE_FALLBACK, guideCat = "all", guideQuery = "";
+const guideGrid = document.getElementById("guideGrid");
+const guideEmpty = document.getElementById("guideEmpty");
+
+function renderGuides() {
+  const q = guideQuery.trim().toLowerCase();
+  const list = guides
+    .filter(g => (guideCat === "all" || g.cat === guideCat) &&
+                 (!q || g.title.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q)))
+    .slice(0, 6);
+  guideGrid.innerHTML = list.map(g => `
+    <a class="guide-card" href="/guides/${encodeURIComponent(g.slug)}">
+      <div class="guide-cover" aria-hidden="true">${guideIcon}</div>
+      <div class="guide-body">
+        <span class="cat">${g.catLabel}</span>
+        <h3>${g.title}</h3>
+        <p>${g.desc}</p>
+        <span class="more">ဖတ်ရှုမည် →</span>
+      </div>
+    </a>`).join("");
+  guideEmpty.classList.toggle("hidden", list.length > 0);
+}
+(async function loadGuides() {
+  try {
+    const r = await fetch("/api/public/guides?limit=12", { signal: AbortSignal.timeout(6000) });
+    if (r.ok) {
+      const d = await r.json();
+      const arr = Array.isArray(d) ? d : d.guides;
+      if (Array.isArray(arr) && arr.length) {
+        guides = arr.map(g => ({
+          slug: g.slug, cat: g.category || "all", catLabel: g.category || "Guide",
+          title: g.title, desc: g.description || ""
+        }));
       }
+    }
+  } catch (_) {}
+  renderGuides();
+})();
+document.getElementById("guideSearch").addEventListener("input", e => { guideQuery = e.target.value; renderGuides(); });
+document.getElementById("guideChips").addEventListener("click", e => {
+  const chip = e.target.closest(".chip"); if (!chip) return;
+  document.querySelectorAll("#guideChips .chip").forEach(c => c.classList.remove("active"));
+  chip.classList.add("active");
+  guideCat = chip.dataset.cat;
+  renderGuides();
+});
 
-      function renderShops(list) {
-        var wrap = document.querySelector('[data-business-list]');
-        if (!wrap) return;
-        wrap.innerHTML = '';
+/* ---------- Active shops ---------- */
+const SHOP_SAMPLE = [
+  { name:"Mahar Shwe Mobile", logo:"", location:"Hsi Hseng, Southern Shan State", businessType:"Mobile Sales and Repair", description:"Phone sales and repair service", verified:true, status:"active" },
+];
+const shopGrid = document.getElementById("shopGrid");
+const shopEmpty = document.getElementById("shopEmpty");
+const shopError = document.getElementById("shopError");
+const shopCountEl = document.getElementById("shopCount");
+const shopLoadMore = document.getElementById("shopLoadMore");
+const shopSampleNote = document.getElementById("shopSampleNote");
+const checkIcon = '<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
+const shopState = { page:1, limit:12, total:0, items:[], search:"", location:"", businessType:"", usingSample:false };
 
-        if (!list || !list.length) {
-          var empty = document.createElement('div');
-          empty.className = 'shop';
-          empty.textContent = 'ဆိုင်အမည် မရှိသေးပါ';
-          wrap.appendChild(empty);
-          return;
-        }
+function esc(s){ const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+function initials(name){ return (name || "?").trim().split(/\s+/).slice(0,2).map(w => w[0]).join("").toUpperCase(); }
 
-        list.slice(0, 10).forEach(function (item, i) {
-          var card = document.createElement('div');
-          card.className = 'shop';
-          card.textContent = 'ဆိုင် #' + (i + 1) + ' — ' + (item.name || 'Unnamed Shop');
-          wrap.appendChild(card);
-        });
-      }
+function shopCard(s) {
+  const logo = s.logo
+    ? `<img src="${esc(s.logo)}" alt="${esc(s.name)} logo" loading="lazy" onerror="this.remove();this.parentNode.textContent='${esc(initials(s.name))}'">`
+    : esc(initials(s.name));
+  return `<article class="shop-card">
+    <div class="shop-head">
+      <div class="shop-logo">${logo}</div>
+      <div><h3>${esc(s.name)}</h3><small>${esc(s.location || "")}</small></div>
+    </div>
+    <div class="shop-type">${esc(s.businessType || s.description || "")}</div>
+    <div class="shop-tags">
+      <span class="tag tag-active">${checkIcon} Active</span>
+      ${s.verified ? `<span class="tag tag-verified">${checkIcon} Verified Mahar POS Shop</span>` : ""}
+    </div>
+  </article>`;
+}
 
-      async function loadLiveStats() {
-        try {
-          var res = await fetch('/api/public/live-stats', { cache: 'no-store' });
-          var data = await res.json();
-          if (!data || !data.ok) throw new Error('Invalid live stats');
+function renderShops(append) {
+  if (!append) shopGrid.innerHTML = "";
+  shopGrid.insertAdjacentHTML("beforeend", shopState.pageItems.map(shopCard).join(""));
+  const shown = shopGrid.children.length;
+  shopEmpty.classList.toggle("hidden", shown > 0);
+  shopError.classList.add("hidden");
+  shopCountEl.textContent = shopState.total > 0
+    ? `Active Shops ${shopState.total.toLocaleString()} ဆိုင် — Live`
+    : "ပြသရန် ဆိုင် မရှိသေးပါ";
+  shopLoadMore.classList.toggle("hidden", shown >= shopState.total);
+  shopSampleNote.classList.toggle("hidden", !shopState.usingSample);
+}
 
-          var stats = data.stats || {};
-          Object.keys(stats).forEach(function (key) {
-            setText('[data-live-stat="' + key + '"]', Number(stats[key] || 0).toLocaleString() + '+');
-          });
+async function loadShops(append = false) {
+  if (!append) {
+    shopGrid.innerHTML = '<div class="skeleton shop-skeleton"></div>'.repeat(3);
+    shopEmpty.classList.add("hidden"); shopError.classList.add("hidden");
+  }
+  const p = new URLSearchParams({ page: shopState.page, limit: shopState.limit });
+  if (shopState.search) p.set("search", shopState.search);
+  if (shopState.location) p.set("location", shopState.location);
+  if (shopState.businessType) p.set("businessType", shopState.businessType);
+  try {
+    const r = await fetch("/api/public/shops/active?" + p, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    shopState.total = Number(d.total) || (d.shops ? d.shops.length : 0);
+    shopState.pageItems = Array.isArray(d.shops) ? d.shops : [];
+    shopState.usingSample = false;
+    if (!append) populateShopFilters(shopState.pageItems);
+    renderShops(append);
+  } catch (_) {
+    /* API unavailable (e.g. previewing this file standalone) → show sample */
+    shopState.total = SHOP_SAMPLE.length;
+    shopState.pageItems = SHOP_SAMPLE.filter(s =>
+      (!shopState.search || s.name.toLowerCase().includes(shopState.search.toLowerCase())) &&
+      (!shopState.location || s.location === shopState.location) &&
+      (!shopState.businessType || s.businessType === shopState.businessType));
+    shopState.total = shopState.pageItems.length;
+    shopState.usingSample = true;
+    populateShopFilters(SHOP_SAMPLE);
+    renderShops(false);
+  }
+}
+const locSel = document.getElementById("shopLocation");
+const typeSel = document.getElementById("shopType");
+function populateShopFilters(items) {
+  const fill = (sel, key) => {
+    const current = sel.value;
+    const values = [...new Set(items.map(i => i[key]).filter(Boolean))];
+    sel.length = 1;
+    values.forEach(v => sel.add(new Option(v, v)));
+    sel.value = current;
+  };
+  fill(locSel, "location");
+  fill(typeSel, "businessType");
+}
+let searchTimer;
+document.getElementById("shopSearch").addEventListener("input", e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { shopState.search = e.target.value; shopState.page = 1; loadShops(); }, 350);
+});
+locSel.addEventListener("change", () => { shopState.location = locSel.value; shopState.page = 1; loadShops(); });
+typeSel.addEventListener("change", () => { shopState.businessType = typeSel.value; shopState.page = 1; loadShops(); });
+shopLoadMore.addEventListener("click", () => { shopState.page++; loadShops(true); });
+loadShops();
+/* Background refresh every 60s (spec: 30–60s cache) */
+setInterval(() => { if (shopState.page === 1 && !document.hidden) loadShops(); }, 60000);
 
-          renderShops(data.businesses || []);
-          var d = data.generatedAt ? new Date(data.generatedAt) : new Date();
-          document.querySelectorAll('[data-live-updated]').forEach(function (el) {
-            el.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          });
-        } catch (err) {
-          setText('[data-live-stat="businessCount"]', '0+');
-          setText('[data-live-stat="products"]', '0+');
-          setText('[data-live-stat="repairs"]', '0+');
-          setText('[data-live-updated]', '--');
-          renderShops([]);
-        }
-      }
+/* ---------- FAQ accordion ---------- */
+document.querySelectorAll(".faq-item").forEach(item => {
+  const btn = item.querySelector(".faq-q");
+  const panel = item.querySelector(".faq-a");
+  btn.addEventListener("click", () => {
+    const open = item.classList.toggle("open");
+    btn.setAttribute("aria-expanded", open);
+    panel.style.maxHeight = open ? panel.scrollHeight + "px" : "0";
+  });
+});
 
-      loadLiveStats();
-      setInterval(loadLiveStats, 60000);
-    })();
-  </script>
+/* ---------- Premium lock modal (reusable) ---------- */
+const modal = document.getElementById("upgradeModal");
+function openUpgradeModal(){ modal.classList.add("open"); document.getElementById("modalPlans").focus(); }
+function closeUpgradeModal(){ modal.classList.remove("open"); }
+document.getElementById("previewModal").addEventListener("click", openUpgradeModal);
+document.getElementById("modalClose").addEventListener("click", closeUpgradeModal);
+document.getElementById("modalPlans").addEventListener("click", closeUpgradeModal);
+document.getElementById("modalContact").addEventListener("click", closeUpgradeModal);
+modal.addEventListener("click", e => { if (e.target === modal) closeUpgradeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeUpgradeModal(); });
+</script>
 </body>
 </html>
