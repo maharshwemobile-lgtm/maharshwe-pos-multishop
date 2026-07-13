@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Box, CircleDollarSign, ClipboardList, CreditCard, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackageCheck, PackagePlus, RotateCcw, Settings, ShieldCheck, ShoppingCart, Truck, Users, Wallet,
+import { BarChart3, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingCart, Truck, Users, Wallet,
   BadgePercent, Wrench, X } from 'lucide-react';
 import DashboardLive from './DashboardLive.jsx';
 import NewSaleV10 from './sales-v10/NewSaleV10.jsx';
@@ -42,12 +42,6 @@ const menu = [
   { name: 'Prices', label: 'ဈေးနှုန်းနှင့် လျော့ဈေးများ', icon: BadgePercent, color: '#f97316' },
   { name: 'Stock', icon: PackagePlus, color: '#8b5cf6' },
   { name: 'Purchases', icon: Truck, color: '#06b6d4' },
-  { name: 'Suppliers', label: 'Suppliers', icon: Users, color: '#0891b2', miniOnly: true, purchaseTab: 'suppliers' },
-  { name: 'Purchase Orders', label: 'Purchase Orders', icon: ClipboardList, color: '#0f766e', miniOnly: true, purchaseTab: 'orders' },
-  { name: 'Goods Receiving', label: 'Goods Receiving', icon: PackageCheck, color: '#16a34a', miniOnly: true, purchaseTab: 'receiving' },
-  { name: 'Supplier Payables', label: 'Supplier Payables', icon: CreditCard, color: '#f97316', miniOnly: true, purchaseTab: 'payables' },
-  { name: 'Purchase Returns', label: 'Purchase Returns', icon: RotateCcw, color: '#dc2626', miniOnly: true, purchaseTab: 'returns' },
-  { name: 'Purchase Reports', label: 'Purchase Reports', icon: BarChart3, color: '#84cc16', miniOnly: true, purchaseTab: 'reports' },
   { name: 'Customers', label: 'Customers & Credit', icon: Users, color: '#10b981' },
   { name: 'Money Service', label: 'Money Service', icon: CircleDollarSign, color: '#16a34a' },
   { name: 'Accounting', label: 'Finance & Accounts', icon: Wallet, color: '#f97316' },
@@ -79,12 +73,6 @@ const pageTitles = {
   Repairs: 'Repair Platform',
   'Partner Settlement': 'Partner Shop & Weekly Settlement',
   Purchases: 'Suppliers & Purchase Orders',
-  Suppliers: 'Suppliers',
-  'Purchase Orders': 'Purchase Orders',
-  'Goods Receiving': 'Goods Receiving',
-  'Supplier Payables': 'Supplier Payables',
-  'Purchase Returns': 'Purchase Returns',
-  'Purchase Reports': 'Purchase Reports',
   Customers: 'Customers & Credit',
   'Money Service': 'Money Service',
   Accounting: 'Finance & Accounts',
@@ -350,8 +338,6 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (safePage === 'Prices') return <Connected page={safePage} setPage={setPage}><ProductPriceDiscountPage/></Connected>;
   if (safePage === 'Stock') return <StockWorkspace/>;
   if (safePage === 'Purchases') return <PurchasingWorkspace/>;
-  const purchaseAlias = menu.find((item) => item.name === safePage && item.purchaseTab);
-  if (purchaseAlias) return <PurchasingWorkspace initialTab={purchaseAlias.purchaseTab}/>;
   if (safePage === 'Customers') return <Connected page={safePage} setPage={setPage}><CustomersCreditPage onNavigate={setPage}/></Connected>;
   if (safePage === 'Money Service') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23/></Connected>;
   if (safePage === 'Accounting') return <Connected page={safePage} setPage={setPage}><FinanceWorkspace onNavigate={setPage}/></Connected>;

@@ -20,13 +20,11 @@ const tabs = [
 ];
 
 const miniMartTabs = [
-  { id: 'suppliers', label: 'Suppliers / ပစ္စည်းသွင်းသူ', icon: Users },
-  { id: 'orders', label: 'Purchase Orders', icon: ClipboardList },
-  { id: 'receiving', label: 'Goods Receiving', icon: PackageCheck },
-  { id: 'payables', label: 'Supplier Payables', icon: CreditCard },
-  { id: 'returns', label: 'Purchase Returns', icon: RotateCcw },
-  { id: 'reports', label: 'Purchase Reports', icon: BarChart3 },
-  { id: 'legacy', label: 'Direct Receiving', icon: PackageCheck },
+  { id: 'suppliers', label: 'Supplier', icon: Users },
+  { id: 'orders', label: 'Purchase', icon: ClipboardList },
+  { id: 'receiving', label: 'Receive Stock', icon: PackageCheck },
+  { id: 'settlement', label: 'Pay / Return', icon: CreditCard },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
 ];
 
 function businessTypeOf() {
@@ -36,6 +34,7 @@ function businessTypeOf() {
 
 export default function PurchasingWorkspaceV2({ initialTab = 'suppliers' }) {
   const [tab, setTab] = useState(initialTab);
+  const [settlementTab, setSettlementTab] = useState('payables');
   const [message, setMessage] = useState(null);
   const isMiniMart = businessTypeOf() === 'MINI_MART';
   const visibleTabs = isMiniMart ? miniMartTabs : tabs;
@@ -64,8 +63,8 @@ export default function PurchasingWorkspaceV2({ initialTab = 'suppliers' }) {
     {isMiniMart ? (
       <section className="purchasing-mini-intro">
         <span>MINI MART PURCHASING</span>
-        <h3>StockM style purchasing flow</h3>
-        <p>Supplier → Purchase Order → Goods Receiving → Payables/Returns → Reports ကို တစ်နေရာတည်းမှာ စီမံပါ။ Mobile Shop repair purchasing flow ကို မထိထားပါ။</p>
+        <h3>ဝယ်ယူမှု၊ လက်ခံမှု၊ ပေးချေ/ပြန်ပို့မှု</h3>
+        <p>Supplier, purchase order, stock receive, payment, return, report အားလုံးကို တစ်နေရာတည်းမှာ ရိုးရိုးရှင်းရှင်း စီမံနိုင်ပါတယ်။</p>
       </section>
     ) : null}
     <nav className="purchasing-tabs" aria-label="Purchasing sections">
@@ -75,8 +74,16 @@ export default function PurchasingWorkspaceV2({ initialTab = 'suppliers' }) {
     {tab === 'orders' ? <Phase10PurchaseOrders/> : null}
     {!isMiniMart && tab === 'operations' ? <Phase10PurchasingCompletion/> : null}
     {isMiniMart && tab === 'receiving' ? <Phase10ReceivingPanel notify={notify} onError={onError}/> : null}
-    {isMiniMart && tab === 'payables' ? <Phase10PayablesPanel notify={notify} onError={onError}/> : null}
-    {isMiniMart && tab === 'returns' ? <Phase10ReturnsPanel notify={notify} onError={onError}/> : null}
+    {isMiniMart && tab === 'settlement' ? (
+      <section className="purchasing-settlement-panel">
+        <nav className="purchasing-subtabs" aria-label="Payment and return sections">
+          <button type="button" className={settlementTab === 'payables' ? 'active' : ''} onClick={() => setSettlementTab('payables')}><CreditCard size={16}/><span>Supplier Payment</span></button>
+          <button type="button" className={settlementTab === 'returns' ? 'active' : ''} onClick={() => setSettlementTab('returns')}><RotateCcw size={16}/><span>Return</span></button>
+        </nav>
+        {settlementTab === 'payables' ? <Phase10PayablesPanel notify={notify} onError={onError}/> : null}
+        {settlementTab === 'returns' ? <Phase10ReturnsPanel notify={notify} onError={onError}/> : null}
+      </section>
+    ) : null}
     {isMiniMart && tab === 'reports' ? <Phase10PurchasingReports notify={notify} onError={onError}/> : null}
     {tab === 'legacy' ? <PurchaseStockPage/> : null}
   </div>;

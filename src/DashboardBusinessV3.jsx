@@ -27,9 +27,7 @@ const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 
 const MINI_MART_MODULES = [
   { label: 'လက်လီအရောင်း', detail: 'Barcode / item sale POS', page: 'Sale POS', icon: ShoppingCart, tone: 'green' },
-  { label: 'ရောင်းချမှုမှတ်တမ်း', detail: 'Sale, void, reprint, history', page: 'Sales History', icon: Clock3, tone: 'blue' },
   { label: 'ပစ္စည်း / Barcode / Unit', detail: 'Category, unit, expiry, stock', page: 'Products', icon: PackageSearch, tone: 'cyan' },
-  { label: 'ရောင်းစျေးနှင့် Discount', detail: 'Retail / wholesale price setup', page: 'Prices', icon: CreditCard, tone: 'orange' },
   { label: 'Stock In/Out & Adjustment', detail: 'Inventory movement control', page: 'Stock', icon: PackageSearch, tone: 'purple' },
   { label: 'Supplier & Purchase', detail: 'Supplier, PO, receiving, payable', page: 'Purchases', icon: Truck, tone: 'cyan' },
   { label: 'ဖောက်သည် / အကြွေး', detail: 'Customer credit receive/pay', page: 'Customers', icon: Users, tone: 'orange' },
@@ -95,7 +93,7 @@ function MiniMartModuleHub({ onNavigate }) {
   return (
     <section className="bc-panel mini-mart-module-hub">
       <header>
-        <div><span>MINI MART ERP MODULES</span><h3>StockM style functions</h3></div>
+        <div><span>MINI MART FUNCTIONS</span><h3>Mini Mart လုပ်ငန်းများ</h3></div>
         <PackageSearch size={23} />
       </header>
       <div className="mini-mart-module-grid">
