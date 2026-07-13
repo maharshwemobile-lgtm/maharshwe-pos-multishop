@@ -512,9 +512,11 @@ function attachReportsPostgresApi(app) {
   app.get('/api/reports/daily-close', ...access, async (req, res) => {
     try {
       const date = String(req.query.date || new Date().toISOString().slice(0, 10)).slice(0, 10);
-      const start = new Date(`${date}T00:00:00.000+06:30`);
-      const end = new Date(`${date}T23:59:59.999+06:30`);
-      const report = await buildDailyCloseReport(req.auth.shopId, start, end, 'daily');
+      const fromDate = String(req.query.from || date).slice(0, 10);
+      const toDate = String(req.query.to || date).slice(0, 10);
+      const start = new Date(`${fromDate}T00:00:00.000+06:30`);
+      const end = new Date(`${toDate}T23:59:59.999+06:30`);
+      const report = await buildDailyCloseReport(req.auth.shopId, start, end, req.query.closePeriod || 'daily');
       return res.json({ ok: true, date, report });
     } catch (error) {
       return res.status(500).json({ ok: false, message: error.message || 'Daily close report failed' });

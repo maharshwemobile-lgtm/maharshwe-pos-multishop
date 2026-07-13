@@ -26,9 +26,7 @@ const day = (value) => new Date(value).toISOString().slice(0, 10);
 
 function defaultDates() {
   const to = new Date();
-  const from = new Date(to);
-  from.setDate(from.getDate() - 29);
-  return { from: day(from), to: day(to) };
+  return { from: day(to), to: day(to) };
 }
 
 function excelCell(value) {
