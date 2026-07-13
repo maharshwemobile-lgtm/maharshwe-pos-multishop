@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
-  Clock3,
   Download,
   Eye,
   FileText,
@@ -530,7 +529,7 @@ function BillerAdjustmentForm({ settings, onSaved }) {
     }
   };
   return <section className="msc-clean-card">
-    <header><div><span>BALANCE ADJUST</span><h3>Bill / Eload Balance Adjustment</h3><p>လက်ကျန်မှားနေချိန်၊ provider settlement ပြင်ချိန်မှာ မှတ်ချက်နဲ့ + / - ပြင်ပါ။</p></div></header>
+    <header><div><span>CORRECTION</span><h3>မှားစာရင်းပြင် / Balance Correction</h3><p>မူရင်းမှတ်တမ်းကို မဖျက်ဘဲ လိုသလောက် ပေါင်း/နုတ်ပြီး reason ထည့်ပါ။</p></div></header>
     <form className="msc-clean-form" onSubmit={submit}>
       {message ? <div className="msc-message">{message}</div> : null}
       <div className="msc-form-row">
@@ -546,7 +545,7 @@ function BillerAdjustmentForm({ settings, onSaved }) {
         <div><span>Adjust</span><b>{form.direction === 'SUBTRACT' ? '-' : '+'}{money(rawAmount)}</b></div>
         <div><span>After Balance</span><b>{money(previewBalance)}</b></div>
       </div>
-      <footer><button className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} Save Adjust</button></footer>
+      <footer><button className="primary" disabled={busy || rawAmount <= 0 || !form.note.trim()}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} Save Correction</button></footer>
     </form>
   </section>;
 }
@@ -761,15 +760,11 @@ export default function MoneyServiceCenterV23() {
   };
 
   return <section className="money-service-center">
-    <header className="msc-heading msc-actions-only">
-      <button type="button" onClick={refresh} disabled={loading}>{loading ? <Loader2 className="msc-spin" size={17}/> : <Clock3 size={17}/>} Refresh</button>
-    </header>
-
     <nav className="msc-nav clean">
       <button className={view === 'transfer' ? 'active' : ''} onClick={() => setView('transfer')}><CircleDollarSign size={18}/><span>Money Transfer</span></button>
       <button className={view === 'bill' ? 'active' : ''} onClick={() => setView('bill')}><Banknote size={18}/><span>Bill / Eload</span></button>
       <button className={view === 'refill' ? 'active' : ''} onClick={() => setView('refill')}><ArrowDownToLine size={18}/><span>Refill</span></button>
-      <button className={view === 'adjust' ? 'active' : ''} onClick={() => setView('adjust')}><Plus size={18}/><span>Adjust</span></button>
+      <button className={view === 'adjust' ? 'active' : ''} onClick={() => setView('adjust')}><Plus size={18}/><span>Correct Balance</span></button>
       <button className={view === 'balance' ? 'active' : ''} onClick={() => setView('balance')}><History size={18}/><span>Balance Report</span></button>
     </nav>
 

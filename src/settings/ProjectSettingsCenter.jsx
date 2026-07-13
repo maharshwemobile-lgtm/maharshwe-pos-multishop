@@ -5,8 +5,6 @@ import {
   Code2,
   Database,
   FileText,
-  Gauge,
-  Globe2,
   Languages,
   Loader2,
   RefreshCw,
@@ -14,25 +12,25 @@ import {
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
-  BellRing,
   UserCog,
+  WalletCards,
 } from 'lucide-react';
 import { apiFetch, clearSession, getSession } from '../phase2Api';
 import ProjectUserAccessSettings from './ProjectUserAccessSettings.jsx';
 import GoogleSheetIntegrationSettingsV23 from './GoogleSheetIntegrationSettingsV23.jsx';
 import AgentApiSettings from './AgentApiSettings.jsx';
 import TelegramAutomationSettings from './TelegramAutomationSettings.jsx';
+import PostgreSQLSettingsHubV23 from './PostgreSQLSettingsHubV23.jsx';
 import './project-settings.css';
 
 const SECTIONS = [
-  { id: 'preferences', label: 'My Preference', icon: SlidersHorizontal },
-  { id: 'slip', label: 'Slip Information', icon: FileText },
   { id: 'business', label: 'Shop Info', icon: Building2 },
-  { id: 'appearance', label: 'Appearance & Language', icon: Languages },
-  { id: 'telegram', label: 'Telegram', icon: BellRing },
-  { id: 'api', label: 'Google Sheet / AI', icon: Code2 },
+  { id: 'slip', label: 'Slip & Print', icon: FileText },
+  { id: 'operations', label: 'POS & Payments', icon: WalletCards },
   { id: 'users', label: 'Users & Access', icon: UserCog },
-  { id: 'system', label: 'System Settings', icon: Database },
+  { id: 'appearance', label: 'Appearance', icon: Languages },
+  { id: 'integrations', label: 'Integrations', icon: Code2 },
+  { id: 'system', label: 'System', icon: Database },
 ];
 
 const clone = (value) => JSON.parse(JSON.stringify(value || {}));
@@ -40,9 +38,14 @@ const clone = (value) => JSON.parse(JSON.stringify(value || {}));
 function formatDate(value) {
   if (!value) return '-';
   try {
-    return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date(value));
+    const normalized = typeof value === 'object' && !Array.isArray(value)
+      ? Object.keys(value).sort((a, b) => Number(a) - Number(b)).map((key) => value[key]).join('')
+      : value;
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return '-';
+    return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(date);
   } catch {
-    return String(value);
+    return '-';
   }
 }
 
@@ -72,7 +75,7 @@ function SectionHeader({ icon: Icon, title, description, onRefresh, busy }) {
 }
 
 export default function ProjectSettingsCenter() {
-  const [section, setSection] = useState('preferences');
+  const [section, setSection] = useState('business');
   const [data, setData] = useState(null);
   const [forms, setForms] = useState({});
   const [loading, setLoading] = useState(false);
@@ -192,8 +195,8 @@ export default function ProjectSettingsCenter() {
 
         {!loading && !data ? <div className="ps-empty">Settings could not be loaded.</div> : null}
 
-        {data && section === 'preferences' ? <section className="ps-panel">
-          <SectionHeader icon={SlidersHorizontal} title="My Own Preference" description="ဒီ Login User တစ်ယောက်အတွက်ပဲ သက်ရောက်မည့် Preference များ။"/>
+        {data && section === 'appearance' ? <section className="ps-panel">
+          <SectionHeader icon={SlidersHorizontal} title="My Preference" description="လက်ရှိ User အတွက် language၊ theme နဲ့ table display ကို သတ်မှတ်ပါ။"/>
           <div className="ps-form ps-grid-2">
             <Field label="Language"><select value={forms.preferences.language} onChange={(event) => updateForm('preferences', { language: event.target.value })}><option value="my">မြန်မာ</option><option value="en">English</option></select></Field>
             <Field label="Theme"><select value={forms.preferences.theme} onChange={(event) => updateForm('preferences', { theme: event.target.value })}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></Field>
@@ -292,9 +295,9 @@ export default function ProjectSettingsCenter() {
           <div className="ps-actions"><button className="ps-primary" type="button" onClick={() => save('appearance')} disabled={!canManage || saving === 'appearance'}>{saving === 'appearance' ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>} Save Appearance</button></div>
         </section> : null}
 
-        {data && section === 'telegram' ? <TelegramAutomationSettings/> : null}
+        {data && section === 'operations' ? <PostgreSQLSettingsHubV23/> : null}
 
-        {data && section === 'api' ? <><GoogleSheetIntegrationSettingsV23/><AgentApiSettings/></> : null}
+        {data && section === 'integrations' ? <><TelegramAutomationSettings/><GoogleSheetIntegrationSettingsV23/><AgentApiSettings/></> : null}
 
         {data && section === 'users' ? <ProjectUserAccessSettings notify={notify}/> : null}
 

@@ -29,7 +29,20 @@ function licenseState(subscription) {
   const usedDays = Math.min(totalDays, Math.max(0, Math.floor((now - start) / day)));
   const remainingDays = Math.max(0, Math.ceil((end - now) / day));
   const expired = now > end;
-  return { ...subscription, status: expired && subscription.status !== 'SUSPENDED' ? 'EXPIRED' : subscription.status, monthlyFee: Number(subscription.monthlyFee || 0), setupFee: Number(subscription.setupFee || 0), totalDays, usedDays, remainingDays, usedPercent: Math.round((usedDays / totalDays) * 100), expired };
+  return {
+    ...subscription,
+    startsAt: subscription.startsAt ? new Date(subscription.startsAt).toISOString() : null,
+    endsAt: subscription.endsAt ? new Date(subscription.endsAt).toISOString() : null,
+    renewedAt: subscription.renewedAt ? new Date(subscription.renewedAt).toISOString() : null,
+    status: expired && subscription.status !== 'SUSPENDED' ? 'EXPIRED' : subscription.status,
+    monthlyFee: Number(subscription.monthlyFee || 0),
+    setupFee: Number(subscription.setupFee || 0),
+    totalDays,
+    usedDays,
+    remainingDays,
+    usedPercent: Math.round((usedDays / totalDays) * 100),
+    expired,
+  };
 }
 
 async function buildProjectSettingsState(shopId, userId) {

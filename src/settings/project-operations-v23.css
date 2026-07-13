@@ -24,4 +24,5 @@
 
 /* Fix: old nth-child hide rules were hiding Telegram and Users tabs after tab order changed. */
 .project-settings-v23-centralized .project-settings-general-only .ps-nav button,.project-settings-general-only .ps-nav button{display:flex!important}
+.project-settings-v23-centralized .ps-nav button{display:flex!important}
 
