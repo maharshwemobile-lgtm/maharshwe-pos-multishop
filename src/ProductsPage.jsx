@@ -18,7 +18,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { apiFetch, clearSession, getSession, login } from './phase2Api';
+import { apiFetch, getSession, login } from './phase2Api';
 import { pickLanguageText } from './settings/ProjectLanguageRuntime.jsx';
 import './products.css';
 
@@ -394,11 +394,6 @@ export default function ProductsPage({ onboardingGuide }) {
     }
   };
 
-  const logout = () => {
-    clearSession();
-    setSession(null);
-  };
-
   const rawBusinessType = onboardingGuide?.businessType
     || session?.shop?.businessType
     || session?.user?.shop?.businessType
@@ -463,7 +458,6 @@ export default function ProductsPage({ onboardingGuide }) {
 
       <section className="p2-page-heading p2-page-actions-only">
         <div className="p2-heading-actions">
-          <button type="button" onClick={logout}>Logout API</button>
           {canManage ? <InventoryImportReview compact onImported={loadProducts}/> : null}
           {canManage ? <button type="button" onClick={() => setCategoryEditor(true)}><FolderPlus size={17} /> Categories</button> : null}
           {canManage ? <button type="button" className="primary" onClick={openCreateProduct}><Plus size={18} /> Add Product</button> : null}
