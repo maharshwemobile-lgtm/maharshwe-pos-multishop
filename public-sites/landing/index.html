@@ -292,6 +292,9 @@ h1,h2,h3{font-family:var(--font-display);line-height:1.35}
 .guide-body h3{font-size:.97rem;font-weight:700}
 .guide-body p{font-size:.84rem;color:var(--ink-soft);flex:1}
 .guide-body .more{font-size:.84rem;font-weight:600;color:var(--gold-deep)}
+.guide-steps{margin:4px 0 0 18px;color:var(--ink-soft);font-size:.78rem;line-height:1.65}
+.guide-steps li{padding-left:2px}
+.guide-steps li::marker{color:var(--gold-deep);font-weight:800}
 
 /* ============ Shops ============ */
 .shops{background:var(--card);border-block:1px solid var(--line)}
@@ -573,7 +576,7 @@ footer{background:var(--ink);color:#93A2B8;padding:64px 0 30px;margin-top:0}
     </div>
     <div class="guide-grid" id="guideGrid"></div>
     <div class="state-box hidden" id="guideEmpty"><b>ရှာဖွေမှုနှင့် ကိုက်ညီသော လမ်းညွှန် မရှိပါ</b>အခြားစကားလုံးဖြင့် ပြန်ရှာကြည့်ပါ။</div>
-    <div class="load-more"><a href="/guides" class="btn btn-ink">အသုံးပြုနည်းအားလုံး ကြည့်မည်</a></div>
+    <div class="load-more"><a href="https://app.maharshwe.shop" class="btn btn-ink">App ထဲဝင်ပြီး စမ်းသုံးမည်</a></div>
   </div>
 </section>
 
@@ -714,8 +717,28 @@ footer{background:var(--ink);color:#93A2B8;padding:64px 0 30px;margin-top:0}
         <div class="faq-a"><p>ရပါသည်။ Admin, Cashier စသည့် Role များ သတ်မှတ်နိုင်ပြီး ဝန်ထမ်းတစ်ဦးချင်းစီအတွက် ခွင့်ပြုချက်များကို ခွဲခြား သတ်မှတ်နိုင်ပါသည်။</p></div>
       </div>
       <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Google Login နဲ့ Account ဖွင့်လို့ရပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>ရပါသည်။ Google ဖြင့်ဝင်ပါက Email အတည်ပြုပြီးသားဖြစ်သဖြင့် Register/Login ပိုမြန်ပါသည်။ User တစ်ဦးစီသည် မိမိ Shop/Tenant data ကိုသာ မြင်ရပါမည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Product Sales နဲ့ Bill/Eload ရောင်းအား ရောသွားပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>မရောပါ။ Product Sales, Money Service, Bill/Eload ကို Report ထဲတွင် သီးသန့်ခွဲပြထားပြီး Staff commission တွက်ရာတွင် Product Sales amount ကိုသာ base အဖြစ်သုံးနိုင်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Google Sheet နဲ့ Report ချိတ်လို့ရပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>ရပါသည်။ Project Settings မှ Apps Script code ကို copy လုပ်ပြီး Google Sheet Web App URL ချိတ်ထားပါက Daily Close, Transaction record နှင့် သတ်မှတ်ထားသော report data များကို Sheet ဖက်မှ pull ယူနိုင်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Mini Mart အတွက် Purchasing flow ပါပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>ပါပါသည်။ Supplier, Purchase Order, Receive Stock, Supplier Payment, Purchase Return နှင့် Purchasing Report ကို Purchases တစ်ခုတည်းအောက်တွင် စီမံနိုင်ပါသည်။ Mobile Shop repair purchasing flow နှင့် သီးသန့်ဖြစ်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">Backup / Data လုံခြုံမှု ဘယ်လိုရှိပါသလဲ။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>Data များကို PostgreSQL database ထဲတွင် tenant/shop အလိုက်သီးသန့်သိမ်းထားပြီး Backup Status မှ backup အခြေအနေကို စစ်နိုင်ပါသည်။ Production data restore/delete လုပ်ရန် admin approval လိုအပ်ပါသည်။</p></div>
+      </div>
+      <div class="faq-item">
         <button class="faq-q" aria-expanded="false">အကူအညီလိုအပ်လျှင် ဘယ်လိုဆက်သွယ်ရမလဲ။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-        <div class="faq-a"><p>Telegram Community သို့မဟုတ် Facebook Page မှတဆင့် ဆက်သွယ်နိုင်ပါသည်။ Setup နှင့် Training အတွက်လည်း Support Team မှ ကူညီပေးပါသည်။</p></div>
+        <div class="faq-a"><p>Telegram Community မှတဆင့် ဆက်သွယ်နိုင်ပါသည်။ Setup, Training, Google Sheet ချိတ်ခြင်းနှင့် Data migration အကူအညီများကို Support Team မှ ကူညီပေးပါသည်။</p></div>
       </div>
     </div>
   </div>
@@ -737,12 +760,11 @@ footer{background:var(--ink);color:#93A2B8;padding:64px 0 30px;margin-top:0}
       <h3>Mahar POS Support</h3>
       <p>Setup, Training နှင့် အသုံးပြုမှုဆိုင်ရာ အကူအညီများအတွက် ဆက်သွယ်ပါ။</p>
       <div class="contact-links">
-        <!-- TODO: Replace # with real contact URLs / phone from the project config. Do not invent details. -->
-        <a href="#" data-contact="phone"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Contact Phone</a>
-        <a href="#" data-contact="telegram"><svg viewBox="0 0 24 24"><path d="M22 3L2 10.5l6 2.5M22 3l-4 18-7.5-6.5M22 3L8 13v6l3.5-3.5"/></svg>Telegram Community</a>
-        <a href="#" data-contact="facebook"><svg viewBox="0 0 24 24"><path d="M15 3h3v4h-3a1 1 0 0 0-1 1v3h4l-.5 4H14v7h-4v-7H7v-4h3V8a5 5 0 0 1 5-5z"/></svg>Facebook Page</a>
+        <a href="https://app.maharshwe.shop" data-contact="app"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>POS App</a>
+        <a href="https://t.me/+2gc9ml7iMgk1ZThl" data-contact="telegram"><svg viewBox="0 0 24 24"><path d="M22 3L2 10.5l6 2.5M22 3l-4 18-7.5-6.5M22 3L8 13v6l3.5-3.5"/></svg>Telegram Community</a>
+        <a href="https://maharshwe.shop" data-contact="website"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 9h16"/></svg>Mahar POS Website</a>
       </div>
-      <a href="#" class="btn btn-outline-light" data-contact="telegram">Support ဆက်သွယ်ရန်</a>
+      <a href="https://t.me/+2gc9ml7iMgk1ZThl" class="btn btn-outline-light" data-contact="telegram">Support ဆက်သွယ်ရန်</a>
     </div>
   </div>
 </section>
@@ -868,18 +890,21 @@ loadStats();
 
 /* ---------- User guides (fetch /api/public/guides, fallback to static list) ---------- */
 const GUIDE_FALLBACK = [
-  { slug:"account-register-login", cat:"start",  catLabel:"စတင်ခြင်း", title:"Account Register နှင့် Login", desc:"Account အသစ်ဖွင့်နည်းနှင့် Login ဝင်နည်း အဆင့်လိုက် လမ်းညွှန်။" },
-  { slug:"business-profile-setup", cat:"start",  catLabel:"စတင်ခြင်း", title:"Business Profile Setup", desc:"ဆိုင်အချက်အလက်၊ Logo နှင့် တည်နေရာ ထည့်သွင်းနည်း။" },
-  { slug:"add-products",           cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Product ထည့်နည်း", desc:"ပစ္စည်းအသစ်၊ စျေးနှုန်းနှင့် Category ထည့်သွင်းနည်း။" },
-  { slug:"add-stock",              cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Stock ထည့်နည်း", desc:"Stock In/Out မှတ်တမ်းတင်နည်းနှင့် လက်ကျန် စစ်ဆေးနည်း။" },
-  { slug:"sale-pos-usage",         cat:"pos",    catLabel:"POS", title:"Sale POS အသုံးပြုနည်း", desc:"Voucher ထုတ်၍ အရောင်း စတင်ရောင်းချနည်း။" },
-  { slug:"repair-pos-usage",       cat:"pos",    catLabel:"POS", title:"Repair POS အသုံးပြုနည်း", desc:"ပြုပြင်ရေး Job လက်ခံနည်းနှင့် Status ခြေရာခံနည်း။" },
-  { slug:"money-service-usage",    cat:"pos",    catLabel:"POS", title:"Money Service အသုံးပြုနည်း", desc:"ငွေလွှဲနှင့် ငွေဖြည့် စာရင်း မှတ်တမ်းတင်နည်း။" },
-  { slug:"income-expense-usage",   cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Income / Expense အသုံးပြုနည်း", desc:"ဝင်ငွေနှင့် အသုံးစရိတ် စာရင်းသွင်းနည်း။" },
-  { slug:"daily-close-report",     cat:"pos",    catLabel:"POS", title:"Daily Close Report အသုံးပြုနည်း", desc:"နေ့စဉ် ဆိုင်ပိတ်ချိန် စာရင်းရှင်းနည်း။" },
-  { slug:"staff-role-permission",  cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Staff Role & Permission သတ်မှတ်နည်း", desc:"ဝန်ထမ်း Role နှင့် ခွင့်ပြုချက် သတ်မှတ်နည်း။" },
-  { slug:"multi-shop-usage",       cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Multi-Shop အသုံးပြုနည်း", desc:"ဆိုင်ခွဲများစွာကို Account တစ်ခုတည်းဖြင့် စီမံနည်း။" },
-  { slug:"change-subscription",    cat:"start",  catLabel:"စတင်ခြင်း", title:"Subscription Plan ပြောင်းနည်း", desc:"Plan ရွေးချယ်နည်းနှင့် Upgrade လုပ်နည်း။" },
+  { slug:"register-google-login", cat:"start", catLabel:"စတင်ခြင်း", title:"Account ဖွင့်ပြီး Login ဝင်နည်း", desc:"Email/Password သို့မဟုတ် Google ဖြင့် Account ဖွင့်ပြီး ၁ လ Trial စတင်အသုံးပြုနည်း။", steps:["app.maharshwe.shop ကိုဖွင့်ပါ","Register ကိုနှိပ်ပြီး Email သို့မဟုတ် Google ဖြင့်ဝင်ပါ","Shop name နှင့် Business type ဖြည့်ပါ"] },
+  { slug:"business-profile-setup", cat:"start", catLabel:"စတင်ခြင်း", title:"Business Profile / Logo ပြင်နည်း", desc:"ဆိုင်အမည်၊ Logo၊ Receipt header/footer၊ Currency နှင့် Language ကို Project Settings မှ ပြင်နည်း။", steps:["Settings > Business Profile ကိုဝင်ပါ","ဆိုင်အမည်၊ ဖုန်း၊ လိပ်စာ၊ Logo ဖြည့်ပါ","Save နှိပ်ပြီး Sale POS slip မှာ ပြန်စစ်ပါ"] },
+  { slug:"products-stock-setup", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Product, Barcode, Stock ထည့်နည်း", desc:"Product, Variant, Category, Barcode, Cost/Selling price, Opening stock နှင့် Low stock alert သတ်မှတ်နည်း။", steps:["Products ကိုဝင်ပါ","Add Product နှိပ်ပြီး Category/Name/Barcode ဖြည့်ပါ","Cost price, Selling price, Opening stock ထည့်ပါ"] },
+  { slug:"sale-pos-checkout", cat:"pos", catLabel:"POS", title:"Sale POS ရောင်းချနည်း", desc:"ပစ္စည်းရှာ၊ Cart ထည့်၊ Qty/Discount ပြင်၊ Wallet payment ရွေးပြီး Voucher ထုတ်နည်း။", steps:["Sale POS ကိုဝင်ပါ","Product / Barcode ဖြင့်ရှာပြီး Cart ထည့်ပါ","Payment method ရွေးပြီး Complete Sale နှိပ်ပါ"] },
+  { slug:"sales-history-void-reprint", cat:"pos", catLabel:"POS", title:"Sales History, Reprint, Void", desc:"အရောင်းမှတ်တမ်း ရှာဖွေခြင်း၊ Voucher ပြန်ထုတ်ခြင်း၊ မှားရောင်းထားသည့် Sale ကို Void လုပ်နည်း။", steps:["Sales History ကိုဝင်ပါ","Invoice, customer, date ဖြင့်ရှာပါ","View / Reprint / Void ကိုလိုသလိုသုံးပါ"] },
+  { slug:"repair-service-flow", cat:"pos", catLabel:"POS", title:"Phone Repair Service အသုံးပြုနည်း", desc:"Repair job အသစ်လက်ခံ၊ Status ပြောင်း၊ Payment မှတ်၊ Voucher ထုတ်၊ device history စစ်နည်း။", steps:["Repairs > Add Repair ကိုနှိပ်ပါ","Customer, device, problem ဖြည့်ပါ","Status ပြောင်းပြီး Voucher ထုတ်ပါ"] },
+  { slug:"money-service-transfer", cat:"pos", catLabel:"POS", title:"Money Service / ငွေလွှဲဝန်ဆောင်မှု", desc:"KPay/Wave/Cash In/Cash Out စာရင်း၊ Fee၊ Wallet balance နှင့် transfer history မှတ်နည်း။", steps:["Money Service ကိုဝင်ပါ","Transfer / Cash Out အမျိုးအစားရွေးပါ","Wallet, amount, fee, status ဖြည့်ပြီး Save ပါ"] },
+  { slug:"bill-eload-flow", cat:"pos", catLabel:"POS", title:"Bill / Eload Balance အသုံးပြုနည်း", desc:"Biller opening balance, refill, sold, adjustment နှင့် closing balance ကို သပ်သပ် report ထုတ်နည်း။", steps:["Money Service > Bill / Eload ကိုဝင်ပါ","Biller setup ထည့်ပါ","Sold/Refill/Adjustment ဖြင့် balance ထိန်းပါ"] },
+  { slug:"customer-credit-debt", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Customer Credit / Debt မှတ်နည်း", desc:"ဖောက်သည်ရရန်အကြွေး၊ ပြန်ဆပ်ငွေ၊ Supplier ပေးရန်အကြွေးနှင့် debt history ကြည့်နည်း။", steps:["Customers ကိုဝင်ပါ","Customer အသစ်ထည့် သို့မဟုတ် Edit လုပ်ပါ","Debt / Collect ဖြင့် အကြွေးယူ/ဆပ် မှတ်ပါ"] },
+  { slug:"other-income-expense", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"အခြားဝင်ငွေ / ထွက်ငွေ မှတ်နည်း", desc:"Other sale/service/top-up/other income နှင့် expense category များကို wallet နှင့်ချိတ်မှတ်နည်း။", steps:["အခြားဝင်ငွေ နှင့်ထွက်ငွေ ကိုဝင်ပါ","Income သို့မဟုတ် Expense ရွေးပါ","Category, wallet, amount, note ဖြည့်ပါ"] },
+  { slug:"daily-close-report", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Daily Close / Reports အသုံးပြုနည်း", desc:"Daily, Monthly, Yearly report များတွင် Product Sales, Service, Money Service, Bill/Eload, Expense ခွဲကြည့်နည်း။", steps:["Reports & Performance ကိုဝင်ပါ","Daily / Monthly / Yearly ရွေးပါ","Excel/CSV export ထုတ်ပါ"] },
+  { slug:"google-sheet-sync", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Google Sheet Sync ချိတ်နည်း", desc:"Project Settings မှ Apps Script code copy လုပ်ပြီး Sheet Web App URL ချိတ်၍ report/data pull လုပ်နည်း။", steps:["Settings > Google Sheet ကိုဝင်ပါ","Apps Script Code ကို Copy လုပ်ပါ","Google Sheet မှာ paste/deploy ပြီး URL ကို Save/Test လုပ်ပါ"] },
+  { slug:"staff-permission", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Staff Role & Permission", desc:"ဝန်ထမ်း account ဖန်တီး၊ password reset၊ Role/Permission ခွဲခြားသတ်မှတ်နည်း။", steps:["Staff section ကိုဝင်ပါ","Create User ဖြင့် user ထည့်ပါ","Role နှင့် permission ရွေးပါ"] },
+  { slug:"mini-mart-purchasing", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Mini Mart Purchasing Flow", desc:"Supplier, Purchase Order, Receive Stock, Supplier Payment/Return နှင့် purchasing report ကို တစ်နေရာတည်းမှာ အသုံးပြုနည်း။", steps:["Purchases ကိုဝင်ပါ","Supplier ထည့်ပြီး Purchase Order ဖန်တီးပါ","Receive Stock / Pay / Return / Reports ကိုသုံးပါ"] },
+  { slug:"backup-restore", cat:"start", catLabel:"စတင်ခြင်း", title:"Backup / Restore သိထားရန်", desc:"Cloud backup status စစ်ခြင်း၊ backup download နှင့် restore မလုပ်မီ သတိထားရမည့်အချက်များ။", steps:["Backup page မှ latest backup status စစ်ပါ","Download ရလျှင် file သိမ်းထားပါ","Restore မလုပ်မီ current DB backup ယူပါ"] },
 ];
 const guideIcon = '<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h7l7 7v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z"/><path d="M13 3v7h7"/><path d="M8 14h8M8 17h5"/></svg>';
 let guides = GUIDE_FALLBACK, guideCat = "all", guideQuery = "";
@@ -891,29 +916,30 @@ function renderGuides() {
   const list = guides
     .filter(g => (guideCat === "all" || g.cat === guideCat) &&
                  (!q || g.title.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q)))
-    .slice(0, 6);
+    .slice(0, 12);
   guideGrid.innerHTML = list.map(g => `
-    <a class="guide-card" href="/guides/${encodeURIComponent(g.slug)}">
+    <article class="guide-card" id="guide-${encodeURIComponent(g.slug)}">
       <div class="guide-cover" aria-hidden="true">${guideIcon}</div>
       <div class="guide-body">
         <span class="cat">${g.catLabel}</span>
         <h3>${g.title}</h3>
         <p>${g.desc}</p>
-        <span class="more">ဖတ်ရှုမည် →</span>
+        ${Array.isArray(g.steps) && g.steps.length ? `<ol class="guide-steps">${g.steps.slice(0, 4).map(step => `<li>${esc(step)}</li>`).join("")}</ol>` : ""}
+        <span class="more">အဆင့်လိုက် လမ်းညွှန်</span>
       </div>
-    </a>`).join("");
+    </article>`).join("");
   guideEmpty.classList.toggle("hidden", list.length > 0);
 }
 (async function loadGuides() {
   try {
-    const r = await fetch("/api/public/guides?limit=12", { signal: AbortSignal.timeout(6000) });
+    const r = await fetch("/api/public/guides?limit=30", { signal: AbortSignal.timeout(6000) });
     if (r.ok) {
       const d = await r.json();
       const arr = Array.isArray(d) ? d : d.guides;
       if (Array.isArray(arr) && arr.length) {
         guides = arr.map(g => ({
-          slug: g.slug, cat: g.category || "all", catLabel: g.category || "Guide",
-          title: g.title, desc: g.description || ""
+          slug: g.slug, cat: g.category || "all", catLabel: g.categoryLabel || g.category || "Guide",
+          title: g.title, desc: g.description || "", steps: Array.isArray(g.steps) ? g.steps : []
         }));
       }
     }

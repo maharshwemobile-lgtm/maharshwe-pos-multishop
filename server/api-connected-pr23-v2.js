@@ -16,6 +16,7 @@ const attachAdminIntegrationsApi = require('./admin-integrations-api');
 const attachGrandAdminCentralControlApi = require('./grand-admin-central-control-api');
 const attachGrandAdminBackendStep1Api = require('./grand-admin-backend-step1-api');
 const attachGrandAdminBackendStep2Api = require('./grand-admin-backend-step2-api');
+const attachPublicLandingApi = require('./public-landing-api');
 const attachShopAdminBranchControlApi = require('./shop-admin-branch-control-api');
 const attachShopAdminSettingsLock = require('./shop-admin-settings-lock');
 const attachTenantIntegrityApi = require('./tenant-integrity-api');
@@ -94,6 +95,7 @@ const isPostgreSql = process.env.DATABASE_URL?.startsWith('postgresql://') || pr
 const healthHandler = (_req, res) => res.json({ ok: true, server: 'mahar-pos-full-api', database: isPostgreSql ? 'postgresql-configured' : 'legacy-sqlite-configured' });
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
+attachPublicLandingApi(app);
 
 if (isPostgreSql) {
   attachPostgreSqlSettingsApiAliasV23(app);
