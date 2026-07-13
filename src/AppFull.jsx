@@ -54,15 +54,21 @@ const menu = [
 ];
 
 const LIMITED_SUBSCRIPTION_PAGES = new Set(['Sale POS', 'Sales History']);
-const MINI_MART_HIDDEN_PAGES = new Set(['Repairs', 'Partner Settlement', ...((typeof window !== 'undefined' && window.localStorage?.getItem('miniMartShowMoneyService') === 'true') ? [] : ['Money Service'])]);
+const MINI_MART_HIDDEN_PAGES = new Set(['Repairs', 'Partner Settlement']);
 const MINI_MART_MENU_LABELS = {
   Dashboard: 'Mini Mart Dashboard',
   'Sale POS': 'Mini Mart POS',
   'Sales History': 'Sales History',
   Products: 'Items / Products',
+  Prices: 'Prices & Discounts',
   Stock: 'Inventory Stock',
   Purchases: 'Purchases',
+  Customers: 'Customers & Credit',
+  'Money Service': 'Money Service / Bill & Eload',
+  Accounting: 'Accounts & Wallets',
+  'Other Records': 'Income & Expense',
   Reports: 'Mini Mart Reports',
+  Backup: 'Backup & Export',
   Settings: 'Project Settings',
 };
 const TELEGRAM_COMMUNITY_URL = 'https://t.me/+2gc9ml7iMgk1ZThl';

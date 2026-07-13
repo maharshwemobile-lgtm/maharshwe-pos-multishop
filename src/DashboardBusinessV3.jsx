@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  BadgePercent,
   Banknote,
   BarChart3,
   CalendarDays,
@@ -8,11 +9,13 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
+  DatabaseBackup,
   Loader2,
   PackageSearch,
   PlusCircle,
   RefreshCw,
   ShoppingCart,
+  Settings,
   TrendingUp,
   Truck,
   Users,
@@ -26,14 +29,19 @@ import './business-control-income.css';
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 
 const MINI_MART_MODULES = [
-  { label: 'လက်လီအရောင်း', detail: 'Barcode / item sale POS', page: 'Sale POS', icon: ShoppingCart, tone: 'green' },
-  { label: 'ပစ္စည်း / Barcode / Unit', detail: 'Category, unit, expiry, stock', page: 'Products', icon: PackageSearch, tone: 'cyan' },
-  { label: 'Stock In/Out & Adjustment', detail: 'Inventory movement control', page: 'Stock', icon: PackageSearch, tone: 'purple' },
-  { label: 'Supplier & Purchase', detail: 'Supplier, PO, receiving, payable', page: 'Purchases', icon: Truck, tone: 'cyan' },
-  { label: 'ဖောက်သည် / အကြွေး', detail: 'Customer credit receive/pay', page: 'Customers', icon: Users, tone: 'orange' },
-  { label: 'ငွေအကောင့်', detail: 'Cash, wallet, transfer, adjustment', page: 'Accounting', icon: Wallet, tone: 'gold' },
-  { label: 'အခြားဝင်/ထွက်', detail: 'Other income and expense records', page: 'Other Records', icon: PlusCircle, tone: 'green' },
-  { label: 'အစီရင်ခံစာ', detail: 'Sales, stock, supplier, profit reports', page: 'Reports', icon: BarChart3, tone: 'blue' },
+  { label: 'လက်လီအရောင်း POS', detail: 'Barcode scan, cart, payment, voucher', page: 'Sale POS', icon: ShoppingCart, tone: 'green' },
+  { label: 'အရောင်းမှတ်တမ်း', detail: 'Reprint, void, search, export', page: 'Sales History', icon: Clock3, tone: 'blue' },
+  { label: 'ပစ္စည်း / Barcode', detail: 'Category, unit, expiry, variants', page: 'Products', icon: PackageSearch, tone: 'cyan' },
+  { label: 'ဈေးနှုန်း / Discount', detail: 'Retail price, wholesale, discount rules', page: 'Prices', icon: BadgePercent, tone: 'orange' },
+  { label: 'Stock Control', detail: 'Stock in/out, import, adjust, low-stock', page: 'Stock', icon: PackageSearch, tone: 'purple' },
+  { label: 'Supplier Purchasing', detail: 'Supplier, PO, receive, payable, return', page: 'Purchases', icon: Truck, tone: 'cyan' },
+  { label: 'ဖောက်သည် / အကြွေး', detail: 'Customer debt, collect, history', page: 'Customers', icon: Users, tone: 'orange' },
+  { label: 'Money / Bill / Eload', detail: 'Transfer, fee, biller balance, top-up', page: 'Money Service', icon: CircleDollarSign, tone: 'green' },
+  { label: 'Accounts & Wallets', detail: 'Cash, KPay, Wave, account balance', page: 'Accounting', icon: Wallet, tone: 'gold' },
+  { label: 'အခြားဝင်ငွေ / ထွက်ငွေ', detail: 'Income, expense, category, edit, export', page: 'Other Records', icon: PlusCircle, tone: 'green' },
+  { label: 'Reports & Daily Close', detail: 'Daily, monthly, yearly, Excel export', page: 'Reports', icon: BarChart3, tone: 'blue' },
+  { label: 'Backup / Export', detail: 'Backup status and safe data export', page: 'Backup', icon: DatabaseBackup, tone: 'cyan' },
+  { label: 'Settings / Staff', detail: 'Business, receipt, language, staff setup', page: 'Settings', icon: Settings, tone: 'purple' },
 ];
 
 function yangonToday() {
@@ -114,7 +122,7 @@ export default function DashboardBusinessV3({ onNavigate }) {
   const permissions = session?.user?.permissions || {};
   const rawBusinessType = session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
   const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
-  const showMoneyService = !isMiniMart || (typeof window !== 'undefined' && window.localStorage?.getItem('miniMartShowMoneyService') === 'true');
+  const showMoneyService = true;
   const canClose = role === 'SUPER_ADMIN' || role === 'SHOP_ADMIN';
   const today = yangonToday();
 
@@ -271,6 +279,8 @@ export default function DashboardBusinessV3({ onNavigate }) {
           {[
             ['New Sale', ShoppingCart, 'Sale POS'],
             !isMiniMart ? ['Repair Platform', Wrench, 'Repairs'] : null,
+            isMiniMart ? ['Sales History', Clock3, 'Sales History'] : null,
+            isMiniMart ? ['Money / Bill', CircleDollarSign, 'Money Service'] : null,
             ['Finance', Wallet, 'Accounting'],
             ['Purchasing', Truck, 'Purchases'],
             ['Reports', BarChart3, 'Reports'],
