@@ -25,6 +25,19 @@ import './business-control-income.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 
+const MINI_MART_MODULES = [
+  { label: 'လက်လီအရောင်း', detail: 'Barcode / item sale POS', page: 'Sale POS', icon: ShoppingCart, tone: 'green' },
+  { label: 'ရောင်းချမှုမှတ်တမ်း', detail: 'Sale, void, reprint, history', page: 'Sales History', icon: Clock3, tone: 'blue' },
+  { label: 'ပစ္စည်း / Barcode / Unit', detail: 'Category, unit, expiry, stock', page: 'Products', icon: PackageSearch, tone: 'cyan' },
+  { label: 'ရောင်းစျေးနှင့် Discount', detail: 'Retail / wholesale price setup', page: 'Prices', icon: CreditCard, tone: 'orange' },
+  { label: 'Stock In/Out & Adjustment', detail: 'Inventory movement control', page: 'Stock', icon: PackageSearch, tone: 'purple' },
+  { label: 'Supplier & Purchase', detail: 'Supplier, PO, receiving, payable', page: 'Purchases', icon: Truck, tone: 'cyan' },
+  { label: 'ဖောက်သည် / အကြွေး', detail: 'Customer credit receive/pay', page: 'Customers', icon: Users, tone: 'orange' },
+  { label: 'ငွေအကောင့်', detail: 'Cash, wallet, transfer, adjustment', page: 'Accounting', icon: Wallet, tone: 'gold' },
+  { label: 'အခြားဝင်/ထွက်', detail: 'Other income and expense records', page: 'Other Records', icon: PlusCircle, tone: 'green' },
+  { label: 'အစီရင်ခံစာ', detail: 'Sales, stock, supplier, profit reports', page: 'Reports', icon: BarChart3, tone: 'blue' },
+];
+
 function yangonToday() {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Yangon',
@@ -75,6 +88,25 @@ function AccountCard({ label, value, icon: Icon }) {
       <Icon size={19} />
       <div><span>{label}</span><b>{money(value)}</b></div>
     </article>
+  );
+}
+
+function MiniMartModuleHub({ onNavigate }) {
+  return (
+    <section className="bc-panel mini-mart-module-hub">
+      <header>
+        <div><span>MINI MART ERP MODULES</span><h3>StockM style functions</h3></div>
+        <PackageSearch size={23} />
+      </header>
+      <div className="mini-mart-module-grid">
+        {MINI_MART_MODULES.map((module) => (
+          <button type="button" key={module.label} className={`mini-mart-module-card tone-${module.tone}`} onClick={() => onNavigate?.(module.page)}>
+            <module.icon size={20} />
+            <span><b>{module.label}</b><small>{module.detail}</small></span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -197,6 +229,8 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
       {data ? <>
         <section className="bc-metrics">{metrics.map((item) => <MetricCard key={item.label} {...item} />)}</section>
+
+        {isMiniMart ? <MiniMartModuleHub onNavigate={onNavigate} /> : null}
 
         <section className="bc-account-grid">
           <AccountCard icon={Banknote} label="Cash Balance" value={accountBalances.CASH} />

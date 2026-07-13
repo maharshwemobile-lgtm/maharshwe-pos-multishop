@@ -499,6 +499,46 @@
 .bc-quick-links b { font-size: 11px; }
 .bc-quick-links small { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 9px; }
 
+.mini-mart-module-hub { display: grid; gap: 13px; }
+.mini-mart-module-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.mini-mart-module-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid var(--app-border, #dfeade);
+  border-radius: 13px;
+  background: var(--app-soft, #f7fbf8);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mini-mart-module-card:hover {
+  border-color: #13a36f;
+  background: #eefaf3;
+  box-shadow: 0 8px 18px rgba(19, 163, 111, .12);
+  transform: translateY(-1px);
+}
+.mini-mart-module-card svg {
+  width: 38px;
+  height: 38px;
+  padding: 9px;
+  border-radius: 12px;
+  color: #07845c;
+  background: #e8f7ef;
+}
+.mini-mart-module-card span,
+.mini-mart-module-card b,
+.mini-mart-module-card small { display: block; min-width: 0; }
+.mini-mart-module-card b { font-size: 12px; line-height: 1.25; }
+.mini-mart-module-card small { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 10px; line-height: 1.35; }
+
 html.dark .business-control-dashboard {
   --app-card: #12221d;
   --app-soft: #172a23;
@@ -520,6 +560,7 @@ html.dark .bc-permission-note { background: #332b16; color: #f5cc62; }
   .bc-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bc-main-grid { grid-template-columns: 1fr; }
   .bc-quick-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mini-mart-module-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 820px) {
@@ -540,6 +581,7 @@ html.dark .bc-permission-note { background: #332b16; color: #f5cc62; }
   .bc-record-actions { grid-template-columns: 1fr; }
   .bc-metric { min-height: 96px; }
   .bc-quick-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mini-mart-module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bc-chart { gap: 4px; height: 165px; }
   .bc-trend-summary { grid-template-columns: 1fr; }
   .bc-control-actions { align-items: stretch; }
