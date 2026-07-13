@@ -113,7 +113,7 @@ export default function Phase10PayablesPanel({ notify, onError }) {
 
   return <div className="p10-op-grid">
     <section className="purchasing-card p10-op-list-card">
-      <header><div><Wallet size={20}/></div><span><h3>Supplier Payables</h3><p>Received goods minus returns and payments</p></span><button type="button" className="icon-button" onClick={load}><RefreshCw className={loading ? 'purchasing-spin' : ''} size={18}/></button></header>
+      <header><div><Wallet size={20}/></div><span><h3>Supplier Payables</h3></span><button type="button" className="icon-button" onClick={load} aria-label="Reload supplier payables"><RefreshCw className={loading ? 'purchasing-spin' : ''} size={18}/></button></header>
       <div className="p10-summary-row"><span><small>Net Purchases</small><b>{money(Number(summary.receivedAmount || 0) - Number(summary.returnedAmount || 0))}</b></span><span><small>Paid</small><b>{money(summary.paidAmount)}</b></span><span><small>Outstanding</small><b>{money(summary.outstanding)}</b></span></div>
       <div className="p10-table-wrap"><table className="p10-table"><thead><tr><th>PO</th><th>Supplier</th><th>Net Received</th><th>Paid</th><th>Outstanding</th><th></th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><b>{row.orderNumber}</b><small>{String(row.orderDate || '').slice(0,10)}</small></td><td>{row.supplierCode} · {row.supplierName}</td><td>{money(row.netReceived)}</td><td>{money(row.paidAmount)}</td><td><b>{money(row.outstanding)}</b></td><td><button className="p10-small-button" onClick={() => pick(row)}>Pay</button></td></tr>)}</tbody></table></div>
       {!rows.length && !loading ? <div className="purchasing-empty"><Wallet size={32}/><b>No outstanding payables</b></div> : null}
@@ -141,7 +141,7 @@ export default function Phase10PayablesPanel({ notify, onError }) {
     </section>
 
     <section className="purchasing-card p10-op-form-card">
-      <header><div><Plus size={20}/></div><span><h3>Manual Supplier Debt</h3><p>ဆိုင်က supplier ကို ပေးရန် အကြွေး amount ကို create / edit လုပ်ရန်</p></span></header>
+      <header><div><Plus size={20}/></div><span><h3>Manual Supplier Debt</h3></span></header>
       <div className="p10-summary-row"><span><small>Manual Supplier Payable</small><b>{money(manualSummary.outstanding)}</b></span><span><small>Records</small><b>{manualRows.length}</b></span></div>
       <div className="p10-form-body">
         <label className="p10-field"><span>Supplier</span><select value={manualForm.supplierId} onChange={(e) => setManualForm({ ...manualForm, supplierId: e.target.value })}><option value="">Select supplier</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplierCode} · {supplier.name}</option>)}</select></label>

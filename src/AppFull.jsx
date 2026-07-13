@@ -301,7 +301,7 @@ function Topbar({ page, toggle, settings, user, menuOpen }) {
     <div className="topbar-title-copy">
       {phaseLabel ? <span className="topbar-phase-label">{phaseLabel}</span> : null}
       <h1>{title}</h1>
-      <p>{subtitle}</p>
+      {!miniMart ? <p>{subtitle}</p> : null}
     </div>
     <div style={{marginLeft:'auto'}}/>
     <PushNotificationControl/>
@@ -476,7 +476,12 @@ export default function AppFull() {
 
   const firstLoginOnly = Number(onboardingDemo?.loginCount || 1) <= 1;
   const showFirstLoginGuide = Boolean(onboardingDemo?.showGuide && firstLoginOnly && !onboardingDemo?.triggered && !onboardingDismissed);
-  const showMenuTour = Boolean(!menuTourDismissed && session?.token && !session?.user?.passwordMustChange);
+  const showMenuTour = Boolean(
+    !isMiniMartBusiness(user)
+    && !menuTourDismissed
+    && session?.token
+    && !session?.user?.passwordMustChange
+  );
 
   useEffect(() => {
     if (showFirstLoginGuide && page !== 'Sale POS' && pageVisible('Sale POS', user)) {

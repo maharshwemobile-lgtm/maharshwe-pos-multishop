@@ -84,7 +84,7 @@ export default function Phase10PurchaseOrderForm({ suppliers, variants, onCreate
 
   return (
     <form className="purchasing-card purchasing-order-form" onSubmit={submit}>
-      <header><div><Plus size={20} /></div><span><h3>New Purchase Order</h3><p>Create a draft before receiving goods.</p></span></header>
+      <header><div><Plus size={20} /></div><span><h3>New Purchase Order</h3></span></header>
       <div className="purchasing-form-grid">
         <label><span>Supplier *</span><select value={header.supplierId || suppliers[0]?.id || ''} onChange={(event) => setHeader({ ...header, supplierId: event.target.value })} required><option value="">Select supplier</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplierCode} — {supplier.name}</option>)}</select></label>
         <label><span>Order Date *</span><input type="date" value={header.orderDate} onChange={(event) => setHeader({ ...header, orderDate: event.target.value })} required /></label>

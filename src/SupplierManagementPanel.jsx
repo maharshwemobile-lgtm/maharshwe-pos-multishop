@@ -125,7 +125,7 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
         <form className="purchasing-card purchasing-form" onSubmit={submit}>
           <header>
             <div><Plus size={20} /></div>
-            <span><h3>{editingId ? 'Edit Supplier' : 'New Supplier'}</h3><p>Code can be generated automatically.</p></span>
+            <span><h3>{editingId ? 'Edit Supplier' : 'New Supplier'}</h3></span>
           </header>
           <label><span>Supplier Code</span><input value={form.supplierCode} onChange={(event) => setForm({ ...form, supplierCode: event.target.value })} placeholder="Auto: SUP0001" /></label>
           <label><span>Supplier Name *</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Supplier / Company name" required /></label>
@@ -139,7 +139,7 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
         <section className="purchasing-card purchasing-list-card">
           <header>
             <div><Building2 size={20} /></div>
-            <span><h3>Supplier Master</h3><p>{suppliers.length} visible suppliers</p></span>
+            <span><h3>Suppliers</h3></span>
             <button type="button" className="icon-button" onClick={load} disabled={loading}><RefreshCw className={loading ? 'purchasing-spin' : ''} size={18} /></button>
           </header>
           <label className="purchasing-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search code or supplier name" /></label>

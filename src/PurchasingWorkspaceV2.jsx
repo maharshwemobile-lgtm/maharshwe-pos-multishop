@@ -20,11 +20,11 @@ const tabs = [
 ];
 
 const miniMartTabs = [
-  { id: 'suppliers', label: 'Supplier', icon: Users },
-  { id: 'orders', label: 'Purchase', icon: ClipboardList },
-  { id: 'receiving', label: 'Receive Stock', icon: PackageCheck },
-  { id: 'settlement', label: 'Pay / Return', icon: CreditCard },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { id: 'suppliers', label: '1. Supplier', icon: Users },
+  { id: 'orders', label: '2. Order', icon: ClipboardList },
+  { id: 'receiving', label: '3. Receive', icon: PackageCheck },
+  { id: 'settlement', label: '4. Pay / Return', icon: CreditCard },
+  { id: 'reports', label: '5. Report', icon: BarChart3 },
 ];
 
 function businessTypeOf() {
@@ -60,13 +60,6 @@ export default function PurchasingWorkspaceV2({ initialTab = 'suppliers' }) {
 
   return <div className="purchasing-hub">
     {message ? <div className={`purchasing-toast ${message.type}`}>{message.text}</div> : null}
-    {isMiniMart ? (
-      <section className="purchasing-mini-intro">
-        <span>MINI MART PURCHASING</span>
-        <h3>ဝယ်ယူမှု၊ လက်ခံမှု၊ ပေးချေ/ပြန်ပို့မှု</h3>
-        <p>Supplier, purchase order, stock receive, payment, return, report အားလုံးကို တစ်နေရာတည်းမှာ ရိုးရိုးရှင်းရှင်း စီမံနိုင်ပါတယ်။</p>
-      </section>
-    ) : null}
     <nav className="purchasing-tabs" aria-label="Purchasing sections">
       {visibleTabs.map((item) => <button key={item.id} type="button" className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}><item.icon size={18}/><span>{item.label}</span></button>)}
     </nav>

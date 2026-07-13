@@ -42,7 +42,7 @@ export default function Phase10ReturnsPanel({ notify, onError }) {
   };
 
   return <section className="purchasing-card p10-wide-card">
-    <header><div><RotateCcw size={20}/></div><span><h3>Supplier Returns</h3><p>Received goods ကို supplier ဆီပြန်ပို့ပြီး Stock နဲ့ Payable ကိုလျှော့ပါမယ်။</p></span></header>
+    <header><div><RotateCcw size={20}/></div><span><h3>Supplier Returns</h3></span></header>
     <div className="p10-form-body">
       <div className="p10-three-col"><label className="p10-field"><span>Purchase Order</span><select value={selectedId} onChange={(e) => choose(e.target.value)}><option value="">Select received order</option>{available.map((row) => <option key={row.id} value={row.id}>{row.orderNumber} · {row.supplierName}</option>)}</select></label><label className="p10-field"><span>Return Date</span><input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)}/></label><label className="p10-field"><span>Reason</span><input value={reason} onChange={(e) => setReason(e.target.value)}/></label></div>
       {detail ? <>

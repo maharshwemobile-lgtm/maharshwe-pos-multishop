@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  BadgePercent,
   Banknote,
   BarChart3,
   CalendarDays,
@@ -9,13 +8,11 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
-  DatabaseBackup,
   Loader2,
   PackageSearch,
   PlusCircle,
   RefreshCw,
   ShoppingCart,
-  Settings,
   TrendingUp,
   Truck,
   Users,
@@ -27,22 +24,6 @@ import './business-control-dashboard.css';
 import './business-control-income.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
-
-const MINI_MART_MODULES = [
-  { label: 'လက်လီအရောင်း POS', detail: 'Barcode scan, cart, payment, voucher', page: 'Sale POS', icon: ShoppingCart, tone: 'green' },
-  { label: 'အရောင်းမှတ်တမ်း', detail: 'Reprint, void, search, export', page: 'Sales History', icon: Clock3, tone: 'blue' },
-  { label: 'ပစ္စည်း / Barcode', detail: 'Category, unit, expiry, variants', page: 'Products', icon: PackageSearch, tone: 'cyan' },
-  { label: 'ဈေးနှုန်း / Discount', detail: 'Retail price, wholesale, discount rules', page: 'Prices', icon: BadgePercent, tone: 'orange' },
-  { label: 'Stock Control', detail: 'Stock in/out, import, adjust, low-stock', page: 'Stock', icon: PackageSearch, tone: 'purple' },
-  { label: 'Supplier Purchasing', detail: 'Supplier, PO, receive, payable, return', page: 'Purchases', icon: Truck, tone: 'cyan' },
-  { label: 'ဖောက်သည် / အကြွေး', detail: 'Customer debt, collect, history', page: 'Customers', icon: Users, tone: 'orange' },
-  { label: 'Money / Bill / Eload', detail: 'Transfer, fee, biller balance, top-up', page: 'Money Service', icon: CircleDollarSign, tone: 'green' },
-  { label: 'Accounts & Wallets', detail: 'Cash, KPay, Wave, account balance', page: 'Accounting', icon: Wallet, tone: 'gold' },
-  { label: 'အခြားဝင်ငွေ / ထွက်ငွေ', detail: 'Income, expense, category, edit, export', page: 'Other Records', icon: PlusCircle, tone: 'green' },
-  { label: 'Reports & Daily Close', detail: 'Daily, monthly, yearly, Excel export', page: 'Reports', icon: BarChart3, tone: 'blue' },
-  { label: 'Backup / Export', detail: 'Backup status and safe data export', page: 'Backup', icon: DatabaseBackup, tone: 'cyan' },
-  { label: 'Settings / Staff', detail: 'Business, receipt, language, staff setup', page: 'Settings', icon: Settings, tone: 'purple' },
-];
 
 function yangonToday() {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -94,25 +75,6 @@ function AccountCard({ label, value, icon: Icon }) {
       <Icon size={19} />
       <div><span>{label}</span><b>{money(value)}</b></div>
     </article>
-  );
-}
-
-function MiniMartModuleHub({ onNavigate }) {
-  return (
-    <section className="bc-panel mini-mart-module-hub">
-      <header>
-        <div><span>MINI MART FUNCTIONS</span><h3>Mini Mart လုပ်ငန်းများ</h3></div>
-        <PackageSearch size={23} />
-      </header>
-      <div className="mini-mart-module-grid">
-        {MINI_MART_MODULES.map((module) => (
-          <button type="button" key={module.label} className={`mini-mart-module-card tone-${module.tone}`} onClick={() => onNavigate?.(module.page)}>
-            <module.icon size={20} />
-            <span><b>{module.label}</b><small>{module.detail}</small></span>
-          </button>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -236,8 +198,6 @@ export default function DashboardBusinessV3({ onNavigate }) {
       {data ? <>
         <section className="bc-metrics">{metrics.map((item) => <MetricCard key={item.label} {...item} />)}</section>
 
-        {isMiniMart ? <MiniMartModuleHub onNavigate={onNavigate} /> : null}
-
         <section className="bc-account-grid">
           <AccountCard icon={Banknote} label="Cash Balance" value={accountBalances.CASH} />
           <AccountCard icon={Wallet} label="KBZPay Balance" value={accountBalances.KPAY} />
@@ -275,7 +235,7 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
 
 
-        <section className="bc-quick-links">
+        {!isMiniMart ? <section className="bc-quick-links">
           {[
             ['New Sale', ShoppingCart, 'Sale POS'],
             !isMiniMart ? ['Repair Platform', Wrench, 'Repairs'] : null,
@@ -285,7 +245,7 @@ export default function DashboardBusinessV3({ onNavigate }) {
             ['Purchasing', Truck, 'Purchases'],
             ['Reports', BarChart3, 'Reports'],
           ].filter(Boolean).map(([label, Icon, page]) => <button type="button" key={label} onClick={() => onNavigate(page)}><Icon size={21} /><span><b>{label}</b><small>Open workspace</small></span></button>)}
-        </section>
+        </section> : null}
       </> : null}
     </div>
   );
