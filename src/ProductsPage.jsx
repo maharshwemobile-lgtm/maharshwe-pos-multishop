@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import FirstLoginGuide from './FirstLoginGuide.jsx';
+import InventoryImportReview from './InventoryImportReview.jsx';
 import {
   AlertTriangle,
   Boxes,
@@ -463,6 +464,7 @@ export default function ProductsPage({ onboardingGuide }) {
       <section className="p2-page-heading p2-page-actions-only">
         <div className="p2-heading-actions">
           <button type="button" onClick={logout}>Logout API</button>
+          {canManage ? <InventoryImportReview compact onImported={loadProducts}/> : null}
           {canManage ? <button type="button" onClick={() => setCategoryEditor(true)}><FolderPlus size={17} /> Categories</button> : null}
           {canManage ? <button type="button" className="primary" onClick={openCreateProduct}><Plus size={18} /> Add Product</button> : null}
         </div>

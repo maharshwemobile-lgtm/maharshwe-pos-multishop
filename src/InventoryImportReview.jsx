@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
+  Download,
   Eye,
   FileSpreadsheet,
   Loader2,
@@ -54,6 +55,35 @@ function parseCsv(text) {
   if (cleanRows.length < 2) return [];
   const headers = cleanRows[0].map((value) => String(value).replace(/^\uFEFF/, '').trim());
   return cleanRows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])));
+}
+
+const TEMPLATE_HEADERS = [
+  'productName', 'category', 'brand', 'model', 'productType', 'variantName',
+  'sku', 'barcode', 'ram', 'storage', 'color', 'costPrice',
+  'standardSellingPrice', 'minimumSellingPrice', 'stockQuantity', 'minAlertQuantity',
+];
+
+const TEMPLATE_ROWS = [
+  ['Type-C Charger', 'Charger', 'Example Brand', 'C20', 'NORMAL_PRODUCT', 'Default', 'CHG-C20', '885000000001', '', '', 'White', 5000, 7000, 6500, 10, 2],
+  ['Redmi Note Example', 'Phones', 'Redmi', 'Note Example', 'NORMAL_PRODUCT', '8GB / 256GB / Black', 'RNE-8-256-BLK', '', '8GB', '256GB', 'Black', 500000, 550000, 530000, 1, 1],
+];
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function downloadProductTemplate() {
+  const content = [TEMPLATE_HEADERS, ...TEMPLATE_ROWS].map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'Mahar-POS-Product-Template.csv';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function ReviewModal({ onClose, onImported }) {
@@ -138,6 +168,10 @@ function ReviewModal({ onClose, onImported }) {
 
         {!overview ? (
           <div className="import-review-body">
+            <div className="import-template-guide">
+              <div><b>Excel / Google Sheet Template</b><span>Template ကို download ဆွဲ → Google Sheet မှာ import/ဖြည့် → CSV အဖြစ် download ဆွဲပြီး အောက်မှာတင်ပါ။ Header အမည်များကို မပြောင်းပါနှင့်။</span></div>
+              <button type="button" onClick={downloadProductTemplate}><Download size={17}/> Download Template</button>
+            </div>
             <label className="import-file-picker">
               <FileSpreadsheet size={30} />
               <b>{fileName || 'Choose Inventory CSV'}</b>
@@ -241,7 +275,7 @@ function ReviewModal({ onClose, onImported }) {
   );
 }
 
-export default function InventoryImportReview({ onImported }) {
+export default function InventoryImportReview({ onImported, compact = false }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -250,6 +284,12 @@ export default function InventoryImportReview({ onImported }) {
     setMessage(`Import complete — ${summary.variantsCreated || 0} variants created, ${summary.variantsUpdated || 0} updated, ${summary.stockAdjusted || 0} stock rows changed.`);
     await onImported?.();
   };
+
+  if (compact) return <>
+    <button type="button" onClick={() => setOpen(true)}><FileSpreadsheet size={18}/> Excel / Sheet Import</button>
+    {message ? <div className="import-review-message">{message}</div> : null}
+    {open ? <ReviewModal onClose={() => setOpen(false)} onImported={imported}/> : null}
+  </>;
 
   return (
     <section className="import-review-panel">
