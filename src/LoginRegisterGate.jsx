@@ -6,6 +6,8 @@ import './login-register-gate.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+let googleIdentityInitialized = false;
+let googleCredentialHandler = null;
 
 const BUSINESS_TYPES = [
   {
@@ -122,10 +124,14 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     const renderGoogleButton = () => {
       if (cancelled || !window.google?.accounts?.id || !googleButtonRef.current) return;
       googleButtonRef.current.innerHTML = '';
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response) => handleGoogleCredential(response.credential),
-      });
+      googleCredentialHandler = handleGoogleCredential;
+      if (!googleIdentityInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response) => googleCredentialHandler?.(response.credential),
+        });
+        googleIdentityInitialized = true;
+      }
       window.google.accounts.id.renderButton(googleButtonRef.current, {
         type: 'standard',
         theme: 'outline',

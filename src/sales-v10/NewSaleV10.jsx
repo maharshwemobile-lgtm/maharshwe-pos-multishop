@@ -9,7 +9,6 @@ import {
   Loader2,
   Minus,
   Plus,
-  RefreshCw,
   Search,
   ShoppingCart,
   Trash2,
@@ -260,25 +259,6 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const splitPaymentActive = splitPayments.length > 0;
   const latestCartLine = cart.find((line) => line.key === lastAddedKey) || cart[cart.length - 1] || null;
   const latestLineTotal = latestCartLine ? Number(latestCartLine.unitPrice || 0) * Number(latestCartLine.quantity || 0) : 0;
-  const belowMinimumCount = cart.filter((line) => (
-    Number(line.unitPrice || 0) > 0
-    && Number(line.minimumSellingPrice || 0) > 0
-    && Number(line.unitPrice || 0) < Number(line.minimumSellingPrice || 0)
-  )).length;
-  const needsCreditCustomer = paymentLegacyMethod === 'CREDIT' && !customer.name.trim() && !customer.phone.trim();
-  const nextAction = !cart.length
-    ? t('Step 1: Search a product and tap Add.', 'Step 1: Product ကိုရှာပြီး Add နှိပ်ပါ။')
-    : belowMinimumCount
-      ? t('Step 2: Check items below the minimum price.', 'Step 2: Minimum price အောက်ရောက်နေတဲ့ item ကိုစစ်ပါ။')
-      : needsCreditCustomer
-        ? t('Step 3: Enter customer name or phone for a credit sale.', 'Step 3: Credit sale အတွက် customer name သို့ phone ဖြည့်ပါ။')
-        : t('Ready: Tap Review & Confirm Sale to complete this sale.', 'Ready: Review & Confirm Sale ကိုနှိပ်ပြီး အရောင်းသိမ်းနိုင်ပါပြီ။');
-  const guideState = {
-    pick: cart.length ? 'done' : 'active',
-    check: cart.length && !belowMinimumCount ? 'done' : (cart.length ? 'active' : ''),
-    pay: cart.length && !belowMinimumCount ? 'active' : '',
-  };
-
   const loadCategories = async () => {
     try {
       const data = await apiFetch('/api/categories');
@@ -586,20 +566,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     <div className="stock-page sale10-page">
       {toast ? <div className={`stock-toast stock-toast-${toast.type}`}>{toast.text}</div> : null}
 
-      <div className="stock-page-heading stock-page-actions-only">
-        <button type="button" className="stock-refresh-button" onClick={loadCatalog} disabled={loading}>
-          <RefreshCw className={loading ? 'stock-spin' : ''} size={18} /> Refresh Products
-        </button>
-      </div>
-
       {onboardingGuide?.show ? <FirstLoginGuide currentPage="Sale POS" businessType={onboardingGuide.businessType} onNavigate={onboardingGuide.navigate} onDismiss={onboardingGuide.dismiss}/> : null}
-
-      <section className="sale10-guided-flow" aria-label="Sale workflow guide">
-        <article className={guideState.pick}><b>1</b><span>Product ရွေးရန်</span><small>Search / Barcode / Add</small></article>
-        <article className={guideState.check}><b>2</b><span>Cart စစ်ရန်</span><small>Qty, Price, IMEI</small></article>
-        <article className={guideState.pay}><b>3</b><span>Payment သိမ်းရန်</span><small>Cash / KPay / Credit</small></article>
-        <div className={`sale10-next-action ${belowMinimumCount || needsCreditCustomer ? 'warning' : ''}`}>{nextAction}</div>
-      </section>
 
       {cart.length && latestCartLine ? (
         <section

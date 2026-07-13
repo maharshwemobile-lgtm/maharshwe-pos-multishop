@@ -664,17 +664,6 @@ canvas {
     overflow-x: auto;
   }
 
-  .stock-table-wrap::after,
-  .stock-history-table-wrap::after,
-  .sale10-history-page .stock-table-wrap::after {
-    content: 'If there are many columns, scroll left and right inside this card';
-    display: block;
-    padding: 7px 10px;
-    color: #64748b;
-    font-size: 0.67rem;
-    text-align: center;
-  }
-
   .stock-toast,
   .repair-toast,
   .ps-toast {

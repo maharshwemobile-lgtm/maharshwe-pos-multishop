@@ -11,7 +11,6 @@ import {
   Loader2,
   Printer,
   ReceiptText,
-  RefreshCw,
   Search,
   TrendingUp,
   Wallet,
@@ -374,7 +373,6 @@ export default function SalesHistoryV10() {
           <button type="button" className="stock-refresh-button sale10-export-button" onClick={exportCsv} disabled={exporting || loading}>
             {exporting ? <Loader2 className="stock-spin" size={18} /> : <Download size={18} />} Export CSV
           </button>
-          <button type="button" className="stock-refresh-button" onClick={load} disabled={loading}><RefreshCw className={loading ? 'stock-spin' : ''} size={18} /> Refresh</button>
         </div>
       </div>
 
