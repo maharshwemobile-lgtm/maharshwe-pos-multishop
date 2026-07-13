@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, ClipboardList, CreditCard, PackageCheck, RotateCcw, Settings2, Users } from 'lucide-react';
 import { clearSession, getSession } from './phase2Api';
 import SupplierManagementPanel from './SupplierManagementPanel.jsx';
@@ -34,11 +34,15 @@ function businessTypeOf() {
   return String(session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP').toUpperCase();
 }
 
-export default function PurchasingWorkspaceV2() {
-  const [tab, setTab] = useState('suppliers');
+export default function PurchasingWorkspaceV2({ initialTab = 'suppliers' }) {
+  const [tab, setTab] = useState(initialTab);
   const [message, setMessage] = useState(null);
   const isMiniMart = businessTypeOf() === 'MINI_MART';
   const visibleTabs = isMiniMart ? miniMartTabs : tabs;
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
 
   const notify = (type, text) => {
     setMessage({ type, text });
