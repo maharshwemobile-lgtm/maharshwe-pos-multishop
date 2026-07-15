@@ -1,0 +1,8 @@
+.ecom-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ecom-filters select{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;background:#fff;color:#334155;font-weight:700}
+.ecom-pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;color:#64748b;font-size:12px}
+.ecom-pagination div{display:flex;gap:7px}
+.ecom-pagination button{border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;background:#fff;font-weight:700}
+.ecom-pagination button:disabled{opacity:.45}
+.ecom-save-one{margin-left:auto!important;background:#059669!important;color:#fff!important;border-color:#059669!important}
+@media(max-width:700px){.ecom-filters{grid-template-columns:1fr}.ecom-pagination{align-items:flex-start;flex-direction:column}.ecom-pagination div{width:100%}.ecom-pagination button{flex:1}}

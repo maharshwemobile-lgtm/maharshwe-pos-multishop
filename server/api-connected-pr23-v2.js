@@ -17,6 +17,7 @@ const attachGrandAdminCentralControlApi = require('./grand-admin-central-control
 const attachGrandAdminBackendStep1Api = require('./grand-admin-backend-step1-api');
 const attachGrandAdminBackendStep2Api = require('./grand-admin-backend-step2-api');
 const attachPublicLandingApi = require('./public-landing-api');
+const attachEcommerceStorefrontApi = require('./ecommerce-storefront-api');
 const attachShopAdminBranchControlApi = require('./shop-admin-branch-control-api');
 const attachShopAdminSettingsLock = require('./shop-admin-settings-lock');
 const attachTenantIntegrityApi = require('./tenant-integrity-api');
@@ -105,6 +106,7 @@ if (isPostgreSql) {
   attachProjectSettingsBusinessWrite(app);
   attachProjectSettingsAppearanceWrite(app);
   attachProjectFunctionAccessMiddleware(app);
+  attachEcommerceStorefrontApi(app);
   attachGoogleSheetSyncV23Extension(app);
   attachGoogleSheetSyncApi(app);
   attachAgentPosApi(app);
