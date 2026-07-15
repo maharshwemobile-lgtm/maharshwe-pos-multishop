@@ -6,6 +6,8 @@ import {
   ChevronRight,
   CreditCard,
   History,
+  Grid3X3,
+  List,
   Loader2,
   Minus,
   Plus,
@@ -19,6 +21,7 @@ import {
 import { apiFetch, clearSession, getSession } from '../phase2Api';
 import '../stock-management.css';
 import './sales-v10.css';
+import './sale10-product-images.css';
 import FirstLoginGuide from '../FirstLoginGuide.jsx';
 import './sales-v10-guided.css';
 import { pickLanguageText } from '../settings/ProjectLanguageRuntime.jsx';
@@ -31,6 +34,7 @@ import {
   saveDraft,
 } from './salesV10Utils';
 import { playPaymentSuccessSound, playPosAddSound } from './salesAudio';
+import ProductCategoryIcon from '../ProductCategoryIcon.jsx';
 
 const PAGE_SIZE = 10;
 const EMPTY_CUSTOMER = { name: '', phone: '' };
@@ -39,6 +43,19 @@ const CASH_PAYMENT_METHOD = { key: 'CASH', id: '', name: 'Cash', code: 'CASH', k
 const CREDIT_PAYMENT_METHOD = { key: 'CREDIT', id: '', name: 'Credit', code: 'CREDIT', kind: 'CREDIT', accountName: '', legacyMethod: 'CREDIT', balance: 0 };
 const FALLBACK_PAYMENT_METHODS = [CASH_PAYMENT_METHOD, CREDIT_PAYMENT_METHOD];
 const t = pickLanguageText;
+
+function ProductGridVisual({ item }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  if (!item.imageUrl || imageFailed) return <div className="sale10-grid-category-icon"><ProductCategoryIcon item={item} size={44}/></div>;
+  return <img src={item.imageUrl} alt="" loading="lazy" onError={() => setImageFailed(true)}/>;
+}
+
+function variantLabel(item) {
+  return [item?.variantName, item?.color, item?.storage]
+    .map((value) => String(value || '').trim())
+    .filter((value) => value && value.toLowerCase() !== 'default')
+    .join(' · ');
+}
 
 function normalizePaymentOption(row) {
   const legacyMethod = row?.legacyMethod || row?.method || row?.code || 'OTHER';
@@ -191,6 +208,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [paymentMethods, setPaymentMethods] = useState(FALLBACK_PAYMENT_METHODS);
   const [query, setQuery] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [productView, setProductView] = useState('grid');
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -209,6 +227,32 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [lastAddedKey, setLastAddedKey] = useState(restored?.cart?.[restored.cart.length - 1]?.key || '');
   const searchRef = useRef(null);
   const cartRef = useRef(null);
+
+  const animateProductToCart = (item, sourceElement) => {
+    if (!sourceElement || !cartRef.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const source = sourceElement.getBoundingClientRect();
+    const target = cartRef.current.getBoundingClientRect();
+    const sourceX = source.left + source.width / 2;
+    const sourceY = source.top + Math.min(source.height / 2, 55);
+    const flyer = document.createElement('div');
+    flyer.className = 'sale10-fly-to-cart';
+    if (item.imageUrl) flyer.style.backgroundImage = `url("${String(item.imageUrl).replace(/"/g, '%22')}")`;
+    else flyer.textContent = '+';
+    flyer.style.left = `${sourceX - 18}px`;
+    flyer.style.top = `${sourceY - 18}px`;
+    document.body.appendChild(flyer);
+    requestAnimationFrame(() => {
+      flyer.style.transform = `translate(${target.left + target.width / 2 - sourceX}px, ${target.top + 22 - sourceY}px) scale(.35)`;
+      flyer.style.opacity = '0.25';
+    });
+    flyer.addEventListener('transitionend', () => {
+      flyer.remove();
+      cartRef.current?.classList.remove('sale10-cart-pulse');
+      void cartRef.current?.offsetWidth;
+      cartRef.current?.classList.add('sale10-cart-pulse');
+      window.setTimeout(() => cartRef.current?.classList.remove('sale10-cart-pulse'), 420);
+    }, { once: true });
+  };
 
   const notify = (type, text) => {
     setToast({ type, text });
@@ -252,7 +296,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const paymentLegacyMethod = selectedPaymentMethod?.legacyMethod || payment.method || 'CASH';
   const cashReceived = paymentLegacyMethod === 'CASH' ? Number(payment.cashReceived || total) : total;
   const change = paymentLegacyMethod === 'CASH' ? Math.max(0, cashReceived - total) : 0;
-  const splitPaymentOptions = useMemo(() => paymentMethods.filter((method) => method.legacyMethod !== 'CREDIT'), [paymentMethods]);
+  const splitPaymentOptions = useMemo(() => paymentMethods, [paymentMethods]);
   const splitPaymentTotal = useMemo(() => splitPayments.reduce((sum, row) => sum + Number(row.amount || 0), 0), [splitPayments]);
   const splitPaymentBalance = Math.max(0, total - splitPaymentTotal);
   const splitPaymentChange = Math.max(0, splitPaymentTotal - total);
@@ -329,7 +373,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     return () => window.clearTimeout(timer);
   }, [cart, customer, payment, splitPayments, discount]);
 
-  const addProduct = (item) => {
+  const addProduct = (item, sourceElement = null) => {
     if (Number(item.available ?? item.stockQuantity ?? 0) <= 0) {
       notify('error', t('Out of stock.', 'Stock မရှိတော့ပါ။'));
       return;
@@ -362,8 +406,8 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
         : line);
     });
 
+    animateProductToCart(item, sourceElement);
     playPosAddSound();
-    notify('success', `${productName(item)} added to cart`);
   };
 
   const searchSubmit = async () => {
@@ -445,7 +489,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
 
   const normalizeSplitMethod = (value) => {
     const upper = String(value || '').toUpperCase();
-    return ['CASH', 'KPAY', 'WAVE_PAY'].includes(upper) ? upper : 'OTHER';
+    return ['CASH', 'KPAY', 'WAVE_PAY', 'CREDIT'].includes(upper) ? upper : 'OTHER';
   };
 
   const addSplitPayment = () => {
@@ -496,6 +540,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     if (splitPaymentActive) {
       if (splitPayments.some((row) => Number(row.amount || 0) <= 0)) return t('One or more split payment amounts are invalid.', 'Split Payment amount မမှန်ပါ။');
       if (splitPaymentTotal < total) return t('Split payment total is less than the sale total.', 'Split Payment စုစုပေါင်းသည် Sale Total ထက် နည်းနေသည်။');
+      if (splitPayments.some((row) => row.method === 'CREDIT') && !customer.name.trim() && !customer.phone.trim()) return t('Enter a customer for the credit portion.', 'Credit ပါဝင်သော Split Payment အတွက် Customer ထည့်ပါ။');
     } else {
       if (paymentLegacyMethod === 'CREDIT' && !customer.name.trim() && !customer.phone.trim()) return t('Enter a customer for credit sale.', 'Credit sale အတွက် customer ထည့်ပါ။');
       if (paymentLegacyMethod === 'CASH' && cashReceived < total) return 'Cash received is less than total.';
@@ -614,6 +659,10 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
               <option value="">All Categories</option>
               {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
+            <div className="sale10-view-toggle" aria-label="Product view">
+              <button type="button" className={productView === 'grid' ? 'active' : ''} onClick={() => setProductView('grid')}><Grid3X3 size={15}/> Grid</button>
+              <button type="button" className={productView === 'list' ? 'active' : ''} onClick={() => setProductView('list')}><List size={15}/> List</button>
+            </div>
           </div>
 
           {loading && catalog.length === 0 ? (
@@ -621,6 +670,20 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
           ) : availableCatalog.length === 0 ? (
             <div className="stock-empty"><Boxes size={38} /><b>No available products found</b><span>Stock ရှိသော Product ကိုအရင်ထည့်ပါ။</span></div>
           ) : (
+            productView === 'grid' ? (
+              <div className="sale10-product-grid">
+                {availableCatalog.map((item) => {
+                  const pickedQuantity = Number(reserved.get(item.id) || 0);
+                  return <button type="button" key={item.id} className={`sale10-product-grid-card ${pickedQuantity > 0 ? 'in-cart' : ''}`} onClick={(event) => addProduct(item, event.currentTarget)}>
+                    <div className={`sale10-grid-photo ${item.imageUrl ? 'has-image' : 'has-icon'}`}><ProductGridVisual item={item}/>{pickedQuantity > 0 ? <span>Cart {pickedQuantity}</span> : null}</div>
+                    <b>{item.productName || 'Unnamed Product'}</b>
+                    {variantLabel(item) ? <small>{variantLabel(item)}</small> : null}
+                    <strong>{money(item.standardSellingPrice)}</strong>
+                    <div className="sale10-grid-card-foot"><em className={item.available <= Number(item.minAlertQuantity || 0) ? 'low' : ''}>Stock {item.available}</em><i>+ Add</i></div>
+                  </button>;
+                })}
+              </div>
+            ) : (
             <div className="stock-table-wrap">
               <table className="stock-table sale10-product-table sale10-quick-product-table">
                 <thead><tr><th>Product / Variant</th><th>Stock</th><th>Selling Price</th><th>Add</th></tr></thead>
@@ -634,7 +697,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                       className={`sale10-clickable-product-row ${pickedQuantity > 0 ? 'in-cart' : ''}`}
                       tabIndex={0}
                       role="button"
-                      onClick={() => addProduct(item)}
+                      onClick={(event) => addProduct(item, event.currentTarget)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
@@ -644,10 +707,9 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                     >
                       <td>
                         <div className="stock-product-cell">
-                          <div><Boxes size={20} /></div>
                           <span>
                             <b>{item.productName || 'Unnamed Product'}</b>
-                            <small>{[item.variantName, item.color, item.storage].filter(Boolean).join(' · ') || 'Default'}</small>
+                            {variantLabel(item) ? <small>{variantLabel(item)}</small> : null}
                             {pickedQuantity > 0 ? <small className="sale10-in-cart-badge">In cart · {pickedQuantity}</small> : null}
                             {query.trim() ? <small className="sale10-search-code">SKU: {item.sku || '-'} · Barcode: {item.barcode || '-'}</small> : null}
                             {item.unit ? <small className="sale10-unit-badge">Unit: {item.unit}</small> : null}
@@ -665,7 +727,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                           className="stock-action stock-action-green sale10-row-add"
                           onClick={(event) => {
                             event.stopPropagation();
-                            addProduct(item);
+                            addProduct(item, event.currentTarget);
                           }}
                         >
                           <Plus size={15} /> Add
@@ -676,6 +738,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                 </tbody>
               </table>
             </div>
+            )
           )}
 
           <footer className="stock-pagination">
@@ -699,18 +762,17 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
               <div className="stock-empty sale10-cart-empty"><ShoppingCart size={38} /><b>Cart is empty</b><span>Product row ကိုတစ်ချက်နှိပ်ပါ။</span></div>
             ) : (
               <div className="sale10-cart-slip-list">
-                {cart.map((line) => {
+                {cart.map((line, lineIndex) => {
                   const lineTotal = Number(line.unitPrice || 0) * Number(line.quantity || 0);
                   const expiryText = expiryWarning(line);
                   return (
                     <article key={line.key} className="sale10-cart-slip-row">
                       <div className="sale10-cart-slip-main">
-                        <b>{productName(line)}</b>
-                        {line.requiresSerial ? <input className="sale10-serial-input" value={line.imeiSerial || ''} onChange={(event) => patchLine(line.key, { imeiSerial: event.target.value })} placeholder="IMEI / Serial" /> : <small>Cart item</small>}
-                        {line.unit ? <small className="sale10-unit-badge">Unit: {line.unit}</small> : null}
+                        <div className="sale10-cart-item-title"><span>{lineIndex + 1}</span><b>{productName(line)}</b></div>
+                        {line.requiresSerial ? <input className="sale10-serial-input" value={line.imeiSerial || ''} onChange={(event) => patchLine(line.key, { imeiSerial: event.target.value })} placeholder="IMEI / Serial" /> : null}
                         {expiryText ? <small className="sale10-expiry-warning">{expiryText}{line.expiryDate ? ` - Exp: ${line.expiryDate}` : ''}</small> : null}
                       </div>
-                      <div className="sale10-quantity-control"><button type="button" onClick={() => changeQuantity(line, -1)}><Minus size={14} /></button><b>{line.quantity}</b><button type="button" onClick={() => changeQuantity(line, 1)} disabled={line.requiresSerial}><Plus size={14} /></button></div>
+                      <div className="sale10-cart-quantity-field"><span>Count</span><div className="sale10-quantity-control"><button type="button" onClick={() => changeQuantity(line, -1)}><Minus size={14} /></button><b>{line.quantity}</b><button type="button" onClick={() => changeQuantity(line, 1)} disabled={line.requiresSerial}><Plus size={14} /></button></div></div>
                       <label className="sale10-cart-price-field">
                         <span>Price</span>
                         <input className="sale10-price-input" type="number" min="0" value={line.unitPrice} onChange={(event) => patchLine(line.key, { unitPrice: event.target.value })} aria-label={`${productName(line)} selling price`} />
@@ -755,10 +817,10 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
             </div>
 
             <div className="sale10-split-actions">
-              <button type="button" onClick={() => splitPaymentActive ? setSplitModalOpen(true) : addSplitPayment()}>
-                {splitPaymentActive ? 'Split Payment ပြင်မယ်' : '+ Split Payment'}
+              <button type="button" className="sale10-split-trigger" onClick={() => splitPaymentActive ? setSplitModalOpen(true) : addSplitPayment()}>
+                <CreditCard size={16}/><span>{splitPaymentActive ? 'Split ပြင်မယ်' : '+ Split Payment'}</span>
               </button>
-              {splitPaymentActive ? <button type="button" onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }}>Single Payment ပြန်သုံးမယ်</button> : null}
+              {splitPaymentActive ? <button type="button" className="sale10-single-trigger" onClick={() => { setSplitPayments([]); setSplitModalOpen(false); }}><Wallet size={16}/> Single Payment</button> : null}
             </div>
 
             {splitPaymentActive ? (
@@ -807,6 +869,8 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
               ))}
 
               <button type="button" className="sale10-add-split-row" onClick={addSplitPayment}>+ Payment Row ထပ်ထည့်မယ်</button>
+
+              {splitPayments.some((row) => row.method === 'CREDIT') ? <div className="sale10-split-credit-note"><UserRound size={16}/> Credit ပမာဏကို Customer အကြွေးစာရင်းထဲ အလိုအလျောက်ထည့်ပါမယ်။ Customer Name သို့ Phone ထည့်ထားရန်လိုပါတယ်။</div> : null}
 
               <div className="sale10-split-summary">
                 <span>Paid/Covered <b>{money(splitPaymentTotal)}</b></span>

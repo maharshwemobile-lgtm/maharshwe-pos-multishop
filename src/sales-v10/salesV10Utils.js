@@ -14,7 +14,8 @@ export function shortMoney(value) {
 }
 
 export function productName(item) {
-  return [item?.productName, item?.variantName].filter(Boolean).join(' · ') || 'Unnamed product';
+  const variant = String(item?.variantName || '').trim();
+  return [item?.productName, variant && variant.toLowerCase() !== 'default' ? variant : ''].filter(Boolean).join(' · ') || 'Unnamed product';
 }
 
 export function reservedQuantity(cart = []) {
