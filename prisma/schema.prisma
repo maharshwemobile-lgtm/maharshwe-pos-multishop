@@ -275,6 +275,7 @@ model EcommerceStoreSettings {
   storeName       String?  @map("store_name")
   description     String?
   contactPhone    String?  @map("contact_phone")
+  telegramUrl     String?  @map("telegram_url")
   deliveryEnabled Boolean  @default(true) @map("delivery_enabled")
   pickupEnabled   Boolean  @default(true) @map("pickup_enabled")
   deliveryFee     Decimal  @default(0) @map("delivery_fee") @db.Decimal(14, 2)

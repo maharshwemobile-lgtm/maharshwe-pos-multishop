@@ -111,6 +111,12 @@
         border-radius: 15px;
         background: #fff;
         box-shadow: 0 8px 24px #0f172a08;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px #0f172a12;
       }
       .photo {
         aspect-ratio: 4 / 3;
@@ -177,6 +183,25 @@
         padding: 60px;
         color: #718096;
       }
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 0 55px;
+      }
+      .pagination button {
+        min-width: 40px;
+        min-height: 40px;
+        border: 1px solid #d8e0ea;
+        border-radius: 10px;
+        background: #fff;
+        color: #334155;
+        font-weight: 700;
+      }
+      .pagination button.active { border-color: #059669; background: #059669; color: #fff; }
+      .pagination button:disabled { opacity: .45; cursor: not-allowed; }
+      .page-summary { color: #64748b; font-size: 12px; }
       .shade {
         position: fixed;
         inset: 0;
@@ -264,6 +289,80 @@
         background: #fef2f2;
         color: #b91c1c;
       }
+      .product-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: none;
+        place-items: center;
+        padding: 18px;
+        background: #0f172ab3;
+      }
+      .product-modal.open { display: grid; }
+      .product-detail {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(280px, .95fr);
+        gap: 24px;
+        width: min(900px, 100%);
+        max-height: min(760px, calc(100vh - 36px));
+        overflow: auto;
+        padding: 22px;
+        border-radius: 18px;
+        background: #fff;
+      }
+      .detail-close {
+        position: absolute;
+        z-index: 2;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: #eef2f7;
+        font-size: 20px;
+      }
+      .detail-main-image {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        padding: 12px;
+        border-radius: 14px;
+        background: #f1f5f9;
+      }
+      .detail-thumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
+      .detail-thumb {
+        flex: 0 0 62px;
+        width: 62px;
+        height: 62px;
+        padding: 3px;
+        border: 2px solid transparent;
+        border-radius: 10px;
+        object-fit: contain;
+        background: #f1f5f9;
+      }
+      .detail-thumb.active { border-color: #059669; }
+      .detail-copy { padding: 20px 8px 8px 0; }
+      .detail-copy h2 { margin: 7px 42px 8px 0; font-size: clamp(22px, 4vw, 32px); line-height: 1.3; }
+      .detail-variant { color: #64748b; font-size: 13px; }
+      .detail-description { white-space: pre-wrap; color: #475569; line-height: 1.7; }
+      .detail-price { margin: 20px 0 5px; color: #047857; font-size: 25px; }
+      .detail-stock { color: #64748b; font-size: 13px; }
+      .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 20px; }
+      .detail-actions button, .telegram-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 45px;
+        border: 0;
+        border-radius: 11px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+      .detail-actions button { background: #059669; color: #fff; }
+      .detail-actions button:disabled { background: #94a3b8; }
+      .telegram-link { background: #229ed9; color: #fff; }
       @media (max-width: 900px) {
         .tools {
           grid-template-columns: 1fr 1fr;
@@ -276,6 +375,10 @@
         }
       }
       @media (max-width: 650px) {
+        .product-detail { grid-template-columns: 1fr; gap: 8px; padding: 14px; }
+        .detail-copy { padding: 4px 2px 2px; }
+        .detail-main-image { max-height: 42vh; }
+        .detail-actions { position: sticky; bottom: -14px; padding: 10px 0 14px; background: #fff; }
         .grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 9px;
@@ -354,6 +457,7 @@
       <div id="grid" class="grid">
         <div class="empty">Loading products...</div>
       </div>
+      <nav id="pagination" class="pagination" aria-label="Product pages"></nav>
     </main>
     <div
       id="shade"
@@ -386,6 +490,27 @@
         </form>
       </aside>
     </div>
+    <div id="productModal" class="product-modal" onclick="if (event.target === this) closeProduct();">
+      <section class="product-detail" role="dialog" aria-modal="true" aria-labelledby="detailName">
+        <button class="detail-close" onclick="closeProduct()" aria-label="Close">×</button>
+        <div>
+          <img id="detailImage" class="detail-main-image" alt="" />
+          <div id="detailThumbs" class="detail-thumbs"></div>
+        </div>
+        <div class="detail-copy">
+          <span id="detailCategory" class="cat"></span>
+          <h2 id="detailName"></h2>
+          <div id="detailVariant" class="detail-variant"></div>
+          <p id="detailDescription" class="detail-description"></p>
+          <div id="detailPrice" class="detail-price"></div>
+          <div id="detailStock" class="detail-stock"></div>
+          <div class="detail-actions">
+            <button id="detailAdd" type="button">Cart ထဲထည့်မည်</button>
+            <a id="telegramChat" class="telegram-link" target="_blank" rel="noopener noreferrer">Telegram Chat</a>
+          </div>
+        </div>
+      </section>
+    </div>
     <script>
       const slug = decodeURIComponent(
         location.pathname.match(/\/shop\/([^/?#]+)/)?.[1] ||
@@ -394,7 +519,10 @@
       );
       let store = null,
         products = [],
-        cart = [];
+        cart = [],
+        currentPage = 1,
+        totalPages = 1,
+        totalProducts = 0;
       const api = (p, o = {}) =>
         fetch("/api" + p, {
           headers: { "Content-Type": "application/json" },
@@ -430,7 +558,7 @@
           grid.innerHTML = '<div class="empty">' + esc(e.message) + "</div>";
         }
       }
-      async function loadProducts() {
+      async function loadProducts(page = 1) {
         try {
           const d = await api(
             "/public/store/" +
@@ -442,9 +570,14 @@
               "&categoryId=" +
               encodeURIComponent(categoryFilter.value) +
               "&stockLevel=" +
-              encodeURIComponent(stockFilter.value),
+              encodeURIComponent(stockFilter.value) +
+              "&page=" +
+              encodeURIComponent(page),
           );
           products = d.products || [];
+          currentPage = Number(d.page || 1);
+          totalPages = Number(d.totalPages || 1);
+          totalProducts = Number(d.total || products.length);
           const selectedBrand = brandFilter.value;
           const selectedCategory = categoryFilter.value;
           brandFilter.innerHTML =
@@ -466,6 +599,7 @@
           brandFilter.value = selectedBrand;
           categoryFilter.value = selectedCategory;
           renderProducts();
+          renderPagination();
         } catch (e) {
           grid.innerHTML = '<div class="empty">' + esc(e.message) + "</div>";
         }
@@ -486,7 +620,7 @@
                     0,
                   ) || 0;
               const price = Number(v?.standardSellingPrice || 0);
-              return `<article class="card"><div class="photo"><img src="${esc(img)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='/default-product-image.svg'">${stock > 0 ? `<span class="stock">${stock} in stock</span>` : ""}</div><div class="body"><span class="cat">${esc(p.category?.name || "Product")}</span><h3>${esc(p.name)}</h3><div class="desc">${esc(p.ecommerceDetail?.description || "")}</div><div class="price">${price > 0 ? `<b>${mmk(price)}</b>` : "<span></span>"}<button ${!v ? "disabled" : ""} onclick="add(${i})">Add</button></div></div></article>`;
+              return `<article class="card" onclick="openProduct(${i})" tabindex="0" onkeydown="if(event.key==='Enter') openProduct(${i})"><div class="photo"><img src="${esc(img)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='/default-product-image.svg'">${stock > 0 ? `<span class="stock">${stock} in stock</span>` : ""}</div><div class="body"><span class="cat">${esc(p.category?.name || "Product")}</span><h3>${esc(p.name)}</h3><div class="desc">${esc(p.ecommerceDetail?.description || "")}</div><div class="price">${price > 0 ? `<b>${mmk(price)}</b>` : "<span></span>"}<button ${!v ? "disabled" : ""} onclick="event.stopPropagation();add(${i})">Add</button></div></div></article>`;
             })
             .join("") ||
           '<div class="empty">Online မှာပြထားသော Product မရှိသေးပါ။</div>';
@@ -508,6 +642,49 @@
             quantity: 1,
           });
         renderCart();
+      }
+      function renderPagination() {
+        if (totalProducts <= 10) { pagination.innerHTML = ''; return; }
+        const pages = [];
+        const start = Math.max(1, currentPage - 2);
+        const end = Math.min(totalPages, start + 4);
+        for (let page = Math.max(1, end - 4); page <= end; page++) pages.push(page);
+        pagination.innerHTML = `<button ${currentPage <= 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">‹</button>${pages.map((page) => `<button class="${page === currentPage ? 'active' : ''}" onclick="goPage(${page})">${page}</button>`).join('')}<button ${currentPage >= totalPages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">›</button><span class="page-summary">${totalProducts} Products</span>`;
+      }
+      function goPage(page) {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        loadProducts(page).then(() => document.querySelector('main').scrollIntoView({ behavior: 'smooth' }));
+      }
+      function openProduct(i) {
+        const p = products[i];
+        if (!p) return;
+        const v = p.variants?.find((variant) => Number(variant.inventoryBalance?.quantity || 0) > 0) || p.variants?.[0];
+        const stock = p.variants?.reduce((sum, variant) => sum + Number(variant.inventoryBalance?.quantity || 0), 0) || 0;
+        const images = (p.ecommerceImages || []).map((image) => image.url).filter(Boolean);
+        if (!images.length) images.push('/default-product-image.svg');
+        detailName.textContent = p.name || '';
+        detailCategory.textContent = p.category?.name || 'Product';
+        detailVariant.textContent = [p.brand, v?.variantName].filter(Boolean).join(' · ');
+        detailDescription.textContent = p.ecommerceDetail?.description || 'အသေးစိတ်သိရှိလိုပါက ဆိုင်သို့ Telegram မှ ဆက်သွယ်မေးမြန်းနိုင်ပါသည်။';
+        detailPrice.textContent = Number(v?.standardSellingPrice || 0) > 0 ? mmk(v.standardSellingPrice) : '';
+        detailStock.textContent = stock > 0 ? `လက်ကျန် ${stock}` : 'လက်ကျန်မရှိပါ';
+        detailAdd.disabled = stock <= 0;
+        detailAdd.onclick = () => { add(i); closeProduct(); openCart(); };
+        telegramChat.hidden = !store?.telegramUrl;
+        if (store?.telegramUrl) telegramChat.href = store.telegramUrl;
+        selectDetailImage(images[0], 0);
+        detailThumbs.innerHTML = images.map((url, index) => `<button type="button" style="border:0;background:none;padding:0" onclick="selectDetailImage('${escJs(url)}',${index})"><img class="detail-thumb${index === 0 ? ' active' : ''}" src="${esc(url)}" alt="${esc(p.name)} ${index + 1}" onerror="this.onerror=null;this.src='/default-product-image.svg'"></button>`).join('');
+        productModal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function selectDetailImage(url, index) {
+        detailImage.src = url || '/default-product-image.svg';
+        detailImage.onerror = () => { detailImage.onerror = null; detailImage.src = '/default-product-image.svg'; };
+        document.querySelectorAll('.detail-thumb').forEach((thumb, i) => thumb.classList.toggle('active', i === index));
+      }
+      function closeProduct() {
+        productModal.classList.remove('open');
+        document.body.style.overflow = '';
       }
       function renderCart() {
         cartCount.textContent = cart.reduce((s, x) => s + x.quantity, 0);
@@ -590,11 +767,17 @@
             })[c],
         );
       }
+      function escJs(v) {
+        return String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n]/g, '');
+      }
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { closeProduct(); closeCart(); }
+      });
       search.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") loadProducts();
+        if (e.key === "Enter") loadProducts(1);
       });
       [brandFilter, categoryFilter, stockFilter].forEach((filter) =>
-        filter.addEventListener("change", loadProducts),
+        filter.addEventListener("change", () => loadProducts(1)),
       );
       init();
     </script>
