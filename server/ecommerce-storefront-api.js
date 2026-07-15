@@ -21,6 +21,10 @@ const settingsInput = z.object({
     z.string().trim().url().max(500).refine((value) => /^https:\/\/(t\.me|telegram\.me)\//i.test(value), 'Use a valid Telegram link'),
     z.literal(''), z.null(),
   ]).optional().transform((value) => value || null),
+  mapUrl: z.union([
+    z.string().trim().url().max(1000).refine((value) => /^https:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|maps\.google\.com)\//i.test(value), 'Use a valid Google Maps link'),
+    z.literal(''), z.null(),
+  ]).optional().transform((value) => value || null),
   deliveryEnabled: z.boolean().optional(), pickupEnabled: z.boolean().optional(), deliveryFee: z.coerce.number().min(0).max(10000000).optional(),
 });
 const productInput = z.object({
@@ -194,7 +198,7 @@ function attachEcommerceStorefrontApi(app) {
     const shop = await prisma.shop.findFirst({ where: { slug: req.params.slug, active: true }, include: { ecommerceSettings: true } });
     if (!shop?.ecommerceSettings?.enabled) notFound('Online shop is not available');
     res.set('Cache-Control', 'public, max-age=60');
-    res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, telegramUrl: shop.ecommerceSettings.telegramUrl, address: shop.address, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
+    res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, telegramUrl: shop.ecommerceSettings.telegramUrl, mapUrl: shop.ecommerceSettings.mapUrl, address: shop.address, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
   }));
 
   app.get('/api/public/store/:slug/manifest.webmanifest', handle(async (req, res) => {
