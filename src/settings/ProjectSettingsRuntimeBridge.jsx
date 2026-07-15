@@ -25,7 +25,7 @@ export function applyProjectTheme(value) {
 }
 
 export default function ProjectSettingsRuntimeBridge() {
-  const [group, setGroup] = useState('postgresql');
+  const [group, setGroup] = useState('general');
 
   useEffect(() => {
     const storedTheme = window.localStorage.getItem(THEME_KEY);
@@ -48,8 +48,8 @@ export default function ProjectSettingsRuntimeBridge() {
 
   return <div className="project-settings-v23-centralized" onChangeCapture={onChange}>
     <nav className="project-settings-group-tabs">
-      <button type="button" className={group === 'postgresql' ? 'active' : ''} onClick={() => setGroup('postgresql')}><Database size={18}/><span><b>Business Setup</b><small>လုပ်ငန်း setup များ</small></span></button>
       <button type="button" className={group === 'general' ? 'active' : ''} onClick={() => setGroup('general')}><SlidersHorizontal size={18}/><span><b>Shop Setup</b><small>ဆိုင်အချက်အလက်၊ user၊ slip</small></span></button>
+      <button type="button" className={group === 'postgresql' ? 'active' : ''} onClick={() => setGroup('postgresql')}><Database size={18}/><span><b>Advanced System Data</b><small>Payment၊ category၊ integration</small></span></button>
     </nav>
 
     {group === 'postgresql'
