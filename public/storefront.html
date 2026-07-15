@@ -281,6 +281,12 @@
       .card.out-of-stock .price button { background:#cbd5e1; color:#64748b; cursor:not-allowed; }
       .support-links { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px 14px; }
       .support-links a { color:#087eb4; font-weight:700; }
+      .map-section { display:none; grid-template-columns:minmax(0,1.4fr) minmax(250px,.6fr); gap:14px; margin:0 auto 48px; }
+      .map-frame { width:100%; min-height:280px; border:1px solid #dfe6ee; border-radius:16px; background:#eef2f7; }
+      .map-card { display:flex; flex-direction:column; justify-content:center; padding:22px; border:1px solid #e3e9f1; border-radius:16px; background:#fff; }
+      .map-card h2 { margin:0 0 8px; }
+      .map-card p { color:#64748b; line-height:1.65; }
+      .map-card a { display:inline-flex; justify-content:center; margin-top:10px; padding:11px 14px; border-radius:10px; background:#059669; color:#fff; font-weight:850; text-decoration:none; }
       .shade {
         position: fixed;
         inset: 0;
@@ -461,6 +467,8 @@
         .detail-actions { background:#fff; }
         .trust-grid { grid-template-columns:1fr; }
         .footer-row { align-items:flex-start; flex-direction:column; }
+        .support-links { justify-content:flex-start; }
+        .map-section { grid-template-columns:1fr; }
         .telegram-top { padding:8px; font-size:0; }
         .telegram-top::before { content:'✈'; font-size:17px; }
         .grid {
@@ -553,6 +561,10 @@
         <div class="trust-card"><b>၁ · Product ရွေးပါ</b><span>Phone, Accessories, Gift Card, Game Item နဲ့ VPN များကို Category အလိုက်ရှာနိုင်ပါတယ်။</span></div>
         <div class="trust-card"><b>၂ · Detail စစ်ပါ</b><span>ပုံများ၊ ဈေးနှုန်း၊ လက်ကျန်နဲ့ Product အသေးစိတ်ကို ဖွင့်ကြည့်ပါ။</span></div>
         <div class="trust-card"><b>၃ · Order / Chat</b><span>COD သို့ Pickup ဖြင့် Order တင်ပြီး Digital Item များကို Telegram မှာ ဆက်သွယ်နိုင်ပါတယ်။</span></div>
+      </section>
+      <section id="mapSection" class="map-section" aria-label="Shop location">
+        <iframe id="mapFrame" class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Shop map preview"></iframe>
+        <div class="map-card"><h2>Shop Location</h2><p id="mapAddress"></p><a id="mapOpen" target="_blank" rel="noopener noreferrer">Google Map မှာဖွင့်မည်</a></div>
       </section>
     </main>
     <footer class="site-footer"><div class="wrap footer-row"><span>© <span id="footerYear"></span> <b id="footerShop">Mahar Online Shop</b> · Powered by Mahar POS</span><div id="supportLinks" class="support-links"><a id="footerTelegram" target="_blank" rel="noopener noreferrer">Telegram Support</a></div></div></footer>
@@ -649,8 +661,14 @@
           });
           footerShop.textContent = store.name;
           footerYear.textContent = new Date().getFullYear();
+          if (store.mapUrl) {
+            mapSection.style.display = "grid";
+            mapOpen.href = store.mapUrl;
+            mapAddress.textContent = store.address || store.name;
+            mapFrame.src = "https://www.google.com/maps?q=" + encodeURIComponent([store.name, store.address].filter(Boolean).join(" ")) + "&output=embed";
+          }
           if (slug === "maharshwemobile") {
-            supportLinks.insertAdjacentHTML("beforeend", '<a href="https://maharshwe.shop/" target="_blank" rel="noopener noreferrer">Mahar POS</a><a href="https://maharshwe.online/vpn/" target="_blank" rel="noopener noreferrer">Mahar VPN</a><a href="https://www.google.com/maps/place/%E1%80%99%E1%80%9F%E1%80%AC%E1%80%9B%E1%80%BD%E1%80%BE%E1%80%B1+%E1%80%99%E1%80%AD%E1%80%AF%E1%80%9C%E1%80%BA%E1%80%98%E1%80%AD%E1%80%AF%E1%80%84%E1%80%BA%E1%80%B8%E1%80%96%E1%80%AF%E1%80%94%E1%80%BA%E1%80%B8%E1%80%95%E1%80%BC%E1%80%84%E1%80%BA%E1%80%86%E1%80%AD%E1%80%AF%E1%80%84%E1%80%BA/@20.1592452,97.2526962,17z" target="_blank" rel="noopener noreferrer">Shop Location</a><a href="tel:09778394052">09778394052</a><span>ဆီဆိုင်မြို့နယ်၊ ရှမ်းပြည်တောင်ပိုင်း</span>');
+            supportLinks.insertAdjacentHTML("beforeend", '<a href="https://maharshwe.shop/" target="_blank" rel="noopener noreferrer">Mahar POS</a><a href="https://maharshwe.online/vpn/" target="_blank" rel="noopener noreferrer">Mahar VPN</a><a href="tel:09778394052">09778394052</a><span>ဆီဆိုင်မြို့နယ်၊ ရှမ်းပြည်တောင်ပိုင်း</span>');
           }
           method.innerHTML =
             (store.deliveryEnabled

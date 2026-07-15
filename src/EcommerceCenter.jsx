@@ -70,6 +70,7 @@ export default function EcommerceCenter() {
       <label className="wide">Description<textarea value={settings.description || ''} onChange={(e) => setSettings({ ...settings, description: e.target.value })}/></label>
       <label>Contact Phone<input value={settings.contactPhone || ''} onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}/></label>
       <label>Telegram Chat Link<input type="url" value={settings.telegramUrl || ''} onChange={(e) => setSettings({ ...settings, telegramUrl: e.target.value })} placeholder="https://t.me/your_shop"/></label>
+      <label>Shop Google Map Link<input type="url" value={settings.mapUrl || ''} onChange={(e) => setSettings({ ...settings, mapUrl: e.target.value })} placeholder="https://maps.app.goo.gl/..."/></label>
       <label>Delivery Fee<input type="number" min="0" value={settings.deliveryFee || 0} onChange={(e) => setSettings({ ...settings, deliveryFee: Number(e.target.value) })}/></label>
       <label className="ecom-toggle"><input type="checkbox" checked={!!settings.deliveryEnabled} onChange={(e) => setSettings({ ...settings, deliveryEnabled: e.target.checked })}/><span>COD Delivery</span></label>
       <label className="ecom-toggle"><input type="checkbox" checked={!!settings.pickupEnabled} onChange={(e) => setSettings({ ...settings, pickupEnabled: e.target.checked })}/><span>Shop Pickup</span></label>
