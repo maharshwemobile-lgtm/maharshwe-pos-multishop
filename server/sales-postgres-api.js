@@ -22,7 +22,7 @@ const saleCreateSchema = z.object({
   paymentReference: text(180),
   cashReceived: money.optional(),
   payments: z.array(z.object({
-    method: z.enum(['CASH', 'KPAY', 'WAVE_PAY', 'OTHER']).default('OTHER'),
+    method: z.enum(['CASH', 'KPAY', 'WAVE_PAY', 'OTHER', 'CREDIT']).default('OTHER'),
     amount: money,
     reference: text(180),
   })).optional(),
@@ -305,10 +305,11 @@ function attachSalesPostgresApi(app) {
       let paidAmount = 0;
       let cashReceived = 0;
       let change = 0;
+      let creditAmount = 0;
 
       if (usingSplitPayment) {
         for (const row of requestedPayments) {
-          const method = ['CASH', 'KPAY', 'WAVE_PAY', 'OTHER'].includes(row.method) ? row.method : 'OTHER';
+          const method = ['CASH', 'KPAY', 'WAVE_PAY', 'OTHER', 'CREDIT'].includes(row.method) ? row.method : 'OTHER';
           const amount = number(row.amount);
           if (amount <= 0) continue;
           tenderedAmount += amount;
@@ -326,8 +327,10 @@ function attachSalesPostgresApi(app) {
           overpay -= removable;
         }
         paymentRows = paymentRows.filter((row) => row.amount > 0);
-        paidAmount = paymentRows.reduce((sum, row) => sum + row.amount, 0);
-        cashReceived = tenderedAmount;
+        creditAmount = paymentRows.filter((row) => row.method === 'CREDIT').reduce((sum, row) => sum + row.amount, 0);
+        if (creditAmount > 0 && !customer) throw new ApiError(400, 'Customer name or phone is required for split credit sale');
+        paidAmount = paymentRows.filter((row) => row.method !== 'CREDIT').reduce((sum, row) => sum + row.amount, 0);
+        cashReceived = paidAmount;
       } else {
         paidAmount = isCredit ? 0 : total;
         cashReceived = paymentMethod === 'CASH' ? number(input.cashReceived || total) : paidAmount;
@@ -342,7 +345,8 @@ function attachSalesPostgresApi(app) {
         }
       }
 
-      const paymentStatus = isCredit ? 'PENDING' : 'PAID';
+      if (isCredit) creditAmount = total;
+      const paymentStatus = creditAmount > 0 ? (paidAmount > 0 ? 'PARTIAL' : 'PENDING') : 'PAID';
       const invoice = await nextCashierInvoice(
         tx,
         req.auth.shopId,
@@ -417,6 +421,7 @@ function attachSalesPostgresApi(app) {
       }
 
       for (const row of paymentRows) {
+        if (row.method === 'CREDIT') continue;
         await tx.payment.create({
           data: {
             shopId: req.auth.shopId,
@@ -428,10 +433,10 @@ function attachSalesPostgresApi(app) {
           },
         });
       }
-      if (isCredit && customer) {
+      if (creditAmount > 0 && customer) {
         await tx.customer.update({
           where: { id: customer.id },
-          data: { balance: { increment: total } },
+          data: { balance: { increment: creditAmount } },
         });
       }
 
@@ -451,6 +456,7 @@ function attachSalesPostgresApi(app) {
             cashReceived,
             change,
             splitPayment: usingSplitPayment,
+            creditAmount,
             payments: paymentRows.map((row) => ({ method: row.method, amount: row.amount, reference: row.reference })),
             itemCount: itemRows.length,
           },
@@ -483,6 +489,7 @@ function attachSalesPostgresApi(app) {
         cashReceived,
         change,
         paidAmount,
+        creditAmount,
         payments: paymentRows.map((row) => ({ method: row.method, amount: row.amount, reference: row.reference })),
         status: 'Completed',
         stockAlert: {
@@ -510,7 +517,7 @@ function attachSalesPostgresApi(app) {
       data: { source: 'sale', saleId: result.id },
     }), 'sale completed push');
 
-    if (result.paymentMethod === 'CREDIT') {
+    if (Number(result.creditAmount || 0) > 0) {
       queuePush(() => sendPushToShop({
         shopId: req.auth.shopId,
         eventType: 'CUSTOMER_CREDIT_CREATED',
