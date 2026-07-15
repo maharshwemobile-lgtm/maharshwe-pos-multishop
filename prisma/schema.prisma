@@ -85,6 +85,20 @@ enum MoneyFeeMode {
   MANUAL
 }
 
+enum BillerType {
+  TOPUP_CARD
+  ELOAD
+  BILL_PAYMENT
+  OTHER
+}
+
+enum BillerTransactionType {
+  OPENING
+  REFILL
+  SOLD
+  ADJUSTMENT
+}
+
 model Shop {
   id           String   @id @default(uuid()) @db.Uuid
   slug         String   @unique
@@ -105,6 +119,8 @@ model Shop {
   inventoryBalances        InventoryBalance[]
   moneyAccounts            MoneyAccount[]
   moneyServiceTransactions MoneyServiceTransaction[]
+  billers                  Biller[]
+  billerTransactions       BillerTransaction[]
   payments                 Payment[]
   productVariants          ProductVariant[]
   products                 Product[]
@@ -119,6 +135,10 @@ model Shop {
   subscriptions            Subscription[]
   users                    User[]
   appNotifications         AppNotification[]
+  ecommerceSettings        EcommerceStoreSettings?
+  ecommerceProductDetails  EcommerceProductDetail[]
+  ecommerceProductImages   EcommerceProductImage[]
+  ecommerceOrders          EcommerceOrder[]
 
   @@map("shops")
 }
@@ -161,17 +181,18 @@ model User {
   createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  approvedSaleItems        SaleItem[]                 @relation("SaleItemApprover")
-  appNotifications         AppNotification[]          @relation("AppNotificationUser")
-  auditLogs                AuditLog[]                 @relation("AuditLogUser")
-  moneyServiceTransactions MoneyServiceTransaction[]  @relation("MoneyServiceUser")
-  pushTokens               UserPushToken[]            @relation("UserPushTokens")
-  repairPayments           RepairPayment[]            @relation("RepairPaymentReceiver")
-  repairStatusChanges      RepairStatusHistory[]      @relation("RepairStatusChanger")
-  repairs                  Repair[]                   @relation("RepairTechnician")
-  sales                    Sale[]                     @relation("SaleStaff")
-  shop                     Shop?                      @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  stockMovements           StockMovement[]            @relation("StockMovementUser")
+  approvedSaleItems        SaleItem[]                @relation("SaleItemApprover")
+  appNotifications         AppNotification[]         @relation("AppNotificationUser")
+  auditLogs                AuditLog[]                @relation("AuditLogUser")
+  moneyServiceTransactions MoneyServiceTransaction[] @relation("MoneyServiceUser")
+  billerTransactions       BillerTransaction[]       @relation("BillerTransactionStaff")
+  pushTokens               UserPushToken[]           @relation("UserPushTokens")
+  repairPayments           RepairPayment[]           @relation("RepairPaymentReceiver")
+  repairStatusChanges      RepairStatusHistory[]     @relation("RepairStatusChanger")
+  repairs                  Repair[]                  @relation("RepairTechnician")
+  sales                    Sale[]                    @relation("SaleStaff")
+  shop                     Shop?                     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  stockMovements           StockMovement[]           @relation("StockMovementUser")
 
   @@unique([shopId, normalizedUsername])
   @@unique([authProvider, providerId])
@@ -236,21 +257,111 @@ model Product {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  category Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  shop     Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  variants ProductVariant[]
+  category        Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  shop            Shop                    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  variants        ProductVariant[]
+  ecommerceDetail EcommerceProductDetail?
+  ecommerceImages EcommerceProductImage[]
 
   @@index([shopId, name])
   @@index([shopId, active])
   @@map("products")
 }
 
+model EcommerceStoreSettings {
+  id              String   @id @default(uuid()) @db.Uuid
+  shopId          String   @unique @map("shop_id") @db.Uuid
+  enabled         Boolean  @default(false)
+  storeName       String?  @map("store_name")
+  description     String?
+  contactPhone    String?  @map("contact_phone")
+  deliveryEnabled Boolean  @default(true) @map("delivery_enabled")
+  pickupEnabled   Boolean  @default(true) @map("pickup_enabled")
+  deliveryFee     Decimal  @default(0) @map("delivery_fee") @db.Decimal(14, 2)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("ecommerce_store_settings")
+}
+
+model EcommerceProductDetail {
+  id          String   @id @default(uuid()) @db.Uuid
+  shopId      String   @map("shop_id") @db.Uuid
+  productId   String   @unique @map("product_id") @db.Uuid
+  visible     Boolean  @default(false)
+  description String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, visible])
+  @@map("ecommerce_product_details")
+}
+
+model EcommerceProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  shopId    String   @map("shop_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  url       String
+  source    String   @default("UPLOAD")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, productId, sortOrder])
+  @@map("ecommerce_product_images")
+}
+
+model EcommerceOrder {
+  id                String               @id @default(uuid()) @db.Uuid
+  shopId            String               @map("shop_id") @db.Uuid
+  orderNumber       String               @map("order_number")
+  customerName      String               @map("customer_name")
+  customerPhone     String               @map("customer_phone")
+  deliveryAddress   String?              @map("delivery_address")
+  fulfillmentMethod String               @map("fulfillment_method")
+  status            String               @default("PENDING")
+  subtotal          Decimal              @default(0) @db.Decimal(14, 2)
+  deliveryFee       Decimal              @default(0) @map("delivery_fee") @db.Decimal(14, 2)
+  total             Decimal              @default(0) @db.Decimal(14, 2)
+  note              String?
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shop              Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  items             EcommerceOrderItem[]
+
+  @@unique([shopId, orderNumber])
+  @@index([shopId, status, createdAt])
+  @@map("ecommerce_orders")
+}
+
+model EcommerceOrderItem {
+  id                  String         @id @default(uuid()) @db.Uuid
+  orderId             String         @map("order_id") @db.Uuid
+  productVariantId    String         @map("product_variant_id") @db.Uuid
+  productNameSnapshot String         @map("product_name_snapshot")
+  variantNameSnapshot String?        @map("variant_name_snapshot")
+  unitPrice           Decimal        @map("unit_price") @db.Decimal(14, 2)
+  quantity            Int
+  lineTotal           Decimal        @map("line_total") @db.Decimal(14, 2)
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  order               EcommerceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productVariantId])
+  @@map("ecommerce_order_items")
+}
+
 model ProductVariant {
-  id                   String   @id @default(uuid()) @db.Uuid
-  shopId               String   @map("shop_id") @db.Uuid
-  productId            String   @map("product_id") @db.Uuid
-  categoryId           String?  @map("category_id") @db.Uuid
-  variantName          String   @map("variant_name")
+  id                   String    @id @default(uuid()) @db.Uuid
+  shopId               String    @map("shop_id") @db.Uuid
+  productId            String    @map("product_id") @db.Uuid
+  categoryId           String?   @map("category_id") @db.Uuid
+  variantName          String    @map("variant_name")
   sku                  String?
   barcode              String?
   unit                 String?
@@ -258,19 +369,19 @@ model ProductVariant {
   storage              String?
   color                String?
   expiryDate           DateTime? @map("expiry_date") @db.Date
-  costPrice            Decimal  @default(0) @map("cost_price") @db.Decimal(14, 2)
-  standardSellingPrice Decimal  @default(0) @map("standard_selling_price") @db.Decimal(14, 2)
-  wholesalePrice       Decimal  @default(0) @map("wholesale_price") @db.Decimal(14, 2)
-  minimumSellingPrice  Decimal  @default(0) @map("minimum_selling_price") @db.Decimal(14, 2)
-  active               Boolean  @default(true)
-  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  costPrice            Decimal   @default(0) @map("cost_price") @db.Decimal(14, 2)
+  standardSellingPrice Decimal   @default(0) @map("standard_selling_price") @db.Decimal(14, 2)
+  wholesalePrice       Decimal   @default(0) @map("wholesale_price") @db.Decimal(14, 2)
+  minimumSellingPrice  Decimal   @default(0) @map("minimum_selling_price") @db.Decimal(14, 2)
+  active               Boolean   @default(true)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  category         Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   inventoryBalance InventoryBalance?
-  product          Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   saleItems        SaleItem[]
-  shop             Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop             Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
   stockMovements   StockMovement[]
 
   @@unique([shopId, sku])
@@ -371,24 +482,24 @@ model Sale {
 }
 
 model SaleItem {
-  id                    String   @id @default(uuid()) @db.Uuid
-  shopId                String   @map("shop_id") @db.Uuid
-  saleId                String   @map("sale_id") @db.Uuid
-  productVariantId      String?  @map("product_variant_id") @db.Uuid
-  productNameSnapshot   String   @map("product_name_snapshot")
-  variantNameSnapshot   String?  @map("variant_name_snapshot")
-  categoryNameSnapshot  String?  @map("category_name_snapshot")
-  imeiSerial            String?  @map("imei_serial")
-  costPrice             Decimal  @default(0) @map("cost_price") @db.Decimal(14, 2)
-  standardPrice         Decimal  @default(0) @map("standard_price") @db.Decimal(14, 2)
-  minimumPrice          Decimal  @default(0) @map("minimum_price") @db.Decimal(14, 2)
-  actualSoldPrice       Decimal  @default(0) @map("actual_sold_price") @db.Decimal(14, 2)
-  quantity              Int      @default(1)
-  discount              Decimal  @default(0) @db.Decimal(14, 2)
-  profit                Decimal  @default(0) @db.Decimal(14, 2)
-  requiresApproval      Boolean  @default(false) @map("requires_approval")
-  approvedById          String?  @map("approved_by_id") @db.Uuid
-  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                   String   @id @default(uuid()) @db.Uuid
+  shopId               String   @map("shop_id") @db.Uuid
+  saleId               String   @map("sale_id") @db.Uuid
+  productVariantId     String?  @map("product_variant_id") @db.Uuid
+  productNameSnapshot  String   @map("product_name_snapshot")
+  variantNameSnapshot  String?  @map("variant_name_snapshot")
+  categoryNameSnapshot String?  @map("category_name_snapshot")
+  imeiSerial           String?  @map("imei_serial")
+  costPrice            Decimal  @default(0) @map("cost_price") @db.Decimal(14, 2)
+  standardPrice        Decimal  @default(0) @map("standard_price") @db.Decimal(14, 2)
+  minimumPrice         Decimal  @default(0) @map("minimum_price") @db.Decimal(14, 2)
+  actualSoldPrice      Decimal  @default(0) @map("actual_sold_price") @db.Decimal(14, 2)
+  quantity             Int      @default(1)
+  discount             Decimal  @default(0) @db.Decimal(14, 2)
+  profit               Decimal  @default(0) @db.Decimal(14, 2)
+  requiresApproval     Boolean  @default(false) @map("requires_approval")
+  approvedById         String?  @map("approved_by_id") @db.Uuid
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   approvedBy     User?           @relation("SaleItemApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   productVariant ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
@@ -442,11 +553,11 @@ model Repair {
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  customer      Customer?              @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customer      Customer?             @relation(fields: [customerId], references: [id], onDelete: SetNull)
   payments      RepairPayment[]
-  shop          Shop                   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shop          Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
   statusHistory RepairStatusHistory[]
-  technician    User?                  @relation("RepairTechnician", fields: [technicianId], references: [id], onDelete: SetNull)
+  technician    User?                 @relation("RepairTechnician", fields: [technicianId], references: [id], onDelete: SetNull)
 
   @@unique([shopId, repairNumber])
   @@index([shopId, status, receivedAt])
@@ -501,6 +612,7 @@ model MoneyAccount {
   updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   serviceTransactions MoneyServiceTransaction[]
+  billerTransactions  BillerTransaction[]
   shop                Shop                      @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@unique([shopId, name])
@@ -509,26 +621,26 @@ model MoneyAccount {
 }
 
 model MoneyServiceTransaction {
-  id                    String            @id @default(uuid()) @db.Uuid
-  shopId                String            @map("shop_id") @db.Uuid
-  accountId             String?           @map("account_id") @db.Uuid
-  type                  MoneyServiceType
-  feeMode               MoneyFeeMode      @default(PROPORTIONAL) @map("fee_mode")
-  customerAmount        Decimal           @default(0) @map("customer_amount") @db.Decimal(14, 2)
-  feeAmount             Decimal           @default(0) @map("fee_amount") @db.Decimal(14, 2)
-  customerPaysAmount    Decimal           @default(0) @map("customer_pays_amount") @db.Decimal(14, 2)
+  id                     String           @id @default(uuid()) @db.Uuid
+  shopId                 String           @map("shop_id") @db.Uuid
+  accountId              String?          @map("account_id") @db.Uuid
+  type                   MoneyServiceType
+  feeMode                MoneyFeeMode     @default(PROPORTIONAL) @map("fee_mode")
+  customerAmount         Decimal          @default(0) @map("customer_amount") @db.Decimal(14, 2)
+  feeAmount              Decimal          @default(0) @map("fee_amount") @db.Decimal(14, 2)
+  customerPaysAmount     Decimal          @default(0) @map("customer_pays_amount") @db.Decimal(14, 2)
   customerReceivesAmount Decimal          @default(0) @map("customer_receives_amount") @db.Decimal(14, 2)
-  cashChange            Decimal           @default(0) @map("cash_change") @db.Decimal(14, 2)
-  walletChange          Decimal           @default(0) @map("wallet_change") @db.Decimal(14, 2)
-  serviceProfit         Decimal           @default(0) @map("service_profit") @db.Decimal(14, 2)
-  beforeCashBalance     Decimal           @default(0) @map("before_cash_balance") @db.Decimal(14, 2)
-  afterCashBalance      Decimal           @default(0) @map("after_cash_balance") @db.Decimal(14, 2)
-  beforeWalletBalance   Decimal           @default(0) @map("before_wallet_balance") @db.Decimal(14, 2)
-  afterWalletBalance    Decimal           @default(0) @map("after_wallet_balance") @db.Decimal(14, 2)
-  reversalOfId          String?           @map("reversal_of_id") @db.Uuid
-  userId                String?           @map("user_id") @db.Uuid
-  note                  String?
-  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  cashChange             Decimal          @default(0) @map("cash_change") @db.Decimal(14, 2)
+  walletChange           Decimal          @default(0) @map("wallet_change") @db.Decimal(14, 2)
+  serviceProfit          Decimal          @default(0) @map("service_profit") @db.Decimal(14, 2)
+  beforeCashBalance      Decimal          @default(0) @map("before_cash_balance") @db.Decimal(14, 2)
+  afterCashBalance       Decimal          @default(0) @map("after_cash_balance") @db.Decimal(14, 2)
+  beforeWalletBalance    Decimal          @default(0) @map("before_wallet_balance") @db.Decimal(14, 2)
+  afterWalletBalance     Decimal          @default(0) @map("after_wallet_balance") @db.Decimal(14, 2)
+  reversalOfId           String?          @map("reversal_of_id") @db.Uuid
+  userId                 String?          @map("user_id") @db.Uuid
+  note                   String?
+  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
 
   account    MoneyAccount?             @relation(fields: [accountId], references: [id], onDelete: SetNull)
   reversalOf MoneyServiceTransaction?  @relation("MoneyServiceReversal", fields: [reversalOfId], references: [id], onDelete: SetNull)
@@ -539,6 +651,65 @@ model MoneyServiceTransaction {
   @@index([shopId, type, createdAt])
   @@index([shopId, userId, createdAt])
   @@map("money_service_transactions")
+}
+
+model Biller {
+  id                String     @id @default(uuid()) @db.Uuid
+  shopId            String     @map("shop_id") @db.Uuid
+  branchId          String?    @map("branch_id") @db.Uuid
+  name              String
+  type              BillerType
+  openingBalance    Decimal    @default(0) @map("opening_balance") @db.Decimal(14, 2)
+  currentBalance    Decimal    @default(0) @map("current_balance") @db.Decimal(14, 2)
+  saleAdjustMode    String     @default("NONE") @map("sale_adjust_mode")
+  saleAdjustPercent Decimal    @default(0) @map("sale_adjust_percent") @db.Decimal(8, 4)
+  isActive          Boolean    @default(true) @map("is_active")
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  shop         Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  transactions BillerTransaction[]
+
+  @@unique([shopId, branchId, name])
+  @@index([shopId, isActive])
+  @@index([shopId, branchId])
+  @@map("billers")
+}
+
+model BillerTransaction {
+  id                   String                @id @default(uuid()) @db.Uuid
+  shopId               String                @map("shop_id") @db.Uuid
+  branchId             String?               @map("branch_id") @db.Uuid
+  billerId             String                @map("biller_id") @db.Uuid
+  transactionType      BillerTransactionType @map("transaction_type")
+  amount               Decimal               @db.Decimal(14, 2)
+  balanceEffectAmount  Decimal               @default(0) @map("balance_effect_amount") @db.Decimal(14, 2)
+  balanceAdjustMode    String?               @map("balance_adjust_mode")
+  balanceAdjustPercent Decimal               @default(0) @map("balance_adjust_percent") @db.Decimal(8, 4)
+  costAmount           Decimal?              @map("cost_amount") @db.Decimal(14, 2)
+  profitAmount         Decimal?              @map("profit_amount") @db.Decimal(14, 2)
+  customerPhone        String?               @map("customer_phone")
+  paymentMethod        String?               @map("payment_method")
+  paymentAccountId     String?               @map("payment_account_id") @db.Uuid
+  paymentStatus        PaymentStatus         @default(PAID) @map("payment_status")
+  paidAmount           Decimal               @default(0) @map("paid_amount") @db.Decimal(14, 2)
+  dueAmount            Decimal               @default(0) @map("due_amount") @db.Decimal(14, 2)
+  dueDate              DateTime?             @map("due_date") @db.Date
+  staffId              String?               @map("staff_id") @db.Uuid
+  note                 String?
+  transactionDate      DateTime              @default(now()) @map("transaction_date") @db.Timestamptz(6)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  biller         Biller        @relation(fields: [billerId], references: [id], onDelete: Cascade)
+  shop           Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  paymentAccount MoneyAccount? @relation(fields: [paymentAccountId], references: [id], onDelete: SetNull)
+  staff          User?         @relation("BillerTransactionStaff", fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, branchId, transactionDate])
+  @@index([shopId, billerId, transactionDate])
+  @@index([shopId, transactionType, transactionDate])
+  @@map("biller_transactions")
 }
 
 model DailyClosing {
@@ -582,17 +753,17 @@ model AuditLog {
 }
 
 model AppNotification {
-  id        String   @id @default(uuid()) @db.Uuid
-  shopId    String   @map("shop_id") @db.Uuid
-  userId    String?  @map("user_id") @db.Uuid
-  eventType String   @map("event_type")
+  id        String    @id @default(uuid()) @db.Uuid
+  shopId    String    @map("shop_id") @db.Uuid
+  userId    String?   @map("user_id") @db.Uuid
+  eventType String    @map("event_type")
   title     String
   body      String
   url       String?
-  data      Json     @default("{}")
-  isRead    Boolean  @default(false) @map("is_read")
+  data      Json      @default("{}")
+  isRead    Boolean   @default(false) @map("is_read")
   readAt    DateTime? @map("read_at") @db.Timestamptz(6)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   shop Shop  @relation(fields: [shopId], references: [id], onDelete: Cascade)
   user User? @relation("AppNotificationUser", fields: [userId], references: [id], onDelete: Cascade)
@@ -684,23 +855,23 @@ model AdminAdsHistory {
 }
 
 model AdminRenewalHistory {
-  id             String   @id @default(uuid()) @db.Uuid
-  productSlug    String   @default("mahar_pos_web") @map("product_slug")
-  shopId         String   @map("shop_id") @db.Uuid
-  tenantId       String?  @map("tenant_id")
-  shopName       String?  @map("shop_name")
-  subscriptionId String?  @map("subscription_id") @db.Uuid
+  id             String    @id @default(uuid()) @db.Uuid
+  productSlug    String    @default("mahar_pos_web") @map("product_slug")
+  shopId         String    @map("shop_id") @db.Uuid
+  tenantId       String?   @map("tenant_id")
+  shopName       String?   @map("shop_name")
+  subscriptionId String?   @map("subscription_id") @db.Uuid
   plan           String?
   months         Int?
-  customDays     Int?     @map("custom_days")
-  durationLabel  String?  @map("duration_label")
+  customDays     Int?      @map("custom_days")
+  durationLabel  String?   @map("duration_label")
   previousEndsAt DateTime? @map("previous_ends_at") @db.Timestamptz(6)
   startsAt       DateTime? @map("starts_at") @db.Timestamptz(6)
   newEndsAt      DateTime  @map("new_ends_at") @db.Timestamptz(6)
   note           String?
-  renewedBy      String?  @map("renewed_by") @db.Uuid
-  metadataJson   Json?    @map("metadata_json")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  renewedBy      String?   @map("renewed_by") @db.Uuid
+  metadataJson   Json?     @map("metadata_json")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([productSlug, createdAt])
   @@index([shopId, createdAt])

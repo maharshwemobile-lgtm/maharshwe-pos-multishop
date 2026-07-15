@@ -16,6 +16,8 @@ const attachAdminIntegrationsApi = require('./admin-integrations-api');
 const attachGrandAdminCentralControlApi = require('./grand-admin-central-control-api');
 const attachGrandAdminBackendStep1Api = require('./grand-admin-backend-step1-api');
 const attachGrandAdminBackendStep2Api = require('./grand-admin-backend-step2-api');
+const attachPublicLandingApi = require('./public-landing-api');
+const attachEcommerceStorefrontApi = require('./ecommerce-storefront-api');
 const attachShopAdminBranchControlApi = require('./shop-admin-branch-control-api');
 const attachShopAdminSettingsLock = require('./shop-admin-settings-lock');
 const attachTenantIntegrityApi = require('./tenant-integrity-api');
@@ -54,6 +56,8 @@ const attachProjectSettingsPreferencesWrite = require('./project-settings-prefer
 const attachProjectSettingsBusinessWrite = require('./project-settings-business-write');
 const attachProjectSettingsAppearanceWrite = require('./project-settings-appearance-write');
 const attachProjectFunctionAccessMiddleware = require('./project-function-access-middleware');
+const attachAgentPosApi = require('./agent-pos-api');
+const { attachTelegramAutomationApi, startTelegramAutomationRunner } = require('./telegram-automation-api');
 const attachHardDbApi = require('./hard-db-api');
 const attachProductImportApi = require('./product-import-api');
 const attachProductCrudApi = require('./product-crud-api');
@@ -92,6 +96,7 @@ const isPostgreSql = process.env.DATABASE_URL?.startsWith('postgresql://') || pr
 const healthHandler = (_req, res) => res.json({ ok: true, server: 'mahar-pos-full-api', database: isPostgreSql ? 'postgresql-configured' : 'legacy-sqlite-configured' });
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
+attachPublicLandingApi(app);
 
 if (isPostgreSql) {
   attachPostgreSqlSettingsApiAliasV23(app);
@@ -101,8 +106,11 @@ if (isPostgreSql) {
   attachProjectSettingsBusinessWrite(app);
   attachProjectSettingsAppearanceWrite(app);
   attachProjectFunctionAccessMiddleware(app);
+  attachEcommerceStorefrontApi(app);
   attachGoogleSheetSyncV23Extension(app);
   attachGoogleSheetSyncApi(app);
+  attachAgentPosApi(app);
+  attachTelegramAutomationApi(app);
   attachFinanceSettingsV23Api(app);
   attachMoneyServiceV23Guards(app);
   attachMoneyServiceRatesV23Api(app);
@@ -154,6 +162,7 @@ async function start() {
     if (isPostgreSql) {
       startRepairOutboxRunner();
       startGoogleSheetSyncRunner();
+      startTelegramAutomationRunner();
     }
   });
 }

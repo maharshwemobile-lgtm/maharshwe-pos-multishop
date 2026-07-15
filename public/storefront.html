@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="my">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#059669" />
+    <title>Online Shop · Mahar POS</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f7f9fc;
+        color: #14213d;
+        font-family: Inter, "Noto Sans Myanmar", system-ui, sans-serif;
+      }
+      .wrap {
+        width: min(1160px, calc(100% - 28px));
+        margin: auto;
+      }
+      .top {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: #ffffffeb;
+        backdrop-filter: blur(15px);
+        border-bottom: 1px solid #e8edf4;
+      }
+      .top .wrap {
+        height: 68px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+      .logo {
+        width: 42px;
+        height: 42px;
+        border-radius: 11px;
+        object-fit: cover;
+        background: #eaf8f2;
+      }
+      .brand {
+        min-width: 0;
+      }
+      .brand b,
+      .brand small {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .brand small {
+        color: #718096;
+        font-size: 11px;
+      }
+      .cartbtn {
+        margin-left: auto;
+        border: 0;
+        border-radius: 11px;
+        background: #059669;
+        color: #fff;
+        padding: 10px 13px;
+        font-weight: 800;
+      }
+      .hero {
+        padding: 35px 0 22px;
+        background: linear-gradient(135deg, #ecfdf5, #f8fafc 55%, #fff7ed);
+      }
+      .hero h1 {
+        margin: 0 0 8px;
+        font-size: clamp(25px, 5vw, 42px);
+      }
+      .hero p {
+        max-width: 680px;
+        margin: 0;
+        color: #64748b;
+      }
+      .tools {
+        display: grid;
+        grid-template-columns:
+          minmax(180px, 1fr) repeat(3, minmax(120px, 180px))
+          auto;
+        gap: 8px;
+        margin: 22px 0 16px;
+      }
+      .tools input,
+      .tools select {
+        min-width: 0;
+        border: 1px solid #d8e0ea;
+        border-radius: 11px;
+        padding: 12px 14px;
+        background: #fff;
+      }
+      .tools button {
+        border: 0;
+        border-radius: 11px;
+        padding: 0 15px;
+        background: #14213d;
+        color: #fff;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        padding-bottom: 55px;
+      }
+      .card {
+        overflow: hidden;
+        border: 1px solid #e4eaf1;
+        border-radius: 15px;
+        background: #fff;
+        box-shadow: 0 8px 24px #0f172a08;
+      }
+      .photo {
+        aspect-ratio: 4 / 3;
+        background: #edf2f7;
+        position: relative;
+      }
+      .photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        padding: 8px;
+      }
+      .stock {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        border-radius: 999px;
+        padding: 4px 7px;
+        background: #ffffffea;
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .body {
+        padding: 12px;
+      }
+      .cat {
+        font-size: 10px;
+        color: #059669;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .body h3 {
+        font-size: 14px;
+        margin: 5px 0 6px;
+        line-height: 1.4;
+      }
+      .desc {
+        height: 34px;
+        overflow: hidden;
+        color: #718096;
+        font-size: 11px;
+      }
+      .price {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 11px;
+      }
+      .price b {
+        font-size: 15px;
+      }
+      .price button {
+        border: 0;
+        border-radius: 9px;
+        padding: 8px 10px;
+        background: #059669;
+        color: #fff;
+        font-weight: 800;
+      }
+      .empty {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 60px;
+        color: #718096;
+      }
+      .shade {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        background: #0f172a99;
+      }
+      .shade.open {
+        display: block;
+      }
+      .drawer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: min(440px, 100%);
+        height: 100%;
+        overflow: auto;
+        background: #fff;
+        padding: 20px;
+      }
+      .drawer-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .drawer-head button {
+        border: 0;
+        background: #edf2f7;
+        border-radius: 9px;
+        padding: 8px 11px;
+      }
+      .line {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        padding: 12px 0;
+        border-bottom: 1px solid #edf2f7;
+      }
+      .line small {
+        display: block;
+        color: #718096;
+      }
+      .line button {
+        border: 0;
+        background: none;
+        color: #dc2626;
+      }
+      .total {
+        display: flex;
+        justify-content: space-between;
+        padding: 16px 0;
+        font-size: 18px;
+      }
+      .checkout {
+        display: grid;
+        gap: 10px;
+      }
+      .checkout input,
+      .checkout textarea,
+      .checkout select {
+        width: 100%;
+        border: 1px solid #d8e0ea;
+        border-radius: 10px;
+        padding: 11px;
+      }
+      .checkout textarea {
+        min-height: 78px;
+      }
+      .checkout > button {
+        border: 0;
+        border-radius: 11px;
+        padding: 12px;
+        background: #059669;
+        color: #fff;
+        font-weight: 800;
+      }
+      .notice {
+        padding: 10px;
+        border-radius: 9px;
+        background: #ecfdf5;
+        color: #047857;
+        font-size: 12px;
+      }
+      .error {
+        background: #fef2f2;
+        color: #b91c1c;
+      }
+      @media (max-width: 900px) {
+        .tools {
+          grid-template-columns: 1fr 1fr;
+        }
+        .tools button {
+          min-height: 42px;
+        }
+        .grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 650px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 9px;
+        }
+        .wrap {
+          width: min(100% - 18px, 1160px);
+        }
+        .hero {
+          padding-top: 25px;
+        }
+        .body {
+          padding: 9px;
+        }
+        .desc {
+          display: none;
+        }
+        .price {
+          align-items: flex-end;
+          gap: 5px;
+        }
+        .price b {
+          font-size: 12px;
+        }
+        .price button {
+          padding: 7px 8px;
+          font-size: 11px;
+        }
+      }
+      @media (max-width: 360px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <img id="logo" class="logo" alt="" />
+        <div class="brand">
+          <b id="shopName">Online Shop</b
+          ><small id="shopMeta">Powered by Mahar POS</small>
+        </div>
+        <button class="cartbtn" onclick="openCart()">
+          Cart · <span id="cartCount">0</span>
+        </button>
+      </div>
+    </header>
+    <section class="hero">
+      <div class="wrap">
+        <h1 id="heroName">Online Shop</h1>
+        <p id="heroDesc">
+          ပစ္စည်းများကို Online မှ ရွေးချယ်ပြီး COD သို့မဟုတ်
+          ဆိုင်တွင်လာယူနိုင်ပါသည်။
+        </p>
+        <div class="tools">
+          <input id="search" placeholder="ပစ္စည်းအမည် ရှာရန်" />
+          <select id="brandFilter">
+            <option value="">All Brands</option>
+          </select>
+          <select id="categoryFilter">
+            <option value="">All Categories</option>
+          </select>
+          <select id="stockFilter">
+            <option value="">All Stock Levels</option>
+            <option value="IN_STOCK">In Stock</option>
+            <option value="LOW_STOCK">Low Stock</option>
+            <option value="OUT_OF_STOCK">Out of Stock</option>
+          </select>
+          <button onclick="loadProducts()">Search</button>
+        </div>
+      </div>
+    </section>
+    <main class="wrap">
+      <div id="message"></div>
+      <div id="grid" class="grid">
+        <div class="empty">Loading products...</div>
+      </div>
+    </main>
+    <div
+      id="shade"
+      class="shade"
+      onclick="if (event.target === this) closeCart();"
+    >
+      <aside class="drawer">
+        <div class="drawer-head">
+          <h2>Shopping Cart</h2>
+          <button onclick="closeCart()">Close</button>
+        </div>
+        <div id="cartLines"></div>
+        <div class="total"><span>Total</span><b id="total">0 MMK</b></div>
+        <form class="checkout" onsubmit="submitOrder(event)">
+          <input id="customerName" required placeholder="အမည်" /><input
+            id="customerPhone"
+            required
+            placeholder="ဖုန်းနံပါတ်"
+          /><select id="method" onchange="toggleAddress()">
+            <option value="COD">COD Delivery</option>
+            <option value="PICKUP">ဆိုင်တွင်လာယူမည်</option></select
+          ><textarea
+            id="address"
+            required
+            placeholder="ပို့ဆောင်ရမည့်လိပ်စာ"
+          ></textarea
+          ><textarea id="note" placeholder="မှတ်ချက် (Optional)"></textarea
+          ><button id="orderBtn">Order တင်မည်</button>
+          <div id="orderMessage"></div>
+        </form>
+      </aside>
+    </div>
+    <script>
+      const slug = decodeURIComponent(
+        location.pathname.match(/\/shop\/([^/?#]+)/)?.[1] ||
+          new URLSearchParams(location.search).get("shop") ||
+          "",
+      );
+      let store = null,
+        products = [],
+        cart = [];
+      const api = (p, o = {}) =>
+        fetch("/api" + p, {
+          headers: { "Content-Type": "application/json" },
+          ...o,
+        }).then(async (r) => {
+          const d = await r.json();
+          if (!r.ok) throw Error(d.message || "Request failed");
+          return d;
+        });
+      const mmk = (n) => Number(n || 0).toLocaleString() + " MMK";
+      async function init() {
+        try {
+          const d = await api("/public/store/" + encodeURIComponent(slug));
+          store = d.store;
+          shopName.textContent = heroName.textContent = store.name;
+          heroDesc.textContent = store.description || heroDesc.textContent;
+          shopMeta.textContent =
+            [store.phone, store.address].filter(Boolean).join(" · ") ||
+            "Powered by Mahar POS";
+          if (store.logoUrl) {
+            logo.src = store.logoUrl;
+          } else logo.style.visibility = "hidden";
+          method.innerHTML =
+            (store.deliveryEnabled
+              ? '<option value="COD">COD Delivery</option>'
+              : "") +
+            (store.pickupEnabled
+              ? '<option value="PICKUP">ဆိုင်တွင်လာယူမည်</option>'
+              : "");
+          toggleAddress();
+          await loadProducts();
+        } catch (e) {
+          grid.innerHTML = '<div class="empty">' + esc(e.message) + "</div>";
+        }
+      }
+      async function loadProducts() {
+        try {
+          const d = await api(
+            "/public/store/" +
+              encodeURIComponent(slug) +
+              "/products?search=" +
+              encodeURIComponent(search.value) +
+              "&brand=" +
+              encodeURIComponent(brandFilter.value) +
+              "&categoryId=" +
+              encodeURIComponent(categoryFilter.value) +
+              "&stockLevel=" +
+              encodeURIComponent(stockFilter.value),
+          );
+          products = d.products || [];
+          const selectedBrand = brandFilter.value;
+          const selectedCategory = categoryFilter.value;
+          brandFilter.innerHTML =
+            '<option value="">All Brands</option>' +
+            (d.brands || [])
+              .map(
+                (brand) =>
+                  `<option value="${esc(brand)}">${esc(brand)}</option>`,
+              )
+              .join("");
+          categoryFilter.innerHTML =
+            '<option value="">All Categories</option>' +
+            (d.categories || [])
+              .map(
+                (category) =>
+                  `<option value="${esc(category.id)}">${esc(category.name)}</option>`,
+              )
+              .join("");
+          brandFilter.value = selectedBrand;
+          categoryFilter.value = selectedCategory;
+          renderProducts();
+        } catch (e) {
+          grid.innerHTML = '<div class="empty">' + esc(e.message) + "</div>";
+        }
+      }
+      function renderProducts() {
+        grid.innerHTML =
+          products
+            .map((p, i) => {
+              const v = p.variants?.find(
+                  (variant) =>
+                    Number(variant.inventoryBalance?.quantity || 0) > 0,
+                ),
+                img =
+                  p.ecommerceImages?.[0]?.url || "/default-product-image.svg",
+                stock =
+                  p.variants?.reduce(
+                    (s, x) => s + Number(x.inventoryBalance?.quantity || 0),
+                    0,
+                  ) || 0;
+              const price = Number(v?.standardSellingPrice || 0);
+              return `<article class="card"><div class="photo"><img src="${esc(img)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='/default-product-image.svg'">${stock > 0 ? `<span class="stock">${stock} in stock</span>` : ""}</div><div class="body"><span class="cat">${esc(p.category?.name || "Product")}</span><h3>${esc(p.name)}</h3><div class="desc">${esc(p.ecommerceDetail?.description || "")}</div><div class="price">${price > 0 ? `<b>${mmk(price)}</b>` : "<span></span>"}<button ${!v ? "disabled" : ""} onclick="add(${i})">Add</button></div></div></article>`;
+            })
+            .join("") ||
+          '<div class="empty">Online မှာပြထားသော Product မရှိသေးပါ။</div>';
+      }
+      function add(i) {
+        const p = products[i],
+          v = p.variants?.find(
+            (variant) => Number(variant.inventoryBalance?.quantity || 0) > 0,
+          );
+        if (!v) return;
+        const found = cart.find((x) => x.variantId === v.id);
+        if (found) found.quantity++;
+        else
+          cart.push({
+            variantId: v.id,
+            name: p.name,
+            variant: v.variantName,
+            price: Number(v.standardSellingPrice),
+            quantity: 1,
+          });
+        renderCart();
+      }
+      function renderCart() {
+        cartCount.textContent = cart.reduce((s, x) => s + x.quantity, 0);
+        cartLines.innerHTML =
+          cart
+            .map(
+              (x, i) =>
+                `<div class="line"><span><b>${esc(x.name)}</b><small>${esc(x.variant || "")} · ${x.quantity} × ${mmk(x.price)}</small></span><button onclick="removeLine(${i})">Remove</button></div>`,
+            )
+            .join("") || "<p>Cart ထဲတွင် Product မရှိသေးပါ။</p>";
+        total.textContent = mmk(
+          cart.reduce((s, x) => s + x.price * x.quantity, 0) +
+            (method.value === "COD" ? Number(store?.deliveryFee || 0) : 0),
+        );
+      }
+      function removeLine(i) {
+        cart.splice(i, 1);
+        renderCart();
+      }
+      function openCart() {
+        shade.classList.add("open");
+        renderCart();
+      }
+      function closeCart() {
+        shade.classList.remove("open");
+      }
+      function toggleAddress() {
+        address.hidden = method.value !== "COD";
+        address.required = method.value === "COD";
+        renderCart();
+      }
+      async function submitOrder(e) {
+        e.preventDefault();
+        if (!cart.length) return showOrder("Cart ထဲတွင် Product ထည့်ပါ။", true);
+        orderBtn.disabled = true;
+        try {
+          const d = await api(
+            "/public/store/" + encodeURIComponent(slug) + "/orders",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                customerName: customerName.value,
+                customerPhone: customerPhone.value,
+                deliveryAddress: address.value,
+                fulfillmentMethod: method.value,
+                note: note.value,
+                items: cart.map((x) => ({
+                  variantId: x.variantId,
+                  quantity: x.quantity,
+                })),
+              }),
+            },
+          );
+          cart = [];
+          renderCart();
+          showOrder(
+            "Order အောင်မြင်ပါသည်။ Order No: " + d.order.orderNumber,
+            false,
+          );
+        } catch (e) {
+          showOrder(e.message, true);
+        } finally {
+          orderBtn.disabled = false;
+        }
+      }
+      function showOrder(t, bad) {
+        orderMessage.className = "notice" + (bad ? " error" : "");
+        orderMessage.textContent = t;
+      }
+      function esc(v) {
+        return String(v || "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+      search.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") loadProducts();
+      });
+      [brandFilter, categoryFilter, stockFilter].forEach((filter) =>
+        filter.addEventListener("change", loadProducts),
+      );
+      init();
+    </script>
+  </body>
+</html>
