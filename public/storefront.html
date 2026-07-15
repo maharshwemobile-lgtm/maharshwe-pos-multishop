@@ -202,6 +202,51 @@
       .pagination button.active { border-color: #059669; background: #059669; color: #fff; }
       .pagination button:disabled { opacity: .45; cursor: not-allowed; }
       .page-summary { color: #64748b; font-size: 12px; }
+      .category-chips { display:flex; gap:8px; overflow-x:auto; padding:2px 0 16px; scrollbar-width:none; }
+      .category-chips::-webkit-scrollbar { display:none; }
+      .category-chip { flex:0 0 auto; border:1px solid #273155; border-radius:999px; padding:9px 14px; background:#111832; color:#aeb7dc; font-weight:750; }
+      .category-chip.active { border-color:#2aabee; background:#17375a; color:#fff; }
+      .instant-badge { position:absolute; left:8px; bottom:8px; border-radius:999px; padding:4px 8px; background:#3ddc97; color:#052e20; font-size:10px; font-weight:900; }
+      .telegram-top { display:none; align-items:center; gap:6px; margin-left:auto; border:1px solid #2aabee66; border-radius:10px; padding:9px 12px; color:#dff5ff; background:#2aabee1f; text-decoration:none; font-size:12px; font-weight:800; }
+      .hero-kicker { color:#ffc24b; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+      .hero-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:18px; }
+      .hero-action { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border-radius:11px; background:#2aabee; color:#fff; font-weight:850; text-decoration:none; }
+      .hero-action.secondary { border:1px solid #303b65; background:#131a36; color:#d7dcf5; }
+      .trust-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:8px 0 55px; }
+      .trust-card { padding:18px; border:1px solid #222c50; border-radius:15px; background:#10162e; }
+      .trust-card b { display:block; margin-bottom:5px; color:#fff; }
+      .trust-card span { color:#929bc5; font-size:12px; line-height:1.6; }
+      .site-footer { border-top:1px solid #202949; padding:26px 0; background:#080b18; color:#8f98bd; font-size:12px; }
+      .footer-row { display:flex; align-items:center; justify-content:space-between; gap:15px; }
+      .footer-row a { color:#66c8f5; text-decoration:none; }
+
+      body { background:radial-gradient(900px 460px at 90% -10%,#372f772b,transparent 62%),linear-gradient(180deg,#0d1230,#070a18 45%); color:#edf0ff; }
+      .top { background:#070a18df; border-color:#222b4b; }
+      .logo { background:#171e3b; }
+      .brand small,.hero p,.desc { color:#9aa3ca; }
+      .cartbtn { background:linear-gradient(135deg,#248ecc,#2aabee); }
+      .hero { padding:48px 0 28px; background:transparent; }
+      .hero h1 { max-width:760px; font-weight:900; letter-spacing:-.025em; }
+      .tools input,.tools select { border-color:#293354; background:#111730; color:#edf0ff; }
+      .tools button { background:#ffc24b; color:#241a04; font-weight:900; }
+      .card { border-color:#222c50; background:#10162e; box-shadow:0 16px 34px #02040e55; }
+      .card:hover { border-color:#384879; box-shadow:0 20px 42px #02040e88; }
+      .photo { background:linear-gradient(145deg,#1b2345,#10162d); }
+      .stock { background:#0b1128e8; color:#7be5b2; }
+      .cat { color:#65c8f6; }
+      .price b,.detail-price { color:#ffc24b; }
+      .price button { background:#2aabee; }
+      .pagination button { border-color:#273155; background:#111832; color:#cbd2ed; }
+      .pagination button.active { border-color:#2aabee; background:#2aabee; }
+      .product-detail,.detail-actions { background:#0f152c; }
+      .product-detail { border:1px solid #2a355c; color:#edf0ff; }
+      .detail-main-image,.detail-thumb { background:#171f3d; }
+      .detail-close { background:#222b4c; color:#fff; }
+      .detail-variant,.detail-description,.detail-stock { color:#a2abd0; }
+      .drawer { background:#0d1329; color:#edf0ff; }
+      .drawer-head button { background:#202947; color:#fff; }
+      .line { border-color:#232d4e; }
+      .checkout input,.checkout textarea,.checkout select { border-color:#293354; background:#111730; color:#edf0ff; }
       .shade {
         position: fixed;
         inset: 0;
@@ -379,6 +424,11 @@
         .detail-copy { padding: 4px 2px 2px; }
         .detail-main-image { max-height: 42vh; }
         .detail-actions { position: sticky; bottom: -14px; padding: 10px 0 14px; background: #fff; }
+        .detail-actions { background:#0f152c; }
+        .trust-grid { grid-template-columns:1fr; }
+        .footer-row { align-items:flex-start; flex-direction:column; }
+        .telegram-top { padding:8px; font-size:0; }
+        .telegram-top::before { content:'✈'; font-size:17px; }
         .grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 9px;
@@ -422,6 +472,7 @@
           <b id="shopName">Online Shop</b
           ><small id="shopMeta">Powered by Mahar POS</small>
         </div>
+        <a id="topTelegram" class="telegram-top" target="_blank" rel="noopener noreferrer">✈ Telegram</a>
         <button class="cartbtn" onclick="openCart()">
           Cart · <span id="cartCount">0</span>
         </button>
@@ -429,11 +480,16 @@
     </header>
     <section class="hero">
       <div class="wrap">
+        <div class="hero-kicker">Phones · Accessories · Digital Goods</div>
         <h1 id="heroName">Online Shop</h1>
         <p id="heroDesc">
           ပစ္စည်းများကို Online မှ ရွေးချယ်ပြီး COD သို့မဟုတ်
           ဆိုင်တွင်လာယူနိုင်ပါသည်။
         </p>
+        <div class="hero-actions">
+          <a href="#products" class="hero-action">ပစ္စည်းများကြည့်မည်</a>
+          <a id="heroTelegram" class="hero-action secondary" target="_blank" rel="noopener noreferrer">Telegram မှာမေးမည်</a>
+        </div>
         <div class="tools">
           <input id="search" placeholder="ပစ္စည်းအမည် ရှာရန်" />
           <select id="brandFilter">
@@ -450,15 +506,22 @@
           </select>
           <button onclick="loadProducts()">Search</button>
         </div>
+        <div id="categoryChips" class="category-chips"></div>
       </div>
     </section>
-    <main class="wrap">
+    <main id="products" class="wrap">
       <div id="message"></div>
       <div id="grid" class="grid">
         <div class="empty">Loading products...</div>
       </div>
       <nav id="pagination" class="pagination" aria-label="Product pages"></nav>
+      <section class="trust-grid" aria-label="How to order">
+        <div class="trust-card"><b>၁ · Product ရွေးပါ</b><span>Phone, Accessories, Gift Card, Game Item နဲ့ VPN များကို Category အလိုက်ရှာနိုင်ပါတယ်။</span></div>
+        <div class="trust-card"><b>၂ · Detail စစ်ပါ</b><span>ပုံများ၊ ဈေးနှုန်း၊ လက်ကျန်နဲ့ Product အသေးစိတ်ကို ဖွင့်ကြည့်ပါ။</span></div>
+        <div class="trust-card"><b>၃ · Order / Chat</b><span>COD သို့ Pickup ဖြင့် Order တင်ပြီး Digital Item များကို Telegram မှာ ဆက်သွယ်နိုင်ပါတယ်။</span></div>
+      </section>
     </main>
+    <footer class="site-footer"><div class="wrap footer-row"><span>© <span id="footerYear"></span> <b id="footerShop">Mahar Online Shop</b> · Powered by Mahar POS</span><a id="footerTelegram" target="_blank" rel="noopener noreferrer">Telegram Support</a></div></footer>
     <div
       id="shade"
       class="shade"
@@ -545,6 +608,12 @@
           if (store.logoUrl) {
             logo.src = store.logoUrl;
           } else logo.style.visibility = "hidden";
+          [topTelegram, heroTelegram, footerTelegram].forEach((link) => {
+            link.style.display = store.telegramUrl ? "inline-flex" : "none";
+            if (store.telegramUrl) link.href = store.telegramUrl;
+          });
+          footerShop.textContent = store.name;
+          footerYear.textContent = new Date().getFullYear();
           method.innerHTML =
             (store.deliveryEnabled
               ? '<option value="COD">COD Delivery</option>'
@@ -598,6 +667,7 @@
               .join("");
           brandFilter.value = selectedBrand;
           categoryFilter.value = selectedCategory;
+          renderCategoryChips(d.categories || []);
           renderProducts();
           renderPagination();
         } catch (e) {
@@ -620,7 +690,7 @@
                     0,
                   ) || 0;
               const price = Number(v?.standardSellingPrice || 0);
-              return `<article class="card" onclick="openProduct(${i})" tabindex="0" onkeydown="if(event.key==='Enter') openProduct(${i})"><div class="photo"><img src="${esc(img)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='/default-product-image.svg'">${stock > 0 ? `<span class="stock">${stock} in stock</span>` : ""}</div><div class="body"><span class="cat">${esc(p.category?.name || "Product")}</span><h3>${esc(p.name)}</h3><div class="desc">${esc(p.ecommerceDetail?.description || "")}</div><div class="price">${price > 0 ? `<b>${mmk(price)}</b>` : "<span></span>"}<button ${!v ? "disabled" : ""} onclick="event.stopPropagation();add(${i})">Add</button></div></div></article>`;
+              return `<article class="card" onclick="openProduct(${i})" tabindex="0" onkeydown="if(event.key==='Enter') openProduct(${i})"><div class="photo"><img src="${esc(img)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='/default-product-image.svg'">${stock > 0 ? `<span class="stock">${stock} in stock</span>` : ""}${isDigitalProduct(p) ? '<span class="instant-badge">⚡ Instant</span>' : ''}</div><div class="body"><span class="cat">${categoryIcon(p.category?.name)} ${esc(p.category?.name || "Product")}</span><h3>${esc(p.name)}</h3><div class="desc">${esc(p.ecommerceDetail?.description || "")}</div><div class="price">${price > 0 ? `<b>${mmk(price)}</b>` : "<span></span>"}<button ${!v ? "disabled" : ""} onclick="event.stopPropagation();add(${i})">Add</button></div></div></article>`;
             })
             .join("") ||
           '<div class="empty">Online မှာပြထားသော Product မရှိသေးပါ။</div>';
@@ -642,6 +712,28 @@
             quantity: 1,
           });
         renderCart();
+      }
+      function categoryIcon(name) {
+        const value = String(name || "").toLowerCase();
+        if (/vpn|key/.test(value)) return "🔐";
+        if (/game|gift|card|steam|play/.test(value)) return "🎮";
+        if (/phone|mobile|ဖုန်း/.test(value)) return "📱";
+        if (/access|cable|charger|ကြိုး|အားသွင်း/.test(value)) return "🔌";
+        return "✦";
+      }
+      function isDigitalProduct(product) {
+        return /vpn|game|gift|digital|key|card|steam|play/i.test(
+          [product.category?.name, product.name].filter(Boolean).join(" "),
+        );
+      }
+      function renderCategoryChips(categories) {
+        categoryChips.innerHTML =
+          `<button class="category-chip ${!categoryFilter.value ? "active" : ""}" onclick="chooseCategory('')">✦ All</button>` +
+          categories.map((category) => `<button class="category-chip ${categoryFilter.value === category.id ? "active" : ""}" onclick="chooseCategory('${escJs(category.id)}')">${categoryIcon(category.name)} ${esc(category.name)}</button>`).join("");
+      }
+      function chooseCategory(id) {
+        categoryFilter.value = id;
+        loadProducts(1);
       }
       function renderPagination() {
         if (totalProducts <= 10) { pagination.innerHTML = ''; return; }
