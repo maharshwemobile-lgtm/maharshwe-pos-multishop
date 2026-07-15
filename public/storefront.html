@@ -288,6 +288,16 @@
       .map-card h2 { margin:0 0 8px; }
       .map-card p { color:#64748b; line-height:1.65; }
       .map-card a { display:inline-flex; justify-content:center; margin-top:10px; padding:11px 14px; border-radius:10px; background:#059669; color:#fff; font-weight:850; text-decoration:none; }
+      .vpn-plans { display:none; margin:22px 0 18px; padding:18px; border:1px solid #dce7e2; border-radius:17px; background:linear-gradient(135deg,#effbf7,#f8fbff); }
+      .vpn-plans-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:13px; }
+      .vpn-plans-head h2 { margin:0; font-size:20px; }
+      .vpn-plans-head span { color:#64748b; font-size:12px; }
+      .vpn-plan-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+      .vpn-plan { display:flex; flex-direction:column; gap:5px; padding:15px; border:1px solid #dbe4ec; border-radius:13px; background:#fff; color:#14213d; text-decoration:none; transition:.18s ease; }
+      .vpn-plan:hover { transform:translateY(-2px); border-color:#229ed9; box-shadow:0 10px 22px #0f172a12; }
+      .vpn-plan b { font-size:15px; }
+      .vpn-plan strong { color:#059669; font-size:18px; }
+      .vpn-plan small { color:#64748b; }
       .shade {
         position: fixed;
         inset: 0;
@@ -470,6 +480,8 @@
         .footer-row { align-items:flex-start; flex-direction:column; }
         .support-links { justify-content:flex-start; }
         .map-section { grid-template-columns:1fr; }
+        .vpn-plans-head { align-items:flex-start; flex-direction:column; }
+        .vpn-plan-grid { grid-template-columns:1fr; }
         .telegram-top { padding:8px; font-size:0; }
         .telegram-top::before { content:'✈'; font-size:17px; }
         .telegram-fab { right:12px; bottom:12px; min-height:46px; padding:0 14px; font-size:12px; }
@@ -554,6 +566,14 @@
       </div>
     </section>
     <main id="products" class="wrap">
+      <section id="vpnPlans" class="vpn-plans" aria-label="Mahar VPN plans">
+        <div class="vpn-plans-head"><div><div class="hero-kicker">Mahar VPN</div><h2>VPN Plan ရွေးချယ်မည်</h2></div><span>Plan နှိပ်တာနဲ့ Telegram Bot flow တန်းစပါမယ်</span></div>
+        <div class="vpn-plan-grid">
+          <a id="vpnFree" class="vpn-plan" target="_blank" rel="noopener noreferrer"><b>Free Trial</b><strong>2 Days</strong><small>စမ်းသုံးရန်</small></a>
+          <a id="vpn1m" class="vpn-plan" target="_blank" rel="noopener noreferrer"><b>1 Month</b><strong>3,000 Ks</strong><small>Telegram Bot မှဝယ်မည်</small></a>
+          <a id="vpn2m" class="vpn-plan" target="_blank" rel="noopener noreferrer"><b>2 Months</b><strong>5,000 Ks</strong><small>Telegram Bot မှဝယ်မည်</small></a>
+        </div>
+      </section>
       <div id="message"></div>
       <div id="grid" class="grid">
         <div class="empty">Loading products...</div>
@@ -672,6 +692,12 @@
             mapFrame.src = "https://www.google.com/maps?q=" + encodeURIComponent([store.name, store.address].filter(Boolean).join(" ")) + "&output=embed";
           }
           if (slug === "maharshwemobile") {
+            const botUrl = "https://t.me/Mylifemychoice68";
+            document.getElementById("topTelegram").href = botUrl + "?start=vpn_plans";
+            document.getElementById("vpnPlans").style.display = "block";
+            document.getElementById("vpnFree").href = botUrl + "?start=vpn_plan_free";
+            document.getElementById("vpn1m").href = botUrl + "?start=vpn_plan_1m";
+            document.getElementById("vpn2m").href = botUrl + "?start=vpn_plan_2m";
             supportLinks.insertAdjacentHTML("beforeend", '<a href="https://maharshwe.shop/" target="_blank" rel="noopener noreferrer">Mahar POS</a><a href="https://maharshwe.online/vpn/" target="_blank" rel="noopener noreferrer">Mahar VPN</a><a href="tel:09778394052">09778394052</a><span>ဆီဆိုင်မြို့နယ်၊ ရှမ်းပြည်တောင်ပိုင်း</span>');
           }
           method.innerHTML =
