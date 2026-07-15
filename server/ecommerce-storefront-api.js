@@ -17,6 +17,10 @@ const orderInput = z.object({
 const settingsInput = z.object({
   enabled: z.boolean().optional(), storeName: z.string().trim().max(160).nullable().optional(),
   description: z.string().trim().max(1200).nullable().optional(), contactPhone: z.string().trim().max(40).nullable().optional(),
+  telegramUrl: z.union([
+    z.string().trim().url().max(500).refine((value) => /^https:\/\/(t\.me|telegram\.me)\//i.test(value), 'Use a valid Telegram link'),
+    z.literal(''), z.null(),
+  ]).optional().transform((value) => value || null),
   deliveryEnabled: z.boolean().optional(), pickupEnabled: z.boolean().optional(), deliveryFee: z.coerce.number().min(0).max(10000000).optional(),
 });
 const productInput = z.object({
@@ -190,13 +194,13 @@ function attachEcommerceStorefrontApi(app) {
     const shop = await prisma.shop.findFirst({ where: { slug: req.params.slug, active: true }, include: { ecommerceSettings: true } });
     if (!shop?.ecommerceSettings?.enabled) notFound('Online shop is not available');
     res.set('Cache-Control', 'public, max-age=60');
-    res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, address: shop.address, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
+    res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, telegramUrl: shop.ecommerceSettings.telegramUrl, address: shop.address, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
   }));
 
   app.get('/api/public/store/:slug/products', handle(async (req, res) => {
     const shop = await prisma.shop.findFirst({ where: { slug: req.params.slug, active: true, ecommerceSettings: { is: { enabled: true } } }, select: { id: true } });
     if (!shop) notFound('Online shop is not available');
-    const search = String(req.query.search || '').trim(); const page = Math.max(1, Number(req.query.page) || 1); const take = 1000;
+    const search = String(req.query.search || '').trim(); const page = Math.max(1, Number(req.query.page) || 1); const take = 10;
     const brand = String(req.query.brand || '').trim(); const categoryId = String(req.query.categoryId || '').trim(); const stockLevel = String(req.query.stockLevel || '').trim().toUpperCase();
     const visibleWhere = { OR: [{ ecommerceDetail: { is: null } }, { ecommerceDetail: { is: { visible: true } } }] };
     const where = { shopId: shop.id, active: true, ecommerceImages: { some: {} }, ...visibleWhere, ...(search ? { name: { contains: search, mode: 'insensitive' } } : {}), ...(brand ? { brand } : {}), ...(categoryId ? { categoryId } : {}) };
