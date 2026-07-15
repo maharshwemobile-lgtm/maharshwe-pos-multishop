@@ -203,6 +203,52 @@ function attachPublicLandingApi(app) {
     }
   });
 
+  app.get('/api/public/active-users', async (req, res) => {
+    try {
+      const limit = Math.min(10, Math.max(1, Number.parseInt(req.query.limit, 10) || 4));
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const rows = await prisma.$queryRaw`
+        WITH login_stats AS (
+          SELECT shop_id, COUNT(*)::int AS login_count, MAX(created_at) AS last_audit_at
+          FROM audit_logs
+          WHERE shop_id IS NOT NULL
+            AND action IN ('LOGIN_SUCCESS', 'GOOGLE_LOGIN_SUCCESS')
+            AND created_at >= ${since}
+          GROUP BY shop_id
+        ), user_stats AS (
+          SELECT shop_id, MAX(last_login_at) AS last_login_at
+          FROM users
+          WHERE shop_id IS NOT NULL AND active = TRUE AND last_login_at IS NOT NULL
+          GROUP BY shop_id
+        )
+        SELECT s.id, s.name,
+          COALESCE(l.login_count, 0)::int AS "loginCount",
+          GREATEST(l.last_audit_at, u.last_login_at) AS "lastActiveAt"
+        FROM shops s
+        LEFT JOIN login_stats l ON l.shop_id = s.id
+        LEFT JOIN user_stats u ON u.shop_id = s.id
+        WHERE s.active = TRUE AND (l.login_count > 0 OR u.last_login_at IS NOT NULL)
+        ORDER BY COALESCE(l.login_count, 0) DESC,
+          GREATEST(l.last_audit_at, u.last_login_at) DESC NULLS LAST
+        LIMIT ${limit}
+      `;
+      res.set('Cache-Control', 'no-store');
+      return res.json({
+        ok: true,
+        periodDays: 30,
+        updatedAt: new Date().toISOString(),
+        users: rows.map((row) => ({
+          shopId: row.id,
+          displayName: row.name,
+          loginCount: Number(row.loginCount || 0),
+          lastActiveAt: row.lastActiveAt ? new Date(row.lastActiveAt).toISOString() : null,
+        })),
+      });
+    } catch (error) {
+      console.error('public active users failed:', error);
+      return res.status(500).json({ ok: false, message: 'Unable to load active users' });
+    }
+  });
   app.get('/api/public/shops/active', async (req, res) => {
     try {
       const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);

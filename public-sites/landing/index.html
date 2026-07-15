@@ -197,16 +197,20 @@ h1,h2,h3{font-family:var(--font-display);line-height:1.35}
 .mockup-bar i:nth-child(1){background:#E5604C}.mockup-bar i:nth-child(2){background:#E4AF1E}.mockup-bar i:nth-child(3){background:#3FBF8A}
 .mockup-bar em{margin-left:auto;font-style:normal;font-size:.7rem;color:#7E8CA1;font-family:var(--font-display)}
 .mockup-body{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mtile{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px}
-.mtile small{display:block;font-size:.68rem;color:#8FA0B8;letter-spacing:.05em;margin-bottom:5px}
-.mtile strong{font-family:var(--font-display);font-size:1.15rem;color:#fff}
-.mtile .up{color:#54D6A4;font-size:.7rem;margin-left:7px}
-.mchart{grid-column:1 / -1;display:flex;align-items:flex-end;gap:7px;height:96px;padding:14px}
-.mchart b{flex:1;border-radius:5px 5px 0 0;background:linear-gradient(180deg,#E4AF1E,#8F6A05);opacity:.9;animation:rise 1s ease both}
-@keyframes rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-.mchart b{transform-origin:bottom}
-.mrow{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 14px;font-size:.78rem;color:#C6D0DF}
-.mrow b{color:#54D6A4;font-weight:600}
+  .mranking{grid-column:1 / -1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:15px}
+.mranking-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.08)}
+.mranking-head strong{display:block;color:#fff;font-family:var(--font-display);font-size:.9rem}
+.mranking-head span{display:block;margin-top:3px;color:#8FA0B8;font-size:.63rem}
+.mranking-head small{flex:none;color:#54D6A4;background:rgba(84,214,164,.1);border:1px solid rgba(84,214,164,.2);border-radius:999px;padding:4px 8px;font-size:.6rem;font-weight:700}
+.mranking-list{display:grid;gap:7px;margin-top:10px}
+.mrank{display:grid;grid-template-columns:24px 30px minmax(0,1fr) auto;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.025);color:#C6D0DF;font-size:.69rem}
+.mrank>i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(243,206,92,.14);color:#F3CE5C;font-style:normal;font-family:var(--font-display);font-weight:800}
+.mrank:first-child>i{background:#F3CE5C;color:#101E31}
+.mavatar{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,#1D3856,#264E73);color:#fff;font-style:normal;font-weight:800}
+.muser{min-width:0}
+.muser b,.muser small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.muser b{color:#fff;font-size:.71rem}.muser small{margin-top:2px;color:#7E8CA1;font-size:.58rem}
+  .mlogins{text-align:right}.mlogins b,.mlogins small{display:block}.mlogins b{color:#54D6A4;font-family:var(--font-display);font-size:.72rem}.mlogins small{margin-top:2px;color:#7E8CA1;font-size:.56rem}
 
 /* ============ Stats strip ============ */
 .stats{margin-top:-58px;position:relative;z-index:5}
@@ -492,16 +496,10 @@ footer{background:var(--ink);color:#93A2B8;padding:64px 0 30px;margin-top:0}
     <div class="mockup" role="img" aria-label="Mahar POS dashboard preview">
       <div class="mockup-bar"><i></i><i></i><i></i><em>app.maharshwe.shop — Dashboard</em></div>
       <div class="mockup-body">
-        <div class="mtile"><small>ယနေ့ အရောင်း</small><strong>1,240,000 Ks<span class="up">▲ 12%</span></strong></div>
-        <div class="mtile"><small>Repair Jobs</small><strong>18 ခု<span class="up">▲ 4</span></strong></div>
-        <div class="mchart" aria-hidden="true">
-          <b style="height:38%;animation-delay:.05s"></b><b style="height:55%;animation-delay:.1s"></b>
-          <b style="height:44%;animation-delay:.15s"></b><b style="height:70%;animation-delay:.2s"></b>
-          <b style="height:58%;animation-delay:.25s"></b><b style="height:82%;animation-delay:.3s"></b>
-          <b style="height:66%;animation-delay:.35s"></b><b style="height:92%;animation-delay:.4s"></b>
+        <div class="mranking" aria-label="Most active users by login frequency">
+          <div class="mranking-head"><div><strong>The Most Active Users</strong><span>Login ဝင်သည့်အကြိမ်ရေအလိုက် စီထားသည်</span></div><small>Last 30 Days</small></div>
+          <div class="mranking-list" id="activeUsersRanking"><div class="mrank"><span class="muser"><b>Loading live activity...</b><small>PostgreSQL API</small></span></div></div>
         </div>
-        <div class="mrow"><span>Daily Close Report</span><b>✓ ပိတ်ပြီး</b></div>
-        <div class="mrow"><span>Stock Alert — Screen Protector</span><b style="color:#F3CE5C">Low</b></div>
       </div>
     </div>
   </div>
@@ -888,6 +886,46 @@ async function loadStats() {
 }
 loadStats();
 
+/* ---------- Real login activity from PostgreSQL ---------- */
+let activeUsersData = [];
+function activeAgo(value) {
+  const time = new Date(value).getTime();
+  if (!Number.isFinite(time)) return "Activity time unavailable";
+  const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+  if (seconds < 60) return "Active just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `Active ${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Active ${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `Active ${days} day${days === 1 ? "" : "s"} ago`;
+}
+function activeInitials(name) {
+  return String(name || "POS").trim().split(/\s+/).slice(0, 2).map(part => part[0] || "").join("").toUpperCase();
+}
+function renderActiveUsers() {
+  const root = document.getElementById("activeUsersRanking");
+  if (!root) return;
+  if (!activeUsersData.length) {
+    root.innerHTML = '<div class="mrank"><span class="muser"><b>No recent login activity</b><small>Waiting for the next login</small></span></div>';
+    return;
+  }
+  root.innerHTML = activeUsersData.map((user, index) => `<div class="mrank"><i>${index + 1}</i><em class="mavatar">${esc(activeInitials(user.displayName))}</em><span class="muser"><b>${esc(user.displayName)}</b><small>${esc(activeAgo(user.lastActiveAt))}</small></span><span class="mlogins"><b>${Number(user.loginCount || 0).toLocaleString()}</b><small>Logins</small></span></div>`).join("");
+}
+async function loadActiveUsers() {
+  try {
+    const response = await fetch("/api/public/active-users?limit=4&_=" + Date.now(), { cache: "no-store", signal: AbortSignal.timeout(6000) });
+    if (!response.ok) throw new Error("Active users API failed");
+    const payload = await response.json();
+    activeUsersData = Array.isArray(payload.users) ? payload.users : [];
+    renderActiveUsers();
+  } catch (_error) {
+    if (!activeUsersData.length) renderActiveUsers();
+  }
+}
+loadActiveUsers();
+setInterval(loadActiveUsers, 30_000);
+setInterval(renderActiveUsers, 15_000);
 /* ---------- User guides (fetch /api/public/guides, fallback to static list) ---------- */
 const GUIDE_FALLBACK = [
   { slug:"register-google-login", cat:"start", catLabel:"စတင်ခြင်း", title:"Account ဖွင့်ပြီး Login ဝင်နည်း", desc:"Email/Password သို့မဟုတ် Google ဖြင့် Account ဖွင့်ပြီး ၁ လ Trial စတင်အသုံးပြုနည်း။", steps:["app.maharshwe.shop ကိုဖွင့်ပါ","Register ကိုနှိပ်ပြီး Email သို့မဟုတ် Google ဖြင့်ဝင်ပါ","Shop name နှင့် Business type ဖြည့်ပါ"] },

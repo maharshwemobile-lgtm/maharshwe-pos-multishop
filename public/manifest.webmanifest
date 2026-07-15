@@ -1,11 +1,11 @@
 {
   "name": "Mahar POS",
   "short_name": "Mahar POS",
-  "description": "Mahar POS mobile phone sale and service management app",
+  "description": "Multi-shop POS and business management software",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#f8fafc",
   "theme_color": "#13a36f",
   "icons": [
     {
