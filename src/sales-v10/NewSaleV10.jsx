@@ -24,7 +24,6 @@ import './sales-v10.css';
 import './sale10-product-images.css';
 import FirstLoginGuide from '../FirstLoginGuide.jsx';
 import './sales-v10-guided.css';
-import { pickLanguageText } from '../settings/ProjectLanguageRuntime.jsx';
 import {
   clearDraft,
   loadDraft,
@@ -42,7 +41,13 @@ const EMPTY_PAYMENT = { method: '', methodId: '', methodCode: '', methodName: ''
 const CASH_PAYMENT_METHOD = { key: 'CASH', id: '', name: 'Cash', code: 'CASH', kind: 'CASH', accountName: 'Cash', legacyMethod: 'CASH', balance: 0 };
 const CREDIT_PAYMENT_METHOD = { key: 'CREDIT', id: '', name: 'Credit', code: 'CREDIT', kind: 'CREDIT', accountName: '', legacyMethod: 'CREDIT', balance: 0 };
 const FALLBACK_PAYMENT_METHODS = [CASH_PAYMENT_METHOD, CREDIT_PAYMENT_METHOD];
-const t = pickLanguageText;
+const t = (english, myanmar) => {
+  try {
+    return localStorage.getItem('mahar-pos-language-v2') === 'en' ? english : myanmar;
+  } catch {
+    return myanmar;
+  }
+};
 
 function ProductGridVisual({ item }) {
   const [imageFailed, setImageFailed] = useState(false);
