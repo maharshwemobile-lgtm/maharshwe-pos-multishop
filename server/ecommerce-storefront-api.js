@@ -42,6 +42,43 @@ function publicImageUrl(shopId, filename) {
   const base = String(process.env.PUBLIC_LANDING_URL || 'https://maharshwe.shop').replace(/\/+$/, '');
   return `${base}/uploads/storefront/${cleanFilePart(shopId)}/${filename}`;
 }
+
+async function notifyMaharStoreOrder(shop, order) {
+  if (shop.slug !== 'maharshwemobile') return { configured: false };
+  const token = String(process.env.MAIN_BOT_TOKEN || '').trim();
+  const chatId = String(process.env.ADMIN_CHAT_ID || '').trim();
+  if (!token || !/^-?\d+$/.test(chatId)) return { configured: false };
+  const itemLines = (order.items || []).map((item) =>
+    `• ${item.productNameSnapshot}${item.variantNameSnapshot ? ` (${item.variantNameSnapshot})` : ''} × ${item.quantity} — ${Number(item.lineTotal).toLocaleString()} Ks`);
+  const text = [
+    '🛒 Mahar Shwe Online Order',
+    `Order No: ${order.orderNumber}`,
+    `Customer: ${order.customerName}`,
+    `Phone: ${order.customerPhone}`,
+    `Method: ${order.fulfillmentMethod}`,
+    order.deliveryAddress ? `Address: ${order.deliveryAddress}` : '',
+    '',
+    ...itemLines,
+    '',
+    `Subtotal: ${Number(order.subtotal).toLocaleString()} Ks`,
+    Number(order.deliveryFee) > 0 ? `Delivery: ${Number(order.deliveryFee).toLocaleString()} Ks` : '',
+    `Total: ${Number(order.total).toLocaleString()} Ks`,
+    order.note ? `Note: ${order.note}` : '',
+  ].filter(Boolean).join('\n');
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error(`Telegram returned HTTP ${response.status}`);
+    return { configured: true, sent: true };
+  } catch (error) {
+    console.error('[ecommerce] Telegram order notification failed:', error.message);
+    return { configured: true, sent: false };
+  }
+}
 function driveImageUrl(value) {
   const url = new URL(value);
   if (url.hostname === 'drive.google.com') {
@@ -267,7 +304,8 @@ function attachEcommerceStorefrontApi(app) {
       const orderNumber = `WEB-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
       return tx.ecommerceOrder.create({ data: { shopId: shop.id, orderNumber, customerName: input.customerName, customerPhone: input.customerPhone, deliveryAddress: input.deliveryAddress || null, fulfillmentMethod: input.fulfillmentMethod, subtotal, deliveryFee, total: subtotal + deliveryFee, note: input.note || null, items: { create: items } }, include: { items: true } });
     }, { isolationLevel: 'Serializable' });
-    res.status(201).json({ ok: true, order: created });
+    const telegram = await notifyMaharStoreOrder(shop, created);
+    res.status(201).json({ ok: true, order: created, telegram: { configured: telegram.configured, sent: telegram.sent === true } });
   }));
 }
 
