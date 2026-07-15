@@ -209,6 +209,7 @@
       .category-chip.active { border-color:#2aabee; background:#17375a; color:#fff; }
       .instant-badge { position:absolute; left:8px; bottom:8px; border-radius:999px; padding:4px 8px; background:#3ddc97; color:#052e20; font-size:10px; font-weight:900; }
       .telegram-top { display:none; align-items:center; gap:6px; margin-left:auto; border:1px solid #2aabee66; border-radius:10px; padding:9px 12px; color:#dff5ff; background:#2aabee1f; text-decoration:none; font-size:12px; font-weight:800; }
+      .telegram-fab { position:fixed; right:18px; bottom:18px; z-index:18; display:none; align-items:center; gap:8px; min-height:48px; padding:0 17px; border-radius:999px; background:#229ed9; color:#fff; box-shadow:0 12px 30px #1478a84d; text-decoration:none; font-weight:900; }
       .hero-kicker { color:#ffc24b; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
       .hero-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:18px; }
       .hero-action { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border-radius:11px; background:#2aabee; color:#fff; font-weight:850; text-decoration:none; }
@@ -471,6 +472,7 @@
         .map-section { grid-template-columns:1fr; }
         .telegram-top { padding:8px; font-size:0; }
         .telegram-top::before { content:'✈'; font-size:17px; }
+        .telegram-fab { right:12px; bottom:12px; min-height:46px; padding:0 14px; font-size:12px; }
         .grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 9px;
@@ -568,6 +570,7 @@
       </section>
     </main>
     <footer class="site-footer"><div class="wrap footer-row"><span>© <span id="footerYear"></span> <b id="footerShop">Mahar Online Shop</b> · Powered by Mahar POS</span><div id="supportLinks" class="support-links"><a id="footerTelegram" target="_blank" rel="noopener noreferrer">Telegram Support</a></div></div></footer>
+    <a id="telegramFab" class="telegram-fab" target="_blank" rel="noopener noreferrer" aria-label="Telegram Chat">✈ Telegram Chat</a>
     <div
       id="shade"
       class="shade"
@@ -655,7 +658,8 @@
           if (store.logoUrl) {
             logo.src = store.logoUrl;
           } else logo.style.visibility = "hidden";
-          [topTelegram, heroTelegram, footerTelegram].forEach((link) => {
+          const telegramLinks = ["topTelegram", "heroTelegram", "footerTelegram", "telegramFab"].map((id) => document.getElementById(id));
+          telegramLinks.forEach((link) => {
             link.style.display = store.telegramUrl ? "inline-flex" : "none";
             if (store.telegramUrl) link.href = store.telegramUrl;
           });
