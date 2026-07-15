@@ -197,6 +197,29 @@ function attachEcommerceStorefrontApi(app) {
     res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, telegramUrl: shop.ecommerceSettings.telegramUrl, address: shop.address, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
   }));
 
+  app.get('/api/public/store/:slug/manifest.webmanifest', handle(async (req, res) => {
+    const shop = await prisma.shop.findFirst({
+      where: { slug: req.params.slug, active: true, ecommerceSettings: { is: { enabled: true } } },
+      include: { ecommerceSettings: true },
+    });
+    if (!shop) notFound('Online shop is not available');
+    const name = shop.ecommerceSettings.storeName || shop.name;
+    res.type('application/manifest+json').set('Cache-Control', 'public, max-age=300').json({
+      id: `/shop/${shop.slug}`,
+      name,
+      short_name: name.slice(0, 24),
+      description: shop.ecommerceSettings.description || `${name} online shop`,
+      start_url: `/shop/${shop.slug}`,
+      scope: '/shop/',
+      display: 'standalone',
+      background_color: '#f7f9fc',
+      theme_color: '#059669',
+      icons: [
+        { src: shop.logoUrl || '/maharshwe-logo.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+      ],
+    });
+  }));
+
   app.get('/api/public/store/:slug/products', handle(async (req, res) => {
     const shop = await prisma.shop.findFirst({ where: { slug: req.params.slug, active: true, ecommerceSettings: { is: { enabled: true } } }, select: { id: true } });
     if (!shop) notFound('Online shop is not available');

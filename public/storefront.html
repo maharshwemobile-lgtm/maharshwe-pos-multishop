@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#059669" />
+    <link id="storeManifest" rel="manifest" />
     <title>Online Shop · Mahar POS</title>
     <style>
       * {
@@ -247,6 +248,39 @@
       .drawer-head button { background:#202947; color:#fff; }
       .line { border-color:#232d4e; }
       .checkout input,.checkout textarea,.checkout select { border-color:#293354; background:#111730; color:#edf0ff; }
+      /* Light is the default storefront appearance. */
+      body { background:#f7f9fc; color:#14213d; }
+      .top { background:#ffffffed; border-color:#e5eaf1; }
+      .logo { background:#eaf8f2; }
+      .brand small,.hero p,.desc { color:#64748b; }
+      .hero { background:linear-gradient(135deg,#eefbf7,#f8fafc 55%,#fff8e7); }
+      .tools input,.tools select { border-color:#d8e0ea; background:#fff; color:#14213d; }
+      .category-chip { border-color:#d8e0ea; background:#fff; color:#475569; }
+      .category-chip.active { border-color:#059669; background:#ecfdf5; color:#047857; }
+      .card { border-color:#e3e9f1; background:#fff; box-shadow:0 10px 28px #0f172a0a; }
+      .card:hover { border-color:#b9d9ce; box-shadow:0 16px 34px #0f172a14; }
+      .photo { background:linear-gradient(145deg,#f2f6fa,#eaf0f6); }
+      .stock { background:#ffffffed; color:#047857; }
+      .price b,.detail-price { color:#d97706; }
+      .pagination button { border-color:#d8e0ea; background:#fff; color:#475569; }
+      .pagination button.active { border-color:#059669; background:#059669; }
+      .trust-card { border-color:#e3e9f1; background:#fff; }
+      .trust-card b { color:#14213d; }
+      .trust-card span { color:#64748b; }
+      .site-footer { border-color:#e3e9f1; background:#fff; color:#64748b; }
+      .product-detail,.detail-actions { background:#fff; }
+      .product-detail { border-color:#dfe6ee; color:#14213d; }
+      .detail-main-image,.detail-thumb { background:#f1f5f9; }
+      .detail-close { background:#edf2f7; color:#14213d; }
+      .detail-variant,.detail-description,.detail-stock { color:#64748b; }
+      .drawer { background:#fff; color:#14213d; }
+      .drawer-head button { background:#edf2f7; color:#14213d; }
+      .checkout input,.checkout textarea,.checkout select { border-color:#d8e0ea; background:#fff; color:#14213d; }
+      .out-badge { position:absolute; right:8px; top:8px; border-radius:999px; padding:5px 8px; background:#fee2e2; color:#b91c1c; font-size:10px; font-weight:900; }
+      .card.out-of-stock { opacity:.78; }
+      .card.out-of-stock .price button { background:#cbd5e1; color:#64748b; cursor:not-allowed; }
+      .support-links { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px 14px; }
+      .support-links a { color:#087eb4; font-weight:700; }
       .shade {
         position: fixed;
         inset: 0;
@@ -424,7 +458,7 @@
         .detail-copy { padding: 4px 2px 2px; }
         .detail-main-image { max-height: 42vh; }
         .detail-actions { position: sticky; bottom: -14px; padding: 10px 0 14px; background: #fff; }
-        .detail-actions { background:#0f152c; }
+        .detail-actions { background:#fff; }
         .trust-grid { grid-template-columns:1fr; }
         .footer-row { align-items:flex-start; flex-direction:column; }
         .telegram-top { padding:8px; font-size:0; }
@@ -521,7 +555,7 @@
         <div class="trust-card"><b>၃ · Order / Chat</b><span>COD သို့ Pickup ဖြင့် Order တင်ပြီး Digital Item များကို Telegram မှာ ဆက်သွယ်နိုင်ပါတယ်။</span></div>
       </section>
     </main>
-    <footer class="site-footer"><div class="wrap footer-row"><span>© <span id="footerYear"></span> <b id="footerShop">Mahar Online Shop</b> · Powered by Mahar POS</span><a id="footerTelegram" target="_blank" rel="noopener noreferrer">Telegram Support</a></div></footer>
+    <footer class="site-footer"><div class="wrap footer-row"><span>© <span id="footerYear"></span> <b id="footerShop">Mahar Online Shop</b> · Powered by Mahar POS</span><div id="supportLinks" class="support-links"><a id="footerTelegram" target="_blank" rel="noopener noreferrer">Telegram Support</a></div></div></footer>
     <div
       id="shade"
       class="shade"
@@ -598,6 +632,7 @@
       const mmk = (n) => Number(n || 0).toLocaleString() + " MMK";
       async function init() {
         try {
+          storeManifest.href = "/api/public/store/" + encodeURIComponent(slug) + "/manifest.webmanifest";
           const d = await api("/public/store/" + encodeURIComponent(slug));
           store = d.store;
           shopName.textContent = heroName.textContent = store.name;
@@ -614,6 +649,9 @@
           });
           footerShop.textContent = store.name;
           footerYear.textContent = new Date().getFullYear();
+          if (slug === "maharshwemobile") {
+            supportLinks.insertAdjacentHTML("beforeend", '<a href="https://maharshwe.shop/" target="_blank" rel="noopener noreferrer">Mahar POS</a><a href="https://maharshwe.online/vpn/" target="_blank" rel="noopener noreferrer">Mahar VPN</a><a href="https://www.google.com/maps/place/%E1%80%99%E1%80%9F%E1%80%AC%E1%80%9B%E1%80%BD%E1%80%BE%E1%80%B1+%E1%80%99%E1%80%AD%E1%80%AF%E1%80%9C%E1%80%BA%E1%80%98%E1%80%AD%E1%80%AF%E1%80%84%E1%80%BA%E1%80%B8%E1%80%96%E1%80%AF%E1%80%94%E1%80%BA%E1%80%B8%E1%80%95%E1%80%BC%E1%80%84%E1%80%BA%E1%80%86%E1%80%AD%E1%80%AF%E1%80%84%E1%80%BA/@20.1592452,97.2526962,17z" target="_blank" rel="noopener noreferrer">Shop Location</a><a href="tel:09778394052">09778394052</a><span>ဆီဆိုင်မြို့နယ်၊ ရှမ်းပြည်တောင်ပိုင်း</span>');
+          }
           method.innerHTML =
             (store.deliveryEnabled
               ? '<option value="COD">COD Delivery</option>'
@@ -690,7 +728,7 @@
                     0,
                   ) || 0;
               const price = Number(v?.standardSellingPrice || 0);
-              return `<article class="card" onclick="openProduct(${i})" tabindex="0" onkeydown="if(event.key==='Enter') openProduct(${i})"><div class="photo"><img src="${esc(img)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='/default-product-image.svg'">${stock > 0 ? `<span class="stock">${stock} in stock</span>` : ""}${isDigitalProduct(p) ? '<span class="instant-badge">⚡ Instant</span>' : ''}</div><div class="body"><span class="cat">${categoryIcon(p.category?.name)} ${esc(p.category?.name || "Product")}</span><h3>${esc(p.name)}</h3><div class="desc">${esc(p.ecommerceDetail?.description || "")}</div><div class="price">${price > 0 ? `<b>${mmk(price)}</b>` : "<span></span>"}<button ${!v ? "disabled" : ""} onclick="event.stopPropagation();add(${i})">Add</button></div></div></article>`;
+              return `<article class="card ${stock <= 0 ? "out-of-stock" : ""}" onclick="openProduct(${i})" tabindex="0" onkeydown="if(event.key==='Enter') openProduct(${i})"><div class="photo"><img src="${esc(img)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='/default-product-image.svg'">${stock > 0 ? `<span class="stock">${stock} in stock</span>` : '<span class="out-badge">OUT OF STOCK</span>'}${isDigitalProduct(p) ? '<span class="instant-badge">⚡ Instant</span>' : ''}</div><div class="body"><span class="cat">${categoryIcon(p.category?.name)} ${esc(p.category?.name || "Product")}</span><h3>${esc(p.name)}</h3><div class="desc">${esc(p.ecommerceDetail?.description || "")}</div><div class="price">${price > 0 ? `<b>${mmk(price)}</b>` : "<span></span>"}<button ${!v ? "disabled" : ""} onclick="event.stopPropagation();add(${i})">${v ? "Add" : "Out of stock"}</button></div></div></article>`;
             })
             .join("") ||
           '<div class="empty">Online မှာပြထားသော Product မရှိသေးပါ။</div>';
@@ -761,6 +799,7 @@
         detailPrice.textContent = Number(v?.standardSellingPrice || 0) > 0 ? mmk(v.standardSellingPrice) : '';
         detailStock.textContent = stock > 0 ? `လက်ကျန် ${stock}` : 'လက်ကျန်မရှိပါ';
         detailAdd.disabled = stock <= 0;
+        detailAdd.textContent = stock > 0 ? 'Cart ထဲထည့်မည်' : 'OUT OF STOCK';
         detailAdd.onclick = () => { add(i); closeProduct(); openCart(); };
         telegramChat.hidden = !store?.telegramUrl;
         if (store?.telegramUrl) telegramChat.href = store.telegramUrl;
@@ -811,6 +850,8 @@
       async function submitOrder(e) {
         e.preventDefault();
         if (!cart.length) return showOrder("Cart ထဲတွင် Product ထည့်ပါ။", true);
+        const orderSnapshot = cart.map((item) => ({ ...item }));
+        const telegramWindow = store?.telegramUrl ? window.open("", "_blank") : null;
         orderBtn.disabled = true;
         try {
           const d = await api(
@@ -836,7 +877,24 @@
             "Order အောင်မြင်ပါသည်။ Order No: " + d.order.orderNumber,
             false,
           );
+          if (telegramWindow) {
+            const lines = [
+              `🛒 Order — ${store.name}`,
+              `Order No: ${d.order.orderNumber}`,
+              `Customer: ${customerName.value}`,
+              `Phone: ${customerPhone.value}`,
+              `Method: ${method.value}`,
+              address.value ? `Address: ${address.value}` : "",
+              "",
+              ...orderSnapshot.map((item) => `• ${item.name}${item.variant ? ` (${item.variant})` : ""} × ${item.quantity} — ${mmk(item.price * item.quantity)}`),
+              "",
+              `Total: ${mmk(d.order.total)}`,
+              note.value ? `Note: ${note.value}` : "",
+            ].filter(Boolean);
+            telegramWindow.location.href = telegramOrderUrl(store.telegramUrl, lines.join("\n"));
+          }
         } catch (e) {
+          if (telegramWindow) telegramWindow.close();
           showOrder(e.message, true);
         } finally {
           orderBtn.disabled = false;
@@ -859,6 +917,10 @@
             })[c],
         );
       }
+      function telegramOrderUrl(baseUrl, text) {
+        const match = String(baseUrl || "").match(/^https:\/\/t\.me\/([A-Za-z0-9_]+)\/?$/i);
+        return match ? `https://t.me/${match[1]}?text=${encodeURIComponent(text)}` : baseUrl;
+      }
       function escJs(v) {
         return String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n]/g, '');
       }
@@ -871,6 +933,9 @@
       [brandFilter, categoryFilter, stockFilter].forEach((filter) =>
         filter.addEventListener("change", () => loadProducts(1)),
       );
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("/storefront-sw.js", { scope: "/" }).catch(() => undefined));
+      }
       init();
     </script>
   </body>
