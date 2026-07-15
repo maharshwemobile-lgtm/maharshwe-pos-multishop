@@ -1,0 +1,94 @@
+import { useEffect, useState } from 'react';
+import { ExternalLink, ImagePlus, PackageCheck, Save, ShoppingBag, Store } from 'lucide-react';
+import { apiFetch, getSession } from './phase2Api';
+import './ecommerce-center.css';
+import './ecommerce-center-filters.css';
+import './ecommerce-image-manager.css';
+
+const money = (value) => `${Number(value || 0).toLocaleString()} MMK`;
+const emptyMeta = { page: 1, totalPages: 1, total: 0, onlineTotal: 0, brands: [], categories: [] };
+
+export default function EcommerceCenter() {
+  const [tab, setTab] = useState('setup');
+  const [meta, setMeta] = useState(null);
+  const [settings, setSettings] = useState({ enabled: false, deliveryEnabled: true, pickupEnabled: true, deliveryFee: 0 });
+  const [products, setProducts] = useState([]);
+  const [productMeta, setProductMeta] = useState(emptyMeta);
+  const [filters, setFilters] = useState({ brand: '', categoryId: '', stockLevel: '' });
+  const [orders, setOrders] = useState([]);
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function load(nextPage = productMeta.page || 1, nextFilters = filters) {
+    setBusy(true); setMessage('');
+    try {
+      const query = new URLSearchParams({ page: String(nextPage), ...nextFilters });
+      const [settingsData, productsData, ordersData] = await Promise.all([
+        apiFetch('/api/ecommerce/settings'), apiFetch(`/api/ecommerce/products?${query}`), apiFetch('/api/ecommerce/orders?page=1'),
+      ]);
+      setMeta(settingsData); setSettings((current) => ({ ...current, ...(settingsData.settings || {}) }));
+      setProducts(productsData.products || []); setProductMeta({ ...emptyMeta, ...productsData }); setOrders(ordersData.orders || []);
+    } catch (error) { setMessage(error.message); } finally { setBusy(false); }
+  }
+  useEffect(() => { load(1, filters); }, []);
+
+  async function saveSettings() {
+    setBusy(true); try { const data = await apiFetch('/api/ecommerce/settings', { method: 'PUT', body: settings }); setSettings(data.settings); setMessage('Online shop settings saved.'); } catch (error) { setMessage(error.message); } finally { setBusy(false); }
+  }
+  async function saveProduct(product, patch) {
+    setBusy(true);
+    try { await apiFetch(`/api/ecommerce/products/${product.id}`, { method: 'PUT', body: patch }); setMessage(`${product.name} updated.`); await load(productMeta.page, filters); }
+    catch (error) { setMessage(error.message); setBusy(false); throw error; }
+  }
+  async function uploadImages(product, files) {
+    if (!files?.length) return;
+    const form = new FormData(); [...files].slice(0, 3).forEach((file) => form.append('images', file));
+    const token = getSession()?.token; setBusy(true);
+    try { const response = await fetch(`/api/ecommerce/products/${product.id}/images`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: form }); const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Image upload failed'); setMessage('Product images uploaded.'); await load(productMeta.page, filters); }
+    catch (error) { setMessage(error.message); setBusy(false); }
+  }
+  async function deleteImage(image) {
+    if (!window.confirm('Delete this product image?')) return;
+    setBusy(true); try { await apiFetch(`/api/ecommerce/images/${image.id}`, { method: 'DELETE' }); setMessage('Image deleted.'); await load(productMeta.page, filters); } catch (error) { setMessage(error.message); setBusy(false); }
+  }
+  async function setPrimaryImage(image) {
+    setBusy(true); try { await apiFetch(`/api/ecommerce/images/${image.id}/primary`, { method: 'PATCH' }); setMessage('Main product photo updated.'); await load(productMeta.page, filters); } catch (error) { setMessage(error.message); setBusy(false); }
+  }
+  async function updateOrder(order, status) {
+    setBusy(true); try { await apiFetch(`/api/ecommerce/orders/${order.id}/status`, { method: 'PATCH', body: { status } }); setMessage(`${order.orderNumber} updated.`); await load(productMeta.page, filters); } catch (error) { setMessage(error.message); setBusy(false); }
+  }
+  function changeFilter(key, value) { const next = { ...filters, [key]: value }; setFilters(next); load(1, next); }
+
+  return <section className="ecom-center">
+    <header className="ecom-head"><div><span>ONLINE STORE</span><h2>E-commerce Website</h2><p>POS Product နှင့် Stock ချိတ်ထားသော အခမဲ့ Online Shop</p></div>{meta?.storeUrl && <a href={meta.storeUrl} target="_blank" rel="noreferrer"><ExternalLink size={17}/> View Store</a>}</header>
+    <div className="ecom-stats"><div><Store/><span><small>Store</small><b>{settings.enabled ? 'Online' : 'Offline'}</b></span></div><div><ShoppingBag/><span><small>Online Products</small><b>{productMeta.onlineTotal}</b></span></div><div><PackageCheck/><span><small>New Orders</small><b>{orders.filter((order) => order.status === 'PENDING').length}</b></span></div></div>
+    <nav className="ecom-tabs">{[['setup','Store Setup'],['products','Products & Images'],['orders','Orders']].map(([key,label]) => <button key={key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>{label}</button>)}</nav>
+    {message && <div className="ecom-message">{message}</div>}{busy && <div className="ecom-loading">Working...</div>}
+    {tab === 'setup' && <div className="ecom-card ecom-form">
+      <label className="ecom-toggle"><input type="checkbox" checked={!!settings.enabled} onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}/><span>Online Shop ဖွင့်မည်</span></label>
+      <label>Store Name<input value={settings.storeName || ''} onChange={(e) => setSettings({ ...settings, storeName: e.target.value })} placeholder={meta?.shop?.name || 'My Shop'}/></label>
+      <label className="wide">Description<textarea value={settings.description || ''} onChange={(e) => setSettings({ ...settings, description: e.target.value })}/></label>
+      <label>Contact Phone<input value={settings.contactPhone || ''} onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}/></label>
+      <label>Delivery Fee<input type="number" min="0" value={settings.deliveryFee || 0} onChange={(e) => setSettings({ ...settings, deliveryFee: Number(e.target.value) })}/></label>
+      <label className="ecom-toggle"><input type="checkbox" checked={!!settings.deliveryEnabled} onChange={(e) => setSettings({ ...settings, deliveryEnabled: e.target.checked })}/><span>COD Delivery</span></label>
+      <label className="ecom-toggle"><input type="checkbox" checked={!!settings.pickupEnabled} onChange={(e) => setSettings({ ...settings, pickupEnabled: e.target.checked })}/><span>Shop Pickup</span></label>
+      <button className="ecom-primary" onClick={saveSettings}><Save size={17}/> Save Store</button>
+    </div>}
+    {tab === 'products' && <><div className="ecom-filters"><select value={filters.brand} onChange={(e) => changeFilter('brand', e.target.value)}><option value="">All Brands</option>{productMeta.brands.map((brand) => <option key={brand}>{brand}</option>)}</select><select value={filters.categoryId} onChange={(e) => changeFilter('categoryId', e.target.value)}><option value="">All Categories</option>{productMeta.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><select value={filters.stockLevel} onChange={(e) => changeFilter('stockLevel', e.target.value)}><option value="">All Stock Levels</option><option value="IN_STOCK">In Stock</option><option value="LOW_STOCK">Low Stock</option><option value="OUT_OF_STOCK">Out of Stock</option></select></div><div className="ecom-list">{products.map((product) => <ProductRow key={product.id} product={product} onSave={saveProduct} onUpload={uploadImages} onDeleteImage={deleteImage} onSetPrimary={setPrimaryImage}/>)}</div><div className="ecom-pagination"><span>{productMeta.total} Products · Page {productMeta.page} / {productMeta.totalPages}</span><div><button disabled={productMeta.page <= 1 || busy} onClick={() => load(productMeta.page - 1, filters)}>Previous</button><button disabled={productMeta.page >= productMeta.totalPages || busy} onClick={() => load(productMeta.page + 1, filters)}>Next</button></div></div></>}
+    {tab === 'orders' && <div className="ecom-card ecom-orders"><table><thead><tr><th>Order</th><th>Customer</th><th>Type</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id}><td><b>{order.orderNumber}</b><small>{new Date(order.createdAt).toLocaleString()}</small></td><td>{order.customerName}<small>{order.customerPhone}</small></td><td>{order.fulfillmentMethod}</td><td>{money(order.total)}</td><td><span className={`ecom-status ${order.status.toLowerCase()}`}>{order.status}</span></td><td><select value={order.status} onChange={(e) => updateOrder(order, e.target.value)}><option>PENDING</option><option>CONFIRMED</option><option>READY</option><option>COMPLETED</option><option>CANCELLED</option></select></td></tr>)}</tbody></table>{!orders.length && <p className="ecom-empty">No online orders yet.</p>}</div>}
+  </section>;
+}
+
+function ProductRow({ product, onSave, onUpload, onDeleteImage, onSetPrimary }) {
+  const [description, setDescription] = useState(product.ecommerceDetail?.description || '');
+  const [links, setLinks] = useState(product.ecommerceImages?.filter((image) => image.source !== 'UPLOAD').map((image) => image.url).join('\n') || '');
+  const [visible, setVisible] = useState(product.ecommerceDetail?.visible !== false);
+  const [files, setFiles] = useState(null);
+  const stock = product.variants?.reduce((sum, variant) => sum + Number(variant.inventoryBalance?.quantity || 0), 0) || 0;
+  async function saveAll() { await onSave(product, { visible, description, imageUrls: links.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean) }); if (files?.length) await onUpload(product, files); }
+  return <article className="ecom-product"><div className="ecom-product-title"><div className="ecom-thumb"><img src={product.ecommerceImages?.[0]?.url || '/default-product-image.svg'} alt="" onError={(event) => { event.currentTarget.src = '/default-product-image.svg'; }}/></div><div><h3>{product.name}</h3><p>{product.category?.name || 'Uncategorized'} · Stock {stock}</p></div><label className="ecom-switch"><input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)}/><span>{visible ? 'Online' : 'Hidden'}</span></label></div>
+    <div className="ecom-image-manager">{product.ecommerceImages?.length ? product.ecommerceImages.map((image, index) => <div className="ecom-image-item" key={image.id}><img src={image.url} alt="" onError={(event) => { event.currentTarget.src = '/default-product-image.svg'; }}/><span>{index === 0 ? 'Main Photo' : `Photo ${index + 1}`}</span><div>{index !== 0 && <button type="button" onClick={() => onSetPrimary(image)}>Set Main</button>}<button type="button" className="danger" onClick={() => onDeleteImage(image)}>Delete</button></div></div>) : <div className="ecom-no-image"><img src="/default-product-image.svg" alt=""/><span>Default Photo</span></div>}</div>
+    <div className="ecom-product-fields"><label>Description<textarea value={description} onChange={(e) => setDescription(e.target.value)}/></label><label>Google Drive / Image Links<textarea value={links} onChange={(e) => { setLinks(e.target.value); if (e.target.value.trim()) setVisible(true); }} placeholder="One HTTPS link per line (unlimited)"/></label></div>
+    <div className="ecom-product-actions"><label className="ecom-upload"><ImagePlus size={16}/> {files?.length ? `${files.length} image selected` : 'Choose Images (Max 3)'}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={(e) => { setFiles(e.target.files); if (e.target.files?.length) setVisible(true); }}/></label><button className="ecom-save-one" onClick={saveAll}><Save size={16}/> Save</button></div>
+  </article>;
+}

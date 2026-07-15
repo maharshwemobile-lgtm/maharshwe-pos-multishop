@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingCart, Truck, Users, Wallet,
+import { BarChart3, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
   BadgePercent, Wrench, X } from 'lucide-react';
 import DashboardLive from './DashboardLive.jsx';
 import NewSaleV10 from './sales-v10/NewSaleV10.jsx';
@@ -18,6 +18,7 @@ import FinanceWorkspace from './FinanceWorkspace.jsx';
 import BusinessRecordsPanel from './BusinessRecordsPanel.jsx';
 import AboutUsPage from './AboutUsPage.jsx';
 import MoneyServiceCenterV23 from './MoneyServiceCenterV23.jsx';
+import EcommerceCenter from './EcommerceCenter.jsx';
 import ReportsWorkspace from './ReportsWorkspace.jsx';
 import AuditTrailPage from './AuditTrailPage.jsx';
 import GrandAdminPortal from './GrandAdminPortal.jsx';
@@ -39,6 +40,7 @@ const menu = [
   { name: 'Repairs', label: 'Repair Platform', icon: Wrench, color: '#f59e0b' },
   { name: 'Partner Settlement', label: 'Partner & Settlement', icon: Handshake, color: '#14b8a6' },
   { name: 'Products', icon: Box, color: '#ec4899' },
+  { name: 'Online Shop', label: 'E-commerce Website', icon: ShoppingBag, color: '#059669' },
   { name: 'Prices', label: 'ဈေးနှုန်းနှင့် လျော့ဈေးများ', icon: BadgePercent, color: '#f97316' },
   { name: 'Stock', icon: PackagePlus, color: '#8b5cf6' },
   { name: 'Purchases', icon: Truck, color: '#06b6d4' },
@@ -60,6 +62,7 @@ const MINI_MART_MENU_LABELS = {
   'Sale POS': 'Mini Mart POS',
   'Sales History': 'Sales History',
   Products: 'Items / Products',
+  'Online Shop': 'E-commerce Website',
   Prices: 'Prices & Discounts',
   Stock: 'Inventory Stock',
   Purchases: 'Purchases',
@@ -79,6 +82,7 @@ const pageTitles = {
   Repairs: 'Repair Platform',
   'Partner Settlement': 'Partner Shop & Weekly Settlement',
   Purchases: 'Suppliers & Purchase Orders',
+  'Online Shop': 'E-commerce Website',
   Customers: 'Customers & Credit',
   'Money Service': 'Money Service',
   Accounting: 'Finance & Accounts',
@@ -310,6 +314,7 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (safePage === 'Repairs') return <Phase8RepairWorkspace/>;
   if (safePage === 'Partner Settlement') return <PartnerSettlementWorkspace/>;
   if (safePage === 'Products') return <ProductsPage onboardingGuide={onboardingGuide}/>;
+  if (safePage === 'Online Shop') return <EcommerceCenter/>;
   if (safePage === 'Prices') return <Connected page={safePage} setPage={setPage}><ProductPriceDiscountPage/></Connected>;
   if (safePage === 'Stock') return <StockWorkspace/>;
   if (safePage === 'Purchases') return <PurchasingWorkspace/>;
