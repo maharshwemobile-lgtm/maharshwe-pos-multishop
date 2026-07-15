@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maharshwe-pos-v3';
+const CACHE_NAME = 'mahar-pos-v4';
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
