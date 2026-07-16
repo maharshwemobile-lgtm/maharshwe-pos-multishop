@@ -1,5 +1,5 @@
 (() => {
-  const localLogoUrl = new URL('./mahar-pos-logo-dark-safe.svg?v=20260715-dark-safe', window.location.href).href;
+  const localLogoUrl = new URL('./mahar-pos-logo.png?v=20260716-original-transparent', window.location.href).href;
 
   const removeThemeToggles = () => {
     localStorage.removeItem('ms_theme');
