@@ -328,8 +328,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       <main className="ms-login-page">
         <section className="ms-login-card">
           <div className="ms-login-brand">
-            <img src={PROJECT_LOGO_URL} alt="Mahar Shwe POS" />
-            <h1>Mahar Shwe POS</h1>
+            <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
+            <h1>Mahar POS</h1>
             <p>Password အသစ်ပြောင်းရန်</p>
           </div>
           {success ? <div className="ms-login-alert success">🔐 {success}</div> : null}
@@ -361,8 +361,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       <main className="ms-login-page">
         <section className="ms-login-card">
           <div className="ms-login-brand">
-            <img src={PROJECT_LOGO_URL} alt="Mahar Shwe POS" />
-            <h1>Mahar Shwe POS</h1>
+            <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
+            <h1>Mahar POS</h1>
             <p>Google Register ဆက်လုပ်ရန် ဆိုင်အမျိုးအစား ရွေးပါ</p>
           </div>
           {error ? <div className="ms-login-alert error">{error}</div> : null}
@@ -381,8 +381,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     <main className="ms-login-page">
       <section className="ms-login-card">
         <div className="ms-login-brand">
-          <img src={PROJECT_LOGO_URL} alt="Mahar Shwe POS" />
-          <h1>Mahar Shwe POS</h1>
+          <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
+          <h1>Mahar POS</h1>
           <p>{mode === 'login' ? 'အကောင့်ဝင်ရန်' : 'အကောင့်သစ် ဖွင့်ရန်'}</p>
         </div>
         <div className="ms-login-tabs" role="tablist" aria-label="Login and register">
@@ -418,7 +418,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
           <form className="ms-login-form" onSubmit={submitRegister}>
             <label>
               <span>ဆိုင်အမည် <b>*</b></span>
-              <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="မဟာရွှေဆိုင်" autoFocus />
+              <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="ကျွန်ုပ်၏ဆိုင်" autoFocus />
             </label>
             <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
             <label>

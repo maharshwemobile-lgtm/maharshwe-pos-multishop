@@ -219,7 +219,7 @@ export default function GoogleAuthGate({ children }) {
             <a className="ms-auth-logo-link" href="https://maharshwe.shop/">
               <img src={LOGO_URL} alt="Mahar POS Logo" />
               <span>
-                <b>Mahar Shwe Mobile POS</b>
+                <b>Mahar POS</b>
                 <small>app.maharshwe.shop</small>
               </span>
             </a>
@@ -255,7 +255,7 @@ export default function GoogleAuthGate({ children }) {
           <header className="ms-auth-header">
             <a className="ms-auth-mobile-logo" href="https://maharshwe.shop/">
               <img src={LOGO_URL} alt="Mahar POS" />
-              <span>Mahar Shwe POS</span>
+              <span>Mahar POS</span>
             </a>
             <div className="ms-auth-tabs" role="tablist" aria-label="Login mode">
               <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => switchMode('login')}>
@@ -373,7 +373,7 @@ export default function GoogleAuthGate({ children }) {
                     </label>
                     <label>
                       <span>ဖုန်းဆိုင်အမည်</span>
-                      <input value={registerForm.shopName} onChange={(event) => setRegisterForm({ ...registerForm, shopName: event.target.value })} placeholder="Mahar Shwe Mobile" required />
+                      <input value={registerForm.shopName} onChange={(event) => setRegisterForm({ ...registerForm, shopName: event.target.value })} placeholder="My Shop" required />
                     </label>
                     <label>
                       <span>Admin Username / Email / Phone</span>
@@ -431,7 +431,7 @@ export default function GoogleAuthGate({ children }) {
 
           <footer className="ms-auth-footer">
             <LoginFooterActions onForgotPassword={() => setError('Password reset လိုအပ်ပါက Telegram Support မှ Admin ကိုဆက်သွယ်ပါ။')} />
-            © 2026 Mahar Shwe Mobile POS. Powered by PostgreSQL Architecture.
+            © 2026 Mahar POS. Powered by PostgreSQL Architecture.
           </footer>
         </section>
       </section>
