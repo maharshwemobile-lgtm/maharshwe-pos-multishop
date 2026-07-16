@@ -45,8 +45,8 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(self.registration.showNotification(title, {
     body,
-    icon: '/mahar-pos-logo.png',
-    badge: '/mahar-pos-logo-192.png',
+    icon: '/mahar-pos-logo.png?v=20260716-all-brand-surfaces',
+    badge: '/mahar-pos-logo-192.png?v=20260716-all-brand-surfaces',
     tag,
     data: { url },
   }));

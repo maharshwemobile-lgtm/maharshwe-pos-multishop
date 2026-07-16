@@ -1,5 +1,5 @@
 const CACHE = 'mahar-storefront-v1';
-const SHELL = ['/storefront.html', '/default-product-image.svg', '/maharshwe-logo.png'];
+const SHELL = ['/storefront.html', '/default-product-image.svg', '/mahar-pos-logo.png?v=20260716-all-brand-surfaces'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).catch(() => undefined));

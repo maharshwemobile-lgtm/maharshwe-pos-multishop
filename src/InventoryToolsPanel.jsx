@@ -293,7 +293,7 @@ export default function InventoryToolsPanel({ onInventoryChanged }) {
         lastNotifiedRef.current = signature;
         new Notification(`Mahar POS — Low stock ${items.length} items`, {
           body: items.slice(0, 4).map((item) => `${item.product?.name || item.variantName}: ${item.inventory?.quantity || 0}`).join('\n'),
-          icon: '/mahar-pos-logo.png',
+          icon: '/mahar-pos-logo.png?v=20260716-all-brand-surfaces',
         });
       }
     } catch (error) {

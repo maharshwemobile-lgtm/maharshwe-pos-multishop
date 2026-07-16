@@ -7,8 +7,8 @@ import {
 import SimpleSalePOS from './pos/SimpleSalePOS.jsx';
 import GoogleAuthGate from './GoogleAuthGate.jsx';
 
-const logo = './mahar-pos-logo.png';
-const slipLogoUrl = './mahar-pos-logo.png';
+const logo = './mahar-pos-logo.png?v=20260716-all-brand-surfaces';
+const slipLogoUrl = './mahar-pos-logo.png?v=20260716-all-brand-surfaces';
 
 const products = [
   { name: 'ACD CC82 Charger', cat: 'Chargers', stock: 50, price: 9000, sold: 5, status: 'In Stock' },

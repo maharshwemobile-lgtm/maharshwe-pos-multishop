@@ -7,7 +7,7 @@ import './auth-gate.css';
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
 const DEFAULT_SHOP_SLUG = import.meta.env.VITE_SHOP_SLUG || '';
-const LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png?v=20260716-original-transparent';
+const LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png?v=20260716-all-brand-surfaces';
 
 let googleScriptPromise;
 
