@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mahar POS Runtime Refresh</title>
+    <style>
+      body{margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;display:grid;place-items:center;min-height:100vh}
+      .card{max-width:420px;margin:24px;padding:24px;border:1px solid #dbe5ef;border-radius:18px;background:#fff;box-shadow:0 18px 40px rgba(15,23,42,.08)}
+      h1{margin:0 0 10px;font-size:22px}
+      p{margin:0 0 10px;line-height:1.5;color:#475569}
+      code{display:block;margin-top:10px;padding:10px 12px;border-radius:12px;background:#f1f5f9;color:#0f172a;font-size:12px;word-break:break-all}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Refreshing Mahar POS…</h1>
+      <p>Old app cache နဲ့ service worker ကိုရှင်းပြီး latest version ကိုပြန်ဖွင့်နေပါတယ်။</p>
+      <p id="status">Starting cleanup…</p>
+      <code id="detail">runtime-refresh-20260702</code>
+    </div>
+    <script>
+      (async function () {
+        const status = document.getElementById('status');
+        const setStatus = (text) => { if (status) status.textContent = text; };
+        try {
+          setStatus('Clearing legacy service workers…');
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister().catch(() => {})));
+          }
+
+          setStatus('Clearing old caches…');
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((key) => caches.delete(key).catch(() => {})));
+          }
+
+          try {
+            localStorage.setItem('mahar-runtime-version', '20260702-runtime-refresh');
+          } catch {}
+
+          setStatus('Opening latest Mahar POS…');
+          const nextUrl = '/?v=20260702-runtime-refresh-final';
+          setTimeout(() => { window.location.replace(nextUrl); }, 700);
+        } catch (error) {
+          setStatus('Cleanup finished. Redirecting…');
+          setTimeout(() => { window.location.replace('/?v=20260702-runtime-refresh-fallback'); }, 1000);
+        }
+      })();
+    </script>
+  </body>
+</html>
