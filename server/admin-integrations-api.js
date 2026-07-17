@@ -14,6 +14,8 @@ const { recordTelegramSheetSafe } = require('./telegram-sheet-recorder');
 const VPN_TOPIC = String(process.env.FCM_TOPIC || 'maharshwe-vpn').trim() || 'maharshwe-vpn';
 const VPN_FIREBASE_PROJECT = 'maharshweonlinevpn';
 const VPN_REGISTERED_TOKEN_FALLBACK = 140;
+const VPN_ADS_PUBLIC_URL = String(process.env.VPN_ADS_PUBLIC_URL || 'https://maharshwe.online/api/vpn-ads').trim();
+const VPN_ADS_ADMIN_URL = String(process.env.VPN_ADS_ADMIN_URL || VPN_ADS_PUBLIC_URL).trim();
 const ADMIN_PORTAL_SHOP_SLUG = 'mahar-admin-portal';
 const HIDDEN_TENANT_SLUG_PREFIXES = ['codex-', 'browser-cors-'];
 const VISIBLE_POS_SHOP_WHERE = {
@@ -407,6 +409,51 @@ async function readLocalVpnAdsConfig() {
   return { config: adsHistoryToConfig(latest), history: latest || null };
 }
 
+function vpnAdsAdminApiKey() {
+  return String(process.env.MAHARSHWE_ONLINE_ADMIN_API_KEY || process.env.TELEGRAM_API_KEY || '').trim();
+}
+
+async function requestVpnAdsUpstream({ method = 'GET', payload } = {}) {
+  const target = method === 'POST' ? VPN_ADS_ADMIN_URL : VPN_ADS_PUBLIC_URL;
+  const headers = { Accept: 'application/json' };
+  if (method === 'POST') {
+    const apiKey = vpnAdsAdminApiKey();
+    if (!apiKey) throw new ApiError(503, 'VPN Ads admin API key is not configured');
+    headers['Content-Type'] = 'application/json';
+    headers['x-api-key'] = apiKey;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(target, {
+      method,
+      headers,
+      body: method === 'POST' ? JSON.stringify(payload) : undefined,
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    let body = {};
+    try {
+      body = text ? JSON.parse(text) : {};
+    } catch {
+      body = { message: text.slice(0, 500) };
+    }
+    if (!response.ok || body?.ok === false) {
+      throw new ApiError(502, body?.message || `VPN Ads upstream returned HTTP ${response.status}`, {
+        status: response.status,
+        target,
+      });
+    }
+    return { config: body?.config || body, raw: body, target, status: response.status };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(502, error?.name === 'AbortError' ? 'VPN Ads upstream timed out' : 'VPN Ads upstream is unavailable');
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function sendVpnTopicPush(payload) {
   if (!isFirebaseAdminConfigured()) {
     throw new ApiError(500, 'Firebase Admin is not configured on this server');
@@ -451,14 +498,9 @@ function shopFilter(req) {
 
 function attachAdminIntegrationsApi(app) {
   app.get('/api/vpn-ads', wrap(async (_req, res) => {
-    const { config } = await readLocalVpnAdsConfig();
-    res.json({
-      ok: true,
-      enabled: config.enabled,
-      config,
-      source: 'super.maharshwe.shop',
-      behavior: 'Free Server Ads appear only after a Free Server connection, 5 seconds after connect. Other Key connections do not show ads.',
-    });
+    const upstream = await requestVpnAdsUpstream();
+    res.set('Cache-Control', 'no-store');
+    res.json(upstream.config);
   }));
 
   app.get('/api/admin/products', ...adminAccess('dashboard.view'), wrap(async (_req, res) => {
@@ -750,8 +792,13 @@ function attachAdminIntegrationsApi(app) {
         : Promise.resolve(0),
     ]);
 
-    const { config: vpnAdsConfig } = await readLocalVpnAdsConfig();
-    const vpnAds = { available: true, local: true, config: vpnAdsConfig, enabled: vpnAdsConfig.enabled };
+    let vpnAds;
+    try {
+      const upstream = await requestVpnAdsUpstream();
+      vpnAds = { available: true, local: false, source: upstream.target, config: upstream.config, enabled: Boolean(upstream.config.enabled) };
+    } catch (error) {
+      vpnAds = { available: false, local: false, source: VPN_ADS_PUBLIC_URL, error: error.message, config: defaultVpnAdsConfig(), enabled: false };
+    }
 
     res.json({
       ok: true,
@@ -782,14 +829,16 @@ function attachAdminIntegrationsApi(app) {
   }));
 
   app.get('/api/admin/integrations/vpn-ads', ...adminAccess('vpn_ads.view'), wrap(async (_req, res) => {
-    const { config, history } = await readLocalVpnAdsConfig();
+    const upstream = await requestVpnAdsUpstream();
     res.json({
       ok: true,
       productSlug: 'mahar_shwe_vpn',
-      local: true,
+      local: false,
+      source: upstream.target,
+      writable: Boolean(vpnAdsAdminApiKey()),
       behavior: 'Free Server Ads appear only after a Free Server connection, 5 seconds after connect. Other Key connections do not show ads.',
-      config,
-      raw: { config, historyId: history?.id || null },
+      config: upstream.config,
+      raw: upstream.raw,
     });
   }));
 
@@ -807,7 +856,14 @@ function attachAdminIntegrationsApi(app) {
       backgroundColor: input.backgroundColor,
       textColor: input.textColor,
     };
-    const localResponse = { ok: true, source: 'super.maharshwe.shop', config: payload, savedAt: new Date().toISOString() };
+    const upstream = await requestVpnAdsUpstream({ method: 'POST', payload });
+    const upstreamResponse = {
+      ok: true,
+      source: upstream.target,
+      status: upstream.status,
+      response: upstream.raw,
+      savedAt: new Date().toISOString(),
+    };
     const history = await createAdsHistory({
       productSlug: 'mahar_shwe_vpn',
       adsType: 'free_server_banner',
@@ -821,14 +877,14 @@ function attachAdminIntegrationsApi(app) {
       cta: payload.cta || null,
       backgroundColor: payload.backgroundColor,
       textColor: payload.textColor,
-      responseJson: localResponse,
+      responseJson: upstreamResponse,
       createdBy: req.auth.userId || null,
     });
     await writeAdminAudit(req, payload.enabled ? 'VPN_ADS_SAVE' : 'VPN_ADS_DISABLE', 'vpn_ads', history?.id || null, {
       productSlug: 'mahar_shwe_vpn',
       enabled: payload.enabled,
     });
-    res.json({ ok: true, savedAt: new Date(), config: payload, response: localResponse, historyId: history?.id || null });
+    res.json({ ok: true, savedAt: new Date(), config: upstream.config, response: upstreamResponse, historyId: history?.id || null });
   }));
 
   app.post('/api/admin/integrations/vpn-notifications/send', ...adminAccess('push.send'), wrap(async (req, res) => {

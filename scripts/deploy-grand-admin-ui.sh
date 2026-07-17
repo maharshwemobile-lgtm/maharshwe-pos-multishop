@@ -22,6 +22,7 @@ rsync -a "$SUPER_ROOT/" "$BACKUP/"
 echo "Backup saved to: $BACKUP"
 
 echo "=== Deploy Mahar POS Grand Admin UI ==="
+rsync -a "$ROOT/dist/grand-admin/" "$SUPER_ROOT/grand-admin/"
 cp "$DIST_INDEX" "$SUPER_ROOT/index.html"
 cp "$DIST_LOGO" "$SUPER_ROOT/mahar-pos-logo.svg"
 cp "$DIST_GS_JS" "$SUPER_ROOT/grand-admin-google-sheet-integration.js"
