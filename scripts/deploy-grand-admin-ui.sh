@@ -25,9 +25,6 @@ echo "=== Deploy Mahar POS Grand Admin UI ==="
 rsync -a "$ROOT/dist/grand-admin/" "$SUPER_ROOT/grand-admin/"
 cp "$DIST_INDEX" "$SUPER_ROOT/index.html"
 cp "$DIST_LOGO" "$SUPER_ROOT/mahar-pos-logo.svg"
-cp "$ROOT/dist/mahar-pos-logo.png" "$SUPER_ROOT/mahar-pos-logo.png"
-cp "$ROOT/dist/mahar-pos-logo-192.png" "$SUPER_ROOT/mahar-pos-logo-192.png"
-cp "$ROOT/dist/mahar-pos-logo-512.png" "$SUPER_ROOT/mahar-pos-logo-512.png"
 cp "$DIST_GS_JS" "$SUPER_ROOT/grand-admin-google-sheet-integration.js"
 python3 - "$SUPER_ROOT/index.html" "$STAMP" <<'PYINJECT'
 import sys
