@@ -410,7 +410,7 @@ async function readLocalVpnAdsConfig() {
 }
 
 function vpnAdsAdminApiKey() {
-  return String(process.env.MAHARSHWE_ONLINE_ADMIN_API_KEY || process.env.TELEGRAM_API_KEY || '').trim();
+  return String(process.env.TELEGRAM_API_KEY || '').trim();
 }
 
 async function requestVpnAdsUpstream({ method = 'GET', payload } = {}) {
