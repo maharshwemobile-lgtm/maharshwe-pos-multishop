@@ -8,13 +8,25 @@ const { OAuth2Client } = require('google-auth-library');
 const { prisma } = require('./prisma');
 const { requireAuth } = require('./auth-api');
 
+const optionalOrderText = (maximum) => z.preprocess((value) => value == null ? '' : String(value), z.string().trim().max(maximum));
 const orderInput = z.object({
-  customerName: z.string().trim().min(1).max(120),
-  customerPhone: z.string().trim().min(5).max(40),
-  deliveryAddress: z.string().trim().max(500).optional().default(''),
-  fulfillmentMethod: z.enum(['COD', 'PICKUP']),
-  note: z.string().trim().max(500).optional().default(''),
-  items: z.array(z.object({ variantId: z.string().uuid(), quantity: z.coerce.number().int().min(1).max(100) })).min(1).max(50),
+  customerName: z.preprocess((value) => value == null ? '' : String(value), z.string().trim().min(1).max(120)),
+  customerPhone: z.preprocess((value) => value == null ? '' : String(value), z.string().trim().min(3).max(40)),
+  deliveryAddress: optionalOrderText(500),
+  fulfillmentMethod: z.preprocess((value) => String(value || '').toUpperCase(), z.enum(['COD', 'PICKUP'])),
+  note: optionalOrderText(500),
+  items: z.array(z.object({
+    variantId: z.string().uuid().optional(),
+    productVariantId: z.string().uuid().optional(),
+    quantity: z.coerce.number().int().min(1).max(100).optional(),
+    qty: z.coerce.number().int().min(1).max(100).optional(),
+  }).transform((item, context) => {
+    const variantId = item.variantId || item.productVariantId;
+    const quantity = item.quantity || item.qty;
+    if (!variantId) context.addIssue({ code: 'custom', path: ['variantId'], message: 'Product variant is required' });
+    if (!quantity) context.addIssue({ code: 'custom', path: ['quantity'], message: 'Quantity is required' });
+    return { variantId, quantity };
+  })).min(1).max(50),
 });
 const settingsInput = z.object({
   enabled: z.boolean().optional(), storeName: z.string().trim().max(160).nullable().optional(),
@@ -91,7 +103,11 @@ function driveImageUrl(value) {
 }
 function handle(handler) {
   return async (req, res) => { try { await handler(req, res); } catch (error) {
-    if (error?.issues) return res.status(400).json({ ok: false, message: 'Invalid request', issues: error.issues });
+    if (error?.issues) {
+      const first = error.issues[0];
+      const field = first?.path?.filter((part) => typeof part !== 'number').join('.') || 'request';
+      return res.status(400).json({ ok: false, message: `${field}: ${first?.message || 'Invalid request'}`, issues: error.issues });
+    }
     if (!error.status || error.status >= 500) console.error('E-commerce API:', error);
     return res.status(error.status || 500).json({ ok: false, message: error.message || 'E-commerce request failed' });
   } };

@@ -1,11 +1,11 @@
-const CACHE = 'maharshwe-storefront-global-vpn-v21';
+const CACHE = 'maharshwe-storefront-order-pwa-fix-v22';
 const SHELL = [
   '/storefront.html',
   '/storefront-app.css?v=20260718-category-icons-v13',
   '/storefront-google.css?v=20260718-category-icons-v13',
   '/storefront-preview-theme.css?v=20260718-filter-controls-v15',
-  '/storefront-original-v2.css?v=20260718-global-vpn-v19',
-  '/storefront-app.js?v=20260718-global-vpn-v19',
+  '/storefront-original-v2.css?v=20260718-order-pwa-fix-v20',
+  '/storefront-app.js?v=20260718-order-pwa-fix-v20',
   '/mahar-pos-logo-192.png',
   '/mahar-pos-logo-512.png',
   '/default-product-image.svg',
