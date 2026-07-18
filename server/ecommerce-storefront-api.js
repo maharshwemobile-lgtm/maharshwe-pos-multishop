@@ -10,7 +10,7 @@ const { requireAuth } = require('./auth-api');
 
 const optionalOrderText = (maximum) => z.preprocess((value) => value == null ? '' : String(value), z.string().trim().max(maximum));
 const orderInput = z.object({
-  customerName: z.preprocess((value) => value == null ? '' : String(value), z.string().trim().min(1).max(120)),
+  customerName: z.preprocess((value) => String(value || '').trim() || 'Guest Customer', z.string().max(120)),
   customerPhone: z.preprocess((value) => value == null ? '' : String(value), z.string().trim().min(3).max(40)),
   deliveryAddress: optionalOrderText(500),
   fulfillmentMethod: z.preprocess((value) => String(value || '').toUpperCase(), z.enum(['COD', 'PICKUP'])),
@@ -623,7 +623,6 @@ function attachEcommerceStorefrontApi(app) {
       return order;
     }, { isolationLevel: 'Serializable' }));
     res.status(201).json({ ok: true, order: created });
-    notifyMaharStoreOrder(shop, created).catch((error) => console.error('[ecommerce] order notify failed:', error?.message));
   }));
 }
 
