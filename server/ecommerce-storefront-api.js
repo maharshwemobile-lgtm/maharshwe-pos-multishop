@@ -424,6 +424,7 @@ function attachEcommerceStorefrontApi(app) {
     });
     if (!shop) notFound('Online shop is not available');
     const name = shop.ecommerceSettings.storeName || shop.name;
+    const shopIcon = shop.logoUrl || '/mahar-pos-logo-512.png';
     res.type('application/manifest+json').set('Cache-Control', 'public, max-age=300').json({
       id: `/shop/${shop.slug}`,
       name,
@@ -435,6 +436,7 @@ function attachEcommerceStorefrontApi(app) {
       background_color: '#f7f9fc',
       theme_color: '#0a8f5b',
       icons: [
+        { src: shopIcon, sizes: '512x512', purpose: 'any maskable' },
         { src: '/mahar-pos-logo-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/mahar-pos-logo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
       ],
