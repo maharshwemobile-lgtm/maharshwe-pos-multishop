@@ -139,6 +139,8 @@ model Shop {
   ecommerceProductDetails  EcommerceProductDetail[]
   ecommerceProductImages   EcommerceProductImage[]
   ecommerceOrders          EcommerceOrder[]
+  ecommerceCustomers       EcommerceCustomer[]
+  ecommerceCarts           EcommerceCart[]
 
   @@map("shops")
 }
@@ -331,14 +333,138 @@ model EcommerceOrder {
   deliveryFee       Decimal              @default(0) @map("delivery_fee") @db.Decimal(14, 2)
   total             Decimal              @default(0) @db.Decimal(14, 2)
   note              String?
+  customerId        String?              @map("customer_id") @db.Uuid
+  idempotencyKey    String?              @map("idempotency_key")
   createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
   shop              Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
   items             EcommerceOrderItem[]
+  customer          EcommerceCustomer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   @@unique([shopId, orderNumber])
+  @@unique([shopId, idempotencyKey])
   @@index([shopId, status, createdAt])
   @@map("ecommerce_orders")
+}
+
+model EcommerceCustomer {
+  id                  String                       @id @default(uuid()) @db.Uuid
+  shopId              String                       @map("shop_id") @db.Uuid
+  telegramUserId      String?                      @map("telegram_user_id")
+  googleSubject       String?                      @map("google_subject")
+  email               String?
+  displayName         String?                      @map("display_name")
+  telegramChatId      String?                      @map("telegram_chat_id")
+  telegramUsername    String?                      @map("telegram_username")
+  telegramFirstName   String?                      @map("telegram_first_name")
+  telegramLastName    String?                      @map("telegram_last_name")
+  telegramPhotoUrl    String?                      @map("telegram_photo_url")
+  languageCode        String?                      @map("language_code")
+  phone               String?
+  notificationConsent Boolean                      @default(true) @map("notification_consent")
+  telegramConnectedAt DateTime?                    @map("telegram_connected_at") @db.Timestamptz(6)
+  lastLoginAt         DateTime                     @default(now()) @map("last_login_at") @db.Timestamptz(6)
+  lastOrderAt         DateTime?                    @map("last_order_at") @db.Timestamptz(6)
+  createdAt           DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shop                Shop                         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sessions            EcommerceCustomerSession[]
+  addresses           EcommerceCustomerAddress[]
+  favourites          EcommerceCustomerFavourite[]
+  carts               EcommerceCart[]
+  orders              EcommerceOrder[]
+
+  @@unique([shopId, telegramUserId])
+  @@unique([shopId, googleSubject])
+  @@index([shopId, lastLoginAt])
+  @@map("ecommerce_customers")
+}
+
+model EcommerceCustomerSession {
+  id               String            @id @default(uuid()) @db.Uuid
+  customerId       String            @map("customer_id") @db.Uuid
+  sessionTokenHash String            @unique @map("session_token_hash")
+  expiresAt        DateTime          @map("expires_at") @db.Timestamptz(6)
+  revokedAt        DateTime?         @map("revoked_at") @db.Timestamptz(6)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  customer         EcommerceCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, expiresAt])
+  @@map("ecommerce_customer_sessions")
+}
+
+model EcommerceCustomerAddress {
+  id            String            @id @default(uuid()) @db.Uuid
+  customerId    String            @map("customer_id") @db.Uuid
+  recipientName String            @map("recipient_name")
+  phone         String
+  addressLine   String            @map("address_line")
+  township      String?
+  city          String?
+  note          String?
+  isDefault     Boolean           @default(false) @map("is_default")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  customer      EcommerceCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, isDefault])
+  @@map("ecommerce_customer_addresses")
+}
+
+model EcommerceCustomerFavourite {
+  customerId String            @map("customer_id") @db.Uuid
+  productId  String            @map("product_id") @db.Uuid
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  customer   EcommerceCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, productId])
+  @@map("ecommerce_customer_favourites")
+}
+
+model EcommerceCart {
+  id             String              @id @default(uuid()) @db.Uuid
+  shopId         String              @map("shop_id") @db.Uuid
+  customerId     String?             @map("customer_id") @db.Uuid
+  guestSessionId String?             @map("guest_session_id")
+  status         String              @default("ACTIVE")
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shop           Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer       EcommerceCustomer?  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items          EcommerceCartItem[]
+
+  @@index([shopId, customerId, status])
+  @@index([shopId, guestSessionId, status])
+  @@map("ecommerce_carts")
+}
+
+model EcommerceCartItem {
+  id                String        @id @default(uuid()) @db.Uuid
+  cartId            String        @map("cart_id") @db.Uuid
+  productId         String        @map("product_id") @db.Uuid
+  productVariantId  String?       @map("product_variant_id") @db.Uuid
+  quantity          Int
+  unitPriceSnapshot Decimal       @map("unit_price_snapshot") @db.Decimal(14, 2)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cart              EcommerceCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productVariantId])
+  @@index([cartId])
+  @@map("ecommerce_cart_items")
+}
+
+model EcommerceTelegramConnectionToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  customerId String    @map("customer_id") @db.Uuid
+  shopId     String    @map("shop_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt     DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([customerId, expiresAt])
+  @@map("ecommerce_telegram_connection_tokens")
 }
 
 model EcommerceOrderItem {

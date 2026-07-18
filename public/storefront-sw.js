@@ -1,14 +1,32 @@
-const CACHE = 'mahar-storefront-v1';
-const SHELL = ['/storefront.html', '/default-product-image.svg', '/mahar-pos-logo.png?v=20260716-all-brand-surfaces'];
+const CACHE = 'maharshwe-storefront-global-vpn-v21';
+const SHELL = [
+  '/storefront.html',
+  '/storefront-app.css?v=20260718-category-icons-v13',
+  '/storefront-google.css?v=20260718-category-icons-v13',
+  '/storefront-preview-theme.css?v=20260718-filter-controls-v15',
+  '/storefront-original-v2.css?v=20260718-global-vpn-v19',
+  '/storefront-app.js?v=20260718-global-vpn-v19',
+  '/mahar-pos-logo-192.png',
+  '/mahar-pos-logo-512.png',
+  '/default-product-image.svg',
+];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).catch(() => undefined));
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).catch(() => undefined)
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
+      )
+      .then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
