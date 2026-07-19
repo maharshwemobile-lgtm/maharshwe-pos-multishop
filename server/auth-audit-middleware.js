@@ -8,6 +8,10 @@ function attachAuthAuditMiddleware(app) {
     const isLogout = pathname === '/api/auth/logout';
     if (req.method !== 'POST' || (!isLogin && !isLogout)) return next();
 
+    // auth-api also has a legacy audit helper. This marker makes the
+    // cryptographic middleware the single writer for password login/logout.
+    req.authAuditMiddlewareActive = true;
+
     const requestId = req.headers['x-request-id'] || crypto.randomUUID();
     const startedAt = Date.now();
     let responseBody = null;

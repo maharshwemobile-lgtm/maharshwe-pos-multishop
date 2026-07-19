@@ -403,6 +403,7 @@ function signToken(user) {
 }
 
 async function writeAudit({ shopId, userId, action, details, req }) {
+  if (req?.authAuditMiddlewareActive) return;
   try {
     await prisma.auditLog.create({
       data: {
