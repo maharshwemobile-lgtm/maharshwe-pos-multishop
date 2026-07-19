@@ -158,11 +158,11 @@ function sessionFromResponse(data) {
   return session;
 }
 
-export async function login({ username, password, shopSlug }) {
+export async function login({ username, password, shopSlug, turnstileToken }) {
   const response = await fetch(resolveApiUrl('/api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ username, password, shopSlug }),
+    body: JSON.stringify({ username, password, shopSlug, turnstileToken }),
   });
   const data = await readJson(response);
   if (!response.ok || !data?.token) {
@@ -188,6 +188,15 @@ export async function registerTenant(payload) {
     throw error;
   }
   return data;
+}
+
+export async function getLoginSecurityConfig() {
+  const response = await fetch(resolveApiUrl('/api/auth/login-security-config'), {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  const data = await readJson(response);
+  return response.ok ? data : { turnstile: { enabled: false, siteKey: null } };
 }
 
 export async function getAuthSecurityConfig() {

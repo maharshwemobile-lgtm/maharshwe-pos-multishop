@@ -93,7 +93,9 @@ function turnstileConfig() {
 }
 
 const superLoginFailures = new Map();
+const appLoginFailures = new Map();
 const SUPER_CAPTCHA_THRESHOLD = Math.max(1, Number(process.env.SUPER_ADMIN_CAPTCHA_THRESHOLD || 3));
+const APP_CAPTCHA_THRESHOLD = Math.max(1, Number(process.env.APP_LOGIN_CAPTCHA_THRESHOLD || 3));
 const SUPER_FAILURE_WINDOW_MS = Math.max(60_000, Number(process.env.SUPER_ADMIN_FAILURE_WINDOW_MS || 15 * 60 * 1000));
 
 function superTurnstileConfig() {
@@ -102,9 +104,45 @@ function superTurnstileConfig() {
   return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
 }
 
+function appTurnstileConfig() {
+  const siteKey = String(process.env.APP_TURNSTILE_SITE_KEY || '').trim();
+  const secretKey = String(process.env.APP_TURNSTILE_SECRET_KEY || '').trim();
+  return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
+}
+
 function isSuperLoginRequest(req) {
   const host = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase();
   return host === 'super.maharshwe.shop';
+}
+
+function isAppLoginRequest(req) {
+  const host = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase();
+  return host === 'app.maharshwe.shop';
+}
+
+function currentAppFailures(req) {
+  const key = authClientIp(req);
+  const entry = appLoginFailures.get(key);
+  if (!entry || Date.now() - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS) {
+    appLoginFailures.delete(key);
+    return 0;
+  }
+  return entry.count;
+}
+
+function recordAppFailure(req) {
+  const key = authClientIp(req);
+  const now = Date.now();
+  const entry = appLoginFailures.get(key);
+  const next = !entry || now - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS
+    ? { count: 1, firstFailedAt: now }
+    : { ...entry, count: entry.count + 1 };
+  appLoginFailures.set(key, next);
+  return next.count;
+}
+
+function clearAppFailures(req) {
+  appLoginFailures.delete(authClientIp(req));
 }
 
 function superFailureKey(req) {
@@ -151,6 +189,23 @@ async function verifySuperTurnstile(token, ip) {
     return { success: response.ok && result.success === true, errors: result['error-codes'] || [] };
   } catch (error) {
     console.error('[AUTH_SECURITY] Super admin Turnstile verification failed:', error.message);
+    return { success: false, reason: 'verification-unavailable' };
+  }
+}
+
+async function verifyAppTurnstile(token, ip) {
+  const config = appTurnstileConfig();
+  if (!config.enabled) return { success: false, reason: 'not-configured' };
+  if (!token) return { success: false, reason: 'missing-token' };
+  try {
+    const body = new URLSearchParams({ secret: config.secretKey, response: token, remoteip: ip });
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST', body, signal: AbortSignal.timeout(8000),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success === true, errors: result['error-codes'] || [] };
+  } catch (error) {
+    console.error('[AUTH_SECURITY] App Turnstile verification failed:', error.message);
     return { success: false, reason: 'verification-unavailable' };
   }
 }
@@ -642,8 +697,11 @@ async function loginHandler(req, res) {
   const password = parsed.data.password;
   const shopSlug = String(parsed.data.shopSlug || parsed.data.shop || "").trim();
   const superLogin = isSuperLoginRequest(req);
+  const appLogin = isAppLoginRequest(req);
   const superCaptchaEnabled = superTurnstileConfig().enabled;
+  const appCaptchaEnabled = appTurnstileConfig().enabled;
   const previousSuperFailures = superLogin ? currentSuperFailures(req, username) : 0;
+  const previousAppFailures = appLogin ? currentAppFailures(req) : 0;
 
   if (superLogin && superCaptchaEnabled && previousSuperFailures >= SUPER_CAPTCHA_THRESHOLD) {
     const challenge = await verifySuperTurnstile(parsed.data.turnstileToken, authClientIp(req));
@@ -662,6 +720,21 @@ async function loginHandler(req, res) {
     }
   }
 
+  if (appLogin && appCaptchaEnabled && previousAppFailures >= APP_CAPTCHA_THRESHOLD) {
+    const challenge = await verifyAppTurnstile(parsed.data.turnstileToken, authClientIp(req));
+    if (!challenge.success) {
+      console.warn('[AUTH_SECURITY]', JSON.stringify({
+        event: 'APP_LOGIN_TURNSTILE_REJECTED', ip: authClientIp(req),
+        reason: challenge.reason || challenge.errors, at: new Date().toISOString(),
+      }));
+      return res.status(403).json({
+        ok: false,
+        message: 'Security verification ကိုပြီးအောင်လုပ်ပြီး ပြန်ဝင်ပါ။',
+        captchaRequired: true,
+      });
+    }
+  }
+
   try {
     const { user, reason } = await findLoginUser({ username, shopSlug });
     if (!user) {
@@ -675,10 +748,14 @@ async function loginHandler(req, res) {
           ? "ဆိုင်ကုဒ် / Tenant ID လိုအပ်သည်"
           : "Username or password is incorrect";
       const failures = superLogin ? recordSuperFailure(req, username) : 0;
+      const appFailures = appLogin ? recordAppFailure(req) : 0;
       return res.status(401).json({
         ok: false,
         message,
-        captchaRequired: Boolean(superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD),
+        captchaRequired: Boolean(
+          (superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD) ||
+          (appLogin && appCaptchaEnabled && appFailures >= APP_CAPTCHA_THRESHOLD)
+        ),
       });
     }
 
@@ -703,14 +780,19 @@ async function loginHandler(req, res) {
         req,
       });
       const failures = superLogin ? recordSuperFailure(req, username) : 0;
+      const appFailures = appLogin ? recordAppFailure(req) : 0;
       return res.status(401).json({
         ok: false,
         message: "Username or password is incorrect",
-        captchaRequired: Boolean(superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD),
+        captchaRequired: Boolean(
+          (superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD) ||
+          (appLogin && appCaptchaEnabled && appFailures >= APP_CAPTCHA_THRESHOLD)
+        ),
       });
     }
 
     if (superLogin) clearSuperFailures(req, username);
+    if (appLogin) clearAppFailures(req);
 
     const demoAutoCleanup = await maybeAutoCleanupDemoData(user);
 
@@ -1024,6 +1106,18 @@ function attachAuthApi(app) {
         enabled: Boolean(hostAllowed && config.enabled),
         siteKey: hostAllowed && config.enabled ? config.siteKey : null,
         threshold: SUPER_CAPTCHA_THRESHOLD,
+      },
+    });
+  });
+  app.get('/api/auth/login-security-config', (req, res) => {
+    const config = appTurnstileConfig();
+    const hostAllowed = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase() === 'app.maharshwe.shop';
+    res.set('Cache-Control', 'no-store').json({
+      ok: true,
+      turnstile: {
+        enabled: Boolean(hostAllowed && config.enabled),
+        siteKey: hostAllowed && config.enabled ? config.siteKey : null,
+        threshold: APP_CAPTCHA_THRESHOLD,
       },
     });
   });

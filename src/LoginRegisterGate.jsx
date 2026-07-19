@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { changePassword, clearSession, getAuthSecurityConfig, googleLogin, login, registerTenant } from './phase2Api';
+import { changePassword, clearSession, getAuthSecurityConfig, getLoginSecurityConfig, googleLogin, login, registerTenant } from './phase2Api';
 import { PROJECT_LOGO_URL } from './projectBrand';
 import LoginFooterActions from './LoginFooterActions.jsx';
 import './login-register-gate.css';
@@ -59,6 +59,9 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
   const [pendingSession, setPendingSession] = useState(null);
   const [turnstileConfig, setTurnstileConfig] = useState({ enabled: false, siteKey: null });
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [loginTurnstileConfig, setLoginTurnstileConfig] = useState({ enabled: false, siteKey: null });
+  const [loginCaptchaRequired, setLoginCaptchaRequired] = useState(false);
+  const [loginTurnstileToken, setLoginTurnstileToken] = useState('');
   const [passwordChangeForm, setPasswordChangeForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -67,10 +70,48 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
   const googleButtonRef = useRef(null);
   const turnstileRef = useRef(null);
   const turnstileWidgetRef = useRef(null);
+  const loginTurnstileRef = useRef(null);
+  const loginTurnstileWidgetRef = useRef(null);
 
   useEffect(() => {
     getAuthSecurityConfig().then((data) => setTurnstileConfig(data?.turnstile || { enabled: false, siteKey: null })).catch(() => null);
+    getLoginSecurityConfig().then((data) => setLoginTurnstileConfig(data?.turnstile || { enabled: false, siteKey: null })).catch(() => null);
   }, []);
+
+  useEffect(() => {
+    if (mode !== 'login' || !loginCaptchaRequired || !loginTurnstileConfig.enabled || !loginTurnstileConfig.siteKey || !loginTurnstileRef.current) return undefined;
+    let cancelled = false;
+    const renderWidget = () => {
+      if (cancelled || !window.turnstile || !loginTurnstileRef.current || loginTurnstileWidgetRef.current !== null) return;
+      loginTurnstileWidgetRef.current = window.turnstile.render(loginTurnstileRef.current, {
+        sitekey: loginTurnstileConfig.siteKey,
+        theme: 'auto',
+        size: 'flexible',
+        callback: (token) => setLoginTurnstileToken(token),
+        'expired-callback': () => setLoginTurnstileToken(''),
+        'error-callback': () => setLoginTurnstileToken(''),
+      });
+    };
+    if (window.turnstile) renderWidget();
+    else {
+      let script = document.querySelector('script[data-mahar-turnstile="true"]');
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.maharTurnstile = 'true';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', renderWidget, { once: true });
+    }
+    return () => {
+      cancelled = true;
+      if (window.turnstile && loginTurnstileWidgetRef.current !== null) window.turnstile.remove(loginTurnstileWidgetRef.current);
+      loginTurnstileWidgetRef.current = null;
+      setLoginTurnstileToken('');
+    };
+  }, [mode, loginCaptchaRequired, loginTurnstileConfig.enabled, loginTurnstileConfig.siteKey]);
 
   useEffect(() => {
     if (mode !== 'register' || !turnstileConfig.enabled || !turnstileConfig.siteKey || !turnstileRef.current) return undefined;
@@ -231,6 +272,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         username: loginForm.username.trim(),
         password: loginForm.password,
         shopSlug: loginForm.shopSlug.trim() || undefined,
+        turnstileToken: loginTurnstileToken || undefined,
       });
       if (session?.user?.passwordMustChange) {
         setPendingSession(session);
@@ -241,6 +283,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       }
       onSession?.(session);
     } catch (requestError) {
+      if (requestError?.data?.captchaRequired) setLoginCaptchaRequired(true);
       const message = requestError?.message || 'Login မအောင်မြင်ပါ။';
       if (/(multiple|shop slug|shop code|tenant|ဆိုင်ကုဒ်)/i.test(message)) {
         setNeedSlug(true);
@@ -458,6 +501,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
                 <small>မသိပါက ဆိုင် admin / owner ထံမေးပါ။ ပုံမှန် user တစ်ယောက်တည်းဆို ဒီအကွက် မလိုပါ။</small>
               </label>
             ) : null}
+            {loginCaptchaRequired && loginTurnstileConfig.enabled ? <div className="ms-turnstile" ref={loginTurnstileRef} aria-label="Security verification" /> : null}
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဝင်နေသည်...' : 'Login ဝင်မည်'}</button>
             {GOOGLE_CLIENT_ID ? <><div className="ms-login-divider"><span>သို့မဟုတ်</span></div><div className="ms-login-google" ref={googleButtonRef} /></> : null}
             <p className="ms-login-footer">အကောင့်မရှိသေးဘူးလား? <button type="button" onClick={() => switchMode('register')}>Register လုပ်ရန်</button></p>
