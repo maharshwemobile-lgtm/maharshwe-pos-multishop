@@ -314,7 +314,7 @@ function attachEcommerceStorefrontApi(app) {
         orderBy: { name: 'asc' },
       }),
       prisma.product.findMany({ where: { shopId: req.auth.shopId, active: true }, select: { brand: true, category: true } }),
-      prisma.product.count({ where: { shopId: req.auth.shopId, active: true, OR: [{ ecommerceDetail: { is: null } }, { ecommerceDetail: { is: { visible: true } } }] } }),
+      prisma.product.count({ where: { shopId: req.auth.shopId, active: true, ecommerceImages: { some: {} }, OR: [{ ecommerceDetail: { is: null } }, { ecommerceDetail: { is: { visible: true } } }] } }),
     ]);
     const stockTotal = (product) => product.variants.reduce((sum, variant) => sum + Number(variant.inventoryBalance?.quantity || 0), 0);
     const lowStock = (product) => product.variants.some((variant) => {
