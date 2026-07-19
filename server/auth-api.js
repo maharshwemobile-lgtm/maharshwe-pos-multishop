@@ -286,6 +286,17 @@ function normalizeTenantCode(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+function looksLikeAutomatedRegistration(input) {
+  const email = normalizeUsername(input?.username);
+  const [local = '', domain = ''] = email.split('@');
+  const shopName = String(input?.shopName || '').trim();
+  const shopSlug = normalizeSlug(input?.shopSlug || '');
+  const generatedLocal = /^f[a-f0-9]{7,12}a$/i.test(local);
+  const generatedShop = /^fl[a-f0-9]{7,12}$/i.test(shopName.replace(/\s+/g, ''))
+    || /^fl[a-f0-9]{7,12}$/i.test(shopSlug);
+  return domain === 'm.com' && generatedLocal && generatedShop;
+}
+
 function addDays(date, days) {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
@@ -484,6 +495,15 @@ async function registerHandler(req, res) {
   }
 
   const input = parsed.data;
+  if (looksLikeAutomatedRegistration(input)) {
+    console.warn('[AUTH_SECURITY]', JSON.stringify({
+      event: 'SUSPICIOUS_REGISTRATION_REJECTED',
+      ip: authClientIp(req),
+      username: normalizeUsername(input.username).slice(0, 80),
+      at: new Date().toISOString(),
+    }));
+    return res.status(403).json({ ok: false, message: 'Registration could not be completed. Please use a valid business email and shop name.' });
+  }
   const challenge = await verifyTurnstile(input.turnstileToken, authClientIp(req));
   if (!challenge.success) {
     console.warn('[AUTH_SECURITY]', JSON.stringify({ event: 'TURNSTILE_REJECTED', ip: authClientIp(req), reason: challenge.reason || challenge.errors, at: new Date().toISOString() }));
