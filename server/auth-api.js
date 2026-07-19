@@ -18,6 +18,7 @@ const loginSchema = z.object({
   password: z.string().min(1).max(200),
   shopSlug: z.string().trim().min(1).max(80).optional(),
   shop: z.string().trim().min(1).max(80).optional(),
+  turnstileToken: z.string().trim().max(2048).optional(),
 });
 
 const registerSchema = z.object({
@@ -89,6 +90,69 @@ function turnstileConfig() {
   const siteKey = String(process.env.TURNSTILE_SITE_KEY || '').trim();
   const secretKey = String(process.env.TURNSTILE_SECRET_KEY || '').trim();
   return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
+}
+
+const superLoginFailures = new Map();
+const SUPER_CAPTCHA_THRESHOLD = Math.max(1, Number(process.env.SUPER_ADMIN_CAPTCHA_THRESHOLD || 3));
+const SUPER_FAILURE_WINDOW_MS = Math.max(60_000, Number(process.env.SUPER_ADMIN_FAILURE_WINDOW_MS || 15 * 60 * 1000));
+
+function superTurnstileConfig() {
+  const siteKey = String(process.env.SUPER_ADMIN_TURNSTILE_SITE_KEY || '').trim();
+  const secretKey = String(process.env.SUPER_ADMIN_TURNSTILE_SECRET_KEY || '').trim();
+  return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
+}
+
+function isSuperLoginRequest(req) {
+  const host = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase();
+  return host === 'super.maharshwe.shop';
+}
+
+function superFailureKey(req) {
+  return authClientIp(req);
+}
+
+function currentSuperFailures(req, username) {
+  const key = superFailureKey(req);
+  const entry = superLoginFailures.get(key);
+  if (!entry || Date.now() - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS) {
+    superLoginFailures.delete(key);
+    return 0;
+  }
+  return entry.count;
+}
+
+function recordSuperFailure(req, username) {
+  const key = superFailureKey(req);
+  const now = Date.now();
+  const entry = superLoginFailures.get(key);
+  const next = !entry || now - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS
+    ? { count: 1, firstFailedAt: now }
+    : { ...entry, count: entry.count + 1 };
+  superLoginFailures.set(key, next);
+  return next.count;
+}
+
+function clearSuperFailures(req, username) {
+  superLoginFailures.delete(superFailureKey(req));
+}
+
+async function verifySuperTurnstile(token, ip) {
+  const config = superTurnstileConfig();
+  if (!config.enabled) return { success: false, reason: 'not-configured' };
+  if (!token) return { success: false, reason: 'missing-token' };
+  try {
+    const body = new URLSearchParams({ secret: config.secretKey, response: token, remoteip: ip });
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body,
+      signal: AbortSignal.timeout(8000),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success === true, errors: result['error-codes'] || [] };
+  } catch (error) {
+    console.error('[AUTH_SECURITY] Super admin Turnstile verification failed:', error.message);
+    return { success: false, reason: 'verification-unavailable' };
+  }
 }
 
 async function verifyTurnstile(token, ip) {
@@ -577,6 +641,26 @@ async function loginHandler(req, res) {
   const username = parsed.data.username;
   const password = parsed.data.password;
   const shopSlug = String(parsed.data.shopSlug || parsed.data.shop || "").trim();
+  const superLogin = isSuperLoginRequest(req);
+  const superCaptchaEnabled = superTurnstileConfig().enabled;
+  const previousSuperFailures = superLogin ? currentSuperFailures(req, username) : 0;
+
+  if (superLogin && superCaptchaEnabled && previousSuperFailures >= SUPER_CAPTCHA_THRESHOLD) {
+    const challenge = await verifySuperTurnstile(parsed.data.turnstileToken, authClientIp(req));
+    if (!challenge.success) {
+      console.warn('[AUTH_SECURITY]', JSON.stringify({
+        event: 'SUPER_ADMIN_TURNSTILE_REJECTED',
+        ip: authClientIp(req),
+        reason: challenge.reason || challenge.errors,
+        at: new Date().toISOString(),
+      }));
+      return res.status(403).json({
+        ok: false,
+        message: 'Please complete the security check before trying again.',
+        captchaRequired: true,
+      });
+    }
+  }
 
   try {
     const { user, reason } = await findLoginUser({ username, shopSlug });
@@ -590,7 +674,12 @@ async function loginHandler(req, res) {
         reason === "SHOP_SLUG_REQUIRED"
           ? "ဆိုင်ကုဒ် / Tenant ID လိုအပ်သည်"
           : "Username or password is incorrect";
-      return res.status(401).json({ ok: false, message });
+      const failures = superLogin ? recordSuperFailure(req, username) : 0;
+      return res.status(401).json({
+        ok: false,
+        message,
+        captchaRequired: Boolean(superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD),
+      });
     }
 
     if (user.shop && !user.shop.active) {
@@ -613,8 +702,15 @@ async function loginHandler(req, res) {
         details: { username: user.normalizedUsername, reason: "BAD_PASSWORD" },
         req,
       });
-      return res.status(401).json({ ok: false, message: "Username or password is incorrect" });
+      const failures = superLogin ? recordSuperFailure(req, username) : 0;
+      return res.status(401).json({
+        ok: false,
+        message: "Username or password is incorrect",
+        captchaRequired: Boolean(superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD),
+      });
     }
+
+    if (superLogin) clearSuperFailures(req, username);
 
     const demoAutoCleanup = await maybeAutoCleanupDemoData(user);
 
@@ -918,6 +1014,18 @@ function attachAuthApi(app) {
   app.get('/api/auth/security-config', (_req, res) => {
     const config = turnstileConfig();
     res.set('Cache-Control', 'no-store').json({ ok: true, turnstile: { enabled: config.enabled, siteKey: config.enabled ? config.siteKey : null } });
+  });
+  app.get('/api/auth/super-security-config', (req, res) => {
+    const config = superTurnstileConfig();
+    const hostAllowed = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase() === 'super.maharshwe.shop';
+    res.set('Cache-Control', 'no-store').json({
+      ok: true,
+      turnstile: {
+        enabled: Boolean(hostAllowed && config.enabled),
+        siteKey: hostAllowed && config.enabled ? config.siteKey : null,
+        threshold: SUPER_CAPTCHA_THRESHOLD,
+      },
+    });
   });
   app.post("/api/auth/register", registerGlobalLimiter, registerLimiter, registerHandler);
   app.post("/api/auth/login", loginBurstLimiter, loginCredentialLimiter, loginHandler);
