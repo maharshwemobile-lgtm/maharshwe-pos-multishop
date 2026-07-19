@@ -29,6 +29,7 @@ const registerSchema = z.object({
   phone: z.string().trim().max(60).optional(),
   businessType: z.enum(["PHONE_SHOP", "MINI_MART"]).default("PHONE_SHOP"),
   address: z.string().trim().max(300).optional(),
+  turnstileToken: z.string().trim().max(2048).optional(),
 });
 
 const changePasswordSchema = z.object({
@@ -36,19 +37,74 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8).max(200),
 });
 
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 20,
+function authClientIp(req) {
+  return String(req.ip || req.socket?.remoteAddress || 'unknown');
+}
+
+function authLimitHandler(kind) {
+  return (req, res) => {
+    console.warn('[AUTH_SECURITY]', JSON.stringify({ event: 'RATE_LIMITED', kind, ip: authClientIp(req), username: normalizeUsername(req.body?.username).slice(0, 80), at: new Date().toISOString() }));
+    res.status(429).json({ ok: false, message: kind === 'register' ? 'Registration attempts are temporarily limited. Please try again later.' : 'Too many login attempts. Please wait and try again.' });
+  };
+}
+
+const loginBurstLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 12,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  keyGenerator: (req) => rateLimit.ipKeyGenerator(authClientIp(req)),
+  handler: authLimitHandler('login'),
+});
+
+const loginCredentialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 8,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `${rateLimit.ipKeyGenerator(authClientIp(req))}:${normalizeUsername(req.body?.username)}`,
+  handler: authLimitHandler('login'),
 });
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 10,
+  limit: 3,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  keyGenerator: (req) => rateLimit.ipKeyGenerator(authClientIp(req)),
+  handler: authLimitHandler('register'),
 });
+
+const registerGlobalLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 25,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: () => 'all-self-registration',
+  handler: authLimitHandler('register'),
+});
+
+function turnstileConfig() {
+  const siteKey = String(process.env.TURNSTILE_SITE_KEY || '').trim();
+  const secretKey = String(process.env.TURNSTILE_SECRET_KEY || '').trim();
+  return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
+}
+
+async function verifyTurnstile(token, ip) {
+  const config = turnstileConfig();
+  if (!config.enabled) return { success: true, skipped: true };
+  if (!token) return { success: false, reason: 'missing-token' };
+  try {
+    const body = new URLSearchParams({ secret: config.secretKey, response: token, remoteip: ip });
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body, signal: AbortSignal.timeout(8000) });
+    const result = await response.json();
+    return { success: response.ok && result.success === true, errors: result['error-codes'] || [] };
+  } catch (error) {
+    console.error('[AUTH_SECURITY] Turnstile verification failed:', error.message);
+    return { success: false, reason: 'verification-unavailable' };
+  }
+}
 
 const SHOP_ADMIN_PERMISSIONS = {
   "tab.Dashboard": true,
@@ -308,6 +364,11 @@ async function registerHandler(req, res) {
   }
 
   const input = parsed.data;
+  const challenge = await verifyTurnstile(input.turnstileToken, authClientIp(req));
+  if (!challenge.success) {
+    console.warn('[AUTH_SECURITY]', JSON.stringify({ event: 'TURNSTILE_REJECTED', ip: authClientIp(req), reason: challenge.reason || challenge.errors, at: new Date().toISOString() }));
+    return res.status(403).json({ ok: false, message: 'Security verification failed. Please refresh and try again.' });
+  }
   const normalizedUsername = normalizeUsername(input.username);
   const businessType = normalizeBusinessType(input.businessType);
   const now = new Date();
@@ -854,9 +915,13 @@ function requireWritableSubscription(req, res, next) {
 }
 
 function attachAuthApi(app) {
-  app.post("/api/auth/register", registerLimiter, registerHandler);
-  app.post("/api/auth/login", loginLimiter, loginHandler);
-  app.post("/api/login", loginLimiter, loginHandler);
+  app.get('/api/auth/security-config', (_req, res) => {
+    const config = turnstileConfig();
+    res.set('Cache-Control', 'no-store').json({ ok: true, turnstile: { enabled: config.enabled, siteKey: config.enabled ? config.siteKey : null } });
+  });
+  app.post("/api/auth/register", registerGlobalLimiter, registerLimiter, registerHandler);
+  app.post("/api/auth/login", loginBurstLimiter, loginCredentialLimiter, loginHandler);
+  app.post("/api/login", loginBurstLimiter, loginCredentialLimiter, loginHandler);
   app.post("/api/auth/change-password", requireAuth, changePasswordHandler);
   app.get("/api/auth/me", requireAuth, (req, res) => res.json({ ok: true, user: req.auth.user }));
   app.post("/api/auth/logout", requireAuth, async (req, res) => {

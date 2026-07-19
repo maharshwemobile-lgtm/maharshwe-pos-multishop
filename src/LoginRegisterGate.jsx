@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { changePassword, clearSession, googleLogin, login, registerTenant } from './phase2Api';
+import { changePassword, clearSession, getAuthSecurityConfig, googleLogin, login, registerTenant } from './phase2Api';
 import { PROJECT_LOGO_URL } from './projectBrand';
 import LoginFooterActions from './LoginFooterActions.jsx';
 import './login-register-gate.css';
@@ -17,7 +17,7 @@ const BUSINESS_TYPES = [
   },
   {
     value: 'MINI_MART',
-    title: '🛒 Mini Mart',
+    title: '🛒 Retail Shop',
     subtitle: 'Barcode / Expiry / Grocery POS',
   },
 ];
@@ -57,12 +57,55 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingSession, setPendingSession] = useState(null);
+  const [turnstileConfig, setTurnstileConfig] = useState({ enabled: false, siteKey: null });
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [passwordChangeForm, setPasswordChangeForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
   const googleButtonRef = useRef(null);
+  const turnstileRef = useRef(null);
+  const turnstileWidgetRef = useRef(null);
+
+  useEffect(() => {
+    getAuthSecurityConfig().then((data) => setTurnstileConfig(data?.turnstile || { enabled: false, siteKey: null })).catch(() => null);
+  }, []);
+
+  useEffect(() => {
+    if (mode !== 'register' || !turnstileConfig.enabled || !turnstileConfig.siteKey || !turnstileRef.current) return undefined;
+    let cancelled = false;
+    const renderWidget = () => {
+      if (cancelled || !window.turnstile || !turnstileRef.current || turnstileWidgetRef.current !== null) return;
+      turnstileWidgetRef.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: turnstileConfig.siteKey,
+        theme: 'auto',
+        size: 'flexible',
+        callback: (token) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(''),
+        'error-callback': () => setTurnstileToken(''),
+      });
+    };
+    if (window.turnstile) renderWidget();
+    else {
+      let script = document.querySelector('script[data-mahar-turnstile="true"]');
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.maharTurnstile = 'true';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', renderWidget, { once: true });
+    }
+    return () => {
+      cancelled = true;
+      if (window.turnstile && turnstileWidgetRef.current !== null) window.turnstile.remove(turnstileWidgetRef.current);
+      turnstileWidgetRef.current = null;
+      setTurnstileToken('');
+    };
+  }, [mode, turnstileConfig.enabled, turnstileConfig.siteKey]);
 
   useEffect(() => {
     if (!forcePasswordChange) return;
@@ -104,7 +147,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         setPendingGoogleCredential(credential);
         setGoogleBusinessType('PHONE_SHOP');
         setMode('googleBusinessType');
-        setError('Google Register ဆက်လုပ်ရန် Phone ဆိုင် / Mini Mart ကို အရင်ရွေးပါ။');
+        setError('Google Register ဆက်လုပ်ရန် ဆိုင်အမျိုးအစားကို အရင်ရွေးပါ။');
         return;
       }
       const message = requestError?.message || 'Google Login မအောင်မြင်ပါ။';
@@ -226,6 +269,10 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       setError('Password အနည်းဆုံး ၆ လုံး ရှိရမည်။');
       return;
     }
+    if (turnstileConfig.enabled && !turnstileToken) {
+      setError('Security verification ပြီးအောင် ခဏစောင့်ပြီး ပြန်နှိပ်ပါ။');
+      return;
+    }
     setLoading(true);
     try {
       const data = await registerTenant({
@@ -234,6 +281,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         username: registerForm.username.trim(),
         password: registerForm.password,
         phone: registerForm.phone.trim() || undefined,
+        turnstileToken: turnstileToken || undefined,
       });
       const nextPrefill = {
         username: registerForm.username.trim(),
@@ -435,6 +483,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <input type="tel" name="phone" value={registerForm.phone} onChange={(event) => { setRegisterForm({ ...registerForm, phone: event.target.value }); setError(''); }} placeholder="09xxxxxxxxx" />
             </label>
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဖွင့်နေသည်...' : 'အကောင့်ဖွင့်မည်'}</button>
+            {turnstileConfig.enabled ? <div className="ms-turnstile" ref={turnstileRef} aria-label="Security verification" /> : null}
             <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
             <p className="ms-login-footer">အကောင့်ရှိပြီးသားလား? <button type="button" onClick={() => switchMode('login')}>Login ဝင်ရန်</button></p>
             {GOOGLE_CLIENT_ID ? (

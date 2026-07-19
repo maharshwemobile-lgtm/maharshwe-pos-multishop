@@ -190,6 +190,14 @@ export async function registerTenant(payload) {
   return data;
 }
 
+export async function getAuthSecurityConfig() {
+  const response = await fetch(resolveApiUrl('/api/auth/security-config'), {
+    headers: { Accept: 'application/json' },
+  });
+  const data = await readJson(response);
+  return response.ok ? data : { turnstile: { enabled: false, siteKey: null } };
+}
+
 export async function changePassword({ currentPassword, newPassword }) {
   const response = await apiFetch('/api/auth/change-password', {
     method: 'POST',

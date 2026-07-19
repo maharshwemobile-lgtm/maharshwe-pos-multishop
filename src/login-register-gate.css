@@ -193,6 +193,7 @@
   color:#6b7280;
   font-size:13px;
 }
+.ms-turnstile{min-height:65px;width:100%;display:flex;justify-content:center;overflow:hidden}
 .ms-login-trial{
   color:#9ca3af;
   font-size:12px;
