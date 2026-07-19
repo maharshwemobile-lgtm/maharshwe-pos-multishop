@@ -307,6 +307,7 @@ function attachEcommerceStorefrontApi(app) {
     const brand = String(req.query.brand || '').trim();
     const categoryId = String(req.query.categoryId || '').trim();
     const stockLevel = String(req.query.stockLevel || '').trim().toUpperCase();
+    const publicationStatus = String(req.query.publicationStatus || '').trim().toUpperCase();
     const [rows, optionRows, onlineTotal] = await Promise.all([
       prisma.product.findMany({
         where: { shopId: req.auth.shopId, active: true, ...(brand ? { brand } : {}), ...(categoryId ? { categoryId } : {}) },
@@ -323,6 +324,9 @@ function attachEcommerceStorefrontApi(app) {
     });
     const filtered = rows.filter((product) => {
       const quantity = stockTotal(product);
+      const published = product.ecommerceImages.length > 0 && product.ecommerceDetail?.visible !== false;
+      if (publicationStatus === 'ONLINE' && !published) return false;
+      if (publicationStatus === 'OFFLINE' && published) return false;
       if (stockLevel === 'IN_STOCK') return quantity > 0;
       if (stockLevel === 'LOW_STOCK') return lowStock(product);
       if (stockLevel === 'OUT_OF_STOCK') return quantity <= 0;
