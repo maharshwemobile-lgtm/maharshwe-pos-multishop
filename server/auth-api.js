@@ -291,10 +291,15 @@ function looksLikeAutomatedRegistration(input) {
   const [local = '', domain = ''] = email.split('@');
   const shopName = String(input?.shopName || '').trim();
   const shopSlug = normalizeSlug(input?.shopSlug || '');
+  const compactShop = shopName.replace(/\s+/g, '');
   const generatedLocal = /^f[a-f0-9]{7,12}a$/i.test(local);
-  const generatedShop = /^fl[a-f0-9]{7,12}$/i.test(shopName.replace(/\s+/g, ''))
+  const generatedShop = /^fl[a-f0-9]{7,12}$/i.test(compactShop)
     || /^fl[a-f0-9]{7,12}$/i.test(shopSlug);
-  return domain === 'm.com' && generatedLocal && generatedShop;
+  const loadTestShop = /^stressshop[a-z0-9]{4,16}$/i.test(compactShop)
+    || /^stress-shop-[a-z0-9]{4,16}$/i.test(shopSlug)
+    || /^ratetest\d{1,4}$/i.test(compactShop)
+    || /^ratetest\d{1,4}$/i.test(shopSlug);
+  return (domain === 'm.com' && generatedLocal && generatedShop) || loadTestShop;
 }
 
 function addDays(date, days) {
