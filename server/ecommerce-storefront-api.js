@@ -253,8 +253,20 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024, files: 3 }, fileFilter(_req, file, callback) {
-  callback(null, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype));
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) return callback(new Error('Only JPG, PNG, WEBP or GIF images are allowed'));
+  return callback(null, true);
 } });
+function productImageUpload(req, res, next) {
+  upload.array('images', 3)(req, res, (error) => {
+    if (!error) return next();
+    const message = error.code === 'LIMIT_FILE_SIZE'
+      ? 'Photo တစ်ပုံလျှင် 5 MB ထက်မကြီးရပါ'
+      : error.code === 'LIMIT_FILE_COUNT'
+        ? 'တစ်ကြိမ်လျှင် Photo 3 ပုံအထိသာတင်နိုင်ပါသည်'
+        : error.message;
+    return res.status(400).json({ ok: false, message: message || 'Image upload failed' });
+  });
+}
 
 function attachEcommerceStorefrontApi(app) {
   app.post('/api/ecommerce/telegram/connect-callback', handle(async (req, res) => {
@@ -338,9 +350,10 @@ function attachEcommerceStorefrontApi(app) {
     res.json({ ok: true, detail: result });
   }));
 
-  app.post('/api/ecommerce/products/:productId/images', requireAuth, upload.array('images', 3), handle(async (req, res) => {
+  app.post('/api/ecommerce/products/:productId/images', requireAuth, productImageUpload, handle(async (req, res) => {
     const product = await prisma.product.findFirst({ where: { id: req.params.productId, shopId: req.auth.shopId } });
     if (!product) notFound('Product not found');
+    if (!req.files?.length) return res.status(400).json({ ok: false, message: 'Upload လုပ်ရန် Photo ရွေးပါ' });
     const existing = await prisma.ecommerceProductImage.count({ where: { shopId: req.auth.shopId, productId: product.id, source: 'UPLOAD' } });
     if (existing + req.files.length > 3) { req.files.forEach((file) => fs.rmSync(file.path, { force: true })); return res.status(400).json({ ok: false, message: 'Maximum 3 uploaded images per product' }); }
     const rows = await prisma.$transaction(async (tx) => {

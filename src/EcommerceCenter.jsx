@@ -35,6 +35,19 @@ export default function EcommerceCenter() {
   async function saveSettings() {
     setBusy(true); try { const data = await apiFetch('/api/ecommerce/settings', { method: 'PUT', body: settings }); setSettings(data.settings); setMessage('Online shop settings saved.'); } catch (error) { setMessage(error.message); } finally { setBusy(false); }
   }
+  async function openStore() {
+    if (!meta?.storeUrl) return;
+    if (settings.enabled) return window.open(meta.storeUrl, '_blank', 'noopener,noreferrer');
+    if (!window.confirm('Online Shop မဖွင့်ရသေးပါ။ အခုဖွင့်ပြီး Store ကိုကြည့်မလား?')) return;
+    const popup = window.open('about:blank', '_blank');
+    setBusy(true); setMessage('');
+    try {
+      const data = await apiFetch('/api/ecommerce/settings', { method: 'PUT', body: { ...settings, enabled: true } });
+      setSettings(data.settings); setMessage('Online Shop ဖွင့်ပြီးပါပြီ။');
+      if (popup) { popup.opener = null; popup.location.replace(meta.storeUrl); } else window.location.assign(meta.storeUrl);
+    } catch (error) { if (popup) popup.close(); setMessage(error.message); }
+    finally { setBusy(false); }
+  }
   async function saveProduct(product, patch) {
     setBusy(true);
     try { await apiFetch(`/api/ecommerce/products/${product.id}`, { method: 'PUT', body: patch }); setMessage(`${product.name} updated.`); await load(productMeta.page, filters); }
@@ -44,8 +57,8 @@ export default function EcommerceCenter() {
     if (!files?.length) return;
     const form = new FormData(); [...files].slice(0, 3).forEach((file) => form.append('images', file));
     const token = getSession()?.token; setBusy(true);
-    try { const response = await fetch(`/api/ecommerce/products/${product.id}/images`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: form }); const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Image upload failed'); setMessage('Product images uploaded.'); await load(productMeta.page, filters); }
-    catch (error) { setMessage(error.message); setBusy(false); }
+    try { const response = await fetch(`/api/ecommerce/products/${product.id}/images`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || `Image upload failed (HTTP ${response.status})`); setMessage('Product Photo တင်ပြီးပါပြီ။'); await load(productMeta.page, filters); return true; }
+    catch (error) { setMessage(error.message); setBusy(false); return false; }
   }
   async function deleteImage(image) {
     if (!window.confirm('Delete this product image?')) return;
@@ -59,10 +72,11 @@ export default function EcommerceCenter() {
   }
   function changeFilter(key, value) { const next = { ...filters, [key]: value }; setFilters(next); load(1, next); }
 
+  const tabs = [['setup','Store Setup',Store,'ဆိုင်အချက်အလက်'],['products','Products & Images',ImagePlus,'ပစ္စည်းနှင့်ပုံများ'],['orders','Orders',ShoppingBag,'အော်ဒါများ']];
   return <section className="ecom-center">
-    <header className="ecom-head"><div><span>ONLINE STORE</span><h2>E-commerce Website</h2><p>POS Product နှင့် Stock ချိတ်ထားသော အခမဲ့ Online Shop</p></div>{meta?.storeUrl && <a href={meta.storeUrl} target="_blank" rel="noreferrer"><ExternalLink size={17}/> View Store</a>}</header>
+    <header className="ecom-head"><div><span>ONLINE STORE</span><h2>E-commerce Website</h2><p>POS Product နှင့် Stock ချိတ်ထားသော အခမဲ့ Online Shop</p></div>{meta?.storeUrl && <button type="button" className={`ecom-view-store ${settings.enabled ? 'online' : 'offline'}`} onClick={openStore}><ExternalLink size={17}/> View Store <small>{settings.enabled ? 'Online' : 'ဖွင့်ရန်'}</small></button>}</header>
     <div className="ecom-stats"><div><Store/><span><small>Store</small><b>{settings.enabled ? 'Online' : 'Offline'}</b></span></div><div><ShoppingBag/><span><small>Online Products</small><b>{productMeta.onlineTotal}</b></span></div><div><PackageCheck/><span><small>New Orders</small><b>{orders.filter((order) => order.status === 'PENDING').length}</b></span></div></div>
-    <nav className="ecom-tabs">{[['setup','Store Setup'],['products','Products & Images'],['orders','Orders']].map(([key,label]) => <button key={key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>{label}</button>)}</nav>
+    <nav className="ecom-tabs">{tabs.map(([key,label,Icon,subtitle]) => <button key={key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}><Icon size={19}/><span><b>{label}</b><small>{subtitle}</small></span></button>)}</nav>
     {message && <div className="ecom-message">{message}</div>}{busy && <div className="ecom-loading">Working...</div>}
     {tab === 'setup' && <div className="ecom-card ecom-form">
       <label className="ecom-toggle"><input type="checkbox" checked={!!settings.enabled} onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}/><span>Online Shop ဖွင့်မည်</span></label>
@@ -85,12 +99,21 @@ function ProductRow({ product, onSave, onUpload, onDeleteImage, onSetPrimary }) 
   const [description, setDescription] = useState(product.ecommerceDetail?.description || '');
   const [links, setLinks] = useState(product.ecommerceImages?.filter((image) => image.source !== 'UPLOAD').map((image) => image.url).join('\n') || '');
   const [visible, setVisible] = useState(product.ecommerceDetail?.visible !== false);
-  const [files, setFiles] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const stock = product.variants?.reduce((sum, variant) => sum + Number(variant.inventoryBalance?.quantity || 0), 0) || 0;
-  async function saveAll() { await onSave(product, { visible, description, imageUrls: links.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean) }); if (files?.length) await onUpload(product, files); }
+  const uploadedCount = product.ecommerceImages?.filter((image) => image.source === 'UPLOAD').length || 0;
+  const uploadSlots = Math.max(0, 3 - uploadedCount);
+  async function saveAll() { await onSave(product, { visible, description, imageUrls: links.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean) }); }
+  async function choosePhotos(event) {
+    const selected = [...(event.target.files || [])]; event.target.value = '';
+    if (!selected.length) return;
+    if (selected.some((file) => file.size > 5 * 1024 * 1024)) return window.alert('Photo တစ်ပုံလျှင် 5 MB ထက်မကြီးရပါ။');
+    if (selected.length > uploadSlots) return window.alert(`Upload Photo ${uploadSlots} ပုံသာ ထပ်တင်နိုင်ပါတယ်။`);
+    setUploading(true); try { await onUpload(product, selected); } finally { setUploading(false); }
+  }
   return <article className="ecom-product"><div className="ecom-product-title"><div className="ecom-thumb"><img src={product.ecommerceImages?.[0]?.url || '/default-product-image.svg'} alt="" onError={(event) => { event.currentTarget.src = '/default-product-image.svg'; }}/></div><div><h3>{product.name}</h3><p>{product.category?.name || 'Uncategorized'} · Stock {stock}</p></div><label className="ecom-switch"><input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)}/><span>{visible ? 'Online' : 'Hidden'}</span></label></div>
     <div className="ecom-image-manager">{product.ecommerceImages?.length ? product.ecommerceImages.map((image, index) => <div className="ecom-image-item" key={image.id}><img src={image.url} alt="" onError={(event) => { event.currentTarget.src = '/default-product-image.svg'; }}/><span>{index === 0 ? 'Main Photo' : `Photo ${index + 1}`}</span><div>{index !== 0 && <button type="button" onClick={() => onSetPrimary(image)}>Set Main</button>}<button type="button" className="danger" onClick={() => onDeleteImage(image)}>Delete</button></div></div>) : <div className="ecom-no-image"><img src="/default-product-image.svg" alt=""/><span>Default Photo</span></div>}</div>
     <div className="ecom-product-fields"><label>Description<textarea value={description} onChange={(e) => setDescription(e.target.value)}/></label><label>Google Drive / Image Links<textarea value={links} onChange={(e) => { setLinks(e.target.value); if (e.target.value.trim()) setVisible(true); }} placeholder="One HTTPS link per line (unlimited)"/></label></div>
-    <div className="ecom-product-actions"><label className="ecom-upload"><ImagePlus size={16}/> {files?.length ? `${files.length} image selected` : 'Choose Images (Max 3)'}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={(e) => { setFiles(e.target.files); if (e.target.files?.length) setVisible(true); }}/></label><button className="ecom-save-one" onClick={saveAll}><Save size={16}/> Save</button></div>
+    <div className="ecom-product-actions"><label className={`ecom-upload ${uploadSlots === 0 ? 'disabled' : ''}`}><ImagePlus size={16}/> {uploading ? 'Uploading...' : uploadSlots ? `Upload Photo (${uploadSlots} slots)` : 'Photo Limit (3/3)'}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple disabled={uploading || uploadSlots === 0} onChange={choosePhotos}/></label><button className="ecom-save-one" onClick={saveAll}><Save size={16}/> Save Details</button></div>
   </article>;
 }
