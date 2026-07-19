@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Mahar Shop" />
+    <meta id="storeAppleTitle" name="apple-mobile-web-app-title" content="Online Shop" />
     <meta name="description" content="Mahar online shop" />
     <link id="storeManifest" rel="manifest" />
     <script>
       (() => {
         const slug = decodeURIComponent(location.pathname.split('/shop/')[1]?.split('/')[0] || '');
-        if (slug) document.getElementById('storeManifest').href = `/api/public/store/${encodeURIComponent(slug)}/manifest.webmanifest`;
+        if (slug) document.getElementById('storeManifest').href = `/api/public/store/${encodeURIComponent(slug)}/manifest.webmanifest?v=shop-icon-v2`;
       })();
     </script>
     <link id="storeAppleIcon" rel="apple-touch-icon" href="/mahar-pos-logo-192.png" />
@@ -27,6 +27,6 @@
       <div class="app-boot"><span class="boot-mark">M</span><div class="skeleton boot-line"></div></div>
     </div>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="/storefront-app.js?v=20260719-hero-carousel-v25" defer></script>
+    <script src="/storefront-app.js?v=20260719-shop-pwa-brand-v26" defer></script>
   </body>
 </html>

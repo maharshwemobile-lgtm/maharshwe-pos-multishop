@@ -1,11 +1,11 @@
-const CACHE = 'maharshwe-storefront-hero-carousel-v25';
+const CACHE = 'maharshwe-storefront-shop-pwa-brand-v26';
 const SHELL = [
   '/storefront.html',
   '/storefront-app.css?v=20260718-category-icons-v13',
   '/storefront-google.css?v=20260718-category-icons-v13',
   '/storefront-preview-theme.css?v=20260718-filter-controls-v15',
   '/storefront-original-v2.css?v=20260719-hero-carousel-v25',
-  '/storefront-app.js?v=20260719-hero-carousel-v25',
+  '/storefront-app.js?v=20260719-shop-pwa-brand-v26',
   '/mahar-pos-logo-192.png',
   '/mahar-pos-logo-512.png',
   '/default-product-image.svg',
