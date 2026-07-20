@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Boxes,
+  Camera,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -31,6 +32,7 @@ import {
   saveDraft,
 } from './salesV10Utils';
 import { playPaymentSuccessSound, playPosAddSound } from './salesAudio';
+import WebBarcodeScanner from '../pos/WebBarcodeScanner.jsx';
 
 const PAGE_SIZE = 20;
 const EMPTY_CUSTOMER = { name: '', phone: '' };
@@ -205,6 +207,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [completedSale, setCompletedSale] = useState(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [lastAddedKey, setLastAddedKey] = useState(restored?.cart?.[restored.cart.length - 1]?.key || '');
   const searchRef = useRef(null);
   const cartRef = useRef(null);
@@ -399,6 +402,32 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
       searchRef.current?.focus();
     } catch (error) {
       handleError(error);
+    }
+  };
+
+  const addScannedProduct = async (rawCode) => {
+    const code = String(rawCode || '').trim();
+    if (!code) return { ok: false, message: 'Barcode မရှိပါ' };
+    try {
+      const data = await apiFetch(`/api/pos/catalog?q=${encodeURIComponent(code)}&page=1&limit=30`);
+      const exact = (data.items || []).find((item) => (
+        String(item.barcode || '').trim() === code || String(item.sku || '').trim() === code
+      ));
+      if (!exact) {
+        notify('error', `Barcode ${code} နှင့် Product မတွေ့ပါ`);
+        return { ok: false, message: 'Product မတွေ့ပါ' };
+      }
+      const available = Math.max(0, Number(exact.stockQuantity || 0) - Number(reserved.get(exact.id) || 0));
+      if (available <= 0) {
+        notify('error', `${productName(exact)} Stock မရှိတော့ပါ`);
+        return { ok: false, message: 'Stock မရှိတော့ပါ' };
+      }
+      addProduct({ ...exact, available });
+      setQuery('');
+      return { ok: true, message: `${productName(exact)} · Cart ထဲထည့်ပြီးပါပြီ` };
+    } catch (error) {
+      handleError(error);
+      return { ok: false, message: error?.message || 'Barcode ရှာမရပါ' };
     }
   };
 
@@ -641,6 +670,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
               <Search size={18} />
               <input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && searchSubmit()} placeholder="Product, SKU or Barcode ရှာရန်" />
             </div>
+            <button type="button" className="sale10-scan-button" onClick={() => setScannerOpen(true)}><Camera size={17} /><span>Scan</span></button>
             <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
               <option value="">All Categories</option>
               {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
@@ -855,6 +885,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
       ) : null}
 
       {reviewOpen ? <ReviewModal cart={cart} customer={customer} payment={payment} paymentLegacyMethod={splitPaymentActive ? 'MIXED' : paymentLegacyMethod} paymentMethodLabel={splitPaymentActive ? 'Split Payment' : paymentMethodLabel} subtotal={subtotal} discount={safeDiscount} total={total} cashReceived={splitPaymentActive ? splitPaymentTotal : cashReceived} change={splitPaymentActive ? splitPaymentChange : change} splitPayments={splitPayments} busy={checkoutBusy} error={checkoutError} onClose={() => setReviewOpen(false)} onConfirm={completeSale} /> : null}
+      {scannerOpen ? <WebBarcodeScanner onClose={() => setScannerOpen(false)} onDetected={addScannedProduct} /> : null}
       {completedSale ? <CompletedModal sale={completedSale} onNewSale={() => { setCompletedSale(null); searchRef.current?.focus(); }} onHistory={onOpenHistory} /> : null}
     </div>
   );
