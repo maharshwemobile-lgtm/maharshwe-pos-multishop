@@ -20,9 +20,12 @@ data class AppState(
     val productSuggestions: JSONObject = JSONObject(),
     val repairs: JSONArray = JSONArray(),
     val sales: JSONArray = JSONArray(),
+    val salesData: JSONObject = JSONObject(),
     val customers: JSONArray = JSONArray(),
     val moneyTransactions: JSONArray = JSONArray(),
     val moneySettings: JSONObject = JSONObject(),
+    val moneyDashboard: JSONObject = JSONObject(),
+    val financeCatalogs: JSONObject = JSONObject(),
     val billerTransactions: JSONArray = JSONArray(),
     val report: JSONObject = JSONObject(),
 )
@@ -56,21 +59,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         runCatching {
             val dashboard = async { safeGet("/api/business-control/overview") }
             val products = async { safeGet("/api/pos/catalog?limit=100") }
+            val ecommerceProducts = async { safeGet("/api/ecommerce/products?page=1") }
             val categories = async { safeGet("/api/categories") }
             val productSuggestions = async { safeGet("/api/products/suggestions") }
             val repairs = async { safeGet("/api/repair-platform/jobs?limit=100") }
-            val sales = async { safeGet("/api/sales?limit=100") }
+            val today = yangonDate()
+            val sales = async { safeGet("/api/sales?limit=100&from=$today&to=$today") }
             val customers = async { safeGet("/api/customers?limit=100") }
             val money = async { safeGet("/api/money-service/transactions?limit=100") }
             val moneySettings = async { safeGet("/api/money-service/settings") }
+            val moneyDashboard = async { safeGet("/api/money-service/dashboard") }
+            val financeCatalogs = async { safeGet("/api/finance/settings/catalogs") }
             val billerTransactions = async { safeGet("/api/biller-transactions?limit=100") }
-            val report = async { safeGet("/api/reports/daily-close") }
+            val report = async { safeGet("/api/business-control/overview?date=$today") }
+            val salesJson = sales.await()
+            val productsJson = products.await()
+            val productRows = arrayOf(productsJson, "items", "products")
+            mergeEcommerceImages(productRows, arrayOf(ecommerceProducts.await(), "products", "items"))
             state.value.copy(
                 authenticated = true, loading = false, error = null, userName = session.displayName,
-                dashboard = dashboard.await(), products = arrayOf(products.await(), "items", "products"), categories = arrayOf(categories.await(), "categories", "items"), productSuggestions = productSuggestions.await(),
-                repairs = arrayOf(repairs.await(), "jobs", "repairs"), sales = arrayOf(sales.await(), "sales", "items"),
+                dashboard = dashboard.await(), products = productRows, categories = arrayOf(categories.await(), "categories", "items"), productSuggestions = productSuggestions.await(),
+                repairs = arrayOf(repairs.await(), "jobs", "repairs"), sales = arrayOf(salesJson, "sales", "items"), salesData = salesJson,
                 customers = arrayOf(customers.await(), "customers", "items"),
-                moneyTransactions = arrayOf(money.await(), "transactions", "items"), moneySettings = moneySettings.await(),
+                moneyTransactions = arrayOf(money.await(), "transactions", "items"), moneySettings = moneySettings.await(), moneyDashboard = moneyDashboard.await(), financeCatalogs = financeCatalogs.await(),
                 billerTransactions = arrayOf(billerTransactions.await(), "transactions", "items"), report = report.await(),
             )
         }.onSuccess { state.value = it }.onFailure { if (it is ApiException && it.status == 401) logout() else fail(it) }
@@ -90,12 +101,42 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         "Category created"
     }
 
-    fun updateProduct(item: JSONObject, name: String, brand: String, model: String, categoryId: String?, price: Double, done: (Boolean) -> Unit) = launchWrite(done) {
+    fun updateProduct(item: JSONObject, name: String, brand: String, model: String, categoryId: String?, barcode: String, price: Double, done: (Boolean) -> Unit) = launchWrite(done) {
         val productId = item.optString("productId", item.optString("id"))
         api.patch("/api/products/$productId", JSONObject().put("name", name).put("brand", brand.ifBlank { null }).put("model", model.ifBlank { null }).put("categoryId", categoryId))
         val variantId = item.optString("id")
-        if (variantId.isNotBlank() && variantId != productId) api.patch("/api/variants/$variantId", JSONObject().put("standardSellingPrice", price))
+        if (variantId.isNotBlank() && variantId != productId) api.patch("/api/variants/$variantId", JSONObject().put("standardSellingPrice", price).put("barcode", barcode.ifBlank { null }))
         "Product updated"
+    }
+
+    fun adjustStock(item: JSONObject, newQuantity: Int, note: String, done: (Boolean) -> Unit) = launchWrite(done) {
+        val current = item.optInt("stockQuantity", item.optInt("quantity", 0))
+        val delta = newQuantity - current
+        if (delta == 0) return@launchWrite "Stock unchanged"
+        api.post("/api/stock/movements", JSONObject().put("productVariantId", item.optString("id")).put("type", "ADJUSTMENT").put("quantityChange", delta).put("note", note.ifBlank { "Android stock adjustment" }))
+        "Stock adjusted"
+    }
+
+    fun loadSales(from: String, to: String, query: String = "") = viewModelScope.launch {
+        busy(clearNotice = false)
+        runCatching {
+            val q = java.net.URLEncoder.encode(query.trim(), "UTF-8")
+            api.get("/api/sales?limit=100&from=$from&to=$to&q=$q")
+        }.onSuccess { json -> state.value = state.value.copy(loading = false, error = null, sales = arrayOf(json, "sales", "items"), salesData = json) }.onFailure(::fail)
+    }
+
+    fun loadSaleDetail(id: String, done: (JSONObject?) -> Unit) = viewModelScope.launch {
+        runCatching { api.get("/api/sales/$id").optJSONObject("sale") }.onSuccess(done).onFailure { fail(it); done(null) }
+    }
+
+    fun loadReport(date: String) = viewModelScope.launch {
+        busy(clearNotice = false)
+        runCatching { api.get("/api/business-control/overview?date=$date") }.onSuccess { state.value = state.value.copy(loading = false, error = null, report = it) }.onFailure(::fail)
+    }
+
+    fun closeBusinessDay(date: String, note: String, done: (Boolean) -> Unit) = launchWrite(done) {
+        api.post("/api/business-control/daily-closing", JSONObject().put("businessDate", date).put("note", note.ifBlank { null }))
+        "Business day closed"
     }
 
     fun createRepair(customer: String, phone: String, brand: String, model: String, problem: String, estimate: Double, deposit: Double, done: (Boolean) -> Unit) = launchWrite(done) {
@@ -178,6 +219,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun fail(error: Throwable) { state.value = state.value.copy(loading = false, error = error.message ?: "Request failed") }
     private suspend fun safeGet(path: String) = runCatching { api.get(path) }.getOrElse { JSONObject() }
     private fun arrayOf(json: JSONObject, vararg keys: String): JSONArray { for (key in keys) json.optJSONArray(key)?.let { return it }; return JSONArray() }
+    private fun mergeEcommerceImages(products: JSONArray, ecommerce: JSONArray) {
+        val byId = buildMap { for (i in 0 until ecommerce.length()) ecommerce.optJSONObject(i)?.let { put(it.optString("id"), it) } }
+        for (i in 0 until products.length()) {
+            val row = products.optJSONObject(i) ?: continue
+            val online = byId[row.optString("productId", row.optString("id"))] ?: continue
+            row.put("ecommerceImages", online.optJSONArray("ecommerceImages") ?: JSONArray())
+            row.put("ecommerceDetail", online.optJSONObject("ecommerceDetail"))
+        }
+    }
     private fun productPrice(product: JSONObject) = product.optDouble("standardSellingPrice", product.optDouble("sellingPrice", product.optDouble("price", 0.0)))
+    private fun yangonDate() = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("Asia/Yangon") }.format(java.util.Date())
     fun logout() { session.clear(); state.value = AppState() }
 }
