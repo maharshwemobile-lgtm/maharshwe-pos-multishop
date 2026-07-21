@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:insetLeft="20dp" android:insetTop="20dp" android:insetRight="20dp" android:insetBottom="20dp">
+    <item android:insetLeft="27dp" android:insetTop="27dp" android:insetRight="27dp" android:insetBottom="27dp">
         <bitmap android:src="@drawable/mahar_pos_app_icon" android:gravity="fill" />
     </item>
 </layer-list>
