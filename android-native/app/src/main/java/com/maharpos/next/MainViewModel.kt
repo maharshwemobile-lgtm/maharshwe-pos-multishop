@@ -7,6 +7,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import com.google.firebase.messaging.FirebaseMessaging
 
 data class AppState(
     val authenticated: Boolean = false,
@@ -39,7 +40,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var state = androidx.compose.runtime.mutableStateOf(AppState(authenticated = session.token.isNotBlank(), userName = session.displayName))
         private set
 
-    init { if (session.token.isNotBlank()) refresh() }
+    init {
+        if (session.token.isNotBlank()) {
+            refresh()
+            registerPushToken()
+        }
+    }
 
     fun login(identity: String, password: String) = viewModelScope.launch {
         busy()
@@ -50,8 +56,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             session.token = token
             session.displayName = user?.optString("name", user.optString("username", identity)) ?: identity
             state.value = state.value.copy(authenticated = true, loading = false, userName = session.displayName)
+            registerPushToken()
             refresh()
         }.onFailure(::fail)
+    }
+
+    fun registerPushToken() {
+        if (session.token.isBlank()) return
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            if (token.isBlank()) return@addOnSuccessListener
+            viewModelScope.launch {
+                runCatching {
+                    api.post(
+                        "/api/push/tokens",
+                        JSONObject()
+                            .put("token", token)
+                            .put("platform", "android")
+                            .put("browser", "Mahar POS Native"),
+                    )
+                }
+            }
+        }
     }
 
     fun refresh() = viewModelScope.launch {

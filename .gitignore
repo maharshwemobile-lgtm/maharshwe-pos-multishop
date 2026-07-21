@@ -5,6 +5,12 @@ server/generated/
 .env
 .env.txt
 *.log
+.cart-complete-hotfix/
+.phone-product-hotfix/
+.product-search-scan-hotfix/
+.sale-search-scan-hotfix/
+.scanner-hotfix/
+.simple-phone-categories/
 .DS_Store
 data/*.sqlite
 data/*.sqlite-shm

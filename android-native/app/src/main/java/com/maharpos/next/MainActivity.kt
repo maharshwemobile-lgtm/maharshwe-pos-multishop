@@ -1,5 +1,7 @@
 ﻿package com.maharpos.next
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.content.Intent
 import android.net.Uri
@@ -10,6 +12,7 @@ import android.print.PrintManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -64,10 +67,20 @@ private val Orange = Color(0xFFFF9800)
 private val Canvas = Color(0xFFF5F8F6)
 
 class MainActivity : ComponentActivity() {
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { MaharTheme { MaharApp() } }
+        setContent {
+            MaharTheme {
+                MaharApp {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -81,8 +94,11 @@ private fun MaharTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun MaharApp(vm: MainViewModel = viewModel()) {
+private fun MaharApp(vm: MainViewModel = viewModel(), requestNotificationPermission: () -> Unit) {
     val state by vm.state
+    LaunchedEffect(state.authenticated) {
+        if (state.authenticated) requestNotificationPermission()
+    }
     if (!state.authenticated) LoginScreen(state.loading, state.error, vm::login)
     else MainShell(state, vm)
 }
