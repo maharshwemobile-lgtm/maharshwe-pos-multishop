@@ -80,22 +80,15 @@ function AccountCard({ label, value, icon: Icon }) {
 
 export default function DashboardBusinessV3({ onNavigate }) {
   const session = getSession();
-  const role = session?.user?.role || '';
-  const permissions = session?.user?.permissions || {};
   const rawBusinessType = session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
   const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
   const showMoneyService = true;
-  const canClose = role === 'SUPER_ADMIN' || role === 'SHOP_ADMIN';
   const today = yangonToday();
 
   const [businessDate, setBusinessDate] = useState(today);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [closingNote, setClosingNote] = useState('');
-  const [closing, setClosing] = useState(false);
-  const [reopening, setReopening] = useState(false);
 
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -134,45 +127,6 @@ export default function DashboardBusinessV3({ onNavigate }) {
     { icon: Truck, label: 'Supplier Payable', value: dashboard.payable, detail: `Paid today ${money(dashboard.supplierPaidToday)}`, tone: 'red' },
   ].filter(Boolean);
 
-  const closeBusinessDay = async () => {
-    if (!window.confirm(`${businessDate} daily closing. Are you sure? Shop Admin can undo / reopen later.`)) return;
-    setClosing(true);
-    setNotice('');
-    setError('');
-    try {
-      const response = await apiFetch('/api/business-control/daily-closing', {
-        method: 'POST',
-        body: { businessDate, note: closingNote },
-      });
-      setData(response);
-      setClosingNote('');
-      setNotice(response.message || 'Business day closed successfully.');
-    } catch (requestError) {
-      setError(requestError?.message || 'Daily closing failed');
-    } finally {
-      setClosing(false);
-    }
-  };
-
-  const reopenBusinessDay = async () => {
-    if (!window.confirm(`${businessDate} closed day. Are you sure you want to undo and reopen it?`)) return;
-    setReopening(true);
-    setNotice('');
-    setError('');
-    try {
-      const response = await apiFetch('/api/business-control/daily-closing/undo', {
-        method: 'POST',
-        body: { businessDate },
-      });
-      await load({ silent: true });
-      setNotice(response.message || 'Business day reopened successfully.');
-    } catch (requestError) {
-      setError(requestError?.message || 'Daily closing undo failed');
-    } finally {
-      setReopening(false);
-    }
-  };
-
   return (
     <div className="business-control-dashboard">
       <section className="bc-control-bar">
@@ -185,14 +139,9 @@ export default function DashboardBusinessV3({ onNavigate }) {
           <label><CalendarDays size={17} /><input type="date" value={businessDate} max={today} onChange={(event) => setBusinessDate(event.target.value || today)} /></label>
           <button type="button" onClick={() => load()} disabled={loading}>{loading ? <Loader2 className="bc-spin" size={17} /> : <RefreshCw size={17} />} Refresh</button>
         </div>
-        <div className={`bc-day-state ${data?.closing ? 'closed' : 'open'}`}>
-          {data?.closing ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}
-          <div><b>{data?.closing ? 'Day Closed' : ''}</b><small>{data?.closing ? `Closed by ${data.closing.closedByName || 'Admin'}` : ''}</small></div>
-        </div>
       </section>
 
       {error ? <div className="bc-alert error"><AlertTriangle size={18} />{error}</div> : null}
-      {notice ? <div className="bc-alert success"><CheckCircle2 size={18} />{notice}</div> : null}
       {loading && !data ? <section className="bc-loading"><Loader2 className="bc-spin" size={30} /><b>Business Control data loading…</b></section> : null}
 
       {data ? <>

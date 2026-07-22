@@ -44,6 +44,19 @@ function classifyRecentIncome(rows) {
 
 function attachBusinessControlServiceIncomeCore(app) {
   app.post(
+    ['/api/business-control/daily-closing', '/api/business-control/daily-closing/undo'],
+    requireAuth,
+    requireShopUser,
+    requireWritableSubscription,
+    requireManager,
+    (req, res) => res.status(410).json({
+      ok: false,
+      code: 'DAILY_CLOSING_DISABLED',
+      message: 'Close Day has been removed. Records remain available in reports.',
+    }),
+  );
+
+  app.post(
     '/api/business-control/daily-closing/undo',
     requireAuth,
     requireShopUser,
@@ -95,6 +108,9 @@ function attachBusinessControlServiceIncomeCore(app) {
     const originalJson = res.json.bind(res);
     res.json = async (payload) => {
       try {
+        if (req.method === 'GET' && req.path === '/overview' && payload) {
+          payload.closing = null;
+        }
         const businessDate = businessDateFrom(req, payload);
         const serviceIncome = await serviceIncomeTotal(req.auth?.shopId, businessDate);
         if (payload?.dashboard) {
