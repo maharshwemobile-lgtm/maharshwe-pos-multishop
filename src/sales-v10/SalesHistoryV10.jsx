@@ -128,7 +128,7 @@ function DetailModal({ sale, loading, printing, showExpiry, onClose, onReprint, 
         )}
 
         <footer className="sale10-history-detail-actions">
-          <button type="button" className="sale10-detail-reprint" onClick={() => onReprint(sale)} disabled={!sale || printing}><Printer size={17} /> {printing ? 'Preparing…' : 'Reprint'}</button>
+          <button type="button" className="sale10-detail-reprint allow-mobile-print" onClick={() => onReprint(sale)} disabled={!sale || printing}><Printer size={17} /> {printing ? 'Preparing…' : 'Reprint'}</button>
           <button type="button" className="stock-submit stock-submit-red" disabled={!sale || String(sale.status).toLowerCase().includes('void')} onClick={() => onVoid(sale)}><Ban size={17} /> Void Sale</button>
         </footer>
       </section>
@@ -421,7 +421,7 @@ export default function SalesHistoryV10() {
                     <td data-label="Actions">
                       <div className="stock-row-actions sale10-history-actions">
                         <button type="button" className="stock-action stock-action-blue" onClick={() => loadDetail(row)}><FileText size={15} /> View</button>
-                        <button type="button" className="stock-action stock-action-green" onClick={() => reprint(row)} disabled={printingId === (row.id || row.invoice)}><Printer size={15} /> {printingId === (row.id || row.invoice) ? 'Loading' : 'Reprint'}</button>
+                        <button type="button" className="stock-action stock-action-green allow-mobile-print" onClick={() => reprint(row)} disabled={printingId === (row.id || row.invoice)}><Printer size={15} /> {printingId === (row.id || row.invoice) ? 'Loading' : 'Reprint'}</button>
                         <button type="button" className="stock-action stock-action-red" disabled={String(row.status).toLowerCase().includes('void')} onClick={() => openVoid(row)}><Ban size={15} /> Void</button>
                       </div>
                     </td>
