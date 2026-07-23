@@ -24,6 +24,10 @@ import './business-control-dashboard.css';
 import './business-control-income.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
+const compactMoney = (value) => new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+}).format(Number(value || 0));
 
 function yangonToday() {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -82,7 +86,6 @@ export default function DashboardBusinessV3({ onNavigate }) {
   const session = getSession();
   const rawBusinessType = session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
   const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
-  const showMoneyService = true;
   const today = yangonToday();
 
   const [businessDate, setBusinessDate] = useState(today);
@@ -115,6 +118,17 @@ export default function DashboardBusinessV3({ onNavigate }) {
   const accountBalances = data?.accountBalances || {};
   const trend = data?.trend || [];
   const maxTrend = useMemo(() => Math.max(1, ...trend.map((item) => Number(item.sales || 0))), [trend]);
+  const trendStats = useMemo(() => {
+    const salesTotal = trend.reduce((sum, item) => sum + Number(item.sales || 0), 0);
+    const ordersTotal = trend.reduce((sum, item) => sum + Number(item.orders || 0), 0);
+    const bestDay = trend.reduce((best, item) => Number(item.sales || 0) > Number(best?.sales || 0) ? item : best, null);
+    return {
+      salesTotal,
+      ordersTotal,
+      dailyAverage: trend.length ? salesTotal / trend.length : 0,
+      bestDay,
+    };
+  }, [trend]);
 
   const metrics = [
     { icon: Wallet, label: "Today's Total Income", value: dashboard.todayTotalIncome, detail: isMiniMart ? `Sales + Other + TopUp (${money(dashboard.billEloadSoldVolume)})` : `Sales + Repair + Service + Other + TopUp (${money(dashboard.billEloadSoldVolume)})`, tone: 'green' },
@@ -156,16 +170,28 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
         <section className="bc-main-grid">
           <article className="bc-panel bc-trend-panel">
-            <header><div><span>7-DAY TREND</span><h3>Sales Performance</h3></div><BarChart3 size={23} /></header>
-            <div className="bc-chart">
+            <header className="bc-trend-heading">
+              <div><span>7-DAY TREND</span><h3>Sales Performance</h3><small>Daily revenue and completed sale orders</small></div>
+              <div className="bc-trend-total"><span>7-day sales</span><b>{money(trendStats.salesTotal)}</b></div>
+            </header>
+            <div className="bc-chart-shell">
+              <div className="bc-chart-scale" aria-hidden="true"><span>{compactMoney(maxTrend)}</span><span>{compactMoney(maxTrend / 2)}</span><span>0</span></div>
+              <div className="bc-chart">
               {trend.map((item) => {
                 const height = item.sales > 0 ? Math.max(8, Math.round((Number(item.sales) / maxTrend) * 100)) : 4;
-                return <div className="bc-bar-column" key={item.day} title={`${item.day}: ${money(item.sales)}`}><b>{item.orders}</b><div><i style={{ height: `${height}%` }} /></div><span>{item.day.slice(5)}</span></div>;
+                const isBest = trendStats.bestDay?.day === item.day && Number(item.sales || 0) > 0;
+                return <div className={`bc-bar-column ${isBest ? 'is-best' : ''}`} key={item.day} title={`${item.day}\nSales: ${money(item.sales)}\nOrders: ${item.orders}`}>
+                  <b>{compactMoney(item.sales)}</b>
+                  <div><i style={{ height: `${height}%` }}><em>{item.orders}</em></i></div>
+                  <span>{item.day.slice(5)}</span>
+                </div>;
               })}
+              </div>
             </div>
             <div className="bc-trend-summary">
-              {!isMiniMart ? <span>Repair Profit <b>{money(dashboard.repairProfit)}</b></span> : null}
-              {showMoneyService ? <span>Money Service Profit <b>{money(dashboard.moneyServiceProfit)}</b></span> : null}
+              <span>Total Orders <b>{trendStats.ordersTotal.toLocaleString('en-US')}</b></span>
+              <span>Daily Average <b>{money(trendStats.dailyAverage)}</b></span>
+              <span>Best Day <b>{trendStats.bestDay ? `${trendStats.bestDay.day.slice(5)} · ${money(trendStats.bestDay.sales)}` : '-'}</b></span>
             </div>
           </article>
 
