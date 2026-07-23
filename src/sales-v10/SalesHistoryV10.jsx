@@ -127,8 +127,8 @@ function DetailModal({ sale, loading, printing, showExpiry, onClose, onReprint, 
           </>
         )}
 
-        <footer>
-          <button type="button" onClick={() => onReprint(sale)} disabled={!sale || printing}><Printer size={17} /> {printing ? 'Preparing…' : 'Reprint'}</button>
+        <footer className="sale10-history-detail-actions">
+          <button type="button" className="sale10-detail-reprint" onClick={() => onReprint(sale)} disabled={!sale || printing}><Printer size={17} /> {printing ? 'Preparing…' : 'Reprint'}</button>
           <button type="button" className="stock-submit stock-submit-red" disabled={!sale || String(sale.status).toLowerCase().includes('void')} onClick={() => onVoid(sale)}><Ban size={17} /> Void Sale</button>
         </footer>
       </section>
@@ -410,15 +410,15 @@ export default function SalesHistoryV10() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id || row.invoice}>
-                    <td><b>{row.invoice}</b></td>
-                    <td>{formatDate(row.dateTime || row.date)}</td>
-                    <td>{row.customer || 'Walk-in Customer'}</td>
-                    <td>{row.itemCount || 0}</td>
-                    <td><b>{money(row.amount)}</b></td>
-                    <td>{row.payment || '-'}</td>
-                    <td><span className={`stock-type-badge stock-type-${statusTone(row.status)}`}>{row.status}</span></td>
-                    <td>{row.cashier || '-'}</td>
-                    <td>
+                    <td data-label="Invoice"><b>{row.invoice}</b></td>
+                    <td data-label="Date">{formatDate(row.dateTime || row.date)}</td>
+                    <td data-label="Customer">{row.customer || 'Walk-in Customer'}</td>
+                    <td data-label="Items">{row.itemCount || 0}</td>
+                    <td data-label="Total"><b>{money(row.amount)}</b></td>
+                    <td data-label="Payment">{row.payment || '-'}</td>
+                    <td data-label="Status"><span className={`stock-type-badge stock-type-${statusTone(row.status)}`}>{row.status}</span></td>
+                    <td data-label="Cashier">{row.cashier || '-'}</td>
+                    <td data-label="Actions">
                       <div className="stock-row-actions sale10-history-actions">
                         <button type="button" className="stock-action stock-action-blue" onClick={() => loadDetail(row)}><FileText size={15} /> View</button>
                         <button type="button" className="stock-action stock-action-green" onClick={() => reprint(row)} disabled={printingId === (row.id || row.invoice)}><Printer size={15} /> {printingId === (row.id || row.invoice) ? 'Loading' : 'Reprint'}</button>
