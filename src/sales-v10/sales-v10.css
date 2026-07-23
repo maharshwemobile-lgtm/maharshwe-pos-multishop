@@ -113,3 +113,27 @@
 .dark .sale10-split-modal{background:#0b1b33;color:#e5eef8;border-color:#1e3555}
 .dark .sale10-split-modal header,.dark .sale10-split-modal footer{border-color:#1e3555}
 .dark .sale10-split-modal header button,.dark .sale10-split-modal footer button,.dark .sale10-add-split-row{background:#10223d;color:#e5eef8;border-color:#1e3555}
+
+/* Compact receipt actions and mobile-friendly Sale History cards. */
+.sale10-history-detail-actions{display:flex;justify-content:flex-end;gap:8px}
+.sale10-history-detail-actions button{min-height:38px;padding:7px 12px}
+.sale10-detail-reprint{border-color:#86efac!important;background:#f0fdf4!important;color:#15803d!important;font-weight:900}
+.dark .sale10-detail-reprint{border-color:#166534!important;background:#0d3028!important;color:#86efac!important}
+
+@media(max-width:760px){
+  .sale10-history-table{min-width:0;display:block}
+  .sale10-history-table thead{display:none}
+  .sale10-history-table tbody{display:grid;gap:10px;padding:10px}
+  .sale10-history-table tr{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+  .sale10-history-table td{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;border:0;text-align:right;font-size:12px}
+  .sale10-history-table td::before{content:attr(data-label);color:#64748b;font-size:10px;font-weight:800;text-align:left}
+  .sale10-history-table td:first-child,.sale10-history-table td:last-child{grid-column:1/-1}
+  .sale10-history-table td:first-child{padding-bottom:8px;border-bottom:1px solid #edf2f7}
+  .sale10-history-table td:last-child{padding-top:8px;border-top:1px solid #edf2f7}
+  .sale10-history-actions{width:100%;min-width:0;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .sale10-history-actions .stock-action{min-width:0;justify-content:center;padding:7px 5px;font-size:10px}
+  .sale10-history-detail-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .sale10-history-detail-actions button{width:100%;justify-content:center}
+  .dark .sale10-history-table tr{background:#0b1b33;border-color:#1e3555}
+  .dark .sale10-history-table td:first-child,.dark .sale10-history-table td:last-child{border-color:#1e3555}
+}

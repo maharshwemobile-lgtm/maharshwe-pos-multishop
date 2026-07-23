@@ -1,4 +1,8 @@
-.sale10-complete-modal { position: relative; }
+.sale10-complete-modal {
+  position: relative;
+  width: min(430px, 100%);
+  padding: 24px;
+}
 .sale10-complete-close {
   position: absolute;
   top: 12px;
@@ -13,7 +17,25 @@
   place-items: center;
   cursor: pointer;
 }
-.sale10-complete-modal footer { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sale10-complete-modal footer.sale10-complete-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 16px;
+}
+.sale10-complete-actions button {
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
 .sale10-complete-modal footer .sale10-reprint-button {
   border-color: #86efac;
   background: #f0fdf4;
@@ -22,10 +44,20 @@
 }
 .sale10-cart-quantity-field { gap: 0 !important; }
 @media (max-width: 520px) {
-  .sale10-complete-modal footer { grid-template-columns: 1fr; }
+  .sale10-complete-modal {
+    width: min(360px, 100%);
+    padding: 22px 16px 16px;
+  }
+  .sale10-complete-icon {
+    width: 58px;
+    height: 58px;
+    margin-bottom: 8px;
+  }
+  .sale10-complete-modal footer.sale10-complete-actions { grid-template-columns: 1fr 1fr; }
+  .sale10-complete-actions .sale10-new-sale-button { grid-column: 1 / -1; }
   .sale10-complete-modal footer button {
     width: 100%;
-    min-height: 44px;
+    min-height: 38px;
   }
   .sale10-cart-slip-row { padding: 8px !important; row-gap: 4px !important; }
 }
