@@ -20,21 +20,13 @@ import {
   X,
 } from 'lucide-react';
 import { apiDownload, apiFetch, clearSession, getSession } from './phase2Api';
+import businessRecordCategories from '../shared/business-record-categories.json';
+import { pickLanguageText as t } from './settings/ProjectLanguageRuntime.jsx';
 import './business-records.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
-const DEFAULT_INCOME_OPTIONS = [
-  { name: 'အခြား Service ဝင်ငွေ', value: 'အခြား Service ဝင်ငွေ' },
-  { name: 'အခြား အရောင်းပိုင်း ဝင်ငွေ', value: 'အခြား အရောင်းပိုင်း ဝင်ငွေ' },
-  { name: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ', value: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ' },
-  { name: 'အခြား အခြား ဝင်ငွေ', value: 'အခြား အခြား ဝင်ငွေ' },
-];
-const DEFAULT_EXPENSE_OPTIONS = [
-  'အခြား Service ထွက်ငွေ',
-  'အခြား အရောင်းပိုင်း ထွက်ငွေ',
-  'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
-  'အခြား အခြား ထွက်ငွေ',
-];
+const DEFAULT_INCOME_OPTIONS = businessRecordCategories.income.map((item) => ({ name: item.my, value: item.value }));
+const DEFAULT_EXPENSE_OPTIONS = businessRecordCategories.expense.map((item) => item.value);
 const DEFAULT_INCOME_CATEGORY = DEFAULT_INCOME_OPTIONS[0].value;
 const DEFAULT_EXPENSE_CATEGORY = DEFAULT_EXPENSE_OPTIONS[0];
 
@@ -60,18 +52,30 @@ function formatDateTime(value) {
 }
 
 function categoryLabel(record, isMiniMart = false) {
-  if (record.type === 'expense') return record.category || 'Expense';
-  if (record.category === 'SERVICE_INCOME') return isMiniMart ? 'Other Income' : 'Service Income';
-  if (record.category && record.category !== 'OTHER_INCOME') return record.category;
-  return 'Other Income';
+  const rows = record.type === 'expense' ? businessRecordCategories.expense : businessRecordCategories.income;
+  const category = String(record.category || '').trim().toLowerCase();
+  const match = rows.find((item) => item.value.toLowerCase() === category
+    || item.en.toLowerCase() === category
+    || (item.aliases || []).some((alias) => String(alias).toLowerCase() === category));
+  if (match) return t(match.en, match.my);
+  const fallback = record.type === 'expense' ? rows[0] : (isMiniMart ? rows[3] : rows[0]);
+  return t(fallback.en, fallback.my);
+}
+
+function normalizedCategory(type, value) {
+  const rows = type === 'expense' ? businessRecordCategories.expense : businessRecordCategories.income;
+  const input = String(value || '').trim().toLowerCase();
+  return rows.find((item) => item.value.toLowerCase() === input
+    || item.en.toLowerCase() === input
+    || (item.aliases || []).some((alias) => String(alias).toLowerCase() === input))?.value || rows[0].value;
 }
 
 function buildIncomeOptions() {
-  return DEFAULT_INCOME_OPTIONS;
+  return businessRecordCategories.income.map((item) => ({ name: t(item.en, item.my), value: item.value }));
 }
 
 function buildExpenseOptions() {
-  return DEFAULT_EXPENSE_OPTIONS.map((name) => ({ name, value: name }));
+  return businessRecordCategories.expense.map((item) => ({ name: t(item.en, item.my), value: item.value }));
 }
 
 function DetailModal({ record, onClose, isMiniMart = false }) {
@@ -109,7 +113,10 @@ function DetailModal({ record, onClose, isMiniMart = false }) {
 function EditModal({ record, accounts, incomeOptions, expenseOptions, saving, onSave, onClose }) {
   const buildForm = (currentRecord) => ({
     businessDate: currentRecord?.businessDate || yangonToday(),
-    category: currentRecord?.type === 'income' ? (currentRecord?.category || DEFAULT_INCOME_CATEGORY) : (currentRecord?.title || currentRecord?.category || DEFAULT_EXPENSE_CATEGORY),
+    category: normalizedCategory(
+      currentRecord?.type || 'income',
+      currentRecord?.type === 'income' ? currentRecord?.category : (currentRecord?.title || currentRecord?.category),
+    ),
     title: currentRecord?.title || '',
     amount: String(currentRecord?.amount || ''),
     method: currentRecord?.method || 'CASH',

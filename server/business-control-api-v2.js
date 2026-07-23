@@ -4,6 +4,7 @@ const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
 const { ensureRepairPlatformSchema } = require('./repair-platform-schema');
 const { queuePush, sendPushToShop } = require('./push-notifications-api');
+const { normalizeBusinessRecordCategory } = require('./business-record-categories');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ACCOUNT_TYPES = ['CASH', 'KPAY', 'WAVE_PAY', 'OTHER'];
@@ -535,7 +536,7 @@ function attachBusinessControlApiV2(app) {
   app.post('/api/business-control/expenses', ...write, wrap(async (req, res) => {
     const expenseDate = parseBusinessDate(req.body?.expenseDate);
     if (expenseDate > currentYangonDate()) throw new ApiError(400, 'Future expense dates are not allowed');
-    const category = clean(req.body?.category, 80);
+    const category = normalizeBusinessRecordCategory('expense', req.body?.category);
     const amount = Number(req.body?.amount);
     const method = clean(req.body?.method || 'CASH', 20).toUpperCase();
     const note = clean(req.body?.note, 500) || null;
@@ -570,7 +571,7 @@ function attachBusinessControlApiV2(app) {
   app.post('/api/business-control/other-income', ...write, wrap(async (req, res) => {
     const incomeDate = parseBusinessDate(req.body?.incomeDate);
     if (incomeDate > currentYangonDate()) throw new ApiError(400, 'Future income dates are not allowed');
-    const category = clean(req.body?.category || 'OTHER_INCOME', 80);
+    const category = normalizeBusinessRecordCategory('income', req.body?.category);
     const source = clean(req.body?.source, 80);
     const amount = Number(req.body?.amount);
     const method = clean(req.body?.method || 'CASH', 20).toUpperCase();
