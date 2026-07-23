@@ -105,6 +105,20 @@ function validPageName(value, fallback = 'Dashboard') {
   return menu.some((item) => item.name === candidate) ? candidate : fallback;
 }
 
+function currentPageStorageKey(session) {
+  const scope = session?.user?.shopId || session?.user?.shop?.id || session?.user?.id || 'default';
+  return `mahar-pos-current-page:${scope}`;
+}
+
+function restoredPage(session) {
+  if (typeof window === 'undefined') return 'Dashboard';
+  try {
+    return validPageName(window.sessionStorage.getItem(currentPageStorageKey(session)), 'Dashboard');
+  } catch {
+    return 'Dashboard';
+  }
+}
+
 function subscriptionAccessMode(user) {
   return safeText(user?.shop?.subscription?.accessMode || user?.subscriptionAccess || '', '');
 }
@@ -367,7 +381,7 @@ function Page({ page, setPage, user, onboardingGuide }) {
 export default function AppFull() {
   const [session, setSession] = useState(() => getSession());
   const user = session?.user || null;
-  const [page, setPage] = useState('Dashboard');
+  const [page, setPage] = useState(() => restoredPage(getSession()));
   const [isMobileShell, setIsMobileShell] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 900);
   const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 900);
   const [sidebarRendered, setSidebarRendered] = useState(() => typeof window === 'undefined' || window.innerWidth > 900);
@@ -464,9 +478,18 @@ export default function AppFull() {
     if (!pageVisible(safePage, user)) setPage(fallbackPage);
   }, [page, user, visibleMenu, fallbackPage]);
 
+  useEffect(() => {
+    if (!session?.token) return;
+    try {
+      window.sessionStorage.setItem(currentPageStorageKey(session), validPageName(page));
+    } catch {}
+    if (page === 'Sale POS') setSidebarOpen(false);
+  }, [page, session]);
+
   const selectPage = (nextPage) => {
-    setPage(validPageName(nextPage));
-    if (isMobileShell || window.innerWidth <= 900) setSidebarOpen(false);
+    const safePage = validPageName(nextPage);
+    setPage(safePage);
+    if (safePage === 'Sale POS' || isMobileShell || window.innerWidth <= 900) setSidebarOpen(false);
   };
 
   const onboardingDemo = session?.demoAutoCleanup || session?.onboardingDemo || null;
