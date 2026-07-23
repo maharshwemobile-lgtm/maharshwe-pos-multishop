@@ -181,11 +181,7 @@ export default function PartnerSettlementWorkspace() {
     <section className="psw-page">
       {error ? <div className="psw-error"><span>{error}</span><button type="button" onClick={() => setError('')}><X size={17} /></button></div> : null}
 
-      <header className="psw-hero">
-        <div>
-          <span className="psw-eyebrow">PARTNER SHOP</span>
-          <h2>Weekly Settlement Center</h2>
-        </div>
+      <header className="psw-hero psw-actions-only">
         <div className="psw-actions">
           <button className="psw-button ghost" type="button" onClick={() => loadAll()}>
             <RefreshCw size={18} className={loading ? 'psw-spin' : ''} />Refresh

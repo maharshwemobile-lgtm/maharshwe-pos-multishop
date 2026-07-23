@@ -263,9 +263,9 @@ function subscriptionStatus(subscription) {
     id: subscription.id,
     status,
     rawStatus: subscription.status,
-    startsAt: subscription.startsAt,
-    endsAt: subscription.endsAt,
-    renewedAt: subscription.renewedAt,
+    startsAt: subscription.startsAt ? new Date(subscription.startsAt).toISOString() : null,
+    endsAt: subscription.endsAt ? new Date(subscription.endsAt).toISOString() : null,
+    renewedAt: subscription.renewedAt ? new Date(subscription.renewedAt).toISOString() : null,
     setupFee: Number(subscription.setupFee || 0),
     monthlyFee: Number(subscription.monthlyFee || 0),
     totalDays,
@@ -508,9 +508,11 @@ function attachProjectSettingsPostgresApi(app) {
     await prisma.$transaction(async (tx) => {
       const raw = await currentRawSettings(tx, req.auth.shopId);
       const previous = merge(DEFAULTS.api.googleSheets, plainObject(plainObject(raw.api).googleSheets));
+      const currentApi = plainObject(raw.api);
       await saveRawSettings(tx, req.auth.shopId, {
         ...raw,
         api: {
+          ...currentApi,
           googleSheets: {
             ...googleSheets,
             lastTest: previous.lastTest || null,

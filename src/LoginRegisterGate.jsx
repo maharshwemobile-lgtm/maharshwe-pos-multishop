@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { changePassword, clearSession, googleLogin, login, registerTenant } from './phase2Api';
 import { PROJECT_LOGO_URL } from './projectBrand';
+import LoginFooterActions from './LoginFooterActions.jsx';
 import './login-register-gate.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+let googleIdentityInitialized = false;
+let googleCredentialHandler = null;
 
 const BUSINESS_TYPES = [
   {
@@ -14,7 +17,7 @@ const BUSINESS_TYPES = [
   },
   {
     value: 'MINI_MART',
-    title: '🛒 Mini Mart',
+    title: '🛒 Retail Shop',
     subtitle: 'Barcode / Expiry / Grocery POS',
   },
 ];
@@ -93,6 +96,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       const session = await googleLogin({
         credential,
         shopSlug: loginForm.shopSlug.trim() || undefined,
+        businessType: mode === 'register' ? registerForm.businessType || 'PHONE_SHOP' : undefined,
       });
       onSession?.(session);
     } catch (requestError) {
@@ -100,7 +104,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         setPendingGoogleCredential(credential);
         setGoogleBusinessType('PHONE_SHOP');
         setMode('googleBusinessType');
-        setError('Google Register ဆက်လုပ်ရန် Phone ဆိုင် / Mini Mart ကို အရင်ရွေးပါ။');
+        setError('Google Register ဆက်လုပ်ရန် ဆိုင်အမျိုးအစားကို အရင်ရွေးပါ။');
         return;
       }
       const message = requestError?.message || 'Google Login မအောင်မြင်ပါ။';
@@ -114,22 +118,26 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
   };
 
   useEffect(() => {
-    if (mode !== 'login' || !GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
+    if (!['login', 'register'].includes(mode) || !GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
     let cancelled = false;
 
     const renderGoogleButton = () => {
       if (cancelled || !window.google?.accounts?.id || !googleButtonRef.current) return;
       googleButtonRef.current.innerHTML = '';
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response) => handleGoogleCredential(response.credential),
-      });
+      googleCredentialHandler = handleGoogleCredential;
+      if (!googleIdentityInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response) => googleCredentialHandler?.(response.credential),
+        });
+        googleIdentityInitialized = true;
+      }
       window.google.accounts.id.renderButton(googleButtonRef.current, {
         type: 'standard',
         theme: 'outline',
         size: 'large',
         width: 320,
-        text: 'signin_with',
+        text: mode === 'register' ? 'signup_with' : 'signin_with',
         locale: 'my',
       });
     };
@@ -156,7 +164,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     };
     document.body.appendChild(script);
     return () => { cancelled = true; };
-  }, [mode, loginForm.shopSlug, onSession]);
+  }, [mode, loginForm.shopSlug, registerForm.businessType, onSession]);
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
@@ -320,8 +328,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       <main className="ms-login-page">
         <section className="ms-login-card">
           <div className="ms-login-brand">
-            <img src={PROJECT_LOGO_URL} alt="Mahar Shwe POS" />
-            <h1>Mahar Shwe POS</h1>
+            <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
+            <h1>Mahar POS</h1>
             <p>Password အသစ်ပြောင်းရန်</p>
           </div>
           {success ? <div className="ms-login-alert success">🔐 {success}</div> : null}
@@ -353,8 +361,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       <main className="ms-login-page">
         <section className="ms-login-card">
           <div className="ms-login-brand">
-            <img src={PROJECT_LOGO_URL} alt="Mahar Shwe POS" />
-            <h1>Mahar Shwe POS</h1>
+            <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
+            <h1>Mahar POS</h1>
             <p>Google Register ဆက်လုပ်ရန် ဆိုင်အမျိုးအစား ရွေးပါ</p>
           </div>
           {error ? <div className="ms-login-alert error">{error}</div> : null}
@@ -363,7 +371,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Register လုပ်နေသည်...' : 'ရွေးပြီး Register ပြီး Dashboard ဝင်မည်'}</button>
             <button type="button" className="ms-login-secondary" disabled={loading} onClick={() => { setPendingGoogleCredential(''); switchMode('login'); }}>Google Login ပြန်လုပ်မည်</button>
           </form>
-          <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 7 ရက် Trial အခမဲ့ သုံးနိုင်သည်</p>
+          <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
         </section>
       </main>
     );
@@ -373,8 +381,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     <main className="ms-login-page">
       <section className="ms-login-card">
         <div className="ms-login-brand">
-          <img src={PROJECT_LOGO_URL} alt="Mahar Shwe POS" />
-          <h1>Mahar Shwe POS</h1>
+          <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
+          <h1>Mahar POS</h1>
           <p>{mode === 'login' ? 'အကောင့်ဝင်ရန်' : 'အကောင့်သစ် ဖွင့်ရန်'}</p>
         </div>
         <div className="ms-login-tabs" role="tablist" aria-label="Login and register">
@@ -410,7 +418,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
           <form className="ms-login-form" onSubmit={submitRegister}>
             <label>
               <span>ဆိုင်အမည် <b>*</b></span>
-              <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="မဟာရွှေဆိုင်" autoFocus />
+              <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="ကျွန်ုပ်၏ဆိုင်" autoFocus />
             </label>
             <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
             <label>
@@ -427,10 +435,20 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <input type="tel" name="phone" value={registerForm.phone} onChange={(event) => { setRegisterForm({ ...registerForm, phone: event.target.value }); setError(''); }} placeholder="09xxxxxxxxx" />
             </label>
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဖွင့်နေသည်...' : 'အကောင့်ဖွင့်မည်'}</button>
-            <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 7 ရက် Trial အခမဲ့ သုံးနိုင်သည်</p>
+            <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
             <p className="ms-login-footer">အကောင့်ရှိပြီးသားလား? <button type="button" onClick={() => switchMode('login')}>Login ဝင်ရန်</button></p>
+            {GOOGLE_CLIENT_ID ? (
+              <>
+                <div className="ms-login-divider"><span>သို့မဟုတ်</span></div>
+                <div className="ms-login-google-register">
+                  <b>Google ဖြင့် အမြန် Register</b>
+                  <div className="ms-login-google" ref={googleButtonRef} />
+                </div>
+              </>
+            ) : null}
           </form>
         )}
+        <LoginFooterActions onForgotPassword={() => setError('Password reset လိုအပ်ပါက Telegram Support မှ Admin ကိုဆက်သွယ်ပါ။')} />
       </section>
     </main>
   );

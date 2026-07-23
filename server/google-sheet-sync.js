@@ -8,6 +8,7 @@ const DATASETS = {
   'other-income': { tab: 'Other Income' },
   'service-income': { tab: 'Service Income' },
   expense: { tab: 'Expense' },
+  'daily-closing': { tab: 'Daily Closing' },
   stock: { tab: 'STOCK' },
   'user-audit': { tab: 'User audit' },
 };
@@ -160,6 +161,7 @@ function captureDataset(req) {
   const path = String(req.path || req.originalUrl || '');
   if (!['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) return null;
   if (path.startsWith('/api/remittances')) return null;
+  if (path === '/api/business-control/daily-closing') return 'daily-closing';
   if (path.startsWith('/api/business-control/expenses')) return 'expense';
   if (path.startsWith('/api/business-control/other-income')) {
     const category = String(req.body?.category || '').toUpperCase();
@@ -179,7 +181,7 @@ function attachGoogleSheetSyncCapture(app) {
     const originalJson = res.json.bind(res);
     res.json = (body) => {
       if (res.statusCode >= 200 && res.statusCode < 300 && req.auth?.shopId) {
-        const entityId = body?.id || body?.sale?.id || body?.user?.id || body?.movement?.id || null;
+        const entityId = body?.id || body?.closing?.id || body?.sale?.id || body?.user?.id || body?.movement?.id || null;
         queueGoogleSheetSync({
           shopId: req.auth.shopId,
           dataset,
@@ -254,13 +256,14 @@ async function exportDataset(shopId, dataset, since, limit) {
   if (dataset === 'other-income' || dataset === 'service-income') {
     const service = dataset === 'service-income';
     return prisma.$queryRawUnsafe(
-      `SELECT i.id,i.income_date AS "businessDate",CASE WHEN i.source LIKE $3 THEN SUBSTRING(i.source FROM $4) ELSE i.source END AS source,
+      `SELECT i.id,i.income_date AS "businessDate",i.category,
+              CASE WHEN i.source LIKE $3 THEN SUBSTRING(i.source FROM $4) ELSE i.source END AS source,
               i.amount,i.method,i.note,i.created_at AS "createdAt",a.name AS "accountName",u.name AS "createdBy"
          FROM business_other_income i
          LEFT JOIN money_accounts a ON a.id=i.money_account_id
          LEFT JOIN users u ON u.id=i.created_by_id
         WHERE i.shop_id=$1::uuid AND i.created_at >= $2
-          AND ${service ? 'i.source LIKE $3' : 'i.source NOT LIKE $3'}
+          AND ${service ? "(i.category='SERVICE_INCOME' OR i.source LIKE $3)" : "(COALESCE(i.category,'OTHER_INCOME')!='SERVICE_INCOME' AND i.source NOT LIKE $3)"}
         ORDER BY i.created_at ASC LIMIT $5`,
       shopId, since, `${SERVICE_PREFIX}%`, SERVICE_PREFIX.length + 1, take,
     );
@@ -274,6 +277,23 @@ async function exportDataset(shopId, dataset, since, limit) {
          LEFT JOIN users u ON u.id=e.created_by_id
         WHERE e.shop_id=$1::uuid AND e.created_at >= $2
         ORDER BY e.created_at ASC LIMIT $3`,
+      shopId, since, take,
+    );
+  }
+  if (dataset === 'daily-closing') {
+    return prisma.$queryRawUnsafe(
+      `SELECT dc.id,dc.closing_date AS "businessDate",dc.sales_total AS "salesTotal",
+              dc.product_profit_total AS "productProfitTotal",dc.service_income_total AS "serviceIncomeTotal",
+              dc.money_profit_total AS "moneyProfitTotal",dc.repair_income_total AS "repairIncomeTotal",
+              dc.repair_profit_total AS "repairProfitTotal",dc.expense_total AS "expenseTotal",
+              dc.other_income_total AS "otherIncomeTotal",dc.receivable_total AS "receivableTotal",
+              dc.payable_total AS "payableTotal",dc.total_profit AS "totalProfit",
+              dc.cash_balance AS "cashBalance",dc.kpay_balance AS "kpayBalance",
+              dc.wave_pay_balance AS "wavePayBalance",dc.note,dc.closed_at AS "closedAt",u.name AS "closedBy"
+         FROM daily_closings dc
+         LEFT JOIN users u ON u.id=dc.closed_by_id
+        WHERE dc.shop_id=$1::uuid AND dc.closed_at >= $2
+        ORDER BY dc.closed_at ASC LIMIT $3`,
       shopId, since, take,
     );
   }

@@ -115,7 +115,7 @@ export default function GoogleProductsGate() {
       ) : null}
       {error ? <div className="p2-alert p2-alert-error" style={{ marginTop: 14 }}>{error}</div> : null}
       <small style={{ display: 'block', marginTop: 16, color: '#64748b', textAlign: 'center' }}>
-        New Gmail owner accounts receive their own 7-day trial tenant when self-signup is enabled.
+        New Gmail owner accounts receive their own 1-month free trial tenant when self-signup is enabled.
       </small>
     </section>
   );

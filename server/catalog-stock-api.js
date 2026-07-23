@@ -7,8 +7,6 @@ const {
   requirePermission,
   requireWritableSubscription,
 } = require('./auth-api');
-const { queuePush, sendPushToShop } = require('./push-notifications-api');
-
 const uuid = z.string().uuid();
 const text = (max = 160) => z.union([z.string().trim().max(max), z.null()]).optional();
 const money = z.coerce.number().finite().min(0);
@@ -544,27 +542,6 @@ function attachCatalogStockApi(app) {
       await addAudit(tx, req, 'STOCK_MOVEMENT_CREATED', 'stock_movement', movement.id, { productVariantId: variant.id, type: input.type, quantityChange: delta, beforeQuantity, afterQuantity });
       return { movement, balance };
     });
-    const quantity = Number(result.balance?.quantity || 0);
-    const minAlertQuantity = Number(result.balance?.minAlertQuantity || 0);
-    if (quantity <= 0) {
-      queuePush(() => sendPushToShop({
-        shopId: req.auth.shopId,
-        eventType: 'OUT_OF_STOCK',
-        title: 'Out of stock alert',
-        body: 'A product is out of stock. Open Mahar POS to review.',
-        url: '/stock',
-        data: { source: 'stock-movement', movementId: result.movement.id },
-      }), 'out of stock push');
-    } else if (minAlertQuantity > 0 && quantity <= minAlertQuantity) {
-      queuePush(() => sendPushToShop({
-        shopId: req.auth.shopId,
-        eventType: 'LOW_STOCK',
-        title: 'Low stock alert',
-        body: 'A product is running low. Open Mahar POS to review.',
-        url: '/stock',
-        data: { source: 'stock-movement', movementId: result.movement.id },
-      }), 'low stock push');
-    }
     res.status(201).json({ ok: true, ...result });
   }));
 }

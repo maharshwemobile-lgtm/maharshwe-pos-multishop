@@ -2,15 +2,10 @@ const crypto = require('crypto');
 const { prisma } = require('./prisma');
 
 const DEFAULT_CATEGORIES = [
-  'Electricity',
-  'Transport',
-  'Rent',
-  'Salary',
-  'Food',
-  'Internet',
-  'Repair Parts',
-  'Office Supplies',
-  'Other',
+  'အခြား Service ထွက်ငွေ',
+  'အခြား အရောင်းပိုင်း ထွက်ငွေ',
+  'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
+  'အခြား အခြား ထွက်ငွေ',
 ];
 
 let schemaPromise;
@@ -40,12 +35,6 @@ async function ensureExpenseCategoriesSchema() {
 }
 
 async function ensureDefaultExpenseCategories(shopId, userId) {
-  const rows = await prisma.$queryRawUnsafe(
-    'SELECT COUNT(*)::int AS count FROM business_expense_categories WHERE shop_id=$1::uuid',
-    shopId,
-  );
-  if (Number(rows[0]?.count || 0) > 0) return;
-
   for (let index = 0; index < DEFAULT_CATEGORIES.length; index += 1) {
     await prisma.$executeRawUnsafe(
       `INSERT INTO business_expense_categories(id,shop_id,name,active,sort_order,created_by_id,created_at,updated_at)

@@ -94,6 +94,366 @@ function buildMiniMartDailySales(activeSales) {
     .slice(0, 14);
 }
 
+const OTHER_INCOME_CATEGORY_KEYS = {
+  otherServiceIncome: 'အခြား Service ဝင်ငွေ',
+  otherSaleIncome: 'အခြား အရောင်းပိုင် ဝင်ငွေ',
+  otherTopupIncome: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ',
+  otherOtherIncome: 'အခြား အခြား ဝင်ငွေ',
+};
+
+const OTHER_EXPENSE_CATEGORY_KEYS = {
+  otherServiceExpense: 'အခြား Service ထွက်ငွေ',
+  otherSaleExpense: 'အခြား အရောင်းပိုင်း ထွက်ငွေ',
+  otherTopupExpense: 'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
+  otherOtherExpense: 'အခြား အခြား ထွက်ငွေ',
+};
+
+function closePeriod(value) {
+  const normalized = String(value || '').toLowerCase();
+  if (normalized === 'monthly' || normalized === 'month') return 'monthly';
+  if (normalized === 'yearly' || normalized === 'year') return 'yearly';
+  return 'daily';
+}
+
+function bucketExpression(dateExpression, period) {
+  if (period === 'monthly') return `TO_CHAR(${dateExpression}, 'YYYY-MM')`;
+  if (period === 'yearly') return `TO_CHAR(${dateExpression}, 'YYYY')`;
+  return `TO_CHAR(${dateExpression}, 'YYYY-MM-DD')`;
+}
+
+function bucketStartExpression(dateExpression, period) {
+  if (period === 'monthly') return `DATE_TRUNC('month', ${dateExpression})::date`;
+  if (period === 'yearly') return `DATE_TRUNC('year', ${dateExpression})::date`;
+  return `${dateExpression}::date`;
+}
+
+function emptyCloseRow(bucket) {
+  return {
+    bucket,
+    salePosIncome: 0,
+    salePosExpense: 0,
+    salePosProfit: 0,
+    saleCount: 0,
+    servicePosIncome: 0,
+    servicePosExpense: 0,
+    servicePosProfit: 0,
+    moneyServiceFee: 0,
+    billOpeningBalance: 0,
+    billRefill: 0,
+    billSoldVolume: 0,
+    billAdjustment: 0,
+    billClosingBalance: 0,
+    billEloadProfit: 0,
+    otherSaleIncome: 0,
+    otherServiceIncome: 0,
+    otherTopupIncome: 0,
+    otherOtherIncome: 0,
+    otherIncomeSubtotal: 0,
+    otherSaleExpense: 0,
+    otherServiceExpense: 0,
+    otherTopupExpense: 0,
+    otherOtherExpense: 0,
+    otherExpenseSubtotal: 0,
+    incomeTotal: 0,
+    expenseTotal: 0,
+    netProfit: 0,
+    closedDays: 0,
+    lastClosedAt: null,
+  };
+}
+
+function mergeCloseRows(target, rows, mapper) {
+  for (const raw of rows || []) {
+    const bucket = String(raw.bucket || '');
+    if (!bucket) continue;
+    const row = target.get(bucket) || emptyCloseRow(bucket);
+    mapper(row, raw);
+    target.set(bucket, row);
+  }
+}
+
+async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
+  const period = closePeriod(requestedPeriod);
+  const fromDay = isoDate(from);
+  const toDay = isoDate(to);
+  const saleDate = `((sold_at AT TIME ZONE 'Asia/Yangon')::date)`;
+  const repairDate = `((COALESCE(completed_at,delivered_at,updated_at) AT TIME ZONE 'Asia/Yangon')::date)`;
+  const serviceDate = `((created_at AT TIME ZONE 'Asia/Yangon')::date)`;
+  const saleBucket = bucketExpression(saleDate, period);
+  const repairBucket = bucketExpression(repairDate, period);
+  const serviceBucket = bucketExpression(serviceDate, period);
+  const billerBucket = bucketExpression('transaction_date', period);
+  const billerBucketStart = bucketStartExpression('transaction_date', period);
+  const recordBucket = bucketExpression('income_date', period);
+  const expenseBucket = bucketExpression('expense_date', period);
+  const closeBucket = bucketExpression('closing_date', period);
+
+  const [
+    saleRows,
+    repairRows,
+    moneyServiceRows,
+    billerRows,
+    incomeRows,
+    expenseRows,
+    closingRows,
+  ] = await Promise.all([
+    prisma.$queryRawUnsafe(
+      `SELECT ${saleBucket} AS bucket,
+              COALESCE(SUM(total),0) AS "salePosIncome",
+              COALESCE(SUM(total-profit_total),0) AS "salePosExpense",
+              COALESCE(SUM(profit_total),0) AS "salePosProfit",
+              COUNT(*)::int AS "saleCount"
+         FROM sales
+        WHERE shop_id=$1::uuid
+          AND status IN ('COMPLETED','PARTIAL_RETURN')
+          AND ${saleDate} >= $2::date
+          AND ${saleDate} <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${repairBucket} AS bucket,
+              COALESCE(SUM(final_cost),0) AS "servicePosIncome",
+              COALESCE(SUM(final_cost-parts_cost-technician_commission-other_cost),0) AS "servicePosProfit",
+              COALESCE(SUM(parts_cost+technician_commission+other_cost),0) AS "servicePosExpense"
+         FROM repairs
+        WHERE shop_id=$1::uuid
+          AND status IN ('COMPLETED','DELIVERED')
+          AND ${repairDate} >= $2::date
+          AND ${repairDate} <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${serviceBucket} AS bucket,
+              COALESCE(SUM(service_profit),0) AS "moneyServiceFee"
+         FROM money_service_transactions
+        WHERE shop_id=$1::uuid
+          AND ${serviceDate} >= $2::date
+          AND ${serviceDate} <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `WITH buckets AS (
+          SELECT DISTINCT ${billerBucket} AS bucket,
+                 ${billerBucketStart} AS bucket_start
+           FROM biller_transactions
+           WHERE shop_id=$1::uuid
+             AND voided_at IS NULL
+             AND transaction_date::date >= $2::date
+             AND transaction_date::date <= $3::date
+        ),
+        scoped AS (
+          SELECT ${billerBucket} AS bucket,
+                 transaction_type,
+                 amount,
+                 COALESCE(balance_effect_amount,0) AS balance_effect_amount,
+                 COALESCE(profit_amount,0) AS profit_amount
+            FROM biller_transactions
+           WHERE shop_id=$1::uuid
+             AND voided_at IS NULL
+             AND transaction_date::date >= $2::date
+             AND transaction_date::date <= $3::date
+        )
+        SELECT b.bucket,
+               (
+                 COALESCE((SELECT SUM(opening_balance) FROM billers WHERE shop_id=$1::uuid AND is_active=TRUE),0)
+                 + COALESCE((
+                    SELECT SUM(CASE
+                      WHEN t2.transaction_type IN ('REFILL','ADJUSTMENT') THEN t2.amount
+                      WHEN t2.transaction_type='SOLD' THEN -COALESCE(NULLIF(t2.balance_effect_amount,0),t2.amount)
+                      ELSE 0
+                    END)
+                    FROM biller_transactions t2
+                    WHERE t2.shop_id=$1::uuid
+                      AND t2.voided_at IS NULL
+                      AND t2.transaction_date::date < b.bucket_start
+                 ),0)
+               ) AS "billOpeningBalance",
+               COALESCE(SUM(s.amount) FILTER (WHERE s.transaction_type='REFILL'),0) AS "billRefill",
+               COALESCE(SUM(s.amount) FILTER (WHERE s.transaction_type='SOLD'),0) AS "billSoldVolume",
+               COALESCE(SUM(COALESCE(NULLIF(s.balance_effect_amount,0),s.amount)) FILTER (WHERE s.transaction_type='SOLD'),0) AS "billBalanceSold",
+               COALESCE(SUM(s.amount) FILTER (WHERE s.transaction_type='ADJUSTMENT'),0) AS "billAdjustment",
+               COALESCE(SUM(s.profit_amount) FILTER (WHERE s.transaction_type='SOLD'),0) AS "billEloadProfit"
+          FROM buckets b
+          LEFT JOIN scoped s ON s.bucket=b.bucket
+         GROUP BY b.bucket,b.bucket_start`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${recordBucket} AS bucket,
+              COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceIncome",
+              COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleIncome",
+              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupIncome",
+              COALESCE(SUM(CASE WHEN category=$7 THEN amount ELSE 0 END),0) AS "otherOtherIncome"
+         FROM business_other_income
+        WHERE shop_id=$1::uuid
+          AND income_date >= $2::date
+          AND income_date <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+      OTHER_INCOME_CATEGORY_KEYS.otherServiceIncome,
+      OTHER_INCOME_CATEGORY_KEYS.otherSaleIncome,
+      OTHER_INCOME_CATEGORY_KEYS.otherTopupIncome,
+      OTHER_INCOME_CATEGORY_KEYS.otherOtherIncome,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${expenseBucket} AS bucket,
+              COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceExpense",
+              COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleExpense",
+              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupExpense",
+              COALESCE(SUM(CASE WHEN category=$7 THEN amount ELSE 0 END),0) AS "otherOtherExpense"
+         FROM business_expenses
+        WHERE shop_id=$1::uuid
+          AND expense_date >= $2::date
+          AND expense_date <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherServiceExpense,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherSaleExpense,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherTopupExpense,
+      OTHER_EXPENSE_CATEGORY_KEYS.otherOtherExpense,
+    ).catch(() => []),
+    prisma.$queryRawUnsafe(
+      `SELECT ${closeBucket} AS bucket,
+              COUNT(*)::int AS "closedDays",
+              MAX(closed_at) AS "lastClosedAt"
+         FROM daily_closings
+        WHERE shop_id=$1::uuid
+          AND closing_date >= $2::date
+          AND closing_date <= $3::date
+        GROUP BY 1`,
+      shopId,
+      fromDay,
+      toDay,
+    ).catch(() => []),
+  ]);
+
+  const map = new Map();
+  mergeCloseRows(map, saleRows, (row, raw) => {
+    row.salePosIncome = round(raw.salePosIncome);
+    row.salePosExpense = round(raw.salePosExpense);
+    row.salePosProfit = round(raw.salePosProfit);
+    row.saleCount = Number(raw.saleCount || 0);
+  });
+  mergeCloseRows(map, repairRows, (row, raw) => {
+    row.servicePosIncome = round(raw.servicePosIncome);
+    row.servicePosExpense = round(raw.servicePosExpense);
+    row.servicePosProfit = round(raw.servicePosProfit);
+  });
+  mergeCloseRows(map, moneyServiceRows, (row, raw) => {
+    row.moneyServiceFee = round(raw.moneyServiceFee);
+  });
+  mergeCloseRows(map, billerRows, (row, raw) => {
+    row.billOpeningBalance = round(raw.billOpeningBalance);
+    row.billRefill = round(raw.billRefill);
+    row.billSoldVolume = round(raw.billSoldVolume);
+    row.billBalanceSold = round(raw.billBalanceSold);
+    row.billAdjustment = round(raw.billAdjustment);
+    row.billEloadProfit = round(raw.billEloadProfit);
+  });
+  mergeCloseRows(map, incomeRows, (row, raw) => {
+    row.otherSaleIncome = round(raw.otherSaleIncome);
+    row.otherServiceIncome = round(raw.otherServiceIncome);
+    row.otherTopupIncome = round(raw.otherTopupIncome);
+    row.otherOtherIncome = round(raw.otherOtherIncome);
+  });
+  mergeCloseRows(map, expenseRows, (row, raw) => {
+    row.otherSaleExpense = round(raw.otherSaleExpense);
+    row.otherServiceExpense = round(raw.otherServiceExpense);
+    row.otherTopupExpense = round(raw.otherTopupExpense);
+    row.otherOtherExpense = round(raw.otherOtherExpense);
+  });
+  mergeCloseRows(map, closingRows, (row, raw) => {
+    row.closedDays = Number(raw.closedDays || 0);
+    row.lastClosedAt = raw.lastClosedAt || null;
+  });
+
+  const rows = [...map.values()]
+    .map((row) => {
+      row.otherTopupIncome = round(Number(row.otherTopupIncome || 0) + Number(row.billSoldVolume || 0));
+      const otherIncomeSubtotal = row.otherSaleIncome + row.otherServiceIncome + row.otherTopupIncome + row.otherOtherIncome;
+      const otherExpenseSubtotal = row.otherSaleExpense + row.otherServiceExpense + row.otherTopupExpense + row.otherOtherExpense;
+      const billOpeningBalance = row.billOpeningBalance;
+      const billClosingBalance = billOpeningBalance + row.billRefill - (row.billBalanceSold || row.billSoldVolume) + row.billAdjustment;
+      const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee + row.billEloadProfit + otherIncomeSubtotal;
+      const expenseTotal = row.salePosExpense + row.servicePosExpense + otherExpenseSubtotal;
+      return {
+        ...row,
+        billOpeningBalance: round(billOpeningBalance),
+        billClosingBalance: round(billClosingBalance),
+        otherIncomeSubtotal: round(otherIncomeSubtotal),
+        otherExpenseSubtotal: round(otherExpenseSubtotal),
+        incomeTotal: round(incomeTotal),
+        expenseTotal: round(expenseTotal),
+        netProfit: round(incomeTotal - expenseTotal),
+      };
+    })
+    .sort((a, b) => b.bucket.localeCompare(a.bucket));
+
+  const totals = rows.reduce((acc, row) => {
+    for (const key of Object.keys(acc)) acc[key] += Number(row[key] || 0);
+    return acc;
+  }, {
+    salePosIncome: 0,
+    salePosExpense: 0,
+    salePosProfit: 0,
+    saleCount: 0,
+    servicePosIncome: 0,
+    servicePosExpense: 0,
+    servicePosProfit: 0,
+    moneyServiceFee: 0,
+    billOpeningBalance: 0,
+    billRefill: 0,
+    billSoldVolume: 0,
+    billBalanceSold: 0,
+    billAdjustment: 0,
+    billClosingBalance: 0,
+    billEloadProfit: 0,
+    otherSaleIncome: 0,
+    otherServiceIncome: 0,
+    otherTopupIncome: 0,
+    otherOtherIncome: 0,
+    otherIncomeSubtotal: 0,
+    otherSaleExpense: 0,
+    otherServiceExpense: 0,
+    otherTopupExpense: 0,
+    otherOtherExpense: 0,
+    otherExpenseSubtotal: 0,
+    incomeTotal: 0,
+    expenseTotal: 0,
+    netProfit: 0,
+    closedDays: 0,
+  });
+
+  for (const key of Object.keys(totals)) totals[key] = round(totals[key]);
+
+  return {
+    period,
+    from: fromDay,
+    to: toDay,
+    rows,
+    totals,
+    categories: {
+      income: OTHER_INCOME_CATEGORY_KEYS,
+      expense: OTHER_EXPENSE_CATEGORY_KEYS,
+    },
+  };
+}
+
 async function buildMiniMartSupplierPurchases(shopId, from, to) {
   const rows = await prisma.$queryRawUnsafe(
     `SELECT s.id AS "supplierId",
@@ -151,6 +511,20 @@ async function buildMiniMartReports({ shopId, from, to, activeSales, inventory, 
 
 function attachReportsPostgresApi(app) {
   const access = [requireAuth, requireShopUser, requireReportAccess];
+
+  app.get('/api/reports/daily-close', ...access, async (req, res) => {
+    try {
+      const date = String(req.query.date || new Date().toISOString().slice(0, 10)).slice(0, 10);
+      const fromDate = String(req.query.from || date).slice(0, 10);
+      const toDate = String(req.query.to || date).slice(0, 10);
+      const start = new Date(`${fromDate}T00:00:00.000+06:30`);
+      const end = new Date(`${toDate}T23:59:59.999+06:30`);
+      const report = await buildDailyCloseReport(req.auth.shopId, start, end, req.query.closePeriod || 'daily');
+      return res.json({ ok: true, date, report });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Daily close report failed' });
+    }
+  });
 
   app.get('/api/reports/business', ...access, async (req, res) => {
     try {
@@ -265,6 +639,7 @@ function attachReportsPostgresApi(app) {
       });
       const productReports = buildProductReports(activeSales);
       const repairReports = buildRepairReports(repairs);
+      const dailyCloseReport = await buildDailyCloseReport(shopId, from, to, req.query?.closePeriod);
       const miniMart = String(shop?.businessType || '').toUpperCase() === 'MINI_MART'
         ? await buildMiniMartReports({ shopId, from, to, activeSales, inventory, productReports, summary })
         : { enabled: false };
@@ -286,6 +661,7 @@ function attachReportsPostgresApi(app) {
         staff: buildStaff(activeSales),
         repairStatuses: repairReports.repairStatuses,
         technicians: repairReports.technicians,
+        dailyCloseReport,
         accounts: accounts.map((account) => ({
           id: account.id,
           name: account.name,

@@ -653,6 +653,74 @@ function attachRepairPlatformApi(app) {
     res.json({ ok: true, access: await maharShweApiAccess(prisma, req.auth.shopId) });
   }));
 
+  app.get('/api/repair-platform/device-suggestions', ...read, wrap(async (req, res) => {
+    const shopId = req.auth.shopId;
+    const brandRows = await prisma.$queryRawUnsafe(
+      `SELECT value
+         FROM (
+           SELECT TRIM(device_brand) AS value, MAX(received_at) AS latest
+             FROM repairs
+            WHERE shop_id = $1::uuid AND NULLIF(TRIM(COALESCE(device_brand, '')), '') IS NOT NULL
+            GROUP BY TRIM(device_brand)
+           UNION ALL
+           SELECT TRIM(brand) AS value, MAX(updated_at) AS latest
+             FROM repair_devices
+            WHERE shop_id = $1::uuid AND NULLIF(TRIM(COALESCE(brand, '')), '') IS NOT NULL
+            GROUP BY TRIM(brand)
+         ) x
+        GROUP BY value
+        ORDER BY MAX(latest) DESC NULLS LAST, value ASC
+        LIMIT 80`,
+      shopId,
+    );
+    const modelRows = await prisma.$queryRawUnsafe(
+      `SELECT value
+         FROM (
+           SELECT TRIM(device_model) AS value, MAX(received_at) AS latest
+             FROM repairs
+            WHERE shop_id = $1::uuid AND NULLIF(TRIM(COALESCE(device_model, '')), '') IS NOT NULL
+            GROUP BY TRIM(device_model)
+           UNION ALL
+           SELECT TRIM(model) AS value, MAX(updated_at) AS latest
+             FROM repair_devices
+            WHERE shop_id = $1::uuid AND NULLIF(TRIM(COALESCE(model, '')), '') IS NOT NULL
+            GROUP BY TRIM(model)
+         ) x
+        GROUP BY value
+        ORDER BY MAX(latest) DESC NULLS LAST, value ASC
+        LIMIT 120`,
+      shopId,
+    );
+    const pairRows = await prisma.$queryRawUnsafe(
+      `SELECT brand, model
+         FROM (
+           SELECT TRIM(device_brand) AS brand, TRIM(device_model) AS model, MAX(received_at) AS latest
+             FROM repairs
+            WHERE shop_id = $1::uuid
+              AND NULLIF(TRIM(COALESCE(device_brand, '')), '') IS NOT NULL
+              AND NULLIF(TRIM(COALESCE(device_model, '')), '') IS NOT NULL
+            GROUP BY TRIM(device_brand), TRIM(device_model)
+           UNION ALL
+           SELECT TRIM(brand) AS brand, TRIM(model) AS model, MAX(updated_at) AS latest
+             FROM repair_devices
+            WHERE shop_id = $1::uuid
+              AND NULLIF(TRIM(COALESCE(brand, '')), '') IS NOT NULL
+              AND NULLIF(TRIM(COALESCE(model, '')), '') IS NOT NULL
+            GROUP BY TRIM(brand), TRIM(model)
+         ) x
+        GROUP BY brand, model
+        ORDER BY MAX(latest) DESC NULLS LAST, brand ASC, model ASC
+        LIMIT 160`,
+      shopId,
+    );
+    res.json({
+      ok: true,
+      brands: brandRows.map((row) => row.value).filter(Boolean),
+      models: modelRows.map((row) => row.value).filter(Boolean),
+      pairs: pairRows.map((row) => ({ brand: row.brand, model: row.model })).filter((row) => row.brand && row.model),
+    });
+  }));
+
   app.get('/api/repair-platform/jobs', ...read, wrap(async (req, res) => {
     const shopId = req.auth.shopId;
     const page = Math.max(1, Number.parseInt(req.query.page || '1', 10) || 1);

@@ -34,7 +34,7 @@ export default function Phase10PurchasingReports({ notify, onError }) {
   };
 
   return <section className="purchasing-card p10-wide-card">
-    <header><div><BarChart3 size={20}/></div><span><h3>Purchasing Reports</h3><p>Goods received, payments, returns and outstanding payables</p></span><button type="button" className="icon-button" onClick={load}><RefreshCw className={loading ? 'purchasing-spin' : ''} size={18}/></button></header>
+    <header><div><BarChart3 size={20}/></div><span><h3>Purchasing Reports</h3></span><button type="button" className="icon-button" onClick={load} aria-label="Reload purchasing report"><RefreshCw className={loading ? 'purchasing-spin' : ''} size={18}/></button></header>
     <div className="p10-form-body">
       <div className="p10-report-filters"><label className="p10-field"><span>From</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)}/></label><label className="p10-field"><span>To</span><input type="date" value={to} onChange={(e) => setTo(e.target.value)}/></label><button type="button" onClick={load} disabled={loading}>{loading ? <Loader2 className="purchasing-spin" size={18}/> : <RefreshCw size={18}/>} Apply</button><button type="button" className="export" onClick={exportCsv} disabled={exporting}>{exporting ? <Loader2 className="purchasing-spin" size={18}/> : <Download size={18}/>} Export CSV</button></div>
       <div className="p10-report-grid">

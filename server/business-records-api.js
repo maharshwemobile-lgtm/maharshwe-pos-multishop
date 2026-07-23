@@ -93,6 +93,14 @@ async function ensureRecordsSchema() {
       await tx.$executeRawUnsafe(`ALTER TABLE business_expenses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`);
       await tx.$executeRawUnsafe(`ALTER TABLE business_other_income ADD COLUMN IF NOT EXISTS updated_by_id UUID REFERENCES users(id) ON DELETE SET NULL`);
       await tx.$executeRawUnsafe(`ALTER TABLE business_other_income ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`);
+      await tx.$executeRawUnsafe(`ALTER TABLE business_expenses
+        ADD COLUMN IF NOT EXISTS voided_at TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS void_reason TEXT,
+        ADD COLUMN IF NOT EXISTS voided_by_id UUID REFERENCES users(id) ON DELETE SET NULL`);
+      await tx.$executeRawUnsafe(`ALTER TABLE business_other_income
+        ADD COLUMN IF NOT EXISTS voided_at TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS void_reason TEXT,
+        ADD COLUMN IF NOT EXISTS voided_by_id UUID REFERENCES users(id) ON DELETE SET NULL`);
       return true;
     }, { maxWait: 5000, timeout: 20000 }).catch((error) => {
       schemaPromise = null;
@@ -136,6 +144,9 @@ function normalizeRow(type, row) {
     note: row.note || '',
     createdByName: row.createdByName || row.createdByUsername || '',
     createdByUsername: row.createdByUsername || '',
+    voidedAt: row.voidedAt || null,
+    voidReason: row.voidReason || '',
+    voidedByName: row.voidedByName || row.voidedByUsername || '',
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -147,7 +158,7 @@ async function findRecords(shopId, options) {
   const baseWhere = `${config.alias}.shop_id=$1::uuid AND ${config.alias}.${config.dateColumn}>=$2::date AND ${config.alias}.${config.dateColumn}<=$3::date${search}`;
   const queryParams = [shopId, ...params];
   const countRows = await prisma.$queryRawUnsafe(
-    `SELECT COUNT(*)::int AS count, COALESCE(SUM(${config.alias}.amount),0) AS total
+    `SELECT COUNT(*)::int AS count, COALESCE(SUM(${config.alias}.amount) FILTER (WHERE ${config.alias}.voided_at IS NULL),0) AS total
        FROM ${config.table} ${config.alias}
        LEFT JOIN money_accounts a ON a.id=${config.alias}.money_account_id AND a.shop_id=${config.alias}.shop_id
        LEFT JOIN users u ON u.id=${config.alias}.created_by_id
@@ -164,14 +175,19 @@ async function findRecords(shopId, options) {
             ${config.alias}.method,
             ${config.alias}.money_account_id AS "moneyAccountId",
             ${config.alias}.note,
+            ${config.alias}.voided_at AS "voidedAt",
+            ${config.alias}.void_reason AS "voidReason",
             ${config.alias}.created_at AS "createdAt",
             ${config.alias}.updated_at AS "updatedAt",
             a.name AS "accountName",
             u.name AS "createdByName",
-            u.username AS "createdByUsername"
+            u.username AS "createdByUsername",
+            v.name AS "voidedByName",
+            v.username AS "voidedByUsername"
        FROM ${config.table} ${config.alias}
        LEFT JOIN money_accounts a ON a.id=${config.alias}.money_account_id AND a.shop_id=${config.alias}.shop_id
        LEFT JOIN users u ON u.id=${config.alias}.created_by_id
+       LEFT JOIN users v ON v.id=${config.alias}.voided_by_id
       WHERE ${baseWhere}
       ORDER BY ${config.alias}.${config.dateColumn} DESC, ${config.alias}.created_at DESC, ${config.alias}.id DESC
       LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`,
@@ -234,6 +250,7 @@ async function loadRecordForUpdate(tx, shopId, type, id) {
             amount,
             method,
             money_account_id AS "moneyAccountId",
+            voided_at AS "voidedAt",
             note
        FROM ${config.table}
       WHERE id=$1::uuid AND shop_id=$2::uuid
@@ -254,14 +271,19 @@ async function loadUpdatedRecord(tx, shopId, type, id) {
             ${config.alias}.method,
             ${config.alias}.money_account_id AS "moneyAccountId",
             ${config.alias}.note,
+            ${config.alias}.voided_at AS "voidedAt",
+            ${config.alias}.void_reason AS "voidReason",
             ${config.alias}.created_at AS "createdAt",
             ${config.alias}.updated_at AS "updatedAt",
             a.name AS "accountName",
             u.name AS "createdByName",
-            u.username AS "createdByUsername"
+            u.username AS "createdByUsername",
+            v.name AS "voidedByName",
+            v.username AS "voidedByUsername"
        FROM ${config.table} ${config.alias}
        LEFT JOIN money_accounts a ON a.id=${config.alias}.money_account_id AND a.shop_id=${config.alias}.shop_id
        LEFT JOIN users u ON u.id=${config.alias}.created_by_id
+       LEFT JOIN users v ON v.id=${config.alias}.voided_by_id
       WHERE ${config.alias}.id=$1::uuid AND ${config.alias}.shop_id=$2::uuid`,
     id,
     shopId,
@@ -303,7 +325,7 @@ function attachBusinessRecordsApi(app) {
       if (from > to) return res.status(400).json({ ok: false, message: 'From date cannot be after To date' });
       const query = String(req.query.q || '').trim().slice(0, 100);
       const page = Math.max(1, Number.parseInt(req.query.page || '1', 10) || 1);
-      const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit || '20', 10) || 20));
+      const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit || '10', 10) || 10));
       const result = await findRecords(req.auth.shopId, { type, from, to, query, page, limit });
       return res.json({ ok: true, type, from, to, query, page, limit, ...result });
     } catch (error) {
@@ -343,6 +365,7 @@ function attachBusinessRecordsApi(app) {
       const updated = await prisma.$transaction(async (tx) => {
         const oldRecord = await loadRecordForUpdate(tx, req.auth.shopId, type, id);
         if (!oldRecord) throw Object.assign(new Error('Record not found for this shop'), { status: 404 });
+        if (oldRecord.voidedAt) throw Object.assign(new Error('Voided record cannot be edited'), { status: 409 });
 
         const oldAmount = Number(oldRecord.amount || 0);
         const newAmount = Number(payload.amount || 0);
@@ -385,6 +408,46 @@ function attachBusinessRecordsApi(app) {
     } catch (error) {
       console.error('Business record update:', error);
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Business record update failed' });
+    }
+  });
+
+  app.post('/api/business-control/records/:type/:id/void', ...write, async (req, res) => {
+    try {
+      await ensureRecordsSchema();
+      const type = recordType(req.params.type);
+      const id = String(req.params.id || '').trim();
+      const reason = cleanText(req.body?.reason, 500);
+      if (!id) return res.status(400).json({ ok: false, message: 'Record id is required' });
+      if (reason.length < 3) return res.status(400).json({ ok: false, message: 'Void reason is required' });
+
+      const result = await prisma.$transaction(async (tx) => {
+        const record = await loadRecordForUpdate(tx, req.auth.shopId, type, id);
+        if (!record) throw Object.assign(new Error('Record not found for this shop'), { status: 404 });
+        if (record.voidedAt) throw Object.assign(new Error('Record is already voided'), { status: 409 });
+        const amount = Number(record.amount || 0);
+        if (record.moneyAccountId) {
+          await updateMoneyAccount(tx, req.auth.shopId, record.moneyAccountId, type === 'income' ? -amount : amount);
+        }
+        const config = configuration(type);
+        await tx.$executeRawUnsafe(
+          `UPDATE ${config.table} SET voided_at=NOW(),void_reason=$3,voided_by_id=$4::uuid,updated_at=NOW()
+            WHERE id=$1::uuid AND shop_id=$2::uuid`,
+          id, req.auth.shopId, reason, req.auth.userId || req.auth.id || null,
+        );
+        return { id, type, amount, moneyAccountId: record.moneyAccountId || null, reason };
+      }, { maxWait: 5000, timeout: 20000 });
+
+      await prisma.auditLog.create({
+        data: {
+          shopId: req.auth.shopId, userId: req.auth.userId || req.auth.id || null,
+          action: 'BUSINESS_RECORD_VOIDED', entityType: type === 'income' ? 'business_other_income' : 'business_expense',
+          entityId: id, details: result, ipAddress: req.ip || null, userAgent: req.headers['user-agent'] || null,
+        },
+      }).catch(() => {});
+      return res.json({ ok: true, message: 'Record voided and account balance restored', record: result });
+    } catch (error) {
+      console.error('Business record void:', error);
+      return res.status(error.status || 500).json({ ok: false, message: error.message || 'Business record void failed' });
     }
   });
 }

@@ -1,0 +1,25 @@
+.sale10-product-toolbar .stock-search-box {
+  flex: 1 1 420px;
+  min-width: 280px;
+}
+
+.sale10-inline-scan {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: #eafaf1;
+  color: #15803d;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.sale10-inline-scan:hover { background: #dcfce7; }
+.dark .sale10-inline-scan { background: #123629; color: #86efac; }
+
+@media (max-width: 760px) {
+  .sale10-product-toolbar .stock-search-box { min-width: 0; width: 100%; }
+}

@@ -37,6 +37,7 @@ function catalogItem(row, includeCost) {
     ram: row.ram,
     storage: row.storage,
     requiresSerial: row.product?.requiresSerial === true,
+    imageUrl: row.product?.ecommerceImages?.[0]?.url || null,
     standardSellingPrice: number(row.standardSellingPrice),
     minimumSellingPrice: number(row.minimumSellingPrice),
     stockQuantity: Number(row.inventoryBalance?.quantity || 0),
@@ -81,7 +82,7 @@ function attachAvailablePosCatalogApi(app) {
       prisma.productVariant.count({ where }),
       prisma.productVariant.findMany({
         where,
-        include: { product: true, category: true, inventoryBalance: true },
+        include: { product: { include: { ecommerceImages: { orderBy: { sortOrder: 'asc' }, take: 1 } } }, category: true, inventoryBalance: true },
         orderBy: [{ product: { name: 'asc' } }, { variantName: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,

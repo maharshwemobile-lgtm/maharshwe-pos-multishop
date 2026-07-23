@@ -8,13 +8,13 @@ const {
   sendPushToShop,
   sendPushToUser,
 } = require('./push-notifications-api');
+const { sendFcmMessages, isFirebaseAdminConfigured } = require('./firebase-admin');
 const { recordTelegramSheetSafe } = require('./telegram-sheet-recorder');
 
-const VPN_ADS_URL = 'https://maharshwe.online/api/vpn-ads';
-const VPN_PUSH_URL = 'https://maharshwe.online/api/notifications/send';
 const VPN_TOPIC = String(process.env.FCM_TOPIC || 'maharshwe-vpn').trim() || 'maharshwe-vpn';
 const VPN_FIREBASE_PROJECT = 'maharshweonlinevpn';
 const VPN_REGISTERED_TOKEN_FALLBACK = 140;
+const VPN_ADS_API_URL = String(process.env.MAHARSHWE_VPN_ADS_API_URL || 'https://maharshwe.online/api/vpn-ads').trim();
 const ADMIN_PORTAL_SHOP_SLUG = 'mahar-admin-portal';
 const HIDDEN_TENANT_SLUG_PREFIXES = ['codex-', 'browser-cors-'];
 const VISIBLE_POS_SHOP_WHERE = {
@@ -145,6 +145,38 @@ function optionalUrlSchema() {
   });
 }
 
+function vpnAdsApiKey() {
+  return String(process.env.MAHARSHWE_ONLINE_ADMIN_API_KEY || process.env.TELEGRAM_API_KEY || '').trim();
+}
+
+async function requestVpnAdsApi(method, payload) {
+  const headers = { Accept: 'application/json' };
+  if (method !== 'GET') {
+    const apiKey = vpnAdsApiKey();
+    if (!apiKey) throw new ApiError(503, 'VPN Ads API key is not configured on the server');
+    headers['Content-Type'] = 'application/json';
+    headers['x-api-key'] = apiKey;
+  }
+
+  const response = await fetch(VPN_ADS_API_URL, {
+    method,
+    headers,
+    body: payload ? JSON.stringify(payload) : undefined,
+    signal: AbortSignal.timeout(15000),
+  });
+  const text = await response.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { message: text || `VPN Ads API returned HTTP ${response.status}` };
+  }
+  if (!response.ok) {
+    throw new ApiError(response.status === 401 ? 502 : response.status, data.message || data.error || 'VPN Ads API request failed');
+  }
+  return data;
+}
+
 function roleAllows(role, permission) {
   const permissions = ROLE_PERMISSIONS[String(role || '').toLowerCase()] || [];
   return permissions.includes('*') || permissions.includes(permission);
@@ -197,36 +229,6 @@ async function writeAdminAudit(req, action, resourceType, resourceId = null, met
   } catch (error) {
     console.warn('Admin audit log write failed:', error.message);
     return null;
-  }
-}
-
-function adminApiKey() {
-  const key = String(process.env.MAHARSHWE_ONLINE_ADMIN_API_KEY || '').trim();
-  if (!key) throw new ApiError(500, 'MAHARSHWE_ONLINE_ADMIN_API_KEY is not configured on the server');
-  return key;
-}
-
-async function externalJson(url, options = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'x-api-key': adminApiKey(),
-        ...(options.headers || {}),
-      },
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) {
-      throw new ApiError(response.status || 502, data.message || `Upstream request failed (${response.status})`, data);
-    }
-    return data;
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -396,6 +398,80 @@ async function createAdsHistory(data) {
   return prisma.adminAdsHistory.create({ data });
 }
 
+function defaultVpnAdsConfig() {
+  return {
+    enabled: false,
+    title: '',
+    message: '',
+    imageUrl: '',
+    videoUrl: '',
+    mediaType: 'auto',
+    clickUrl: '',
+    cta: 'Open',
+    backgroundColor: '#141510',
+    textColor: '#ffffff',
+  };
+}
+
+function adsHistoryToConfig(row) {
+  if (!row) return defaultVpnAdsConfig();
+  return {
+    enabled: Boolean(row.enabled),
+    title: row.title || '',
+    message: row.message || '',
+    imageUrl: row.imageUrl || '',
+    videoUrl: row.videoUrl || '',
+    mediaType: row.mediaType || 'auto',
+    clickUrl: row.clickUrl || '',
+    cta: row.cta || 'Open',
+    backgroundColor: row.backgroundColor || '#141510',
+    textColor: row.textColor || '#ffffff',
+    updatedAt: row.createdAt || null,
+  };
+}
+
+async function readLocalVpnAdsConfig() {
+  const latest = prisma.adminAdsHistory?.findFirst
+    ? await prisma.adminAdsHistory.findFirst({
+      where: { productSlug: 'mahar_shwe_vpn', adsType: 'free_server_banner' },
+      orderBy: { createdAt: 'desc' },
+    })
+    : null;
+  return { config: adsHistoryToConfig(latest), history: latest || null };
+}
+
+async function sendVpnTopicPush(payload) {
+  if (!isFirebaseAdminConfigured()) {
+    throw new ApiError(500, 'Firebase Admin is not configured on this server');
+  }
+  const result = await sendFcmMessages([{
+    topic: VPN_TOPIC,
+    notification: {
+      title: payload.title,
+      body: payload.body,
+    },
+    data: {
+      title: payload.title,
+      body: payload.body,
+      url: payload.url || '',
+      topic: VPN_TOPIC,
+      product: 'mahar_shwe_vpn',
+      source: 'super.maharshwe.shop',
+    },
+    android: {
+      priority: 'high',
+      notification: {
+        sound: 'default',
+        clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+      },
+    },
+  }]);
+  if (!result.ok) {
+    throw new ApiError(502, result.message || 'Firebase topic push failed', result);
+  }
+  return result;
+}
+
 function posLimit(req, fallback = 50, max = 200) {
   const value = Number.parseInt(req.query.limit || fallback, 10);
   return Math.min(max, Math.max(1, Number.isFinite(value) ? value : fallback));
@@ -407,6 +483,17 @@ function shopFilter(req) {
 }
 
 function attachAdminIntegrationsApi(app) {
+  app.get('/api/vpn-ads', wrap(async (_req, res) => {
+    const { config } = await readLocalVpnAdsConfig();
+    res.json({
+      ok: true,
+      enabled: config.enabled,
+      config,
+      source: 'super.maharshwe.shop',
+      behavior: 'Free Server Ads appear only after a Free Server connection, 5 seconds after connect. Other Key connections do not show ads.',
+    });
+  }));
+
   app.get('/api/admin/products', ...adminAccess('dashboard.view'), wrap(async (_req, res) => {
     const products = await ensureProductsSeeded();
     res.json({ ok: true, products: products.map(serializeProduct) });
@@ -696,17 +783,8 @@ function attachAdminIntegrationsApi(app) {
         : Promise.resolve(0),
     ]);
 
-    let vpnAds = { available: false, enabled: null, message: 'Not loaded' };
-    try {
-      const data = await externalJson(VPN_ADS_URL);
-      vpnAds = { available: true, ...data };
-    } catch (error) {
-      vpnAds = {
-        available: false,
-        enabled: null,
-        message: error.message,
-      };
-    }
+    const { config: vpnAdsConfig } = await readLocalVpnAdsConfig();
+    const vpnAds = { available: true, local: true, config: vpnAdsConfig, enabled: vpnAdsConfig.enabled };
 
     res.json({
       ok: true,
@@ -716,6 +794,7 @@ function attachAdminIntegrationsApi(app) {
         firebaseProject: VPN_FIREBASE_PROJECT,
         topic: VPN_TOPIC,
         registeredTokens: VPN_REGISTERED_TOKEN_FALLBACK,
+        firebaseAdminConfigured: isFirebaseAdminConfigured(),
         ads: vpnAds,
       },
       pos: {
@@ -736,13 +815,16 @@ function attachAdminIntegrationsApi(app) {
   }));
 
   app.get('/api/admin/integrations/vpn-ads', ...adminAccess('vpn_ads.view'), wrap(async (_req, res) => {
-    const data = await externalJson(VPN_ADS_URL);
+    const { history } = await readLocalVpnAdsConfig();
+    const remote = await requestVpnAdsApi('GET');
+    const config = remote.config && typeof remote.config === 'object' ? remote.config : remote;
     res.json({
       ok: true,
       productSlug: 'mahar_shwe_vpn',
+      local: false,
       behavior: 'Free Server Ads appear only after a Free Server connection, 5 seconds after connect. Other Key connections do not show ads.',
-      config: data.config || data,
-      raw: data,
+      config,
+      raw: { response: remote, historyId: history?.id || null },
     });
   }));
 
@@ -760,10 +842,7 @@ function attachAdminIntegrationsApi(app) {
       backgroundColor: input.backgroundColor,
       textColor: input.textColor,
     };
-    const upstream = await externalJson(VPN_ADS_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    const remoteResponse = await requestVpnAdsApi('POST', payload);
     const history = await createAdsHistory({
       productSlug: 'mahar_shwe_vpn',
       adsType: 'free_server_banner',
@@ -777,14 +856,14 @@ function attachAdminIntegrationsApi(app) {
       cta: payload.cta || null,
       backgroundColor: payload.backgroundColor,
       textColor: payload.textColor,
-      responseJson: upstream,
+      responseJson: remoteResponse,
       createdBy: req.auth.userId || null,
     });
     await writeAdminAudit(req, payload.enabled ? 'VPN_ADS_SAVE' : 'VPN_ADS_DISABLE', 'vpn_ads', history?.id || null, {
       productSlug: 'mahar_shwe_vpn',
       enabled: payload.enabled,
     });
-    res.json({ ok: true, savedAt: new Date(), config: payload, response: upstream, historyId: history?.id || null });
+    res.json({ ok: true, savedAt: new Date(), config: payload, response: remoteResponse, historyId: history?.id || null });
   }));
 
   app.post('/api/admin/integrations/vpn-notifications/send', ...adminAccess('push.send'), wrap(async (req, res) => {
@@ -801,19 +880,18 @@ function attachAdminIntegrationsApi(app) {
       body: payload.body,
       url: payload.url,
       topic: payload.topic,
-      provider: 'maharshwe.online/firebase',
+      provider: 'firebase-admin-topic',
       status: 'PENDING',
       createdBy: req.auth.userId || null,
     });
     try {
-      const upstream = await externalJson(VPN_PUSH_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      await updateCampaign(campaign?.id, { status: 'SENT', responseJson: upstream, sentAt: new Date() });
+      const firebaseResult = await sendVpnTopicPush(payload);
+      const responseJson = { ok: true, source: 'super.maharshwe.shop', firebase: firebaseResult };
+      await updateCampaign(campaign?.id, { status: 'SENT', responseJson, sentAt: new Date() });
       await writeAdminAudit(req, 'VPN_PUSH_SEND', 'push_campaign', campaign?.id || null, {
         productSlug: 'mahar_shwe_vpn',
         topic: VPN_TOPIC,
+        provider: 'firebase-admin-topic',
       });
       recordTelegramSheetSafe('push_notification', {
         productSlug: 'mahar_shwe_vpn',
@@ -822,11 +900,11 @@ function attachAdminIntegrationsApi(app) {
         body: payload.body,
         url: payload.url,
         topic: VPN_TOPIC,
-        provider: 'maharshwe.online/firebase',
+        provider: 'firebase-admin-topic',
         status: 'SENT',
         sentAt: new Date().toISOString(),
       }).catch((sheetError) => console.warn('Telegram sheet record failed:', sheetError.message));
-      res.json({ ok: true, campaignId: campaign?.id || null, sentAt: new Date(), response: upstream });
+      res.json({ ok: true, campaignId: campaign?.id || null, sentAt: new Date(), response: responseJson });
     } catch (error) {
       await updateCampaign(campaign?.id, {
         status: 'FAILED',

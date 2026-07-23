@@ -275,7 +275,7 @@ async function buildOverview(shopId, businessDate) {
     prisma.$queryRawUnsafe(
       `SELECT COALESCE(SUM(amount),0) AS total,COUNT(*)::int AS count
          FROM business_expenses
-        WHERE shop_id=$1::uuid AND expense_date=$2::date`,
+        WHERE shop_id=$1::uuid AND expense_date=$2::date AND voided_at IS NULL`,
       shopId,
       businessDate,
     ),
@@ -285,7 +285,7 @@ async function buildOverview(shopId, businessDate) {
          FROM business_expenses e
          LEFT JOIN money_accounts a ON a.id=e.money_account_id AND a.shop_id=e.shop_id
          LEFT JOIN users u ON u.id=e.created_by_id
-        WHERE e.shop_id=$1::uuid AND e.expense_date=$2::date
+        WHERE e.shop_id=$1::uuid AND e.expense_date=$2::date AND e.voided_at IS NULL
         ORDER BY e.created_at DESC LIMIT 8`,
       shopId,
       businessDate,

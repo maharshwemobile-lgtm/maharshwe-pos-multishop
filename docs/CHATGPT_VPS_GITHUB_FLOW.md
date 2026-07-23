@@ -80,10 +80,7 @@ Frontend-only deploy pattern:
 ```bash
 cd /opt/maharshwe/maharshwe-pos && \
 npm run build && \
-WEBROOT="/var/www/app.maharshwe.shop" && TS=$(date +%Y%m%d%H%M%S) && \
-tar -czf "/opt/maharshwe/backups/app-webroot-before-<name>-$TS.tar.gz" -C /var/www app.maharshwe.shop && \
-rm -rf "$WEBROOT"/* && cp -a dist/. "$WEBROOT"/ && chown -R www-data:www-data "$WEBROOT" && \
-nginx -t && systemctl reload nginx && \
+WEBROOT="/var/www/app.maharshwe.shop" bash scripts/deploy-app-webroot.sh && \
 curl -I https://app.maharshwe.shop && echo && \
 curl -fsS https://api.maharshwe.shop/health && echo
 ```
@@ -93,14 +90,16 @@ Frontend + backend deploy pattern:
 ```bash
 cd /opt/maharshwe/maharshwe-pos && \
 npm run build && \
-WEBROOT="/var/www/app.maharshwe.shop" && TS=$(date +%Y%m%d%H%M%S) && \
-tar -czf "/opt/maharshwe/backups/app-webroot-before-<name>-$TS.tar.gz" -C /var/www app.maharshwe.shop && \
-rm -rf "$WEBROOT"/* && cp -a dist/. "$WEBROOT"/ && chown -R www-data:www-data "$WEBROOT" && \
-nginx -t && systemctl reload nginx && \
-pm2 restart maharshwe-pos-api --update-env && sleep 3 && \
+WEBROOT="/var/www/app.maharshwe.shop" bash scripts/deploy-app-webroot.sh --restart-api && \
 curl -I https://app.maharshwe.shop && echo && \
 curl -fsS https://api.maharshwe.shop/health && echo
 ```
+
+Important:
+
+- nginx root is `/var/www/app.maharshwe.shop`
+- deploy must sync build output into that root directly
+- do not leave old root-level assets while only updating `/var/www/app.maharshwe.shop/dist`
 
 ## Standard validation language
 

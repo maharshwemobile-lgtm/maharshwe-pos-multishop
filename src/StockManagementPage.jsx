@@ -12,16 +12,17 @@ import {
   PackageMinus,
   PackagePlus,
   PlusCircle,
-  RefreshCw,
   Search,
   SlidersHorizontal,
   Wrench,
   X,
 } from 'lucide-react';
 import { apiFetch, clearSession } from './phase2Api';
+import { pickLanguageText } from './settings/ProjectLanguageRuntime.jsx';
 import './stock-management.css';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
+const t = pickLanguageText;
 
 const ACTIONS = {
   STOCK_IN: {
@@ -262,7 +263,7 @@ function HistoryModal({ variant, onClose }) {
       const params = new URLSearchParams({
         productVariantId: variant.id,
         page: String(page),
-        limit: '20',
+        limit: '10',
       });
       const data = await apiFetch(`/api/stock/movements?${params.toString()}`);
       setMovements(data.movements || []);
@@ -457,17 +458,6 @@ export default function StockManagementPage() {
   return (
     <div className="stock-page">
       {toast ? <div className={`stock-toast stock-toast-${toast.type}`}>{toast.text}</div> : null}
-
-      <div className="stock-page-heading">
-        <div>
-          <span className="stock-eyebrow">INVENTORY</span>
-          <h2>Stock Management</h2>
-          <p>Product Variant တစ်ခုချင်းစီအတွက် Stock In, Stock Out, Adjustment, Damage နဲ့ Repair Usage ကို စီမံပါ။</p>
-        </div>
-        <button type="button" className="stock-refresh-button" onClick={loadStock} disabled={loading}>
-          <RefreshCw className={loading ? 'stock-spin' : ''} size={18} /> Refresh
-        </button>
-      </div>
 
       <section className="stock-summary-grid">
         <article><div className="stock-summary-icon stock-tone-blue"><Layers3 /></div><span>Total Variants</span><b>{summary.variants}</b></article>

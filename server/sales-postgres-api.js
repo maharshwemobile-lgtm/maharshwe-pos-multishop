@@ -8,6 +8,7 @@ const {
   requireWritableSubscription,
 } = require('./auth-api');
 const { queuePush, sendPushToShop } = require('./push-notifications-api');
+const { notifyTelegramSale } = require('./telegram-automation-api');
 
 const uuid = z.string().uuid();
 const money = z.coerce.number().finite().min(0);
@@ -170,6 +171,7 @@ function catalogItem(row, includeCost) {
     ram: row.ram,
     storage: row.storage,
     requiresSerial: row.product?.requiresSerial === true,
+    imageUrl: row.product?.ecommerceImages?.[0]?.url || null,
     standardSellingPrice: number(row.standardSellingPrice),
     minimumSellingPrice: number(row.minimumSellingPrice),
     stockQuantity: Number(row.inventoryBalance?.quantity || 0),
@@ -210,7 +212,7 @@ function attachSalesPostgresApi(app) {
       prisma.productVariant.count({ where }),
       prisma.productVariant.findMany({
         where,
-        include: { product: true, category: true, inventoryBalance: true },
+        include: { product: { include: { ecommerceImages: { orderBy: { sortOrder: 'asc' }, take: 1 } } }, category: true, inventoryBalance: true },
         orderBy: [{ product: { name: 'asc' } }, { variantName: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
@@ -528,25 +530,10 @@ function attachSalesPostgresApi(app) {
       }), 'customer credit push');
     }
 
-    if (result.stockAlert?.outOfStockCount > 0) {
-      queuePush(() => sendPushToShop({
-        shopId: req.auth.shopId,
-        eventType: 'OUT_OF_STOCK',
-        title: 'Out of stock alert',
-        body: 'A product is out of stock. Open Mahar POS to review.',
-        url: '/stock',
-        data: { source: 'sale-stock', count: result.stockAlert.outOfStockCount },
-      }), 'out of stock push');
-    } else if (result.stockAlert?.lowStockCount > 0) {
-      queuePush(() => sendPushToShop({
-        shopId: req.auth.shopId,
-        eventType: 'LOW_STOCK',
-        title: 'Low stock alert',
-        body: 'A product is running low. Open Mahar POS to review.',
-        url: '/stock',
-        data: { source: 'sale-stock', count: result.stockAlert.lowStockCount },
-      }), 'low stock push');
-    }
+    queuePush(() => notifyTelegramSale({
+      shopId: req.auth.shopId,
+      sale: result,
+    }), 'telegram sale notification');
 
     res.status(201).json({ ok: true, message: 'Sale completed', sale: result });
   }));

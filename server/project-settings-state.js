@@ -1,6 +1,6 @@
 const { prisma } = require('./prisma');
 
-const PROJECT_LOGO_URL = 'https://raw.githubusercontent.com/maharshwemobile-lgtm/maharshwe.shop/main/mahar-pos-logo.png';
+const PROJECT_LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png?v=20260708-brand-logo';
 
 const DEFAULTS = {
   business: { subtitle: 'Mobile Software & Hardware Expert', secondaryPhone: '', townshipRegion: '', website: '', googleMapUrl: '', kbzPayNumber: '', wavePayNumber: '', repairPrefix: '' },
@@ -29,7 +29,20 @@ function licenseState(subscription) {
   const usedDays = Math.min(totalDays, Math.max(0, Math.floor((now - start) / day)));
   const remainingDays = Math.max(0, Math.ceil((end - now) / day));
   const expired = now > end;
-  return { ...subscription, status: expired && subscription.status !== 'SUSPENDED' ? 'EXPIRED' : subscription.status, monthlyFee: Number(subscription.monthlyFee || 0), setupFee: Number(subscription.setupFee || 0), totalDays, usedDays, remainingDays, usedPercent: Math.round((usedDays / totalDays) * 100), expired };
+  return {
+    ...subscription,
+    startsAt: subscription.startsAt ? new Date(subscription.startsAt).toISOString() : null,
+    endsAt: subscription.endsAt ? new Date(subscription.endsAt).toISOString() : null,
+    renewedAt: subscription.renewedAt ? new Date(subscription.renewedAt).toISOString() : null,
+    status: expired && subscription.status !== 'SUSPENDED' ? 'EXPIRED' : subscription.status,
+    monthlyFee: Number(subscription.monthlyFee || 0),
+    setupFee: Number(subscription.setupFee || 0),
+    totalDays,
+    usedDays,
+    remainingDays,
+    usedPercent: Math.round((usedDays / totalDays) * 100),
+    expired,
+  };
 }
 
 async function buildProjectSettingsState(shopId, userId) {

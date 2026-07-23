@@ -120,7 +120,7 @@ function ScannerModal({ onClose }) {
     setBusy(true);
     setError('');
     try {
-      const params = new URLSearchParams({ q: normalized, page: '1', limit: '20' });
+      const params = new URLSearchParams({ q: normalized, page: '1', limit: '10' });
       const data = await apiFetch(`/api/stock?${params.toString()}`);
       setMatches(data.items || []);
       setCode(normalized);
@@ -293,7 +293,7 @@ export default function InventoryToolsPanel({ onInventoryChanged }) {
         lastNotifiedRef.current = signature;
         new Notification(`Mahar POS — Low stock ${items.length} items`, {
           body: items.slice(0, 4).map((item) => `${item.product?.name || item.variantName}: ${item.inventory?.quantity || 0}`).join('\n'),
-          icon: '/maharshwe-logo.png',
+          icon: '/mahar-pos-logo.png?v=20260716-all-brand-surfaces',
         });
       }
     } catch (error) {
@@ -340,8 +340,7 @@ export default function InventoryToolsPanel({ onInventoryChanged }) {
 
   return (
     <section className="inventory-tools-panel">
-      <div className="inventory-tools-heading">
-        <div><span>INVENTORY TOOLS</span><h3>Low Stock, Barcode & CSV</h3></div>
+      <div className="inventory-tools-heading inventory-tools-actions-only">
         <div className="inventory-tool-actions">
           <button type="button" onClick={enableNotifications}><BellRing size={17} /> Enable Notification</button>
           <button type="button" onClick={() => setScannerOpen(true)}><Barcode size={17} /> Scan Barcode</button>

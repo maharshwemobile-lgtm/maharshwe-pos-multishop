@@ -1,0 +1,97 @@
+{
+  "project_info": {
+    "project_number": "648689584934",
+    "project_id": "maharshweonlinevpn",
+    "storage_bucket": "maharshweonlinevpn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:648689584934:android:7dcccd7f9a2c8c8932cfe7",
+        "android_client_info": {
+          "package_name": "com.maharpos.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIMdp2ymSF_DfIQhMp1hVVNUtwx1CX71Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:648689584934:android:72865b27b54897f932cfe7",
+        "android_client_info": {
+          "package_name": "com.maharshwe.videodownloader"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIMdp2ymSF_DfIQhMp1hVVNUtwx1CX71Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:648689584934:android:d12e28d3c2d6c54132cfe7",
+        "android_client_info": {
+          "package_name": "com.maharshwe.vpn"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIMdp2ymSF_DfIQhMp1hVVNUtwx1CX71Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

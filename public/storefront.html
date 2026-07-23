@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="my">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta id="storeAppleTitle" name="apple-mobile-web-app-title" content="Online Shop" />
+    <meta name="description" content="Mahar online shop" />
+    <link id="storeManifest" rel="manifest" />
+    <script>
+      (() => {
+        const slug = decodeURIComponent(location.pathname.split('/shop/')[1]?.split('/')[0] || '');
+        if (slug) document.getElementById('storeManifest').href = `/api/public/store/${encodeURIComponent(slug)}/manifest.webmanifest?v=shop-icon-v2`;
+      })();
+    </script>
+    <link id="storeAppleIcon" rel="apple-touch-icon" href="/mahar-pos-logo-192.png" />
+    <link rel="stylesheet" href="/storefront-app.css?v=20260718-category-icons-v13" />
+    <link rel="stylesheet" href="/storefront-google.css?v=20260718-category-icons-v13" />
+    <link rel="stylesheet" href="/storefront-preview-theme.css?v=20260718-filter-controls-v15" />
+    <link rel="stylesheet" href="/storefront-original-v2.css?v=20260719-hero-carousel-v25" />
+    <title>Online Shop · Mahar</title>
+  </head>
+  <body>
+    <div id="storefrontRoot">
+      <div class="app-boot"><span class="boot-mark">M</span><div class="skeleton boot-line"></div></div>
+    </div>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/storefront-app.js?v=20260721-category-visual-v27" defer></script>
+  </body>
+</html>

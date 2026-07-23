@@ -57,6 +57,24 @@ function toEvent(row) {
   };
 }
 
+function collapseLegacyDuplicates(events) {
+  const hidden = new Set();
+  for (let index = 0; index < events.length; index += 1) {
+    const current = events[index];
+    for (let compareIndex = index + 1; compareIndex < Math.min(events.length, index + 6); compareIndex += 1) {
+      const candidate = events[compareIndex];
+      const timeGap = Math.abs(new Date(current.createdAt).getTime() - new Date(candidate.createdAt).getTime());
+      if (timeGap > 1500) break;
+      if (current.ipAddress !== candidate.ipAddress) continue;
+      if ((current.actor?.id || null) !== (candidate.actor?.id || null)) continue;
+      if (Boolean(current.crypto) === Boolean(candidate.crypto)) continue;
+      hidden.add(current.crypto ? candidate.id : current.id);
+      break;
+    }
+  }
+  return events.filter((event) => !hidden.has(event.id));
+}
+
 function attachAuditTrailApi(app) {
   attachReportsPostgresApi(app);
   const access = [requireAuth, requireShopUser, requireAuditAccess];
@@ -84,7 +102,7 @@ function attachAuditTrailApi(app) {
         take: 5000,
       });
 
-      const all = rows.map(toEvent);
+      const all = collapseLegacyDuplicates(rows.map(toEvent));
       const filtered = all.filter((event) => {
         if (outcome && event.outcome !== outcome) return false;
         if (!search) return true;

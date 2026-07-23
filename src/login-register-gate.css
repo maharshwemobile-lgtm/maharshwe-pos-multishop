@@ -25,11 +25,15 @@
   margin-bottom:22px;
 }
 .ms-login-brand img{
-  height:70px;
-  width:auto;
+  width:min(132px,46%);
+  height:auto;
+  max-height:96px;
   object-fit:contain;
   margin-bottom:12px;
+  animation:ms-login-logo-pop 1.8s ease-in-out infinite;
+  filter:drop-shadow(0 8px 16px rgba(15,118,110,.14));
 }
+@keyframes ms-login-logo-pop{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
 .ms-login-brand h1{
   margin:0;
   color:#111827;
@@ -168,6 +172,20 @@
   justify-content:center;
   min-height:44px;
 }
+.ms-login-google-register{
+  display:grid;
+  gap:10px;
+  justify-items:center;
+  padding:13px 12px;
+  border:1px solid #dbeafe;
+  border-radius:16px;
+  background:linear-gradient(180deg,#eff6ff,#fff);
+}
+.ms-login-google-register b{
+  color:#1e3a8a;
+  font-size:13px;
+  font-weight:950;
+}
 .ms-login-footer,
 .ms-login-trial{
   margin:4px 0 0;
@@ -221,6 +239,13 @@
 }
 .dark .ms-login-form input[readonly]{
   background:#071426;
+}
+.dark .ms-login-google-register{
+  border-color:#1e3a8a;
+  background:linear-gradient(180deg,#0f2546,#0b1b33);
+}
+.dark .ms-login-google-register b{
+  color:#bfdbfe;
 }
 @media(max-width:520px){
   .ms-login-page{padding:14px}

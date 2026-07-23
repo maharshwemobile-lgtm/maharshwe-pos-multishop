@@ -35,3 +35,8 @@
 .br-edit-form input,.br-edit-form select{display:block;width:100%;min-height:40px;margin-top:5px;padding:0 10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}
 .br-save-edit{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 13px;border:1px solid #047857;border-radius:9px;background:#047857;color:#fff;font-weight:900;cursor:pointer}
 .br-save-edit:disabled,.br-edit-form button:disabled{opacity:.55;cursor:not-allowed}
+.br-void{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 9px;border:1px solid #fecaca;border-radius:9px;background:#fff1f2;color:#be123c;font-weight:800;cursor:pointer}
+.br-void:hover{background:#ffe4e6}.br-voided-row{opacity:.58}.br-voided-row td{text-decoration:line-through}.br-voided-row button,.br-voided-row .br-void-text{text-decoration:none}
+.br-void-text{display:block;color:#be123c!important;font-size:10px;font-weight:950;letter-spacing:.08em}
+.br-confirm-void{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 13px;border:1px solid #be123c;border-radius:9px;background:#be123c;color:#fff;font-weight:900;cursor:pointer}
+.br-void-modal .br-warning{margin:0 0 14px}.br-void-modal footer{display:flex;justify-content:flex-end;gap:9px;padding-top:16px}

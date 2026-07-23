@@ -97,7 +97,7 @@ export default function RemittanceWorkspace() {
   };
 
   const loadHistory = async () => {
-    const params = new URLSearchParams({ page: String(page), limit: '20' });
+    const params = new URLSearchParams({ page: String(page), limit: '10' });
     if (query.trim()) params.set('q', query.trim());
     if (historyMode) params.set('mode', historyMode);
     if (historyChannel) params.set('channel', historyChannel);

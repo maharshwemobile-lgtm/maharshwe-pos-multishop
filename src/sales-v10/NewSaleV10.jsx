@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Boxes,
+  Camera,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   Loader2,
   Minus,
   Plus,
+  Printer,
   Search,
   ShoppingCart,
   Trash2,
@@ -21,19 +23,24 @@ import {
 import { apiFetch, clearSession, getSession } from '../phase2Api';
 import '../stock-management.css';
 import './sales-v10.css';
+import './sale10-inline-scanner.css';
+import './sale10-complete-hotfix.css';
 import './sale10-product-images.css';
 import FirstLoginGuide from '../FirstLoginGuide.jsx';
 import './sales-v10-guided.css';
+import { pickLanguageText } from '../settings/ProjectLanguageRuntime.jsx';
 import {
   clearDraft,
   loadDraft,
   money,
   productName,
   reservedQuantity,
+  reprintReceipt,
   saveDraft,
 } from './salesV10Utils';
 import { playPaymentSuccessSound, playPosAddSound } from './salesAudio';
 import ProductCategoryIcon from '../ProductCategoryIcon.jsx';
+import WebBarcodeScanner from '../pos/WebBarcodeScanner.jsx';
 
 const PAGE_SIZE = 10;
 const EMPTY_CUSTOMER = { name: '', phone: '' };
@@ -41,13 +48,7 @@ const EMPTY_PAYMENT = { method: '', methodId: '', methodCode: '', methodName: ''
 const CASH_PAYMENT_METHOD = { key: 'CASH', id: '', name: 'Cash', code: 'CASH', kind: 'CASH', accountName: 'Cash', legacyMethod: 'CASH', balance: 0 };
 const CREDIT_PAYMENT_METHOD = { key: 'CREDIT', id: '', name: 'Credit', code: 'CREDIT', kind: 'CREDIT', accountName: '', legacyMethod: 'CREDIT', balance: 0 };
 const FALLBACK_PAYMENT_METHODS = [CASH_PAYMENT_METHOD, CREDIT_PAYMENT_METHOD];
-const t = (english, myanmar) => {
-  try {
-    return localStorage.getItem('mahar-pos-language-v2') === 'en' ? english : myanmar;
-  } catch {
-    return myanmar;
-  }
-};
+const t = pickLanguageText;
 
 function ProductGridVisual({ item }) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -184,16 +185,23 @@ function ReviewModal({ cart, customer, payment, paymentLegacyMethod, paymentMeth
 }
 
 function CompletedModal({ sale, onNewSale, onHistory }) {
+  const print = () => {
+    const popup = window.open('', '_blank', 'width=420,height=720');
+    if (!popup) return;
+    reprintReceipt(sale, popup);
+  };
   return (
     <div className="stock-modal-backdrop">
       <section className="stock-modal sale10-complete-modal" role="dialog" aria-modal="true">
+        <button type="button" className="sale10-complete-close" onClick={onNewSale} aria-label="Close"><X size={18} /></button>
         <div className="sale10-complete-icon"><CheckCircle2 size={40} /></div>
         <h3>Sale Completed</h3>
         <p>{sale.invoice}</p>
         <b>{money(sale.total)}</b>
-        <small>Receipt ကို Sales History ထဲက Reprint ခလုတ်ဖြင့်သာ ထုတ်နိုင်ပါသည်။</small>
+        <small>Receipt ကို ယခုပင် Print ထုတ်နိုင်သလို Sales History မှလည်း ပြန်ထုတ်နိုင်ပါတယ်။</small>
         <footer>
           <button type="button" onClick={onHistory}><History size={17} /> Sales History</button>
+          <button type="button" onClick={print}><Printer size={17} /> Print</button>
           <button type="button" className="stock-submit stock-submit-green" onClick={onNewSale}><ShoppingCart size={17} /> New Sale</button>
         </footer>
       </section>
@@ -203,6 +211,12 @@ function CompletedModal({ sale, onNewSale, onHistory }) {
 
 export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const session = getSession();
+  const isMiniMart = String(
+    session?.shop?.businessType
+    || session?.user?.shop?.businessType
+    || session?.businessType
+    || 'PHONE_SHOP',
+  ).toUpperCase() === 'MINI_MART';
   const restored = useMemo(() => loadDraft(session), []);
   const canDiscount = session?.user?.role === 'SUPER_ADMIN'
     || session?.user?.role === 'SHOP_ADMIN'
@@ -229,6 +243,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [completedSale, setCompletedSale] = useState(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [lastAddedKey, setLastAddedKey] = useState(restored?.cart?.[restored.cart.length - 1]?.key || '');
   const searchRef = useRef(null);
   const cartRef = useRef(null);
@@ -430,6 +445,32 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
       searchRef.current?.focus();
     } catch (error) {
       handleError(error);
+    }
+  };
+
+  const addScannedProduct = async (rawCode) => {
+    const code = String(rawCode || '').trim();
+    if (!code) return { ok: false, message: 'Barcode မရှိပါ' };
+    try {
+      const data = await apiFetch(`/api/pos/catalog?q=${encodeURIComponent(code)}&page=1&limit=30`);
+      const exact = (data.items || []).find((item) => (
+        String(item.barcode || '').trim() === code || String(item.sku || '').trim() === code
+      ));
+      if (!exact) {
+        notify('error', `Barcode ${code} နှင့် Product မတွေ့ပါ`);
+        return { ok: false, message: 'Product မတွေ့ပါ' };
+      }
+      const available = Math.max(0, Number(exact.stockQuantity || 0) - Number(reserved.get(exact.id) || 0));
+      if (available <= 0) {
+        notify('error', `${productName(exact)} Stock မရှိတော့ပါ`);
+        return { ok: false, message: 'Stock မရှိတော့ပါ' };
+      }
+      addProduct({ ...exact, available });
+      setQuery('');
+      return { ok: true, message: `${productName(exact)} · Cart ထဲထည့်ပြီးပါပြီ` };
+    } catch (error) {
+      handleError(error);
+      return { ok: false, message: error?.message || 'Barcode ရှာမရပါ' };
     }
   };
 
@@ -659,6 +700,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
             <div className="stock-search-box">
               <Search size={18} />
               <input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && searchSubmit()} placeholder="Product, SKU or Barcode ရှာရန်" />
+              <button type="button" className="sale10-inline-scan" onClick={() => setScannerOpen(true)} aria-label="Scan barcode" title="Scan barcode"><Camera size={18} /></button>
             </div>
             <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
               <option value="">All Categories</option>
@@ -695,7 +737,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                 <tbody>
                   {availableCatalog.map((item) => {
                     const pickedQuantity = Number(reserved.get(item.id) || 0);
-                    const expiryText = expiryWarning(item);
+                    const expiryText = isMiniMart ? expiryWarning(item) : '';
                     return (
                     <tr
                       key={item.id}
@@ -769,7 +811,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
               <div className="sale10-cart-slip-list">
                 {cart.map((line, lineIndex) => {
                   const lineTotal = Number(line.unitPrice || 0) * Number(line.quantity || 0);
-                  const expiryText = expiryWarning(line);
+                  const expiryText = isMiniMart ? expiryWarning(line) : '';
                   return (
                     <article key={line.key} className="sale10-cart-slip-row">
                       <div className="sale10-cart-slip-main">
@@ -777,7 +819,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                         {line.requiresSerial ? <input className="sale10-serial-input" value={line.imeiSerial || ''} onChange={(event) => patchLine(line.key, { imeiSerial: event.target.value })} placeholder="IMEI / Serial" /> : null}
                         {expiryText ? <small className="sale10-expiry-warning">{expiryText}{line.expiryDate ? ` - Exp: ${line.expiryDate}` : ''}</small> : null}
                       </div>
-                      <div className="sale10-cart-quantity-field"><span>Count</span><div className="sale10-quantity-control"><button type="button" onClick={() => changeQuantity(line, -1)}><Minus size={14} /></button><b>{line.quantity}</b><button type="button" onClick={() => changeQuantity(line, 1)} disabled={line.requiresSerial}><Plus size={14} /></button></div></div>
+                      <div className="sale10-cart-quantity-field"><div className="sale10-quantity-control"><button type="button" onClick={() => changeQuantity(line, -1)}><Minus size={14} /></button><b>{line.quantity}</b><button type="button" onClick={() => changeQuantity(line, 1)} disabled={line.requiresSerial}><Plus size={14} /></button></div></div>
                       <label className="sale10-cart-price-field">
                         <span>Price</span>
                         <input className="sale10-price-input" type="number" min="0" value={line.unitPrice} onChange={(event) => patchLine(line.key, { unitPrice: event.target.value })} aria-label={`${productName(line)} selling price`} />
@@ -893,6 +935,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
       ) : null}
 
       {reviewOpen ? <ReviewModal cart={cart} customer={customer} payment={payment} paymentLegacyMethod={splitPaymentActive ? 'MIXED' : paymentLegacyMethod} paymentMethodLabel={splitPaymentActive ? 'Split Payment' : paymentMethodLabel} subtotal={subtotal} discount={safeDiscount} total={total} cashReceived={splitPaymentActive ? splitPaymentTotal : cashReceived} change={splitPaymentActive ? splitPaymentChange : change} splitPayments={splitPayments} busy={checkoutBusy} error={checkoutError} onClose={() => setReviewOpen(false)} onConfirm={completeSale} /> : null}
+      {scannerOpen ? <WebBarcodeScanner onClose={() => setScannerOpen(false)} onDetected={addScannedProduct} /> : null}
       {completedSale ? <CompletedModal sale={completedSale} onNewSale={() => { setCompletedSale(null); searchRef.current?.focus(); }} onHistory={onOpenHistory} /> : null}
     </div>
   );

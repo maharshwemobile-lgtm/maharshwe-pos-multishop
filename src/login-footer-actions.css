@@ -1,0 +1,85 @@
+.login-footer-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid rgba(148,163,184,.22);
+  color:#64748b;
+  font-size:12px;
+  font-weight:850;
+}
+
+.login-footer-link{
+  border:0;
+  padding:0;
+  background:transparent;
+  color:#2563eb;
+  font:inherit;
+  font-weight:950;
+  cursor:pointer;
+}
+
+.login-footer-link:hover{
+  text-decoration:underline;
+}
+
+.login-language-switch{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+}
+
+.login-language-switch span{
+  color:#94a3b8;
+}
+
+.login-language-switch button{
+  min-width:34px;
+  height:28px;
+  border:1px solid #dbe4ef;
+  border-radius:999px;
+  background:#fff;
+  color:#64748b;
+  font:inherit;
+  font-weight:950;
+  cursor:pointer;
+}
+
+.login-language-switch button.active{
+  border-color:#22c55e;
+  background:#dcfce7;
+  color:#15803d;
+  box-shadow:0 4px 14px rgba(34,197,94,.16);
+}
+
+.dark .login-footer-actions{
+  border-top-color:#1e3555;
+  color:#9fb0c7;
+}
+
+.dark .login-language-switch button{
+  background:#0b1b33;
+  border-color:#294463;
+  color:#cbd5e1;
+}
+
+.dark .login-language-switch button.active{
+  background:#102d25;
+  border-color:#22c55e;
+  color:#86efac;
+}
+
+@media(max-width:520px){
+  .login-footer-actions{
+    align-items:stretch;
+    flex-direction:column;
+    text-align:center;
+  }
+
+  .login-language-switch{
+    justify-content:center;
+  }
+}

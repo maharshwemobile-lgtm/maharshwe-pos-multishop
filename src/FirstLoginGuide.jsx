@@ -29,13 +29,13 @@ const PHONE_SHOP_CONTENT = {
 
 const MINI_MART_CONTENT = {
   'Sale POS': {
-    badge: 'MINI MART FIRST LOGIN',
-    title: 'Mini Mart မှာ Product / Unit / Expiry / Stock အရင်ထည့်ပါ',
-    text: 'Mini Mart ရောင်းချမှုအတွက် Products page မှာ Barcode, Unit, Expiry Date, Price, Opening Stock အရင်သတ်မှတ်ပါ။',
+    badge: 'FIRST LOGIN',
+    title: 'Product / Unit / Expiry / Stock အရင်ထည့်ပါ',
+    text: 'ရောင်းချမှုအတွက် Products page မှာ Barcode, Unit, Expiry Date, Price, Opening Stock အရင်သတ်မှတ်ပါ။',
     actions: [{ key: 'go-products', label: 'Products page ဖွင့်မယ်', page: 'Products', icon: Box }],
   },
   Products: {
-    badge: 'MINI MART PRODUCT SETUP',
+    badge: 'PRODUCT SETUP',
     title: 'Product → Unit → Expiry → Opening Stock ထည့်ပါ',
     text: 'Add Product ပြီးရင် Add Variant မှာ Barcode, Unit, Expiry Date, Selling Price, Opening Stock ထည့်ပါ။ ပြီးမှ Sale POS မှာရောင်းပါ။',
     actions: [
@@ -45,7 +45,7 @@ const MINI_MART_CONTENT = {
     ],
   },
   Stock: {
-    badge: 'MINI MART STOCK GUIDE',
+    badge: 'STOCK GUIDE',
     title: 'Stock / Expiry ကို Variant မှတစ်ဆင့်စစ်ပါ',
     text: 'Opening Stock, Low Stock Alert, Expiry Date ကို Variant ထဲမှာထည့်ပြီး Sale POS မှာရောင်းပါ။',
     actions: [{ key: 'go-sale', label: 'Sale POS သွားမယ်', page: 'Sale POS', icon: ShoppingCart }],

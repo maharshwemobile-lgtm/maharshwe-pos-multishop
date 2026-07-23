@@ -8,6 +8,9 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
   const [suppliers, setSuppliers] = useState([]);
   const [dashboard, setDashboard] = useState({});
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [form, setForm] = useState(blankForm);
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,13 +35,15 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: '1', limit: '100' });
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (search.trim()) params.set('q', search.trim());
       const [supplierData, dashboardData] = await Promise.all([
         apiFetch(`/api/purchasing/suppliers?${params}`),
         apiFetch('/api/purchasing/dashboard'),
       ]);
       setSuppliers(supplierData.suppliers || []);
+      setTotal(Number(supplierData.total || supplierData.count || supplierData.suppliers?.length || 0));
+      setTotalPages(Math.max(1, Number(supplierData.totalPages || Math.ceil(Number(supplierData.total || supplierData.suppliers?.length || 0) / 10) || 1)));
       setDashboard(dashboardData.dashboard || {});
     } catch (error) {
       handleError(error);
@@ -50,7 +55,9 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
   useEffect(() => {
     const timer = window.setTimeout(load, 250);
     return () => window.clearTimeout(timer);
-  }, [search]);
+  }, [search, page]);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   const activeCount = useMemo(() => suppliers.filter((item) => item.active).length, [suppliers]);
 
@@ -118,7 +125,7 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
         <form className="purchasing-card purchasing-form" onSubmit={submit}>
           <header>
             <div><Plus size={20} /></div>
-            <span><h3>{editingId ? 'Edit Supplier' : 'New Supplier'}</h3><p>Code can be generated automatically.</p></span>
+            <span><h3>{editingId ? 'Edit Supplier' : 'New Supplier'}</h3></span>
           </header>
           <label><span>Supplier Code</span><input value={form.supplierCode} onChange={(event) => setForm({ ...form, supplierCode: event.target.value })} placeholder="Auto: SUP0001" /></label>
           <label><span>Supplier Name *</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Supplier / Company name" required /></label>
@@ -132,7 +139,7 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
         <section className="purchasing-card purchasing-list-card">
           <header>
             <div><Building2 size={20} /></div>
-            <span><h3>Supplier Master</h3><p>{suppliers.length} visible suppliers</p></span>
+            <span><h3>Suppliers</h3></span>
             <button type="button" className="icon-button" onClick={load} disabled={loading}><RefreshCw className={loading ? 'purchasing-spin' : ''} size={18} /></button>
           </header>
           <label className="purchasing-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search code or supplier name" /></label>
@@ -148,7 +155,15 @@ export default function SupplierManagementPanel({ onOpenOrders }) {
               </article>
             ))}
           </div>
-          <footer><button type="button" onClick={onOpenOrders}>Open Purchase Orders</button></footer>
+          <footer className="stock-pagination">
+            <span>Showing {suppliers.length} of {total}</span>
+            <div>
+              <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
+              <b>{page} / {totalPages}</b>
+              <button type="button" disabled={page >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next</button>
+            </div>
+            <button type="button" onClick={onOpenOrders}>Open Purchase Orders</button>
+          </footer>
         </section>
       </div>
     </section>

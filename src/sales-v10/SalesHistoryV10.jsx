@@ -11,18 +11,18 @@ import {
   Loader2,
   Printer,
   ReceiptText,
-  RefreshCw,
   Search,
   TrendingUp,
   Wallet,
   X,
 } from 'lucide-react';
-import { apiFetch, clearSession } from '../phase2Api';
+import { apiFetch, clearSession, getSession } from '../phase2Api';
 import '../stock-management.css';
 import './sales-v10.css';
 import { money, reprintReceipt } from './salesV10Utils';
+import { pickLanguageText } from '../settings/ProjectLanguageRuntime.jsx';
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 const EXPORT_PAGE_SIZE = 100;
 const STATUS_OPTIONS = [
   ['', 'All Statuses'],
@@ -39,6 +39,7 @@ const PAYMENT_OPTIONS = [
   ['CREDIT', 'Credit'],
   ['OTHER', 'Other'],
 ];
+const t = pickLanguageText;
 
 function formatDate(value) {
   if (!value) return '-';
@@ -64,15 +65,15 @@ function csvCell(value) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function itemMeta(item) {
+function itemMeta(item, showExpiry = false) {
   return [
     item?.imeiSerial ? `Serial: ${item.imeiSerial}` : '',
     item?.unit ? `Unit: ${item.unit}` : '',
-    item?.expiryDate ? `Exp: ${item.expiryDate}` : '',
+    showExpiry && item?.expiryDate ? `Exp: ${item.expiryDate}` : '',
   ].filter(Boolean).join(' · ');
 }
 
-function DetailModal({ sale, loading, printing, onClose, onReprint, onVoid }) {
+function DetailModal({ sale, loading, printing, showExpiry, onClose, onReprint, onVoid }) {
   return (
     <div className="stock-modal-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget && !loading) onClose();
@@ -103,7 +104,7 @@ function DetailModal({ sale, loading, printing, onClose, onReprint, onVoid }) {
                 <tbody>
                   {(sale.itemRows || []).map((item) => (
                     <tr key={item.id}>
-                      <td><b>{[item.productName, item.variantName].filter(Boolean).join(' · ')}</b>{itemMeta(item) ? <small>{itemMeta(item)}</small> : null}</td>
+                      <td><b>{[item.productName, item.variantName].filter(Boolean).join(' · ')}</b>{itemMeta(item, showExpiry) ? <small>{itemMeta(item, showExpiry)}</small> : null}</td>
                       <td>{item.imeiSerial || '-'}</td>
                       <td>{item.quantity}{item.unit ? ` ${item.unit}` : ''}</td>
                       <td>{money(item.unitPrice)}</td>
@@ -160,6 +161,8 @@ function VoidModal({ sale, reason, error, busy, onReasonChange, onClose, onConfi
 }
 
 export default function SalesHistoryV10() {
+  const session = getSession();
+  const showExpiry = String(session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP').toUpperCase() === 'MINI_MART';
   const [query, setQuery] = useState('');
   const [cashier, setCashier] = useState('');
   const [from, setFrom] = useState('');
@@ -260,7 +263,7 @@ export default function SalesHistoryV10() {
     if (!row) return;
     const popup = window.open('', '_blank', 'width=430,height=760');
     if (!popup) {
-      notify('error', 'Browser popup blocked. Popups ကို Allow လုပ်ပြီး Reprint ပြန်နှိပ်ပါ။');
+      notify('error', t('Browser popup blocked. Allow popups and try reprint again.', 'Browser popup blocked. Popups ကို Allow လုပ်ပြီး Reprint ပြန်နှိပ်ပါ။'));
       return;
     }
 
@@ -294,7 +297,7 @@ export default function SalesHistoryV10() {
       } while (exportPage <= pages && exportPage <= 100);
 
       if (!allRows.length) {
-        notify('error', 'Export လုပ်ရန် Sale History မရှိပါ။');
+        notify('error', t('No sale history is available to export.', 'Export လုပ်ရန် Sale History မရှိပါ။'));
         return;
       }
 
@@ -367,17 +370,11 @@ export default function SalesHistoryV10() {
     <div className="stock-page sale10-history-page">
       {toast ? <div className={`stock-toast stock-toast-${toast.type}`}>{toast.text}</div> : null}
 
-      <div className="stock-page-heading">
-        <div>
-          <span className="stock-eyebrow">SALES</span>
-          <h2>Sales History</h2>
-          <p>Invoice, Customer, Payment, Status နဲ့ Cashier အလိုက် ရှာဖွေပြီး Detail, Reprint, Export နဲ့ Void ကို စီမံပါ။</p>
-        </div>
+      <div className="stock-page-heading stock-page-actions-only">
         <div className="sale10-heading-actions">
           <button type="button" className="stock-refresh-button sale10-export-button" onClick={exportCsv} disabled={exporting || loading}>
             {exporting ? <Loader2 className="stock-spin" size={18} /> : <Download size={18} />} Export CSV
           </button>
-          <button type="button" className="stock-refresh-button" onClick={load} disabled={loading}><RefreshCw className={loading ? 'stock-spin' : ''} size={18} /> Refresh</button>
         </div>
       </div>
 
@@ -405,7 +402,7 @@ export default function SalesHistoryV10() {
         {loading && rows.length === 0 ? (
           <div className="stock-loading"><Loader2 className="stock-spin" /> Loading sales…</div>
         ) : rows.length === 0 ? (
-          <div className="stock-empty"><FileText size={38} /><b>No sales found</b><span>Filter ကိုပြောင်းပြီး ပြန်ရှာပါ။</span></div>
+          <div className="stock-empty"><FileText size={38} /><b>No sales found</b><span>{t('Change the filters and search again.', 'Filter ကိုပြောင်းပြီး ပြန်ရှာပါ။')}</span></div>
         ) : (
           <div className="stock-table-wrap">
             <table className="stock-table sale10-history-table">
@@ -445,7 +442,7 @@ export default function SalesHistoryV10() {
         </footer>
       </section>
 
-      {(detailLoading || selected) ? <DetailModal sale={selected} loading={detailLoading} printing={Boolean(printingId)} onClose={() => { setSelected(null); setDetailLoading(false); }} onReprint={reprint} onVoid={openVoid} /> : null}
+      {(detailLoading || selected) ? <DetailModal sale={selected} loading={detailLoading} printing={Boolean(printingId)} showExpiry={showExpiry} onClose={() => { setSelected(null); setDetailLoading(false); }} onReprint={reprint} onVoid={openVoid} /> : null}
       {voidTarget ? <VoidModal sale={voidTarget} reason={voidReason} error={voidError} busy={voidBusy} onReasonChange={setVoidReason} onClose={() => { setVoidTarget(null); setVoidError(''); }} onConfirm={confirmVoid} /> : null}
     </div>
   );
