@@ -247,10 +247,24 @@ async function buildOverview(shopId, businessDate) {
       _sum: { amount: true },
       _count: { _all: true },
     }),
-    prisma.moneyServiceTransaction.aggregate({
-      where: { shopId, createdAt: { gte: start, lt: end } },
-      _sum: { serviceProfit: true },
-    }),
+    prisma.$queryRawUnsafe(
+      `SELECT
+          COALESCE((
+            SELECT SUM(service_profit)
+              FROM money_service_transactions
+             WHERE shop_id=$1::uuid AND created_at >= $2 AND created_at < $3
+          ),0)
+          + COALESCE((
+            SELECT SUM(fee_amount)
+              FROM money_service_transactions_v2
+             WHERE shop_id=$1::uuid
+               AND created_at >= $2 AND created_at < $3
+               AND voided_at IS NULL
+          ),0) AS "serviceProfit"`,
+      shopId,
+      start,
+      end,
+    ),
     prisma.customer.aggregate({
       where: { shopId, balance: { gt: 0 } },
       _sum: { balance: true },
@@ -386,7 +400,7 @@ async function buildOverview(shopId, businessDate) {
   const repairIncome = number(repairPayments._sum.amount);
   const repairRevenue = number(repairFinance.repairRevenue);
   const repairProfit = number(repairFinance.repairProfit);
-  const serviceProfit = number(moneyProfit._sum.serviceProfit);
+  const serviceProfit = number(moneyProfit[0]?.serviceProfit);
   const todayExpense = number(expense.total);
   const otherIncome = number(income.total);
   const todayTotalIncome = todaySaleIncome + repairIncome + serviceProfit + otherIncome;
