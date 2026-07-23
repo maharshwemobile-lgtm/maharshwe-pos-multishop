@@ -515,7 +515,6 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     setSplitModalOpen(false);
     setDiscount('0');
     clearDraft(session);
-    notify('success', 'Cart cleared and reserved stock released');
   };
 
   const scrollToCart = () => {
