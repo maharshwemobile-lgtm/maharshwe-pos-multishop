@@ -231,6 +231,7 @@ async function buildOverview(shopId, businessDate) {
     repairFinanceRows,
     expenseRows,
     otherIncomeRows,
+    billerSoldRows,
     recentExpenses,
     recentOtherIncome,
     closingRows,
@@ -315,6 +316,20 @@ async function buildOverview(shopId, businessDate) {
         WHERE shop_id=$1::uuid AND income_date=$2::date AND voided_at IS NULL`,
       shopId,
       businessDate,
+    ),
+    prisma.$queryRawUnsafe(
+      `SELECT COALESCE(SUM(amount),0) AS "soldVolume",
+              COALESCE(SUM(profit_amount),0) AS profit,
+              COUNT(*)::int AS count
+         FROM biller_transactions
+        WHERE shop_id=$1::uuid
+          AND transaction_type='SOLD'
+          AND transaction_date >= $2
+          AND transaction_date < $3
+          AND voided_at IS NULL`,
+      shopId,
+      start,
+      end,
     ),
     prisma.$queryRawUnsafe(
       `SELECT e.id,e.expense_date AS "expenseDate",e.category,e.amount,e.method,e.note,e.created_at AS "createdAt",
@@ -403,8 +418,11 @@ async function buildOverview(shopId, businessDate) {
   const serviceProfit = number(moneyProfit[0]?.serviceProfit);
   const todayExpense = number(expense.total);
   const otherIncome = number(income.total);
-  const todayTotalIncome = todaySaleIncome + repairIncome + serviceProfit + otherIncome;
-  const todayProfit = productProfit + repairProfit + serviceProfit + otherIncome - todayExpense;
+  const billerSold = billerSoldRows[0] || {};
+  const billEloadSoldVolume = number(billerSold.soldVolume);
+  const billEloadProfit = number(billerSold.profit);
+  const todayTotalIncome = todaySaleIncome + repairIncome + serviceProfit + otherIncome + billEloadSoldVolume;
+  const todayProfit = productProfit + repairProfit + serviceProfit + billEloadProfit + otherIncome - todayExpense;
 
   return {
     businessDate,
@@ -419,6 +437,9 @@ async function buildOverview(shopId, businessDate) {
       repairRevenue,
       repairProfit,
       moneyServiceProfit: serviceProfit,
+      billEloadSoldVolume,
+      billEloadProfit,
+      billEloadCount: Number(billerSold.count || 0),
       otherIncome,
       todayProfit,
       todayExpense,

@@ -37,6 +37,7 @@ module.exports = function attachDashboardPostgresApi(app) {
         weekSales,
         todayRepairPayments,
         todayMoneyProfit,
+        todayBillerSales,
         customerDebt,
         accounts,
         stockRows,
@@ -77,6 +78,20 @@ module.exports = function attachDashboardPostgresApi(app) {
           today,
           tomorrow,
         ),
+        prisma.$queryRawUnsafe(
+          `SELECT COALESCE(SUM(amount),0) AS "soldVolume",
+                  COALESCE(SUM(profit_amount),0) AS profit,
+                  COUNT(*)::int AS count
+             FROM biller_transactions
+            WHERE shop_id=$1::uuid
+              AND transaction_type='SOLD'
+              AND transaction_date >= $2
+              AND transaction_date < $3
+              AND voided_at IS NULL`,
+          shopId,
+          today,
+          tomorrow,
+        ),
         prisma.customer.aggregate({
           where: { shopId, balance: { gt: 0 } },
           _sum: { balance: true },
@@ -97,6 +112,8 @@ module.exports = function attachDashboardPostgresApi(app) {
       const todaySaleIncome = number(todaySales._sum.total);
       const repairIncome = number(todayRepairPayments._sum.amount);
       const moneyProfit = number(todayMoneyProfit[0]?.serviceProfit);
+      const billEloadSoldVolume = number(todayBillerSales[0]?.soldVolume);
+      const billEloadProfit = number(todayBillerSales[0]?.profit);
       const stockBalance = stockRows.reduce(
         (sum, row) => sum + number(row.costPrice) * Number(row.inventoryBalance?.quantity || 0),
         0,
@@ -105,9 +122,12 @@ module.exports = function attachDashboardPostgresApi(app) {
       res.json({
         ok: true,
         dashboard: {
-          todayTotalIncome: todaySaleIncome + repairIncome + moneyProfit,
+          todayTotalIncome: todaySaleIncome + repairIncome + moneyProfit + billEloadSoldVolume,
           todaySaleIncome,
-          todayProfit: number(todaySales._sum.profitTotal) + moneyProfit,
+          todayProfit: number(todaySales._sum.profitTotal) + moneyProfit + billEloadProfit,
+          billEloadSoldVolume,
+          billEloadProfit,
+          billEloadCount: Number(todayBillerSales[0]?.count || 0),
           todayExpense: 0,
           receivable: number(customerDebt._sum.balance),
           payable: 0,
