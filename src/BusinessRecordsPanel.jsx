@@ -37,7 +37,6 @@ const DEFAULT_EXPENSE_OPTIONS = [
 ];
 const DEFAULT_INCOME_CATEGORY = DEFAULT_INCOME_OPTIONS[0].value;
 const DEFAULT_EXPENSE_CATEGORY = DEFAULT_EXPENSE_OPTIONS[0];
-const SYSTEM_ONLY_CATEGORIES = new Set(['Sales Income (Auto) From POS', 'Total Bill Sale', 'Money Service (Auto)']);
 
 function yangonToday() {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -71,21 +70,12 @@ function categoryLabel(record, isMiniMart = false) {
   return 'Other Income';
 }
 
-function buildIncomeOptions(rows = []) {
-  const custom = rows
-    .filter((row) => row?.active !== false && !SYSTEM_ONLY_CATEGORIES.has(row.name))
-    .map((row) => ({ name: row.name, value: row.name }))
-    .filter((option) => !DEFAULT_INCOME_OPTIONS.some((item) => item.value === option.value));
-  return [...DEFAULT_INCOME_OPTIONS, ...custom];
+function buildIncomeOptions() {
+  return DEFAULT_INCOME_OPTIONS;
 }
 
-function buildExpenseOptions(rows = []) {
-  const defaults = DEFAULT_EXPENSE_OPTIONS.map((name) => ({ name, value: name }));
-  const custom = rows
-    .filter((row) => row?.active !== false && !SYSTEM_ONLY_CATEGORIES.has(row.name))
-    .map((row) => ({ name: row.name, value: row.name }))
-    .filter((option) => !defaults.some((item) => item.value === option.value));
-  return [...defaults, ...custom];
+function buildExpenseOptions() {
+  return DEFAULT_EXPENSE_OPTIONS.map((name) => ({ name, value: name }));
 }
 
 function DetailModal({ record, onClose, isMiniMart = false }) {
@@ -239,11 +229,10 @@ export default function BusinessRecordsPanel() {
   const [formMode, setFormMode] = useState('income');
   const [savingIncome, setSavingIncome] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
-  const [catalogs, setCatalogs] = useState({ incomeCategories: [], expenseCategories: [] });
   const [income, setIncome] = useState({ category: DEFAULT_INCOME_CATEGORY, source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
   const [expense, setExpense] = useState({ category: DEFAULT_EXPENSE_CATEGORY, amount: '', method: 'CASH', moneyAccountId: '', note: '' });
-  const incomeOptions = useMemo(() => buildIncomeOptions(catalogs.incomeCategories), [catalogs.incomeCategories]);
-  const expenseOptions = useMemo(() => buildExpenseOptions(catalogs.expenseCategories), [catalogs.expenseCategories]);
+  const incomeOptions = useMemo(() => buildIncomeOptions(), []);
+  const expenseOptions = useMemo(() => buildExpenseOptions(), []);
 
   const params = useMemo(() => {
     const search = new URLSearchParams({
@@ -275,18 +264,6 @@ export default function BusinessRecordsPanel() {
     }
   };
 
-  const loadCatalogs = async () => {
-    try {
-      const response = await apiFetch('/api/finance/settings/catalogs');
-      setCatalogs({
-        incomeCategories: response.incomeCategories || [],
-        expenseCategories: response.expenseCategories || [],
-      });
-    } catch (requestError) {
-      handleError(requestError);
-    }
-  };
-
   const load = async () => {
     setLoading(true);
     setError('');
@@ -308,10 +285,6 @@ export default function BusinessRecordsPanel() {
   useEffect(() => {
     loadContext();
   }, [businessDate]);
-
-  useEffect(() => {
-    loadCatalogs();
-  }, []);
 
   useEffect(() => {
     if (!incomeOptions.some((option) => option.value === income.category)) {
