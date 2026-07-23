@@ -4,7 +4,7 @@ const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
 const { ensureRepairPlatformSchema } = require('./repair-platform-schema');
 const { queuePush, sendPushToShop } = require('./push-notifications-api');
-const { normalizeBusinessRecordCategory } = require('./business-record-categories');
+const { businessRecordCategories, normalizeBusinessRecordCategory } = require('./business-record-categories');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ACCOUNT_TYPES = ['CASH', 'KPAY', 'WAVE_PAY', 'OTHER'];
@@ -312,11 +312,23 @@ async function buildOverview(shopId, businessDate) {
       businessDate,
     ),
     prisma.$queryRawUnsafe(
-      `SELECT COALESCE(SUM(amount),0) AS total,COUNT(*)::int AS count
+      `SELECT COALESCE(SUM(amount),0) AS total,
+              COALESCE(SUM(amount) FILTER (
+                WHERE category=$3
+                   OR category='SERVICE_INCOME'
+                   OR source LIKE '__SERVICE_INCOME__:%'
+              ),0) AS "serviceIncome",
+              COALESCE(SUM(amount) FILTER (
+                WHERE category<>$3
+                  AND category<>'SERVICE_INCOME'
+                  AND source NOT LIKE '__SERVICE_INCOME__:%'
+              ),0) AS "nonServiceIncome",
+              COUNT(*)::int AS count
          FROM business_other_income
         WHERE shop_id=$1::uuid AND income_date=$2::date AND voided_at IS NULL`,
       shopId,
       businessDate,
+      businessRecordCategories.income[0].value,
     ),
     prisma.$queryRawUnsafe(
       `SELECT COALESCE(SUM(amount),0) AS "soldVolume",
@@ -413,12 +425,13 @@ async function buildOverview(shopId, businessDate) {
 
   const todaySaleIncome = number(sales._sum.total);
   const productProfit = number(sales._sum.profitTotal);
-  const repairIncome = number(repairPayments._sum.amount);
-  const repairRevenue = number(repairFinance.repairRevenue);
+  const otherServiceIncome = number(income.serviceIncome);
+  const repairIncome = number(repairPayments._sum.amount) + otherServiceIncome;
+  const repairRevenue = number(repairFinance.repairRevenue) + otherServiceIncome;
   const repairProfit = number(repairFinance.repairProfit);
   const serviceProfit = number(moneyProfit[0]?.serviceProfit);
   const todayExpense = number(expense.total);
-  const otherIncome = number(income.total);
+  const otherIncome = number(income.nonServiceIncome);
   const billerSold = billerSoldRows[0] || {};
   const billEloadSoldVolume = number(billerSold.soldVolume);
   const billEloadProfit = number(billerSold.profit);
@@ -437,6 +450,7 @@ async function buildOverview(shopId, businessDate) {
       repairIncome,
       repairRevenue,
       repairProfit,
+      otherServiceIncome,
       moneyServiceProfit: serviceProfit,
       billEloadSoldVolume,
       billEloadProfit,
