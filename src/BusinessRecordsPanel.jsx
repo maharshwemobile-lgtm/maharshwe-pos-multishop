@@ -46,10 +46,6 @@ function yangonToday() {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-function monthStart(value) {
-  return `${String(value).slice(0, 7)}-01`;
-}
-
 function formatDateTime(value) {
   if (!value) return '-';
   try {
@@ -210,7 +206,7 @@ export default function BusinessRecordsPanel() {
   const canWriteAccounting = role === 'SUPER_ADMIN' || role === 'SHOP_ADMIN' || permissions.accounting === true;
   const [businessDate, setBusinessDate] = useState(today);
   const [type, setType] = useState('income');
-  const [from, setFrom] = useState(monthStart(today));
+  const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -438,7 +434,13 @@ export default function BusinessRecordsPanel() {
             <span>NEW RECORD</span>
             <h4>{formMode === 'income' ? 'Add Other Income' : 'Add Expense'}</h4>
           </div>
-          <label><CalendarDays size={17} /><span>Date</span><input type="date" value={businessDate} max={today} onChange={(event) => setBusinessDate(event.target.value || today)} /></label>
+          <label><CalendarDays size={17} /><span>Date</span><input type="date" value={businessDate} max={today} onChange={(event) => {
+            const selectedDate = event.target.value || today;
+            setBusinessDate(selectedDate);
+            setFrom(selectedDate);
+            setTo(selectedDate);
+            setPage(1);
+          }} /></label>
         </div>
         <div className="br-record-actions">
           <button type="button" className={formMode === 'income' ? 'active income' : ''} onClick={() => setFormMode('income')}>
@@ -486,8 +488,6 @@ export default function BusinessRecordsPanel() {
       </div>
 
       <div className="br-toolbar">
-        <label><CalendarDays size={17} /><span>From</span><input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value || monthStart(today))} /></label>
-        <label><CalendarDays size={17} /><span>To</span><input type="date" value={to} min={from} max={today} onChange={(event) => setTo(event.target.value || today)} /></label>
         <label className="br-search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Source, category, note, account, staff…" /></label>
         <button type="button" onClick={load} disabled={loading}>{loading ? <Loader2 className="br-spin" size={18} /> : <RefreshCw size={18} />} Refresh</button>
         <button type="button" className="br-export" onClick={exportCsv} disabled={exporting}>{exporting ? <Loader2 className="br-spin" size={18} /> : <Download size={18} />} Export CSV</button>
@@ -498,7 +498,7 @@ export default function BusinessRecordsPanel() {
       <div className="br-summary">
         <article><span>Total Records</span><b>{Number(data.total || 0).toLocaleString()}</b></article>
         <article><span>Total Amount</span><b>{money(data.totalAmount)}</b></article>
-        <article><span>Date Range</span><b>{from} → {to}</b></article>
+        <article><span>Selected Date</span><b>{businessDate === today ? `Today · ${businessDate}` : businessDate}</b></article>
       </div>
 
       <div className="br-table-wrap">
