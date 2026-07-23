@@ -206,7 +206,7 @@ function CompletedModal({ sale, onNewSale, onHistory }) {
           <button type="button" className="sale10-complete-secondary" onClick={onHistory}>
             <History size={16} /> {t('History', 'မှတ်တမ်း')}
           </button>
-          <button type="button" className="sale10-reprint-button" onClick={print}>
+          <button type="button" className="sale10-reprint-button allow-mobile-print" onClick={print}>
             <Printer size={16} /> {t('Reprint', 'ပြန်ပုံနှိပ်')}
           </button>
           <button type="button" className="stock-submit stock-submit-green sale10-new-sale-button" onClick={onNewSale}>
