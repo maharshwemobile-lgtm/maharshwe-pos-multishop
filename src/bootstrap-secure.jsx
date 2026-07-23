@@ -4,6 +4,7 @@ import AppSecure from './AppSecure.jsx';
 import AppErrorBoundary from './AppErrorBoundary.jsx';
 import { installResponsiveViewportV21 } from './responsiveViewportV21.js';
 import { installProductIconRuntimeV22 } from './productIconRuntimeV22.js';
+import { installDatePickerRuntime } from './datePickerRuntime.js';
 import './styles.css';
 import './pos/pos-minimal-overrides.css';
 import './pos/pos-payment-selector-direct-v23.css';
@@ -14,7 +15,7 @@ import './ui-polish-v22.css';
 import './product-category-icon.css';
 import './ui-layout-hotfix-v24.css';
 
-const RUNTIME_VERSION = '20260715-project-settings-shop-setup-default';
+const RUNTIME_VERSION = '20260723-stable-record-categories-date-picker';
 
 async function clearLegacyRuntime() {
   try {
@@ -59,6 +60,7 @@ function renderApp() {
   window.requestAnimationFrame(() => {
     installResponsiveViewportV21();
     installProductIconRuntimeV22();
+    installDatePickerRuntime();
   });
 }
 

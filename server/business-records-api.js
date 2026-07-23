@@ -1,5 +1,6 @@
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser } = require('./auth-api');
+const { normalizeBusinessRecordCategory } = require('./business-record-categories');
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SERVICE_PREFIX = '__SERVICE_INCOME__:';
@@ -304,12 +305,12 @@ function editPayload(type, body) {
   const note = cleanText(body.note, 500);
 
   if (type === 'expense') {
-    const title = cleanText(body.category, 80);
+    const title = normalizeBusinessRecordCategory('expense', body.category);
     if (!title) throw Object.assign(new Error('Expense category is required'), { status: 400 });
     return { businessDate, title, amount, method, moneyAccountId, note };
   }
 
-  const category = cleanText(body.category || 'OTHER_INCOME', 80);
+  const category = normalizeBusinessRecordCategory('income', body.category);
   const source = cleanText(body.source, 80);
   if (!source) throw Object.assign(new Error('Income source is required'), { status: 400 });
   const title = category === 'SERVICE_INCOME' ? `${SERVICE_PREFIX}${source}` : source;
