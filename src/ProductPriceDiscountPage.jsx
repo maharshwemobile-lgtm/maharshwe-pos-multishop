@@ -15,7 +15,7 @@ import {
 import { apiFetch, clearSession, getSession } from './phase2Api';
 import './price-discount-page.css';
 
-const LIMIT = 200;
+const LIMIT = 10;
 
 function money(value) {
   const amount = Number(value || 0);
@@ -387,7 +387,7 @@ export default function ProductPriceDiscountPage() {
           </div>
         </div>
 
-        <div className="price-bulk-panel">
+        <div className={`price-bulk-panel ${selectedRows.length ? '' : 'is-empty'}`}>
           <div>
             <Layers3 size={18} />
             <b>Batch Price / Discount</b>

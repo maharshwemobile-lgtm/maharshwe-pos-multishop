@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { appendAuditEvent, sanitizeAuditValue } = require('./audit-chain');
 const { queueGoogleSheetSync } = require('./google-sheet-sync');
+const { prisma } = require('./prisma');
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -89,18 +90,35 @@ function attachAuditTrailMiddleware(app) {
         userAgent: req.headers['user-agent'] || null,
       };
 
-      appendAuditEvent(event).catch((error) => console.error('Cryptographic audit write failed:', error.message));
+      (async () => {
+        // Most domain APIs already write a precise legacy audit row inside
+        // their transaction. Do not add a second generic row for the same
+        // request; keep the global writer only as a fallback for unlogged APIs.
+        const recentRows = await prisma.auditLog.findMany({
+          where: {
+            shopId: req.auth.shopId,
+            userId: req.auth.userId,
+            createdAt: { gte: new Date(startedAt - 250) },
+          },
+          select: { details: true },
+          orderBy: { createdAt: 'desc' },
+          take: 8,
+        });
+        const domainAuditAlreadyWritten = recentRows.some((row) => !row.details?.crypto);
+        if (domainAuditAlreadyWritten) return;
 
-      const userCaptureAlreadyQueued = pathname.startsWith('/api/users') || pathname.startsWith('/api/project-settings');
-      if (!userCaptureAlreadyQueued) {
-        queueGoogleSheetSync({
-          shopId: req.auth.shopId,
-          dataset: 'user-audit',
-          action: info.action,
-          entityId: event.entityId || requestId,
-          payload: event,
-        }).catch((error) => console.warn('User audit Sheet sync failed:', error.message));
-      }
+        await appendAuditEvent(event);
+        const userCaptureAlreadyQueued = pathname.startsWith('/api/users') || pathname.startsWith('/api/project-settings');
+        if (!userCaptureAlreadyQueued) {
+          await queueGoogleSheetSync({
+            shopId: req.auth.shopId,
+            dataset: 'user-audit',
+            action: info.action,
+            entityId: event.entityId || requestId,
+            payload: event,
+          });
+        }
+      })().catch((error) => console.error('Cryptographic audit write failed:', error.message));
     });
     return next();
   });

@@ -46,7 +46,7 @@ function dateLabel(value) {
   }).format(new Date(`${value}T00:00:00+06:30`));
 }
 
-function MetricCard({ icon: Icon, label, value, detail, tone = 'green' }) {
+function MetricCard({ icon: Icon, label, value, detail, tone = 'green', breakdown = [] }) {
   return (
     <article className={`bc-metric bc-tone-${tone}`}>
       <div className="bc-metric-icon"><Icon size={23} /></div>
@@ -54,6 +54,16 @@ function MetricCard({ icon: Icon, label, value, detail, tone = 'green' }) {
         <span>{label}</span>
         <strong>{money(value)}</strong>
         <small>{detail}</small>
+        {breakdown?.length ? (
+          <div className="bc-metric-breakdown">
+            {breakdown.map((row) => (
+              <em key={`${row.label}-${row.amount}`}>
+                <span>{row.label}</span>
+                <b>{money(row.amount)}</b>
+              </em>
+            ))}
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -70,22 +80,15 @@ function AccountCard({ label, value, icon: Icon }) {
 
 export default function DashboardBusinessV3({ onNavigate }) {
   const session = getSession();
-  const role = session?.user?.role || '';
-  const permissions = session?.user?.permissions || {};
   const rawBusinessType = session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
   const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
-  const showMoneyService = !isMiniMart || (typeof window !== 'undefined' && window.localStorage?.getItem('miniMartShowMoneyService') === 'true');
-  const canClose = role === 'SUPER_ADMIN' || role === 'SHOP_ADMIN';
+  const showMoneyService = true;
   const today = yangonToday();
 
   const [businessDate, setBusinessDate] = useState(today);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [closingNote, setClosingNote] = useState('');
-  const [closing, setClosing] = useState(false);
-  const [reopening, setReopening] = useState(false);
 
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -114,54 +117,15 @@ export default function DashboardBusinessV3({ onNavigate }) {
   const maxTrend = useMemo(() => Math.max(1, ...trend.map((item) => Number(item.sales || 0))), [trend]);
 
   const metrics = [
-    { icon: Wallet, label: "Today's Total Income", value: dashboard.todayTotalIncome, detail: isMiniMart ? 'Sales + Other Income' : 'Sales + Repair + Service + Other Income', tone: 'green' },
+    { icon: Wallet, label: "Today's Total Income", value: dashboard.todayTotalIncome, detail: isMiniMart ? `Sales + Other + TopUp (${money(dashboard.billEloadSoldVolume)})` : `Sales + Repair + Service + Other + TopUp (${money(dashboard.billEloadSoldVolume)})`, tone: 'green' },
     { icon: ShoppingCart, label: 'Product Sales Income', value: dashboard.todaySaleIncome, detail: `${Number(dashboard.todayOrders || 0)} sale orders`, tone: 'blue' },
     { icon: TrendingUp, label: 'Product Sales Profit', value: dashboard.productProfit, detail: 'Product gross profit', tone: 'green' },
     !isMiniMart ? { icon: Wrench, label: 'Repair Income', value: dashboard.repairIncome, detail: `${Number(dashboard.repairPayments || 0)} repair payments + Service Income`, tone: 'gold' } : null,
-    { icon: PlusCircle, label: 'Other Income', value: dashboard.otherIncome, detail: `${Number(dashboard.otherIncomeCount || 0)} income records`, tone: 'blue' },
-    { icon: CreditCard, label: "Today's Expense", value: dashboard.todayExpense, detail: `${Number(dashboard.expenseCount || 0)} expense records`, tone: 'red' },
+    { icon: PlusCircle, label: 'Other Income', value: dashboard.otherIncome, detail: `${Number(dashboard.otherIncomeCount || 0)} income records`, tone: 'blue', breakdown: dashboard.otherIncomeBreakdown || [] },
+    { icon: CreditCard, label: "Today's Expense", value: dashboard.todayExpense, detail: `${Number(dashboard.expenseCount || 0)} expense records`, tone: 'red', breakdown: dashboard.expenseBreakdown || [] },
     { icon: Users, label: 'Customer Receivable', value: dashboard.receivable, detail: `${Number(dashboard.receivableCustomers || 0)} customers owe`, tone: 'orange' },
     { icon: Truck, label: 'Supplier Payable', value: dashboard.payable, detail: `Paid today ${money(dashboard.supplierPaidToday)}`, tone: 'red' },
   ].filter(Boolean);
-
-  const closeBusinessDay = async () => {
-    if (!window.confirm(`${businessDate} daily closing. Are you sure? Shop Admin can undo / reopen later.`)) return;
-    setClosing(true);
-    setNotice('');
-    setError('');
-    try {
-      const response = await apiFetch('/api/business-control/daily-closing', {
-        method: 'POST',
-        body: { businessDate, note: closingNote },
-      });
-      setData(response);
-      setClosingNote('');
-      setNotice(response.message || 'Business day closed successfully.');
-    } catch (requestError) {
-      setError(requestError?.message || 'Daily closing failed');
-    } finally {
-      setClosing(false);
-    }
-  };
-
-  const reopenBusinessDay = async () => {
-    if (!window.confirm(`${businessDate} closed day. Are you sure you want to undo and reopen it?`)) return;
-    setReopening(true);
-    setNotice('');
-    setError('');
-    try {
-      const response = await apiFetch('/api/business-control/daily-closing/undo', {
-        method: 'POST',
-        body: { businessDate },
-      });
-      await load({ silent: true });
-      setNotice(response.message || 'Business day reopened successfully.');
-    } catch (requestError) {
-      setError(requestError?.message || 'Daily closing undo failed');
-    } finally {
-      setReopening(false);
-    }
-  };
 
   return (
     <div className="business-control-dashboard">
@@ -175,14 +139,9 @@ export default function DashboardBusinessV3({ onNavigate }) {
           <label><CalendarDays size={17} /><input type="date" value={businessDate} max={today} onChange={(event) => setBusinessDate(event.target.value || today)} /></label>
           <button type="button" onClick={() => load()} disabled={loading}>{loading ? <Loader2 className="bc-spin" size={17} /> : <RefreshCw size={17} />} Refresh</button>
         </div>
-        <div className={`bc-day-state ${data?.closing ? 'closed' : 'open'}`}>
-          {data?.closing ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}
-          <div><b>{data?.closing ? 'Day Closed' : ''}</b><small>{data?.closing ? `Closed by ${data.closing.closedByName || 'Admin'}` : ''}</small></div>
-        </div>
       </section>
 
       {error ? <div className="bc-alert error"><AlertTriangle size={18} />{error}</div> : null}
-      {notice ? <div className="bc-alert success"><CheckCircle2 size={18} />{notice}</div> : null}
       {loading && !data ? <section className="bc-loading"><Loader2 className="bc-spin" size={30} /><b>Business Control data loading…</b></section> : null}
 
       {data ? <>
@@ -225,15 +184,17 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
 
 
-        <section className="bc-quick-links">
+        {!isMiniMart ? <section className="bc-quick-links">
           {[
             ['New Sale', ShoppingCart, 'Sale POS'],
             !isMiniMart ? ['Repair Platform', Wrench, 'Repairs'] : null,
+            isMiniMart ? ['Sales History', Clock3, 'Sales History'] : null,
+            isMiniMart ? ['Money / Bill', CircleDollarSign, 'Money Service'] : null,
             ['Finance', Wallet, 'Accounting'],
             ['Purchasing', Truck, 'Purchases'],
             ['Reports', BarChart3, 'Reports'],
           ].filter(Boolean).map(([label, Icon, page]) => <button type="button" key={label} onClick={() => onNavigate(page)}><Icon size={21} /><span><b>{label}</b><small>Open workspace</small></span></button>)}
-        </section>
+        </section> : null}
       </> : null}
     </div>
   );

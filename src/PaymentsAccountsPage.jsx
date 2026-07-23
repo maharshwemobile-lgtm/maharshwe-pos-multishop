@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowDownCircle,
   ArrowLeftRight,
@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
   CreditCard,
   FileText,
   History,
@@ -218,7 +217,7 @@ export default function PaymentsAccountsPage({ onNavigate }) {
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (query.trim()) params.set('q', query.trim());
       if (accountType) params.set('accountType', accountType);
       if (source) params.set('source', source);
@@ -256,27 +255,8 @@ export default function PaymentsAccountsPage({ onNavigate }) {
     }
   };
 
-  const summary = data.summary || {};
-  const cards = useMemo(() => [
-    { label: 'Total Account Balance', value: money(summary.totalBalance), icon: Landmark, tone: 'green' },
-    { label: 'Today Received', value: money(summary.todayReceived), icon: CircleDollarSign, tone: 'blue', hint: `${Number(summary.todayCount || 0)} payments` },
-    { label: 'Customer Receivable', value: money(summary.receivable), icon: CreditCard, tone: 'orange' },
-    { label: 'Active Accounts', value: Number(summary.activeAccounts || 0).toLocaleString(), icon: WalletCards, tone: 'purple' },
-  ], [summary]);
-
   return (
     <section className="payments-page">
-      <div className="payments-page-heading">
-        <div><span className="payments-eyebrow">PAYMENTS</span><h2>Payments & Accounts</h2><p>Sale / repair / customer credit and wallet account balances are managed here.</p></div>
-        <div className="payments-heading-actions">
-          <button type="button" className="payments-transfer-button" onClick={() => setTransferFrom(data.accounts?.[0] || null)} disabled={(data.accounts?.length || 0) < 2}><ArrowLeftRight size={18} /> Transfer</button>
-        </div>
-      </div>
-
-      <div className="payments-summary-grid">
-        {cards.map((card) => <article key={card.label}><div className={`payments-summary-icon payments-tone-${card.tone}`}><card.icon size={23} /></div><span>{card.label}</span><b>{card.value}</b>{card.hint ? <small>{card.hint}</small> : null}</article>)}
-      </div>
-
       <section className="payments-wallet-section">
         <header>
           <div><span>ACCOUNTS WALLET</span><h3>Accounts / Wallet Balances</h3><p>Cash, KPay, Wave Pay နှင့် အခြား wallet account များကို ဒီနေရာမှာသီးသန့်ကြည့်/ပြင်ပါ။</p></div>

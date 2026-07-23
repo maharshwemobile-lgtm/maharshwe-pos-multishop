@@ -5,8 +5,6 @@ import {
   Code2,
   Database,
   FileText,
-  Gauge,
-  Globe2,
   Languages,
   Loader2,
   RefreshCw,
@@ -15,19 +13,24 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   UserCog,
+  WalletCards,
 } from 'lucide-react';
 import { apiFetch, clearSession, getSession } from '../phase2Api';
 import ProjectUserAccessSettings from './ProjectUserAccessSettings.jsx';
+import GoogleSheetIntegrationSettingsV23 from './GoogleSheetIntegrationSettingsV23.jsx';
+import AgentApiSettings from './AgentApiSettings.jsx';
+import TelegramAutomationSettings from './TelegramAutomationSettings.jsx';
+import PostgreSQLSettingsHubV23 from './PostgreSQLSettingsHubV23.jsx';
 import './project-settings.css';
 
 const SECTIONS = [
-  { id: 'preferences', label: 'My Preference', icon: SlidersHorizontal },
-  { id: 'slip', label: 'Slip Information', icon: FileText },
   { id: 'business', label: 'Shop Info', icon: Building2 },
-  { id: 'appearance', label: 'Appearance & Language', icon: Languages },
-  { id: 'api', label: 'API Configure', icon: Code2 },
+  { id: 'slip', label: 'Slip & Print', icon: FileText },
+  { id: 'operations', label: 'POS & Payments', icon: WalletCards },
   { id: 'users', label: 'Users & Access', icon: UserCog },
-  { id: 'system', label: 'System Settings', icon: Database },
+  { id: 'appearance', label: 'Appearance', icon: Languages },
+  { id: 'integrations', label: 'Integrations', icon: Code2 },
+  { id: 'system', label: 'System', icon: Database },
 ];
 
 const clone = (value) => JSON.parse(JSON.stringify(value || {}));
@@ -35,9 +38,14 @@ const clone = (value) => JSON.parse(JSON.stringify(value || {}));
 function formatDate(value) {
   if (!value) return '-';
   try {
-    return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date(value));
+    const normalized = typeof value === 'object' && !Array.isArray(value)
+      ? Object.keys(value).sort((a, b) => Number(a) - Number(b)).map((key) => value[key]).join('')
+      : value;
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return '-';
+    return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(date);
   } catch {
-    return String(value);
+    return '-';
   }
 }
 
@@ -67,7 +75,7 @@ function SectionHeader({ icon: Icon, title, description, onRefresh, busy }) {
 }
 
 export default function ProjectSettingsCenter() {
-  const [section, setSection] = useState('preferences');
+  const [section, setSection] = useState('business');
   const [data, setData] = useState(null);
   const [forms, setForms] = useState({});
   const [loading, setLoading] = useState(false);
@@ -160,8 +168,8 @@ export default function ProjectSettingsCenter() {
   const rawBusinessType = data?.business?.businessType || session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
   const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
   const showMoneyService = forms.preferences?.showMoneyService === true || forms.preferences?.showMoneyService === 'true';
-  const openingPages = ['Dashboard','Sale POS','Sales History','Repairs','Products','Stock','Purchases','Customers','Money Service','Accounting','Reports','Settings']
-    .filter((item) => !isMiniMart || !['Repairs'].includes(item))
+  const openingPages = ['Sale POS','Dashboard','Sales History','Repairs','Products','Stock','Purchases','Customers','Money Service','Accounting','Reports','Settings']
+    .filter((item) => !isMiniMart || !['Repairs', 'Partner Settlement'].includes(item))
     .filter((item) => item !== 'Money Service' || showMoneyService);
 
   const licenseColor = useMemo(() => {
@@ -187,13 +195,13 @@ export default function ProjectSettingsCenter() {
 
         {!loading && !data ? <div className="ps-empty">Settings could not be loaded.</div> : null}
 
-        {data && section === 'preferences' ? <section className="ps-panel">
-          <SectionHeader icon={SlidersHorizontal} title="My Own Preference" description="ဒီ Login User တစ်ယောက်အတွက်ပဲ သက်ရောက်မည့် Preference များ။"/>
+        {data && section === 'appearance' ? <section className="ps-panel">
+          <SectionHeader icon={SlidersHorizontal} title="My Preference" description="လက်ရှိ User အတွက် language၊ theme နဲ့ table display ကို သတ်မှတ်ပါ။"/>
           <div className="ps-form ps-grid-2">
             <Field label="Language"><select value={forms.preferences.language} onChange={(event) => updateForm('preferences', { language: event.target.value })}><option value="my">မြန်မာ</option><option value="en">English</option></select></Field>
             <Field label="Theme"><select value={forms.preferences.theme} onChange={(event) => updateForm('preferences', { theme: event.target.value })}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></Field>
             <Field label="Default Opening Page"><select value={forms.preferences.openingPage} onChange={(event) => updateForm('preferences', { openingPage: event.target.value })}>{openingPages.map((item) => <option key={item}>{item}</option>)}</select></Field>
-            {isMiniMart ? <Toggle label="Money Service Menu ပြမည်" hint="Mini Mart မှာ default မပြပါ။ Cash In / Cash Out သုံးချင်မှ ဖွင့်ပါ။" checked={showMoneyService} onChange={(value) => { try { window.localStorage.setItem('miniMartShowMoneyService', value ? 'true' : 'false'); } catch {} updateForm('preferences', { showMoneyService: value, openingPage: value ? forms.preferences.openingPage : (forms.preferences.openingPage === 'Money Service' ? 'Dashboard' : forms.preferences.openingPage) }); }} disabled={!canManage}/> : null}
+            {isMiniMart ? <Toggle label="Money Service Menu ပြမည်" hint="ပုံမှန်အားဖြင့် မပြပါ။ Cash In / Cash Out သုံးလိုမှ ဖွင့်ပါ။" checked={showMoneyService} onChange={(value) => { try { window.localStorage.setItem('miniMartShowMoneyService', value ? 'true' : 'false'); } catch {} updateForm('preferences', { showMoneyService: value, openingPage: value ? forms.preferences.openingPage : (forms.preferences.openingPage === 'Money Service' ? 'Sale POS' : forms.preferences.openingPage) }); }} disabled={!canManage}/> : null}
             <Field label="Sidebar"><select value={forms.preferences.sidebarMode} onChange={(event) => updateForm('preferences', { sidebarMode: event.target.value })}><option value="expanded">Expanded</option><option value="compact">Compact</option></select></Field>
             <Field label="Table Density"><select value={forms.preferences.tableDensity} onChange={(event) => updateForm('preferences', { tableDensity: event.target.value })}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></Field>
             <Field label="Page Size"><select value={forms.preferences.pageSize} onChange={(event) => updateForm('preferences', { pageSize: Number(event.target.value) })}>{[10,20,50,100].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
@@ -287,16 +295,9 @@ export default function ProjectSettingsCenter() {
           <div className="ps-actions"><button className="ps-primary" type="button" onClick={() => save('appearance')} disabled={!canManage || saving === 'appearance'}>{saving === 'appearance' ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>} Save Appearance</button></div>
         </section> : null}
 
-        {data && section === 'api' ? <section className="ps-panel">
-          <SectionHeader icon={Code2} title="API Configure" description="Google Sheet Auto Sync ကို dedicated webhook integration card မှာ စီမံပါ။"/>
-          <div className="ps-form">
-            <div className="ps-api-result good">
-              <b>Google Sheet Auto Sync</b>
-              <span>Legacy Google Sheet setup ကို မသုံးတော့ပါ။ Web App URL တစ်ခုတည်းဖြင့် Sale, Repair, Repair Status Update များကို auto sync ပို့ပါမည်။</span>
-              <small>Settings page ထဲရှိ “Google Sheet Auto Sync” card မှာ Webhook URL ထည့်ပြီး Save Integration / Test Connection လုပ်ပါ။</small>
-            </div>
-          </div>
-        </section> : null}
+        {data && section === 'operations' ? <PostgreSQLSettingsHubV23/> : null}
+
+        {data && section === 'integrations' ? <><TelegramAutomationSettings/><GoogleSheetIntegrationSettingsV23/><AgentApiSettings/></> : null}
 
         {data && section === 'users' ? <ProjectUserAccessSettings notify={notify}/> : null}
 

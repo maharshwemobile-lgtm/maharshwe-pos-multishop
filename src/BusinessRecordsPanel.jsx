@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  Ban,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
@@ -75,6 +76,8 @@ function DetailModal({ record, onClose, isMiniMart = false }) {
           <article><span>Created By</span><b>{record.createdByName || '-'}</b><small>{record.createdByUsername || ''}</small></article>
           <article><span>Created At</span><b>{formatDateTime(record.createdAt)}</b></article>
           {record.updatedAt ? <article><span>Updated At</span><b>{formatDateTime(record.updatedAt)}</b></article> : null}
+          {record.voidedAt ? <article><span>Status</span><b className="br-void-text">VOIDED</b><small>{formatDateTime(record.voidedAt)}</small></article> : null}
+          {record.voidedAt ? <article className="wide"><span>Void Reason</span><p>{record.voidReason || '-'}</p><small>{record.voidedByName || ''}</small></article> : null}
           <article className="wide"><span>Note</span><p>{record.note || 'No note.'}</p></article>
           <article className="wide"><span>Record ID</span><code>{record.id}</code></article>
         </div>
@@ -155,6 +158,20 @@ function EditModal({ record, accounts, isMiniMart, saving, onSave, onClose }) {
   );
 }
 
+function VoidModal({ record, saving, reason, setReason, onConfirm, onClose }) {
+  if (!record) return null;
+  return <div className="br-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onClose(); }}>
+    <section className="br-modal br-void-modal" role="dialog" aria-modal="true">
+      <header><div><Ban size={21}/><span><b>Void {record.type === 'income' ? 'Other Income' : 'Expense'}</b><small>{record.businessDate} · {money(record.amount)}</small></span></div><button type="button" disabled={saving} onClick={onClose}><X size={19}/></button></header>
+      <form className="br-edit-form" onSubmit={onConfirm}>
+        <div className="br-warning"><AlertTriangle size={18}/>Void လုပ်ပါက ဆက်စပ် Account balance နှင့် ယနေ့ Total ကို အလိုအလျောက်ပြန်ညှိပါမည်။</div>
+        <label>Void Reason *<input required minLength={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="မှားယွင်းသည့်အကြောင်းရင်း"/></label>
+        <footer><button type="button" disabled={saving} onClick={onClose}>Cancel</button><button type="submit" className="br-confirm-void" disabled={saving || reason.trim().length < 3}>{saving ? <Loader2 className="br-spin" size={18}/> : <Ban size={18}/>} Confirm Void</button></footer>
+      </form>
+    </section>
+  </div>;
+}
+
 export default function BusinessRecordsPanel() {
   const today = yangonToday();
   const session = getSession();
@@ -177,6 +194,9 @@ export default function BusinessRecordsPanel() {
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [voiding, setVoiding] = useState(null);
+  const [voidReason, setVoidReason] = useState('');
+  const [savingVoid, setSavingVoid] = useState(false);
   const [context, setContext] = useState({ accounts: [], closing: null });
   const [formMode, setFormMode] = useState('income');
   const [savingIncome, setSavingIncome] = useState(false);
@@ -190,7 +210,7 @@ export default function BusinessRecordsPanel() {
       from,
       to,
       page: String(page),
-      limit: '20',
+      limit: '10',
     });
     if (query.trim()) search.set('q', query.trim());
     return search;
@@ -334,6 +354,28 @@ export default function BusinessRecordsPanel() {
     }
   };
 
+  const confirmVoid = async (event) => {
+    event.preventDefault();
+    setSavingVoid(true);
+    setError('');
+    setNotice('');
+    try {
+      const response = await apiFetch(`/api/business-control/records/${voiding.type}/${voiding.id}/void`, {
+        method: 'POST',
+        body: { reason: voidReason },
+      });
+      setVoiding(null);
+      setVoidReason('');
+      setNotice(response.message || 'Record voided and account balance restored.');
+      await loadContext();
+      await load();
+    } catch (requestError) {
+      handleError(requestError);
+    } finally {
+      setSavingVoid(false);
+    }
+  };
+
   const accounts = context.accounts || [];
   const dayClosed = Boolean(context.closing);
 
@@ -424,18 +466,19 @@ export default function BusinessRecordsPanel() {
           </thead>
           <tbody>
             {(data.rows || []).map((record) => (
-              <tr key={record.id}>
+              <tr key={record.id} className={record.voidedAt ? 'br-voided-row' : ''}>
                 <td><b>{record.businessDate}</b><small>{formatDateTime(record.createdAt)}</small></td>
                 <td><span className={`br-category ${record.category === 'SERVICE_INCOME' ? 'service' : ''}`}>{categoryLabel(record, isMiniMart)}</span></td>
                 <td><b>{record.title || '-'}</b></td>
-                <td><strong className={type === 'expense' ? 'expense' : 'income'}>{money(record.amount)}</strong></td>
+                <td><strong className={type === 'expense' ? 'expense' : 'income'}>{money(record.amount)}</strong>{record.voidedAt ? <small className="br-void-text">VOIDED</small> : null}</td>
                 <td><b>{record.method}</b><small>{record.accountName || 'No account'}</small></td>
                 <td><span className="br-note">{record.note || '-'}</span></td>
                 <td><b>{record.createdByName || '-'}</b><small>{record.createdByUsername || ''}</small></td>
                 <td>
                   <div className="br-row-actions">
                     <button type="button" className="br-view" onClick={() => setSelected(record)}><Eye size={17} /> View</button>
-                    {canWriteAccounting ? <button type="button" className="br-edit" onClick={() => setEditing(record)}><Pencil size={17} /> Edit</button> : null}
+                    {canWriteAccounting && !record.voidedAt ? <button type="button" className="br-edit" onClick={() => setEditing(record)}><Pencil size={17} /> Edit</button> : null}
+                    {canWriteAccounting && !record.voidedAt ? <button type="button" className="br-void" onClick={() => { setVoiding(record); setVoidReason(''); }}><Ban size={17}/> Void</button> : null}
                   </div>
                 </td>
               </tr>
@@ -457,6 +500,7 @@ export default function BusinessRecordsPanel() {
 
       <DetailModal record={selected} isMiniMart={isMiniMart} onClose={() => setSelected(null)} />
       <EditModal record={editing} accounts={accounts} isMiniMart={isMiniMart} saving={savingEdit} onSave={saveEdit} onClose={() => setEditing(null)} />
+      <VoidModal record={voiding} saving={savingVoid} reason={voidReason} setReason={setVoidReason} onConfirm={confirmVoid} onClose={() => setVoiding(null)}/>
     </section>
   );
 }

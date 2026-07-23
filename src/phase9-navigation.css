@@ -52,6 +52,27 @@ button:has(.lucide-refresh-cw),
 .topbar-phase-label{display:none!important}
 html{scroll-behavior:smooth}
 body{overscroll-behavior-y:none}
+.topbar-brand-logo{
+  background:#fff;
+  padding:3px;
+  box-shadow:0 8px 18px rgba(15,23,42,.10);
+}
+.topbar-user-profile{
+  padding:8px 12px;
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  background:rgba(255,255,255,.72);
+}
+.topbar-user-profile b,
+.topbar-user-profile small{
+  text-align:left;
+}
+.phase9-sidebar .brand img{
+  border-radius:16px;
+  background:#fff;
+  padding:3px;
+  box-shadow:0 10px 22px rgba(2,6,23,.18);
+}
 @media(max-width:900px){
   html,body,#root{max-width:100%;overflow-x:hidden}
   body{-webkit-text-size-adjust:100%;touch-action:manipulation}
@@ -247,4 +268,70 @@ body{overscroll-behavior-y:none}
   .app-menu-tour-actions button{
     width:100%;
   }
+}
+.global-language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--app-border, #dbe4ea);
+  border-radius: 12px;
+  background: var(--app-surface, #fff);
+  color: var(--app-muted, #64748b);
+  white-space: nowrap;
+}
+.global-language-switcher > svg { margin: 0 4px; flex: 0 0 auto; }
+.global-language-switcher button {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.global-language-switcher button.active { background: #16a34a; color: #fff; }
+.global-language-switcher button:focus-visible { outline: 3px solid rgba(22, 163, 74, .25); outline-offset: 1px; }
+
+@media (max-width: 700px) {
+  .global-language-switcher > svg { display: none; }
+  .global-language-switcher button { min-height: 30px; padding: 4px 7px; font-size: 10px; }
+}
+
+/* Shared POS shell polish: consistent controls, readable Myanmar text and safe overflow. */
+.phase9-app :where(button, input, select, textarea) { font: inherit; }
+.phase9-app :where(button, [role="button"], input, select, textarea):focus-visible {
+  outline: 3px solid rgba(22, 163, 74, .2);
+  outline-offset: 2px;
+}
+.phase9-app :where(input, select, textarea) {
+  min-width: 0;
+  border-radius: 10px;
+}
+.phase9-app :where(h1, h2, h3, h4, p, span, b, small, label, th, td) {
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.phase9-app :where(table) { width: 100%; }
+.phase9-app :where(th) { white-space: nowrap; }
+.phase9-app :where(.card, section, article, dialog) { min-width: 0; }
+.phase9-app :where(button) { min-height: 36px; }
+.phase9-app :where(button.primary, .primary) { font-weight: 800; }
+.phase9-app :where(button.danger, .danger, .destructive) { color: #fff; background: #dc2626; }
+
+html[lang="my"] .phase9-app {
+  font-family: "Noto Sans Myanmar", "Pyidaungsu", "Myanmar Text", system-ui, sans-serif;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .topbar { gap: 8px; padding-inline: 10px; }
+  .topbar-title-copy { min-width: 0; flex: 1 1 auto; }
+  .topbar-title-copy h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-user-profile { display: none; }
+  .phase9-app .content { min-width: 0; overflow-x: clip; }
+  .phase9-app :where(button, input, select) { min-height: 40px; }
 }

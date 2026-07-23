@@ -18,6 +18,7 @@ const loginSchema = z.object({
   password: z.string().min(1).max(200),
   shopSlug: z.string().trim().min(1).max(80).optional(),
   shop: z.string().trim().min(1).max(80).optional(),
+  turnstileToken: z.string().trim().max(2048).optional(),
 });
 
 const registerSchema = z.object({
@@ -29,6 +30,7 @@ const registerSchema = z.object({
   phone: z.string().trim().max(60).optional(),
   businessType: z.enum(["PHONE_SHOP", "MINI_MART"]).default("PHONE_SHOP"),
   address: z.string().trim().max(300).optional(),
+  turnstileToken: z.string().trim().max(2048).optional(),
 });
 
 const changePasswordSchema = z.object({
@@ -36,19 +38,192 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8).max(200),
 });
 
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 20,
+function authClientIp(req) {
+  return String(req.ip || req.socket?.remoteAddress || 'unknown');
+}
+
+function authLimitHandler(kind) {
+  return (req, res) => {
+    console.warn('[AUTH_SECURITY]', JSON.stringify({ event: 'RATE_LIMITED', kind, ip: authClientIp(req), username: normalizeUsername(req.body?.username).slice(0, 80), at: new Date().toISOString() }));
+    res.status(429).json({ ok: false, message: kind === 'register' ? 'Registration attempts are temporarily limited. Please try again later.' : 'Too many login attempts. Please wait and try again.' });
+  };
+}
+
+const loginBurstLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 12,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  keyGenerator: (req) => rateLimit.ipKeyGenerator(authClientIp(req)),
+  handler: authLimitHandler('login'),
+});
+
+const loginCredentialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 8,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `${rateLimit.ipKeyGenerator(authClientIp(req))}:${normalizeUsername(req.body?.username)}`,
+  handler: authLimitHandler('login'),
 });
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 10,
+  limit: 3,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  keyGenerator: (req) => rateLimit.ipKeyGenerator(authClientIp(req)),
+  handler: authLimitHandler('register'),
 });
+
+const registerGlobalLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 25,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: () => 'all-self-registration',
+  handler: authLimitHandler('register'),
+});
+
+function turnstileConfig() {
+  const siteKey = String(process.env.TURNSTILE_SITE_KEY || '').trim();
+  const secretKey = String(process.env.TURNSTILE_SECRET_KEY || '').trim();
+  return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
+}
+
+const superLoginFailures = new Map();
+const appLoginFailures = new Map();
+const SUPER_CAPTCHA_THRESHOLD = Math.max(1, Number(process.env.SUPER_ADMIN_CAPTCHA_THRESHOLD || 3));
+const APP_CAPTCHA_THRESHOLD = Math.max(1, Number(process.env.APP_LOGIN_CAPTCHA_THRESHOLD || 3));
+const SUPER_FAILURE_WINDOW_MS = Math.max(60_000, Number(process.env.SUPER_ADMIN_FAILURE_WINDOW_MS || 15 * 60 * 1000));
+
+function superTurnstileConfig() {
+  const siteKey = String(process.env.SUPER_ADMIN_TURNSTILE_SITE_KEY || '').trim();
+  const secretKey = String(process.env.SUPER_ADMIN_TURNSTILE_SECRET_KEY || '').trim();
+  return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
+}
+
+function appTurnstileConfig() {
+  const siteKey = String(process.env.APP_TURNSTILE_SITE_KEY || '').trim();
+  const secretKey = String(process.env.APP_TURNSTILE_SECRET_KEY || '').trim();
+  return { siteKey, secretKey, enabled: Boolean(siteKey && secretKey) };
+}
+
+function isSuperLoginRequest(req) {
+  const host = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase();
+  return host === 'super.maharshwe.shop';
+}
+
+function isAppLoginRequest(req) {
+  const host = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase();
+  return host === 'app.maharshwe.shop';
+}
+
+function currentAppFailures(req) {
+  const key = authClientIp(req);
+  const entry = appLoginFailures.get(key);
+  if (!entry || Date.now() - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS) {
+    appLoginFailures.delete(key);
+    return 0;
+  }
+  return entry.count;
+}
+
+function recordAppFailure(req) {
+  const key = authClientIp(req);
+  const now = Date.now();
+  const entry = appLoginFailures.get(key);
+  const next = !entry || now - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS
+    ? { count: 1, firstFailedAt: now }
+    : { ...entry, count: entry.count + 1 };
+  appLoginFailures.set(key, next);
+  return next.count;
+}
+
+function clearAppFailures(req) {
+  appLoginFailures.delete(authClientIp(req));
+}
+
+function superFailureKey(req) {
+  return authClientIp(req);
+}
+
+function currentSuperFailures(req, username) {
+  const key = superFailureKey(req);
+  const entry = superLoginFailures.get(key);
+  if (!entry || Date.now() - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS) {
+    superLoginFailures.delete(key);
+    return 0;
+  }
+  return entry.count;
+}
+
+function recordSuperFailure(req, username) {
+  const key = superFailureKey(req);
+  const now = Date.now();
+  const entry = superLoginFailures.get(key);
+  const next = !entry || now - entry.firstFailedAt > SUPER_FAILURE_WINDOW_MS
+    ? { count: 1, firstFailedAt: now }
+    : { ...entry, count: entry.count + 1 };
+  superLoginFailures.set(key, next);
+  return next.count;
+}
+
+function clearSuperFailures(req, username) {
+  superLoginFailures.delete(superFailureKey(req));
+}
+
+async function verifySuperTurnstile(token, ip) {
+  const config = superTurnstileConfig();
+  if (!config.enabled) return { success: false, reason: 'not-configured' };
+  if (!token) return { success: false, reason: 'missing-token' };
+  try {
+    const body = new URLSearchParams({ secret: config.secretKey, response: token, remoteip: ip });
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body,
+      signal: AbortSignal.timeout(8000),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success === true, errors: result['error-codes'] || [] };
+  } catch (error) {
+    console.error('[AUTH_SECURITY] Super admin Turnstile verification failed:', error.message);
+    return { success: false, reason: 'verification-unavailable' };
+  }
+}
+
+async function verifyAppTurnstile(token, ip) {
+  const config = appTurnstileConfig();
+  if (!config.enabled) return { success: false, reason: 'not-configured' };
+  if (!token) return { success: false, reason: 'missing-token' };
+  try {
+    const body = new URLSearchParams({ secret: config.secretKey, response: token, remoteip: ip });
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST', body, signal: AbortSignal.timeout(8000),
+    });
+    const result = await response.json();
+    return { success: response.ok && result.success === true, errors: result['error-codes'] || [] };
+  } catch (error) {
+    console.error('[AUTH_SECURITY] App Turnstile verification failed:', error.message);
+    return { success: false, reason: 'verification-unavailable' };
+  }
+}
+
+async function verifyTurnstile(token, ip) {
+  const config = turnstileConfig();
+  if (!config.enabled) return { success: true, skipped: true };
+  if (!token) return { success: false, reason: 'missing-token' };
+  try {
+    const body = new URLSearchParams({ secret: config.secretKey, response: token, remoteip: ip });
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body, signal: AbortSignal.timeout(8000) });
+    const result = await response.json();
+    return { success: response.ok && result.success === true, errors: result['error-codes'] || [] };
+  } catch (error) {
+    console.error('[AUTH_SECURITY] Turnstile verification failed:', error.message);
+    return { success: false, reason: 'verification-unavailable' };
+  }
+}
 
 const SHOP_ADMIN_PERMISSIONS = {
   "tab.Dashboard": true,
@@ -109,6 +284,22 @@ function normalizeTenantCode(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function looksLikeAutomatedRegistration(input) {
+  const email = normalizeUsername(input?.username);
+  const [local = '', domain = ''] = email.split('@');
+  const shopName = String(input?.shopName || '').trim();
+  const shopSlug = normalizeSlug(input?.shopSlug || '');
+  const compactShop = shopName.replace(/\s+/g, '');
+  const generatedLocal = /^f[a-f0-9]{7,12}a$/i.test(local);
+  const generatedShop = /^fl[a-f0-9]{7,12}$/i.test(compactShop)
+    || /^fl[a-f0-9]{7,12}$/i.test(shopSlug);
+  const loadTestShop = /^stressshop[a-z0-9]{4,16}$/i.test(compactShop)
+    || /^stress-shop-[a-z0-9]{4,16}$/i.test(shopSlug)
+    || /^ratetest\d{1,4}$/i.test(compactShop)
+    || /^ratetest\d{1,4}$/i.test(shopSlug);
+  return (domain === 'm.com' && generatedLocal && generatedShop) || loadTestShop;
 }
 
 function addDays(date, days) {
@@ -228,6 +419,7 @@ function signToken(user) {
 }
 
 async function writeAudit({ shopId, userId, action, details, req }) {
+  if (req?.authAuditMiddlewareActive) return;
   try {
     await prisma.auditLog.create({
       data: {
@@ -308,6 +500,20 @@ async function registerHandler(req, res) {
   }
 
   const input = parsed.data;
+  if (looksLikeAutomatedRegistration(input)) {
+    console.warn('[AUTH_SECURITY]', JSON.stringify({
+      event: 'SUSPICIOUS_REGISTRATION_REJECTED',
+      ip: authClientIp(req),
+      username: normalizeUsername(input.username).slice(0, 80),
+      at: new Date().toISOString(),
+    }));
+    return res.status(403).json({ ok: false, message: 'Registration could not be completed. Please use a valid business email and shop name.' });
+  }
+  const challenge = await verifyTurnstile(input.turnstileToken, authClientIp(req));
+  if (!challenge.success) {
+    console.warn('[AUTH_SECURITY]', JSON.stringify({ event: 'TURNSTILE_REJECTED', ip: authClientIp(req), reason: challenge.reason || challenge.errors, at: new Date().toISOString() }));
+    return res.status(403).json({ ok: false, message: 'Security verification failed. Please refresh and try again.' });
+  }
   const normalizedUsername = normalizeUsername(input.username);
   const businessType = normalizeBusinessType(input.businessType);
   const now = new Date();
@@ -328,7 +534,9 @@ async function registerHandler(req, res) {
       message: "Account already exists. Please login.",
     });
   }
-  const trialEndsAt = addDays(now, 7);
+  const trialDays = Number(process.env.SELF_REGISTER_TRIAL_DAYS || 30);
+  const safeTrialDays = Number.isFinite(trialDays) && trialDays >= 1 && trialDays <= 365 ? Math.floor(trialDays) : 30;
+  const trialEndsAt = addDays(now, safeTrialDays);
 
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -344,7 +552,7 @@ async function registerHandler(req, res) {
           businessType,
           phone: input.phone || null,
           address: input.address || null,
-          active: false,
+          active: true,
         },
       });
 
@@ -354,7 +562,7 @@ async function registerHandler(req, res) {
           status: "TRIAL",
           startsAt: now,
           endsAt: trialEndsAt,
-          notes: "7-day free trial created during self-registration",
+          notes: `${safeTrialDays}-day free trial created during self-registration`,
         },
       });
 
@@ -363,8 +571,8 @@ async function registerHandler(req, res) {
           shopId: shop.id,
           receiptHeader: input.shopName.trim(),
           settings: {
-            tenant: { selfRegistered: true, tenantId: code, trialDays: 7, businessType, createdAt: now.toISOString() },
-            platform: { adminPortalEnabled: false, portalEnabledByGrandAdmin: false },
+            tenant: { selfRegistered: true, tenantId: code, trialDays: safeTrialDays, businessType, createdAt: now.toISOString() },
+            platform: { adminPortalEnabled: true, portalEnabledByGrandAdmin: true },
           },
         },
       });
@@ -408,7 +616,7 @@ async function registerHandler(req, res) {
 
     return res.status(201).json({
       ok: true,
-      message: "Tenant registered. Grand Super Admin approval is required before login.",
+      message: `${safeTrialDays}-day free trial active. You can login now.`,
       tenant: publicShop(created.user.shop),
       user: publicUser(created.user),
     });
@@ -514,6 +722,44 @@ async function loginHandler(req, res) {
   const username = parsed.data.username;
   const password = parsed.data.password;
   const shopSlug = String(parsed.data.shopSlug || parsed.data.shop || "").trim();
+  const superLogin = isSuperLoginRequest(req);
+  const appLogin = isAppLoginRequest(req);
+  const superCaptchaEnabled = superTurnstileConfig().enabled;
+  const appCaptchaEnabled = appTurnstileConfig().enabled;
+  const previousSuperFailures = superLogin ? currentSuperFailures(req, username) : 0;
+  const previousAppFailures = appLogin ? currentAppFailures(req) : 0;
+
+  if (superLogin && superCaptchaEnabled && previousSuperFailures >= SUPER_CAPTCHA_THRESHOLD) {
+    const challenge = await verifySuperTurnstile(parsed.data.turnstileToken, authClientIp(req));
+    if (!challenge.success) {
+      console.warn('[AUTH_SECURITY]', JSON.stringify({
+        event: 'SUPER_ADMIN_TURNSTILE_REJECTED',
+        ip: authClientIp(req),
+        reason: challenge.reason || challenge.errors,
+        at: new Date().toISOString(),
+      }));
+      return res.status(403).json({
+        ok: false,
+        message: 'Please complete the security check before trying again.',
+        captchaRequired: true,
+      });
+    }
+  }
+
+  if (appLogin && appCaptchaEnabled && previousAppFailures >= APP_CAPTCHA_THRESHOLD) {
+    const challenge = await verifyAppTurnstile(parsed.data.turnstileToken, authClientIp(req));
+    if (!challenge.success) {
+      console.warn('[AUTH_SECURITY]', JSON.stringify({
+        event: 'APP_LOGIN_TURNSTILE_REJECTED', ip: authClientIp(req),
+        reason: challenge.reason || challenge.errors, at: new Date().toISOString(),
+      }));
+      return res.status(403).json({
+        ok: false,
+        message: 'Security verification ကိုပြီးအောင်လုပ်ပြီး ပြန်ဝင်ပါ။',
+        captchaRequired: true,
+      });
+    }
+  }
 
   try {
     const { user, reason } = await findLoginUser({ username, shopSlug });
@@ -527,7 +773,16 @@ async function loginHandler(req, res) {
         reason === "SHOP_SLUG_REQUIRED"
           ? "ဆိုင်ကုဒ် / Tenant ID လိုအပ်သည်"
           : "Username or password is incorrect";
-      return res.status(401).json({ ok: false, message });
+      const failures = superLogin ? recordSuperFailure(req, username) : 0;
+      const appFailures = appLogin ? recordAppFailure(req) : 0;
+      return res.status(401).json({
+        ok: false,
+        message,
+        captchaRequired: Boolean(
+          (superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD) ||
+          (appLogin && appCaptchaEnabled && appFailures >= APP_CAPTCHA_THRESHOLD)
+        ),
+      });
     }
 
     if (user.shop && !user.shop.active) {
@@ -550,8 +805,20 @@ async function loginHandler(req, res) {
         details: { username: user.normalizedUsername, reason: "BAD_PASSWORD" },
         req,
       });
-      return res.status(401).json({ ok: false, message: "Username or password is incorrect" });
+      const failures = superLogin ? recordSuperFailure(req, username) : 0;
+      const appFailures = appLogin ? recordAppFailure(req) : 0;
+      return res.status(401).json({
+        ok: false,
+        message: "Username or password is incorrect",
+        captchaRequired: Boolean(
+          (superLogin && superCaptchaEnabled && failures >= SUPER_CAPTCHA_THRESHOLD) ||
+          (appLogin && appCaptchaEnabled && appFailures >= APP_CAPTCHA_THRESHOLD)
+        ),
+      });
     }
+
+    if (superLogin) clearSuperFailures(req, username);
+    if (appLogin) clearAppFailures(req);
 
     const demoAutoCleanup = await maybeAutoCleanupDemoData(user);
 
@@ -852,9 +1119,37 @@ function requireWritableSubscription(req, res, next) {
 }
 
 function attachAuthApi(app) {
-  app.post("/api/auth/register", registerLimiter, registerHandler);
-  app.post("/api/auth/login", loginLimiter, loginHandler);
-  app.post("/api/login", loginLimiter, loginHandler);
+  app.get('/api/auth/security-config', (_req, res) => {
+    const config = turnstileConfig();
+    res.set('Cache-Control', 'no-store').json({ ok: true, turnstile: { enabled: config.enabled, siteKey: config.enabled ? config.siteKey : null } });
+  });
+  app.get('/api/auth/super-security-config', (req, res) => {
+    const config = superTurnstileConfig();
+    const hostAllowed = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase() === 'super.maharshwe.shop';
+    res.set('Cache-Control', 'no-store').json({
+      ok: true,
+      turnstile: {
+        enabled: Boolean(hostAllowed && config.enabled),
+        siteKey: hostAllowed && config.enabled ? config.siteKey : null,
+        threshold: SUPER_CAPTCHA_THRESHOLD,
+      },
+    });
+  });
+  app.get('/api/auth/login-security-config', (req, res) => {
+    const config = appTurnstileConfig();
+    const hostAllowed = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase() === 'app.maharshwe.shop';
+    res.set('Cache-Control', 'no-store').json({
+      ok: true,
+      turnstile: {
+        enabled: Boolean(hostAllowed && config.enabled),
+        siteKey: hostAllowed && config.enabled ? config.siteKey : null,
+        threshold: APP_CAPTCHA_THRESHOLD,
+      },
+    });
+  });
+  app.post("/api/auth/register", registerGlobalLimiter, registerLimiter, registerHandler);
+  app.post("/api/auth/login", loginBurstLimiter, loginCredentialLimiter, loginHandler);
+  app.post("/api/login", loginBurstLimiter, loginCredentialLimiter, loginHandler);
   app.post("/api/auth/change-password", requireAuth, changePasswordHandler);
   app.get("/api/auth/me", requireAuth, (req, res) => res.json({ ok: true, user: req.auth.user }));
   app.post("/api/auth/logout", requireAuth, async (req, res) => {

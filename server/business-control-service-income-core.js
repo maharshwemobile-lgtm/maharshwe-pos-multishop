@@ -18,7 +18,7 @@ async function serviceIncomeTotal(shopId, businessDate) {
     const rows = await prisma.$queryRawUnsafe(
       `SELECT COALESCE(SUM(amount),0) AS total
          FROM business_other_income
-        WHERE shop_id=$1::uuid AND income_date=$2::date AND source LIKE $3`,
+        WHERE shop_id=$1::uuid AND income_date=$2::date AND source LIKE $3 AND voided_at IS NULL`,
       shopId,
       businessDate,
       `${SERVICE_PREFIX}%`,

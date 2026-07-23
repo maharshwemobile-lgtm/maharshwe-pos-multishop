@@ -91,10 +91,26 @@ const staffSchema = z.object({
   staffTitle: z.string().trim().max(80).nullable().optional(),
 });
 
+const createStaffSchema = z.object({
+  username: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().max(180).optional().or(z.literal("")),
+  name: z.string().trim().min(1).max(180),
+  password: z.string().min(8).max(200),
+  role: z.enum(["SHOP_ADMIN", "CASHIER"]).default("CASHIER"),
+  branchId: z.string().trim().max(120).nullable().optional(),
+  staffTitle: z.string().trim().max(80).nullable().optional(),
+  permissions: z.record(z.any()).optional(),
+  active: z.boolean().default(true),
+});
+
 const resetPasswordSchema = z.object({
   password: z.string().min(8).max(200),
   mustChange: z.boolean().default(true),
 });
+
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
 function publicStaff(user) {
   const permissions = settingsObject(user.permissions);
@@ -114,9 +130,149 @@ function publicStaff(user) {
   };
 }
 
+function number(value) {
+  return Number(value || 0);
+}
+
+function branchName(branches, branchId) {
+  if (!branchId) return "Unassigned / Main";
+  return branches.find((branch) => branch.id === branchId)?.name || "Unassigned / Main";
+}
+
+function branchIdForSale(sale) {
+  const permissions = settingsObject(sale.user?.permissions);
+  return permissions.branchId || "";
+}
+
+function pushTopProduct(bucket, item) {
+  const key = item.productVariantId || `${item.productNameSnapshot}-${item.variantNameSnapshot || ""}`;
+  const current = bucket.get(key) || {
+    key,
+    name: item.productNameSnapshot || "Product",
+    variantName: item.variantNameSnapshot || "",
+    quantity: 0,
+    revenue: 0,
+    profit: 0,
+  };
+  current.quantity += number(item.quantity);
+  current.revenue += number(item.actualSoldPrice) * number(item.quantity);
+  current.profit += number(item.profit);
+  bucket.set(key, current);
+}
+
+function buildShopAdminAnalytics(branches, sales, inventoryRows) {
+  const branchMap = new Map();
+  const allProducts = new Map();
+
+  branches.forEach((branch) => {
+    branchMap.set(branch.id, {
+      branchId: branch.id,
+      branchName: branch.name,
+      code: branch.code || "",
+      salesCount: 0,
+      revenue: 0,
+      profit: 0,
+      topProductsMap: new Map(),
+    });
+  });
+
+  if (!branchMap.has("")) {
+    branchMap.set("", {
+      branchId: "",
+      branchName: "Unassigned / Main",
+      code: "",
+      salesCount: 0,
+      revenue: 0,
+      profit: 0,
+      topProductsMap: new Map(),
+    });
+  }
+
+  sales.forEach((sale) => {
+    const branchId = branchIdForSale(sale);
+    const bucket = branchMap.get(branchId) || branchMap.get("");
+    bucket.salesCount += 1;
+    bucket.revenue += number(sale.total);
+    bucket.profit += number(sale.profitTotal);
+    (sale.items || []).forEach((item) => {
+      pushTopProduct(bucket.topProductsMap, item);
+      pushTopProduct(allProducts, item);
+    });
+  });
+
+  const toTopProducts = (map, limit = 5) => Array.from(map.values())
+    .sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue)
+    .slice(0, limit)
+    .map((item) => ({
+      ...item,
+      revenue: Math.round(item.revenue),
+      profit: Math.round(item.profit),
+    }));
+
+  const branchSales = Array.from(branchMap.values())
+    .map((branch) => ({
+      branchId: branch.branchId,
+      branchName: branch.branchName,
+      code: branch.code,
+      salesCount: branch.salesCount,
+      revenue: Math.round(branch.revenue),
+      profit: Math.round(branch.profit),
+      topProducts: toTopProducts(branch.topProductsMap, 3),
+    }))
+    .sort((a, b) => b.revenue - a.revenue || b.salesCount - a.salesCount);
+
+  const outOfStock = inventoryRows
+    .filter((row) => number(row.quantity) <= 0)
+    .map((row) => ({
+      productVariantId: row.productVariantId,
+      productName: row.productVariant?.product?.name || "Product",
+      variantName: row.productVariant?.variantName || "",
+      sku: row.productVariant?.sku || "",
+      barcode: row.productVariant?.barcode || "",
+      quantity: number(row.quantity),
+      scope: "Shop inventory",
+    }))
+    .slice(0, 20);
+
+  const lowStock = inventoryRows
+    .filter((row) => number(row.minAlertQuantity) > 0 && number(row.quantity) > 0 && number(row.quantity) <= number(row.minAlertQuantity))
+    .map((row) => ({
+      productVariantId: row.productVariantId,
+      productName: row.productVariant?.product?.name || "Product",
+      variantName: row.productVariant?.variantName || "",
+      sku: row.productVariant?.sku || "",
+      barcode: row.productVariant?.barcode || "",
+      quantity: number(row.quantity),
+      minAlertQuantity: number(row.minAlertQuantity),
+      scope: "Shop inventory",
+    }))
+    .slice(0, 20);
+
+  const totalRevenue = branchSales.reduce((sum, branch) => sum + branch.revenue, 0);
+  const totalProfit = branchSales.reduce((sum, branch) => sum + branch.profit, 0);
+  const totalSales = branchSales.reduce((sum, branch) => sum + branch.salesCount, 0);
+
+  return {
+    period: "Last 30 days",
+    totalRevenue,
+    totalProfit,
+    totalSales,
+    branchSales,
+    topProducts: toTopProducts(allProducts, 10),
+    stockAlerts: {
+      outOfStock,
+      lowStock,
+      outOfStockCount: outOfStock.length,
+      lowStockCount: lowStock.length,
+    },
+    stockScopeNote: "Current database stores inventory at shop level. Branch sales are calculated from each staff member's assigned branch.",
+  };
+}
+
 async function overview(req, res) {
   const shopId = req.auth.shopId;
-  const [{ branches }, users, metrics, auditLogs] = await Promise.all([
+  const since = new Date(Date.now() - 30 * 86400000);
+  const [{ branches }, users, metrics, auditLogs, recentSales, inventoryRows] = await Promise.all([
     getShopSettings(shopId),
     prisma.user.findMany({
       where: { shopId },
@@ -146,7 +302,25 @@ async function overview(req, res) {
       take: 40,
       include: { user: { select: { name: true, username: true, role: true } } },
     }),
+    prisma.sale.findMany({
+      where: { shopId, status: { not: "VOIDED" }, soldAt: { gte: since } },
+      orderBy: { soldAt: "desc" },
+      take: 5000,
+      include: {
+        user: { select: { id: true, name: true, username: true, permissions: true } },
+        items: true,
+      },
+    }),
+    prisma.inventoryBalance.findMany({
+      where: { shopId },
+      include: {
+        productVariant: { include: { product: true } },
+      },
+      orderBy: { quantity: "asc" },
+      take: 5000,
+    }),
   ]);
+  const analytics = buildShopAdminAnalytics(branches, recentSales, inventoryRows);
 
   res.json({
     ok: true,
@@ -160,6 +334,7 @@ async function overview(req, res) {
       staff: users.length,
       activeBranches: branches.filter((item) => item.active !== false).length,
     },
+    analytics,
     auditLogs,
   });
 }
@@ -251,6 +426,63 @@ async function updateStaff(req, res) {
   res.json({ ok: true, user: publicStaff(user) });
 }
 
+async function createStaff(req, res) {
+  const parsed = createStaffSchema.safeParse(req.body || {});
+  if (!parsed.success) return res.status(400).json({ ok: false, message: "Invalid staff", errors: parsed.error.flatten().fieldErrors });
+
+  const shopId = req.auth.shopId;
+  const input = parsed.data;
+  const normalizedUsername = normalizeUsername(input.username);
+  const email = normalizeUsername(input.email || "");
+  const existing = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { shopId, normalizedUsername },
+        ...(email ? [{ email }] : []),
+      ],
+    },
+    select: { id: true },
+  });
+  if (existing) return res.status(409).json({ ok: false, message: "Username or email already exists" });
+
+  const permissions = {
+    ...(input.permissions || {}),
+    branchId: input.branchId || "",
+    staffTitle: input.staffTitle || (input.role === "SHOP_ADMIN" ? "Admin" : "Cashier"),
+  };
+
+  const user = await prisma.user.create({
+    data: {
+      shopId,
+      username: input.username.trim(),
+      normalizedUsername,
+      email: email || null,
+      name: input.name.trim(),
+      role: input.role,
+      active: input.active !== false,
+      permissions,
+      passwordHash: await bcrypt.hash(input.password, 12),
+      passwordMustChange: true,
+      authProvider: "password",
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      name: true,
+      role: true,
+      permissions: true,
+      active: true,
+      authProvider: true,
+      lastLoginAt: true,
+      createdAt: true,
+    },
+  });
+
+  await audit(req, "SHOP_STAFF_CREATED", "user", user.id, { username: user.username, role: user.role, branchId: permissions.branchId });
+  res.status(201).json({ ok: true, user: publicStaff(user) });
+}
+
 async function resetStaffPassword(req, res) {
   const parsed = resetPasswordSchema.safeParse(req.body || {});
   if (!parsed.success) return res.status(400).json({ ok: false, message: "Invalid password reset", errors: parsed.error.flatten().fieldErrors });
@@ -277,6 +509,7 @@ function attachShopAdminBranchControlApi(app) {
   app.get("/api/shop-admin/branches/overview", requireAuth, requireShopAdmin, overview);
   app.post("/api/shop-admin/branches", requireAuth, requireShopAdmin, createBranch);
   app.patch("/api/shop-admin/branches/:branchId", requireAuth, requireShopAdmin, updateBranch);
+  app.post("/api/shop-admin/staff", requireAuth, requireShopAdmin, createStaff);
   app.patch("/api/shop-admin/staff/:userId", requireAuth, requireShopAdmin, updateStaff);
   app.patch("/api/shop-admin/staff/:userId/password", requireAuth, requireShopAdmin, resetStaffPassword);
 }

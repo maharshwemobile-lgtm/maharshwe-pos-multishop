@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyRound, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import { getSession, googleLogin, login, registerTenant, subscribeSession } from './phase2Api';
+import LoginFooterActions from './LoginFooterActions.jsx';
 import './auth-gate.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
 const DEFAULT_SHOP_SLUG = import.meta.env.VITE_SHOP_SLUG || '';
-const LOGO_URL = 'https://raw.githubusercontent.com/maharshwemobile-lgtm/maharshwe.shop/main/mahar-pos-logo.png';
+const LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png?v=20260716-all-brand-surfaces';
 
 let googleScriptPromise;
 
@@ -169,7 +170,7 @@ export default function GoogleAuthGate({ children }) {
       return;
     }
     if (!termsAccepted) {
-      setError('7-day free trial စည်းကမ်းချက်ကို လက်ခံပေးပါ။');
+      setError('1-month free trial စည်းကမ်းချက်ကို လက်ခံပေးပါ။');
       return;
     }
 
@@ -218,7 +219,7 @@ export default function GoogleAuthGate({ children }) {
             <a className="ms-auth-logo-link" href="https://maharshwe.shop/">
               <img src={LOGO_URL} alt="Mahar POS Logo" />
               <span>
-                <b>Mahar Shwe Mobile POS</b>
+                <b>Mahar POS</b>
                 <small>app.maharshwe.shop</small>
               </span>
             </a>
@@ -226,7 +227,7 @@ export default function GoogleAuthGate({ children }) {
           </div>
 
           <div className="ms-auth-brand-copy">
-            <p className="ms-auth-pill">7-Day Free Trial ပါဝင်သည်</p>
+            <p className="ms-auth-pill">1 Month Free Trial ပါဝင်သည်</p>
             <h1>
               Mobile Shop ကို
               <span> စနစ်တကျထိန်းချုပ်ပါ</span>
@@ -254,7 +255,7 @@ export default function GoogleAuthGate({ children }) {
           <header className="ms-auth-header">
             <a className="ms-auth-mobile-logo" href="https://maharshwe.shop/">
               <img src={LOGO_URL} alt="Mahar POS" />
-              <span>Mahar Shwe POS</span>
+              <span>Mahar POS</span>
             </a>
             <div className="ms-auth-tabs" role="tablist" aria-label="Login mode">
               <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => switchMode('login')}>
@@ -274,7 +275,7 @@ export default function GoogleAuthGate({ children }) {
                 <p>
                   {mode === 'login'
                     ? 'Tenant ID / Shop Slug နှင့် username/password ဖြင့် Mahar POS Dashboard သို့ ဝင်ပါ။'
-                    : 'ဆိုင်အကောင့်အသစ်ဖွင့်ပြီး 7-day free trial ကို စတင်နိုင်ပါသည်။'}
+                    : 'ဆိုင်အကောင့်အသစ်ဖွင့်ပြီး 1-month free trial ကို စတင်နိုင်ပါသည်။'}
                 </p>
               </div>
 
@@ -282,7 +283,7 @@ export default function GoogleAuthGate({ children }) {
                 <div className="auth-register-success ms-auth-success">
                   <b>Tenant created: {registerSuccess.tenant?.tenantId}</b>
                   <span>Shop Slug: {registerSuccess.tenant?.slug}</span>
-                  <small>7-day free trial active until {new Date(registerSuccess.tenant?.subscription?.endsAt).toLocaleDateString()}။ Tenant ID ကို Login form ထဲ auto-fill လုပ်ထားပြီးပါပြီ။</small>
+                  <small>1-month free trial active until {new Date(registerSuccess.tenant?.subscription?.endsAt).toLocaleDateString()}။ Tenant ID ကို Login form ထဲ auto-fill လုပ်ထားပြီးပါပြီ။</small>
                 </div>
               ) : null}
 
@@ -359,7 +360,7 @@ export default function GoogleAuthGate({ children }) {
                   <div className="ms-auth-google-wrap ms-auth-register-google">
                     <div className="auth-google-button ms-auth-google-render" ref={buttonRef} />
                     <p className="ms-auth-google-note">
-                      Gmail အသစ်ဖြင့်ဝင်ပါက tenant/shop အသစ်ကို 7-day trial ဖြင့် auto-create လုပ်ပေးပါမယ်။
+                      Gmail အသစ်ဖြင့်ဝင်ပါက tenant/shop အသစ်ကို 1-month free trial ဖြင့် auto-create လုပ်ပေးပါမယ်။
                     </p>
                   </div>
 
@@ -372,7 +373,7 @@ export default function GoogleAuthGate({ children }) {
                     </label>
                     <label>
                       <span>ဖုန်းဆိုင်အမည်</span>
-                      <input value={registerForm.shopName} onChange={(event) => setRegisterForm({ ...registerForm, shopName: event.target.value })} placeholder="Mahar Shwe Mobile" required />
+                      <input value={registerForm.shopName} onChange={(event) => setRegisterForm({ ...registerForm, shopName: event.target.value })} placeholder="My Shop" required />
                     </label>
                     <label>
                       <span>Admin Username / Email / Phone</span>
@@ -405,11 +406,11 @@ export default function GoogleAuthGate({ children }) {
                       </div>
                     </label>
                     <div className="ms-auth-trial-note">
-                      အကောင့်ဖွင့်ပြီးပါက Tenant ID ထုတ်ပေးပြီး 7-day free trial စတင်ပါမည်။ Renew လုပ်လျှင် data မပျက်ဘဲ ပြန်အသုံးပြုနိုင်ပါသည်။
+                      အကောင့်ဖွင့်ပြီးပါက Tenant ID ထုတ်ပေးပြီး 1-month free trial စတင်ပါမည်။ Renew လုပ်လျှင် data မပျက်ဘဲ ပြန်အသုံးပြုနိုင်ပါသည်။
                     </div>
                     <label className="ms-auth-terms">
                       <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-                      <span>7-Day Free Trial စည်းကမ်းချက်များနှင့် Mahar POS အသုံးပြုမှု သဘောတူညီချက်များကို လက်ခံပါသည်။</span>
+                      <span>1 Month Free Trial စည်းကမ်းချက်များနှင့် Mahar POS အသုံးပြုမှု သဘောတူညီချက်များကို လက်ခံပါသည်။</span>
                     </label>
                     <button type="submit" disabled={busy}>
                       {busy ? <Loader2 className="auth-gate-spin" size={19} /> : <UserPlus size={19} />}
@@ -429,7 +430,8 @@ export default function GoogleAuthGate({ children }) {
           </div>
 
           <footer className="ms-auth-footer">
-            © 2026 Mahar Shwe Mobile POS. Powered by PostgreSQL Architecture.
+            <LoginFooterActions onForgotPassword={() => setError('Password reset လိုအပ်ပါက Telegram Support မှ Admin ကိုဆက်သွယ်ပါ။')} />
+            © 2026 Mahar POS. Powered by PostgreSQL Architecture.
           </footer>
         </section>
       </section>

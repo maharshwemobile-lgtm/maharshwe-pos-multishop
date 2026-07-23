@@ -5,7 +5,7 @@ import { apiFetch } from './phase2Api';
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
 const statuses = ['', 'DRAFT', 'APPROVED', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED'];
 
-export default function Phase10PurchaseOrderList({ orders, loading, search, status, setSearch, setStatus, onRefresh, onError, onApproved }) {
+export default function Phase10PurchaseOrderList({ orders, loading, search, status, setSearch, setStatus, page, total, totalPages, setPage, onRefresh, onError, onApproved }) {
   const [detail, setDetail] = useState(null);
   const [working, setWorking] = useState(false);
 
@@ -58,6 +58,14 @@ export default function Phase10PurchaseOrderList({ orders, loading, search, stat
             </article>
           ))}
         </div>
+        <footer className="stock-pagination">
+          <span>Showing {orders.length} of {total}</span>
+          <div>
+            <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => Math.max(1, value - 1))}>Previous</button>
+            <b>{page} / {totalPages}</b>
+            <button type="button" disabled={page >= totalPages || loading} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>Next</button>
+          </div>
+        </footer>
       </section>
 
       {detail ? <div className="po-modal-backdrop" onClick={() => setDetail(null)}>

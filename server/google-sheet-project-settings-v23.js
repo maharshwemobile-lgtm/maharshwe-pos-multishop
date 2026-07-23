@@ -34,6 +34,15 @@ function clean(value, max = 500) {
   return String(value ?? '').trim().slice(0, max);
 }
 
+function parseGoogleSheetResponse(text) {
+  try {
+    const data = JSON.parse(String(text || ''));
+    return { data, accepted: data?.ok !== false, message: clean(data?.message || '', 500) };
+  } catch {
+    return { data: null, accepted: true, message: '' };
+  }
+}
+
 function requireManager(req, res, next) {
   if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN' || req.auth?.permissions?.settings === true) return next();
   return res.status(403).json({ ok: false, message: 'Settings permission is required' });
@@ -193,6 +202,8 @@ async function deliverRow(row) {
     });
     const text = await response.text();
     if (!response.ok) throw new Error(`Google Sheet webhook ${response.status}: ${text.slice(0, 300)}`);
+    const result = parseGoogleSheetResponse(text);
+    if (!result.accepted) throw new Error(`Google Sheet rejected sync: ${result.message || text.slice(0, 300)}`);
     await prisma.$executeRawUnsafe(
       `UPDATE google_sheet_sync_outbox SET status='SENT',attempts=attempts+1,last_error=NULL,sent_at=NOW() WHERE id=$1::uuid`,
       row.id,
@@ -273,12 +284,14 @@ async function testConfig(shopId, method = 'POST') {
   } finally {
     clearTimeout(timeout);
   }
+  const parsedResponse = parseGoogleSheetResponse(preview);
   return {
     method,
-    ok: Boolean(response?.ok),
+    ok: Boolean(response?.ok) && parsedResponse.accepted,
     status: response?.status || 0,
     testedAt: new Date().toISOString(),
     responsePreview: preview,
+    message: parsedResponse.accepted ? '' : (parsedResponse.message || 'Google Apps Script rejected the request'),
   };
 }
 
@@ -336,7 +349,7 @@ function attachGoogleSheetProjectSettingsApi(app) {
       const method = req.body?.method === 'GET' ? 'GET' : 'POST';
       const test = await testConfig(req.auth.shopId, method);
       await persistLastTest(req.auth.shopId, test);
-      return res.status(test.ok ? 200 : 502).json({ ok: test.ok, test });
+      return res.status(test.ok ? 200 : 502).json({ ok: test.ok, test, message: test.message || (test.ok ? 'Connection successful' : 'Google Apps Script rejected the connection test') });
     } catch (error) {
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Google Sheet connection test failed' });
     }

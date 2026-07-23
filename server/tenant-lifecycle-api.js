@@ -313,6 +313,18 @@ function serializeSubscription(subscription) {
   if (!subscription) return null;
   const status = effectiveSubscriptionStatus(subscription);
   const metrics = subscriptionMetrics(subscription);
+  const plan = planFromNotes(subscription.notes);
+  const notesText = String(subscription.notes || '').toLowerCase();
+  const isTrialPlan = status === 'TRIAL' || notesText.includes('trial') || notesText.includes('free');
+  const planType = isTrialPlan
+    ? 'free'
+    : status === 'ACTIVE'
+      ? 'paid'
+      : status === 'SUSPENDED'
+        ? 'suspended'
+        : status === 'OVERDUE'
+          ? 'overdue'
+          : 'unknown';
   return {
     id: subscription.id,
     status,
@@ -323,7 +335,17 @@ function serializeSubscription(subscription) {
     endsAt: subscription.endsAt,
     renewedAt: subscription.renewedAt,
     notes: subscription.notes || '',
-    plan: planFromNotes(subscription.notes),
+    plan,
+    planType,
+    planLabel: planType === 'free'
+      ? 'Free User / Trial'
+      : planType === 'paid'
+        ? `Paid User${plan ? ` · ${plan}` : ''}`
+        : planType === 'suspended'
+          ? 'Suspended User'
+          : planType === 'overdue'
+            ? 'Overdue User'
+            : 'Unknown',
     daysLeft: metrics.daysLeft,
     endingSoon: metrics.endingSoon,
     expired: status === 'OVERDUE',
@@ -750,7 +772,7 @@ function attachTenantLifecycleApi(app) {
 
     try {
       const now = new Date();
-      const trialDays = input.trialDays || 7;
+      const trialDays = input.trialDays || 30;
       const created = await prisma.$transaction(async (tx) => {
         const slug = await uniqueShopSlug(input.slug || input.name, tx);
         if (isHiddenTenantSlug(slug)) {
@@ -785,7 +807,7 @@ function attachTenantLifecycleApi(app) {
               create: {
                 settings: {
                   adminPortal: {
-                    planLabel: '7 Day Trial',
+                    planLabel: '1 Month Free Trial',
                     supportTier: 'STANDARD',
                     featurePreset: 'FULL',
                     featureFlags: defaultFeatureFlags(),

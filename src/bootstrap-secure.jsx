@@ -14,7 +14,7 @@ import './ui-polish-v22.css';
 import './product-category-icon.css';
 import './ui-layout-hotfix-v24.css';
 
-const RUNTIME_VERSION = '20260701-google-sheet-hotfix-2';
+const RUNTIME_VERSION = '20260715-project-settings-shop-setup-default';
 
 async function clearLegacyRuntime() {
   try {

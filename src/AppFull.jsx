@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Building2, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingCart, Truck, Users, Wallet,
+import { BarChart3, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
   BadgePercent, Wrench, X } from 'lucide-react';
 import DashboardLive from './DashboardLive.jsx';
 import NewSaleV10 from './sales-v10/NewSaleV10.jsx';
@@ -16,17 +16,18 @@ import AftercareRouter from './AftercareRouter.jsx';
 import CustomersCreditPage from './CustomersCreditPage.jsx';
 import FinanceWorkspace from './FinanceWorkspace.jsx';
 import BusinessRecordsPanel from './BusinessRecordsPanel.jsx';
+import EcommerceCenter from './EcommerceCenter.jsx';
 import AboutUsPage from './AboutUsPage.jsx';
 import MoneyServiceCenterV23 from './MoneyServiceCenterV23.jsx';
 import ReportsWorkspace from './ReportsWorkspace.jsx';
 import AuditTrailPage from './AuditTrailPage.jsx';
 import GrandAdminPortal from './GrandAdminPortal.jsx';
 import BackupRecoveryPage from './BackupRecoveryPage.jsx';
-import ShopAdminBranchControl from './ShopAdminBranchControl.jsx';
 import PartnerSettlementWorkspace from './PartnerSettlementWorkspace.jsx';
 import ProjectSettingsRuntimeBridge from './settings/ProjectSettingsRuntimeBridge.jsx';
 import ProjectFunctionGuard from './settings/ProjectFunctionGuard.jsx';
 import ProjectLanguageRuntime, { applyProjectLanguage } from './settings/ProjectLanguageRuntime.jsx';
+import GlobalLanguageSwitcher from './settings/GlobalLanguageSwitcher.jsx';
 import PushNotificationControl from './PushNotificationControl.jsx';
 import LoginRegisterGate from './LoginRegisterGate.jsx';
 import { PROJECT_LOGO_URL } from './projectBrand.js';
@@ -38,11 +39,10 @@ const menu = [
   { name: 'Sale POS', icon: ShoppingCart, color: '#22c55e' },
   { name: 'Sales History', icon: History, color: '#6366f1' },
   { name: 'Repairs', label: 'Repair Platform', icon: Wrench, color: '#f59e0b' },
-  { name: 'Partner Settlement', label: 'Partner & Settlement', icon: Handshake, color: '#14b8a6' },
   { name: 'Products', icon: Box, color: '#ec4899' },
+  { name: 'Online Shop', label: 'E-commerce Website', icon: ShoppingBag, color: '#059669' },
   { name: 'Prices', label: 'ဈေးနှုန်းနှင့် လျော့ဈေးများ', icon: BadgePercent, color: '#f97316' },
   { name: 'Stock', icon: PackagePlus, color: '#8b5cf6' },
-  { name: 'Branches', label: 'Branches / Staff', icon: Building2, color: '#0ea5e9' },
   { name: 'Purchases', icon: Truck, color: '#06b6d4' },
   { name: 'Customers', label: 'Customers & Credit', icon: Users, color: '#10b981' },
   { name: 'Money Service', label: 'Money Service', icon: CircleDollarSign, color: '#16a34a' },
@@ -50,7 +50,6 @@ const menu = [
   { name: 'Other Records', label: 'Other Records', icon: FileSpreadsheet, color: '#0f766e' },
   { name: 'Reports', label: 'Reports & Performance', icon: BarChart3, color: '#84cc16' },
   { name: 'Audit Trail', icon: ShieldCheck, color: '#0ea5e9' },
-  { name: 'Backup', label: 'Backup & Recovery', icon: DatabaseBackup, color: '#14b8a6' },
   { name: 'Settings', label: 'Project Settings', icon: Settings, color: '#475569' },
   { name: 'About Us', label: 'About Us', icon: Info, color: '#0f766e' },
 ];
@@ -76,6 +75,7 @@ const pageTitles = {
   'Partner Settlement': 'Partner Shop & Weekly Settlement',
   Purchases: 'Suppliers & Purchase Orders',
   Customers: 'Customers & Credit',
+  'Online Shop': 'E-commerce Website',
   'Money Service': 'Money Service',
   Accounting: 'Finance & Accounts',
   'Other Records': 'Other Records',
@@ -84,7 +84,6 @@ const pageTitles = {
   Settings: 'Project Settings',
   'About Us': 'About Us',
   'Prices': 'ဈေးနှုန်းနှင့် လျော့ဈေးများ',
-  Branches: 'Branches / Staff Management',
 };
 
 function recoverIndexedString(value) {
@@ -143,7 +142,6 @@ const legacyVisibility = {
   Products: (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
   'Prices': (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
   Stock: (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
-  Branches: (permissions, role, user) => Boolean(user?.shopId) && (role === 'SHOP_ADMIN' || permissions.settings === true),
   Purchases: (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
   Customers: (permissions) => permissions.sale !== false || permissions.history !== false,
   'Money Service': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
@@ -205,7 +203,17 @@ function effectiveLogo() {
 }
 
 function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = true }) {
-  const logo = effectiveLogo();
+  const businessName = safeText(settings?.business?.name, safeText(user?.shop?.name, 'Business'));
+  const configuredBusinessLogo = safeText(settings?.business?.logoUrl, safeText(user?.shop?.logoUrl, ''));
+  const googleProfileImage = safeText(user?.avatarUrl, safeText(user?.image, ''));
+  const businessLogo = configuredBusinessLogo || googleProfileImage;
+  const businessInitials = businessName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join('')
+    .toUpperCase() || 'BS';
   const businessSubtitle = isMiniMartBusiness(user) ? 'Mini Mart POS & Inventory' : safeText(settings?.business?.subtitle, 'Mobile Shop Management');
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -216,7 +224,12 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
   };
   return <aside className={`sidebar phase9-sidebar ${open ? 'is-open' : 'is-closing'}`} aria-label="Main navigation">
     <button type="button" className="phase9-sidebar-close" onClick={onClose} aria-label="Close menu"><X size={20}/></button>
-    <div className="brand"><img src={logo} alt="Mahar POS"/><div><b>{safeText(settings?.business?.name, 'Mahar POS')}</b><span>{businessSubtitle}</span></div></div>
+    <div className="brand">
+      {businessLogo
+        ? <img src={businessLogo} alt={`${businessName} logo`}/>
+        : <span className="business-logo-fallback" aria-hidden="true">{businessInitials}</span>}
+      <div><b>{businessName}</b><span>{businessSubtitle}</span></div>
+    </div>
     <nav>
       {visibleMenu.map((item) => <button key={item.name} onClick={() => onSelect(item.name)} className={page === item.name ? 'active' : ''}><item.icon size={22} color={page === item.name ? '#fff' : '#94a3b8'} strokeWidth={2}/><span>{item.label || item.name}</span></button>)}
       <button onClick={handleLogout} style={{ marginTop: 'auto', color: '#ef4444' }}><LogOut size={22} color="#ef4444" strokeWidth={2}/><span>Logout</span></button>
@@ -269,7 +282,7 @@ function Topbar({ page, toggle, settings, user, menuOpen }) {
   const isRepair = safePage === 'Repairs';
   const miniMart = isMiniMartBusiness(user);
   const phaseLabel = '';
-  const subtitle = miniMart
+  const subtitle = safePage === 'Prices' ? '' : miniMart
     ? (isDashboard
       ? 'Mini Mart Daily Sales & Stock Overview'
       : `${safeText(settings?.business?.name, 'PostgreSQL tenant connected')} · Mini Mart POS`)
@@ -293,11 +306,12 @@ function Topbar({ page, toggle, settings, user, menuOpen }) {
     <div className="topbar-title-copy">
       {phaseLabel ? <span className="topbar-phase-label">{phaseLabel}</span> : null}
       <h1>{title}</h1>
-      <p>{subtitle}</p>
+      {subtitle ? <p>{subtitle}</p> : null}
     </div>
     <div style={{marginLeft:'auto'}}/>
+    <GlobalLanguageSwitcher/>
     <PushNotificationControl/>
-    <div className="profile"><img src={logo} alt="Mahar POS" style={{width:48,height:48,borderRadius:'50%',objectFit:'contain'}}/><div><b>{safeText(user?.name, 'Mahar POS User')}</b><small>{safeText(user?.role, 'Secure Login')}</small></div></div>
+    <div className="profile"><div><b>{safeText(settings?.business?.name, safeText(user?.shop?.name, 'Business'))}</b><small>{safeText(user?.role, 'Secure Login')}</small></div></div>
   </header>;
 }
 
@@ -333,9 +347,9 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (safePage === 'Repairs') return <Phase8RepairWorkspace/>;
   if (safePage === 'Partner Settlement') return <PartnerSettlementWorkspace/>;
   if (safePage === 'Products') return <ProductsPage onboardingGuide={onboardingGuide}/>;
+  if (safePage === 'Online Shop') return <EcommerceCenter/>;
   if (safePage === 'Prices') return <Connected page={safePage} setPage={setPage}><ProductPriceDiscountPage/></Connected>;
   if (safePage === 'Stock') return <StockWorkspace/>;
-  if (safePage === 'Branches') return <ShopAdminBranchControl/>;
   if (safePage === 'Purchases') return <PurchasingWorkspace/>;
   if (safePage === 'Customers') return <Connected page={safePage} setPage={setPage}><CustomersCreditPage onNavigate={setPage}/></Connected>;
   if (safePage === 'Money Service') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23/></Connected>;

@@ -138,7 +138,18 @@ function serializeUser(user) {
 
 function serializeSubscription(row, shop) {
   const platform = platformFromShop(shop);
+  const labelFromStatus = (status, plan, notes = "") => {
+    const key = String(status || "").toUpperCase();
+    const note = String(notes || "").toLowerCase();
+    if (key === "TRIAL" || note.includes("trial") || note.includes("free")) return { planType: "free", planLabel: "Free User / Trial" };
+    if (key === "ACTIVE") return { planType: "paid", planLabel: `Paid User${plan ? ` · ${plan}` : ""}` };
+    if (key === "SUSPENDED" || key === "CANCELLED" || key === "DELETED") return { planType: "suspended", planLabel: "Suspended / Cancelled" };
+    if (key === "PAST_DUE" || key === "EXPIRED" || key === "OVERDUE") return { planType: "overdue", planLabel: "Overdue User" };
+    return { planType: "unknown", planLabel: key || "Unknown" };
+  };
   if (!row) {
+    const plan = platform.subscriptionPlan || "starter";
+    const label = labelFromStatus(platform.subscriptionStatus || "TRIAL", plan);
     return {
       id: null,
       status: platform.subscriptionStatus || "TRIAL",
@@ -149,13 +160,18 @@ function serializeSubscription(row, shop) {
       monthlyFee: 0,
       setupFee: 0,
       bundleBudget: Number(platform.bundleBudget || 0),
-      plan: platform.subscriptionPlan || "starter",
+      plan,
+      planType: label.planType,
+      planLabel: label.planLabel,
       notes: "",
     };
   }
+  const plan = platform.subscriptionPlan || "starter";
+  const status = platform.subscriptionStatus || specSubscriptionStatus(row.status);
+  const label = labelFromStatus(status, plan, row.notes);
   return {
     id: row.id,
-    status: platform.subscriptionStatus || specSubscriptionStatus(row.status),
+    status,
     legacyStatus: row.status,
     startsAt: row.startsAt,
     endsAt: row.endsAt,
@@ -163,7 +179,9 @@ function serializeSubscription(row, shop) {
     monthlyFee: Number(row.monthlyFee || 0),
     setupFee: Number(row.setupFee || 0),
     bundleBudget: Number(platform.bundleBudget || 0),
-    plan: platform.subscriptionPlan || "starter",
+    plan,
+    planType: label.planType,
+    planLabel: label.planLabel,
     customDays: platform.subscriptionCustomDays || null,
     notes: row.notes || "",
   };
@@ -627,12 +645,19 @@ async function deleteTenant(req, res) {
         error.statusCode = 409;
         throw error;
       }
-      await tx.user.updateMany({ where: { shopId }, data: { active: false } });
-      await shopSettingsPatch(tx, shopId, { shopStatus: "DELETED", tenantPortalStatus: "DELETED", adminPortalEnabled: false, deletedAt: new Date().toISOString(), deletedBy: req.auth?.userId || null }, {});
-      return fetchShop(shopId, tx);
+      const snapshot = {
+        id: shop.id,
+        name: shop.name,
+        slug: shop.slug,
+        code: shop.code,
+        active: shop.active,
+        tenantPortalStatus: tenantPortalStatus(shop),
+      };
+      await tx.shop.delete({ where: { id: shopId } });
+      return snapshot;
     });
-    await writeGrandAdminAudit(req, "SHOP_DELETED", "shop", shopId, { softDelete: true });
-    return res.json({ ok: true, shopId, status: "DELETED", tenantPortalStatus: tenantPortalStatus(result), message: "Tenant soft-deleted after suspension" });
+    await writeGrandAdminAudit(req, "SHOP_PERMANENTLY_DELETED", "shop", shopId, result);
+    return res.json({ ok: true, shopId, status: "PERMANENTLY_DELETED", message: "Tenant permanently deleted", deleted: result });
   } catch (error) {
     return res.status(error.statusCode || 500).json({ ok: false, message: error.message || "Tenant delete failed" });
   }

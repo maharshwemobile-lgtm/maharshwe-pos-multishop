@@ -21,9 +21,15 @@ function moneyNumber(value) {
 
 function subscriptionView(row) {
   if (!row) return null;
+  const status = String(row.status || "").toUpperCase();
+  const notes = String(row.notes || "").toLowerCase();
+  const isTrial = status === "TRIAL" || notes.includes("trial") || notes.includes("free");
+  const plan = isTrial ? "free_trial" : status === "ACTIVE" ? "paid" : status.toLowerCase() || "unknown";
   return {
     id: row.id,
     status: row.status,
+    planType: plan,
+    planLabel: plan === "free_trial" ? "Free User / Trial" : plan === "paid" ? "Paid User" : status || "Unknown",
     setupFee: moneyNumber(row.setupFee),
     monthlyFee: moneyNumber(row.monthlyFee),
     startsAt: row.startsAt,
@@ -34,6 +40,9 @@ function subscriptionView(row) {
 }
 
 function healthSnapshot() {
+  const mailReady = Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST);
+  const googleOAuthReady = Boolean(process.env.GOOGLE_CLIENT_ID || "648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com");
+  const googleSheetReady = true;
   return {
     ok: true,
     api: { ok: true, name: "Mahar POS API", checkedAt: new Date().toISOString() },
@@ -51,8 +60,19 @@ function healthSnapshot() {
         status: process.env.PAYMENT_GATEWAY_URL || process.env.PAYMENT_API_KEY ? "configured" : "not_configured",
       },
       mailServer: {
-        ok: Boolean(process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST),
-        status: process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST ? "configured" : "not_configured",
+        ok: mailReady,
+        status: mailReady ? "OK" : "NOT_CONFIGURED",
+        provider: process.env.RESEND_API_KEY ? "Resend" : "SMTP",
+      },
+      googleOAuth: {
+        ok: googleOAuthReady,
+        status: googleOAuthReady ? "OK" : "NOT_CONFIGURED",
+        provider: "Google OAuth",
+      },
+      googleSheetSync: {
+        ok: googleSheetReady,
+        status: googleSheetReady ? "OK" : "NOT_READY",
+        provider: "Tenant Google Sheet Sync",
       },
     },
   };

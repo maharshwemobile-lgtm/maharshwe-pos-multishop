@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const { prisma } = require('./prisma');
-const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
 
 const DEFAULT_EVENTS = ['repair', 'sale', 'income-expense', 'product-stock', 'money-service', 'debt'];
 const DATASETS = {
@@ -24,11 +23,42 @@ function safeObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
+function toPlainNumber(value, fallback = 0) {
+  if (value === null || value === undefined || value === '') return fallback;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'bigint') return Number(value);
+  if (typeof value === 'object' && typeof value.toNumber === 'function') return Number(value.toNumber()) || fallback;
+  if (typeof value === 'object' && typeof value.toString === 'function' && value.toString() !== '[object Object]') {
+    const parsed = Number(value.toString());
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  const parsed = Number(String(value).replace(/,/g, '').trim());
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function firstText(...values) {
+  for (const value of values) {
+    const text = clean(value, 2000);
+    if (text) return text;
+  }
+  return '';
+}
+
+function isoDate(value) {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 function sanitize(value, depth = 0) {
   if (depth > 5) return '[truncated]';
   if (value === null || value === undefined) return value;
+  if (value instanceof Date) return isoDate(value);
   if (Array.isArray(value)) return value.slice(0, 100).map((item) => sanitize(item, depth + 1));
   if (typeof value !== 'object') return typeof value === 'string' ? value.slice(0, 2000) : value;
+  if (typeof value.toNumber === 'function') return toPlainNumber(value);
+  if (typeof value.toString === 'function' && value.toString() !== '[object Object]') return clean(value.toString(), 2000);
   const out = {};
   for (const [key, item] of Object.entries(value)) {
     if (/password|passwordhash|token|authorization|secret/i.test(key)) continue;
@@ -129,7 +159,7 @@ async function saveIntegration(shopId, input, userId) {
   const previous = googleSheetFromSettings(settings);
   const webhookUrl = input.webhookUrl !== undefined ? clean(input.webhookUrl, 2000) : previous.webhookUrl;
   if (webhookUrl && !isValidWebhookUrl(webhookUrl)) {
-    const error = new Error('Google Apps Script Web App URL /exec link ထည့်ပါ');
+    const error = new Error('Enter a valid Google Apps Script /exec URL.');
     error.status = 400;
     throw error;
   }
@@ -185,33 +215,20 @@ async function testWebhook(shop, webhookUrl) {
   }
 }
 
-
-function toPlainNumber(value) {
-  if (value === null || value === undefined || value === '') return 0;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-  if (typeof value === 'bigint') return Number(value);
-  if (typeof value === 'object' && typeof value.toNumber === 'function') return Number(value.toNumber()) || 0;
-  if (typeof value === 'object' && typeof value.toString === 'function') return Number(value.toString()) || 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function formatSaleItemsForSheet(items) {
-  return (Array.isArray(items) ? items : [])
-    .map((item) => {
-      const name = [item.productNameSnapshot, item.variantNameSnapshot]
-        .filter(Boolean)
-        .join(' - ');
-      const qty = Number(item.quantity || 0);
-      const price = toPlainNumber(item.actualSoldPrice);
-      return `${name || 'Item'} x${qty}${price ? ` @${price}` : ''}`;
-    })
-    .join('; ');
+function saleSheetItems(items) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    id: item.id || null,
+    productName: firstText(item.productNameSnapshot, item.productName),
+    variantName: firstText(item.variantNameSnapshot, item.variantName),
+    quantity: toPlainNumber(item.quantity),
+    unitPrice: toPlainNumber(item.actualSoldPrice ?? item.unitPrice),
+    discount: toPlainNumber(item.discount),
+    imeiSerial: item.imeiSerial || null,
+  }));
 }
 
 async function enrichSalePayloadForSheet(shopId, entityId, payload) {
   if (!shopId || !entityId) return payload || {};
-
   const sale = await prisma.sale.findFirst({
     where: { id: entityId, shopId },
     include: {
@@ -221,125 +238,122 @@ async function enrichSalePayloadForSheet(shopId, entityId, payload) {
       payments: true,
     },
   }).catch(() => null);
-
   if (!sale) return payload || {};
 
   const response = safeObject(payload?.response);
   const existingSale = safeObject(response.sale);
-  const items = Array.isArray(sale.items) ? sale.items : [];
-  const payments = Array.isArray(sale.payments) ? sale.payments : [];
-  const paidAmount = payments.reduce((sum, row) => sum + toPlainNumber(row.amount), 0);
+  const items = saleSheetItems(sale.items);
   const total = toPlainNumber(sale.total ?? existingSale.total ?? existingSale.amount);
-  const quantity = items.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
-
-  const enrichedSale = {
-    ...existingSale,
-    id: sale.id,
-    invoiceNumber: sale.invoiceNumber || existingSale.invoiceNumber || existingSale.invoice || '',
-    customerName: sale.customer?.name || existingSale.customerName || existingSale.customer || 'Walk-in Customer',
-    customer: sale.customer?.name || existingSale.customer || 'Walk-in Customer',
-    customerPhone: sale.customer?.phone || existingSale.customerPhone || '',
-    items: formatSaleItemsForSheet(items) || existingSale.items || '',
-    quantity,
-    total,
-    amount: total,
-    paidAmount,
-    balance: total - paidAmount,
-    profitTotal: toPlainNumber(sale.profitTotal),
-    paymentMethod: existingSale.paymentMethod || payments[0]?.method || '',
-    paymentStatus: sale.paymentStatus || existingSale.paymentStatus || '',
-    status: sale.status || existingSale.status || '',
-    staffName: sale.user?.name || sale.user?.username || existingSale.staffName || '',
-    staffUsername: sale.user?.username || existingSale.staffUsername || '',
-  };
+  const paidAmount = (Array.isArray(sale.payments) ? sale.payments : []).reduce((sum, row) => sum + toPlainNumber(row.amount), 0);
+  const quantity = items.reduce((sum, item) => sum + toPlainNumber(item.quantity), 0);
+  const staffName = firstText(sale.user?.name, sale.user?.username, existingSale.staffName, existingSale.cashier);
 
   return {
     ...(payload || {}),
     response: {
       ...response,
-      sale: enrichedSale,
+      sale: {
+        ...existingSale,
+        id: sale.id,
+        invoiceNumber: firstText(sale.invoiceNumber, existingSale.invoiceNumber, existingSale.invoice),
+        invoice: firstText(sale.invoiceNumber, existingSale.invoice),
+        customerName: firstText(sale.customer?.name, existingSale.customerName, existingSale.customer, 'Walk-in Customer'),
+        customer: firstText(sale.customer?.name, existingSale.customer, 'Walk-in Customer'),
+        customerPhone: firstText(sale.customer?.phone, existingSale.customerPhone),
+        items,
+        quantity,
+        subtotal: toPlainNumber(sale.subtotal ?? existingSale.subtotal),
+        discount: toPlainNumber(sale.discount ?? existingSale.discount),
+        total,
+        amount: total,
+        paidAmount,
+        balance: Math.max(0, total - paidAmount),
+        profitTotal: toPlainNumber(sale.profitTotal ?? existingSale.profitTotal),
+        profit: toPlainNumber(sale.profitTotal ?? existingSale.profit),
+        paymentMethod: firstText(existingSale.paymentMethod, sale.payments?.[0]?.method),
+        paymentStatus: firstText(sale.paymentStatus, existingSale.paymentStatus),
+        status: firstText(sale.status, existingSale.status),
+        staffName,
+        staffUsername: firstText(sale.user?.username, existingSale.staffUsername),
+        cashier: staffName,
+        soldAt: isoDate(sale.soldAt),
+        createdAt: isoDate(sale.createdAt),
+        updatedAt: isoDate(sale.updatedAt),
+      },
     },
   };
 }
 
-
 async function enrichRepairPayloadForSheet(shopId, entityId, payload) {
   if (!shopId || !entityId) return payload || {};
-
   const repair = await prisma.repair.findFirst({
     where: { id: entityId, shopId },
-    include: {
-      technician: { select: { username: true, name: true } },
-    },
+    include: { technician: { select: { username: true, name: true } } },
   }).catch(() => null);
-
   if (!repair) return payload || {};
 
   const response = safeObject(payload?.response);
   const existingRepair = safeObject(response.repair);
 
-  const repairCost = toPlainNumber(repair.finalCost ?? existingRepair.cost ?? existingRepair.repairCost);
+  const repairCost = toPlainNumber(repair.finalCost ?? existingRepair.repairCost ?? existingRepair.cost);
   const customerPrice = toPlainNumber(repair.estimatedCost ?? existingRepair.customerPrice ?? existingRepair.price);
   const deposit = toPlainNumber(repair.deposit ?? existingRepair.deposit);
-  const repairProfit = customerPrice > 0 ? customerPrice - repairCost : 0;
-  const phoneModel = [repair.deviceBrand, repair.deviceModel].filter(Boolean).join(' ') || existingRepair.phoneModel || existingRepair.model || '';
-  const deliveryStatus = repair.deliveredAt || repair.status === 'DELIVERED' ? 'ယူပြီး' : 'မယူရသေး';
-
-  const enrichedRepair = {
-    ...existingRepair,
-    id: repair.id,
-
-    voucherNo: repair.repairNumber || existingRepair.voucherNo || '',
-    repairNo: repair.repairNumber || existingRepair.repairNo || '',
-    repairNumber: repair.repairNumber || existingRepair.repairNumber || '',
-
-    customerName: repair.customerName || existingRepair.customerName || '',
-    customerPhone: repair.customerPhone || existingRepair.customerPhone || '',
-
-    phoneModel,
-    model: phoneModel,
-    deviceBrand: repair.deviceBrand || '',
-    deviceModel: repair.deviceModel || '',
-
-    issue: repair.problem || existingRepair.issue || '',
-    repairPart: repair.problem || existingRepair.repairPart || '',
-    problem: repair.problem || '',
-
-    status: repair.status || existingRepair.status || '',
-    cost: repairCost,
-    repairCost,
-    estimatedCost: repairCost,
-    finalCost: customerPrice,
-    customerPrice,
-    price: customerPrice,
-    deposit,
-    balanceDue: Math.max(0, customerPrice - deposit),
-    profit: repairProfit,
-
-    technicianName: repair.technician?.name || repair.technician?.username || existingRepair.technicianName || '',
-    deliveredAt: repair.deliveredAt || '',
-    deliveryStatus,
-    paymentStatus: repair.paymentStatus || existingRepair.paymentStatus || '',
-    note: repair.notes || existingRepair.note || '',
-  };
+  const profit = customerPrice > 0 ? customerPrice - repairCost : 0;
+  const phoneModel = firstText(
+    [repair.deviceBrand, repair.deviceModel].filter(Boolean).join(' '),
+    existingRepair.phoneModel,
+    existingRepair.model,
+  );
+  const technicianName = firstText(repair.technician?.name, repair.technician?.username, existingRepair.technicianName);
+  const deliveryStatus = repair.deliveredAt || repair.status === 'DELIVERED' ? 'DELIVERED' : 'PENDING_PICKUP';
 
   return {
     ...(payload || {}),
     response: {
       ...response,
-      repair: enrichedRepair,
+      repair: {
+        ...existingRepair,
+        id: repair.id,
+        voucherNo: firstText(repair.repairNumber, existingRepair.voucherNo),
+        repairNo: firstText(repair.repairNumber, existingRepair.repairNo),
+        repairNumber: firstText(repair.repairNumber, existingRepair.repairNumber),
+        customerName: firstText(repair.customerName, existingRepair.customerName),
+        customerPhone: firstText(repair.customerPhone, existingRepair.customerPhone, existingRepair.phone),
+        phoneModel,
+        model: phoneModel,
+        deviceBrand: firstText(repair.deviceBrand, existingRepair.deviceBrand),
+        deviceModel: firstText(repair.deviceModel, existingRepair.deviceModel),
+        issue: firstText(repair.problem, existingRepair.issue),
+        repairPart: firstText(repair.problem, existingRepair.repairPart),
+        problem: firstText(repair.problem, existingRepair.problem),
+        cost: repairCost,
+        repairCost,
+        estimatedCost: repairCost,
+        customerPrice,
+        price: customerPrice,
+        finalCost: customerPrice,
+        deposit,
+        balanceDue: Math.max(0, customerPrice - deposit),
+        profit,
+        status: firstText(repair.status, existingRepair.status),
+        deliveryStatus,
+        paymentStatus: firstText(repair.paymentStatus, existingRepair.paymentStatus),
+        technicianName,
+        technicianUsername: firstText(repair.technician?.username, existingRepair.technicianUsername),
+        note: firstText(repair.notes, existingRepair.note),
+        receivedAt: isoDate(repair.receivedAt),
+        completedAt: isoDate(repair.completedAt),
+        deliveredAt: isoDate(repair.deliveredAt),
+        createdAt: isoDate(repair.createdAt),
+        updatedAt: isoDate(repair.updatedAt),
+      },
     },
   };
 }
 
-
 async function enrichPayloadForSheet({ shopId, dataset, entityId, payload }) {
-  if (dataset === 'sale') {
-    return enrichSalePayloadForSheet(shopId, entityId, payload || {});
-  }
-  if (dataset === 'repair') {
-    return enrichRepairPayloadForSheet(shopId, entityId, payload || {});
-  }
+  if (dataset === 'sale') return enrichSalePayloadForSheet(shopId, entityId, payload || {});
+  if (dataset === 'repair') return enrichRepairPayloadForSheet(shopId, entityId, payload || {});
   return payload || {};
 }
 
@@ -347,7 +361,7 @@ async function queueTenantGoogleSheetSync({ shopId, dataset, action, entityId, p
   if (!shopId || !DATASETS[dataset]) return null;
   const integration = await readActiveIntegration(shopId, dataset);
   if (!integration) return null;
-  payload = await enrichPayloadForSheet({ shopId, dataset, entityId, payload });
+  const enrichedPayload = await enrichPayloadForSheet({ shopId, dataset, entityId, payload });
   await ensureSchema();
   const id = crypto.randomUUID();
   await prisma.$executeRawUnsafe(
@@ -358,7 +372,7 @@ async function queueTenantGoogleSheetSync({ shopId, dataset, action, entityId, p
     dataset,
     clean(action, 80) || 'UPSERT',
     entityId ? clean(entityId, 120) : null,
-    JSON.stringify(sanitize(payload || {})),
+    JSON.stringify(sanitize(enrichedPayload || {})),
   );
   deliverPendingTenantGoogleSheetSync(10).catch((error) => console.warn('Tenant Google Sheet sync failed:', error.message));
   return id;
@@ -411,28 +425,16 @@ async function deliverOutboxRow(row) {
   }
 }
 
-async function deliverPendingTenantGoogleSheetSync(limit = 25, shopId = null) {
+async function deliverPendingTenantGoogleSheetSync(limit = 25) {
   await ensureSchema();
-  const take = Math.min(100, Math.max(1, Number(limit || 25)));
-  const rows = shopId
-    ? await prisma.$queryRawUnsafe(
-      `SELECT id,shop_id AS "shopId",dataset,action,entity_id AS "entityId",payload,created_at AS "createdAt"
-         FROM tenant_google_sheet_outbox
-        WHERE shop_id=$1::uuid AND status IN ('PENDING','FAILED') AND attempts < 20
-        ORDER BY created_at ASC
-        LIMIT $2`,
-      shopId,
-      take,
-    )
-    : await prisma.$queryRawUnsafe(
-      `SELECT id,shop_id AS "shopId",dataset,action,entity_id AS "entityId",payload,created_at AS "createdAt"
-         FROM tenant_google_sheet_outbox
-        WHERE status IN ('PENDING','FAILED') AND attempts < 20
-        ORDER BY created_at ASC
-        LIMIT $1`,
-      take,
-    );
-
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id,shop_id AS "shopId",dataset,action,entity_id AS "entityId",payload,created_at AS "createdAt"
+       FROM tenant_google_sheet_outbox
+      WHERE status IN ('PENDING','FAILED') AND attempts < 20
+      ORDER BY created_at ASC
+      LIMIT $1`,
+    Math.min(100, Math.max(1, Number(limit || 25))),
+  );
   let sent = 0;
   for (const row of rows) if (await deliverOutboxRow(row)) sent += 1;
   return { ok: true, sent, checked: rows.length };
@@ -452,6 +454,10 @@ function datasetFromRequest(req) {
   return null;
 }
 
+function entityIdFromResponse(body) {
+  return body?.id || body?.sale?.id || body?.repair?.id || body?.movement?.id || body?.transaction?.id || null;
+}
+
 function attachTenantGoogleSheetWebhookCapture(app) {
   app.use((req, res, next) => {
     const dataset = datasetFromRequest(req);
@@ -459,12 +465,11 @@ function attachTenantGoogleSheetWebhookCapture(app) {
     const originalJson = res.json.bind(res);
     res.json = (body) => {
       if (res.statusCode >= 200 && res.statusCode < 300 && req.auth?.shopId) {
-        const entityId = body?.id || body?.sale?.id || body?.repair?.id || body?.movement?.id || body?.transaction?.id || null;
         queueTenantGoogleSheetSync({
           shopId: req.auth.shopId,
           dataset,
           action: `${req.method} ${req.path}`,
-          entityId,
+          entityId: entityIdFromResponse(body),
           payload: { request: sanitize(req.body || {}), response: sanitize(body || {}) },
         }).catch((error) => console.warn('Tenant Google Sheet capture failed:', error.message));
       }
@@ -474,124 +479,7 @@ function attachTenantGoogleSheetWebhookCapture(app) {
   });
 }
 
-
-function requireManager(req, res, next) {
-  if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN' || req.auth?.permissions?.settings === true) return next();
-  return res.status(403).json({ ok: false, message: 'Settings permission is required' });
-}
-
-async function tenantGoogleSheetCounts(shopId) {
-  await ensureSchema();
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT status,COUNT(*)::int AS count
-       FROM tenant_google_sheet_outbox
-      WHERE shop_id=$1::uuid
-      GROUP BY status`,
-    shopId,
-  );
-  return Object.fromEntries(rows.map((row) => [row.status, Number(row.count || 0)]));
-}
-
-function publicTenantIntegration(config) {
-  return {
-    enabled: config.enabled === true,
-    webhookUrl: config.webhookUrl || '',
-    events: Array.isArray(config.events) && config.events.length ? config.events : DEFAULT_EVENTS,
-    lastTestAt: config.lastTestAt || null,
-    lastTestStatus: config.lastTestStatus || 'NOT_TESTED',
-    lastTestMessage: config.lastTestMessage || '',
-    updatedAt: config.updatedAt || null,
-  };
-}
-
-async function tenantIntegrationPayload(shopId) {
-  const shop = await readShop(shopId);
-  if (!shop) return null;
-  return {
-    ok: true,
-    shop: { id: shop.id, name: shop.name, code: shop.code, slug: shop.slug },
-    integration: publicTenantIntegration(googleSheetFromSettings(shop.settings?.settings)),
-    counts: await tenantGoogleSheetCounts(shopId),
-    events: DEFAULT_EVENTS,
-    tabs: Object.values(DATASETS).map((item) => item.tab),
-  };
-}
-
-async function persistTenantWebhookTestResult(shopId, webhookUrl, result) {
-  const row = await prisma.shopSettings.upsert({ where: { shopId }, update: {}, create: { shopId } });
-  const settings = safeObject(row.settings);
-  const integrations = safeObject(settings.integrations);
-  const current = googleSheetFromSettings(settings);
-  const next = {
-    ...current,
-    webhookUrl: webhookUrl || current.webhookUrl,
-    lastTestAt: new Date().toISOString(),
-    lastTestStatus: result.ok ? 'CONNECTED' : 'FAILED',
-    lastTestMessage: result.message || '',
-  };
-  await prisma.shopSettings.update({
-    where: { shopId },
-    data: { settings: { ...settings, integrations: { ...integrations, googleSheet: next } } },
-  });
-  return next;
-}
-
-
 function attachTenantGoogleSheetIntegrationApi(app) {
-  const read = [requireAuth, requireShopUser];
-  const write = [requireAuth, requireShopUser, requireWritableSubscription, requireManager];
-
-  app.get('/api/google-sheet-webhook/integration', ...read, async (req, res) => {
-    try {
-      const payload = await tenantIntegrationPayload(req.auth.shopId);
-      if (!payload) return res.status(404).json({ ok: false, message: 'Shop not found' });
-      return res.json(payload);
-    } catch (error) {
-      return res.status(500).json({ ok: false, message: error.message || 'Google Sheet integration load failed' });
-    }
-  });
-
-  app.put('/api/google-sheet-webhook/integration', ...write, async (req, res) => {
-    try {
-      const integration = await saveIntegration(req.auth.shopId, {
-        enabled: req.body?.enabled === true,
-        webhookUrl: req.body?.webhookUrl || '',
-        events: Array.isArray(req.body?.events) ? req.body.events : DEFAULT_EVENTS,
-      }, req.auth.userId);
-      return res.json({
-        ok: true,
-        integration: publicTenantIntegration(integration),
-        counts: await tenantGoogleSheetCounts(req.auth.shopId),
-        message: 'Google Sheet webhook integration saved',
-      });
-    } catch (error) {
-      return res.status(error.status || 500).json({ ok: false, message: error.message || 'Google Sheet integration save failed' });
-    }
-  });
-
-  app.post('/api/google-sheet-webhook/integration/test', ...write, async (req, res) => {
-    try {
-      const shop = await readShop(req.auth.shopId);
-      if (!shop) return res.status(404).json({ ok: false, message: 'Shop not found' });
-      const current = googleSheetFromSettings(shop.settings?.settings);
-      const webhookUrl = clean(req.body?.webhookUrl || current.webhookUrl, 2000);
-      if (!isValidWebhookUrl(webhookUrl)) return res.status(400).json({ ok: false, message: 'Google Apps Script Web App URL /exec link ထည့်ပါ' });
-      const result = await testWebhook(shop, webhookUrl);
-      const integration = await persistTenantWebhookTestResult(req.auth.shopId, webhookUrl, result);
-      return res.status(result.ok ? 200 : 400).json({ ok: result.ok, result, integration: publicTenantIntegration(integration) });
-    } catch (error) {
-      return res.status(error.status || 500).json({ ok: false, message: error.message || 'Google Sheet test failed' });
-    }
-  });
-
-  app.post('/api/google-sheet-webhook/integration/retry', ...write, async (req, res) => {
-    try {
-      return res.json(await deliverPendingTenantGoogleSheetSync(100, req.auth.shopId));
-    } catch (error) {
-      return res.status(500).json({ ok: false, message: error.message || 'Google Sheet retry failed' });
-    }
-  });
-
   app.get('/api/grand-admin/shops/:shopId/google-sheet-integration', async (req, res) => {
     try {
       const shop = await readShop(req.params.shopId);
@@ -619,7 +507,7 @@ function attachTenantGoogleSheetIntegrationApi(app) {
       if (!shop) return res.status(404).json({ ok: false, message: 'Shop not found' });
       const current = googleSheetFromSettings(shop.settings?.settings);
       const webhookUrl = clean(req.body?.webhookUrl || current.webhookUrl, 2000);
-      if (!isValidWebhookUrl(webhookUrl)) return res.status(400).json({ ok: false, message: 'Google Apps Script Web App URL /exec link ထည့်ပါ' });
+      if (!isValidWebhookUrl(webhookUrl)) return res.status(400).json({ ok: false, message: 'Enter a valid Google Apps Script /exec URL.' });
       const result = await testWebhook(shop, webhookUrl);
       const row = await prisma.shopSettings.upsert({ where: { shopId: shop.id }, update: {}, create: { shopId: shop.id } });
       const settings = safeObject(row.settings);
