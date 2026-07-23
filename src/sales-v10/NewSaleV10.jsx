@@ -238,7 +238,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [splitPayments, setSplitPayments] = useState(restored?.splitPayments || []);
   const [splitModalOpen, setSplitModalOpen] = useState(false);
   const [discount, setDiscount] = useState(restored?.discount || '0');
-  const [toast, setToast] = useState(restored?.cart?.length ? { type: 'success', text: 'Saved cart restored' } : null);
+  const [toast, setToast] = useState(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
