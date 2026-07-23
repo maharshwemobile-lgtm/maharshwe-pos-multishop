@@ -198,10 +198,15 @@ function CompletedModal({ sale, onNewSale, onHistory }) {
         <h3>Sale Completed</h3>
         <p>{sale.invoice}</p>
         <b>{money(sale.total)}</b>
-        <small>Receipt ကို ယခုပင် Print ထုတ်နိုင်သလို Sales History မှလည်း ပြန်ထုတ်နိုင်ပါတယ်။</small>
+        <small>{t(
+          'You can reprint this receipt now or later from Sales History.',
+          'ဤဘောက်ချာကို ယခုပင် ပြန်ပုံနှိပ်နိုင်သလို အရောင်းမှတ်တမ်းမှလည်း နောက်မှ ပြန်ပုံနှိပ်နိုင်ပါသည်။',
+        )}</small>
         <footer>
           <button type="button" onClick={onHistory}><History size={17} /> Sales History</button>
-          <button type="button" onClick={print}><Printer size={17} /> Print</button>
+          <button type="button" className="sale10-reprint-button" onClick={print}>
+            <Printer size={17} /> {t('Reprint Receipt', 'ဘောက်ချာ ပြန်ပုံနှိပ်')}
+          </button>
           <button type="button" className="stock-submit stock-submit-green" onClick={onNewSale}><ShoppingCart size={17} /> New Sale</button>
         </footer>
       </section>

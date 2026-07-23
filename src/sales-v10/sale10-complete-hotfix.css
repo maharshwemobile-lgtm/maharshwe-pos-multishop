@@ -14,9 +14,24 @@
   cursor: pointer;
 }
 .sale10-complete-modal footer { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sale10-complete-modal footer .sale10-reprint-button {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #15803d;
+  font-weight: 900;
+}
 .sale10-cart-quantity-field { gap: 0 !important; }
 @media (max-width: 520px) {
   .sale10-complete-modal footer { grid-template-columns: 1fr; }
+  .sale10-complete-modal footer button {
+    width: 100%;
+    min-height: 44px;
+  }
   .sale10-cart-slip-row { padding: 8px !important; row-gap: 4px !important; }
 }
 .dark .sale10-complete-close { background: #10223d; color: #e5eef8; border-color: #294463; }
+.dark .sale10-complete-modal footer .sale10-reprint-button {
+  border-color: #166534;
+  background: #0d3028;
+  color: #86efac;
+}
