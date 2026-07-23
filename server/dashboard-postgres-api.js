@@ -59,13 +59,24 @@ module.exports = function attachDashboardPostgresApi(app) {
           },
           _sum: { amount: true },
         }),
-        prisma.moneyServiceTransaction.aggregate({
-          where: {
-            shopId,
-            createdAt: { gte: today, lt: tomorrow },
-          },
-          _sum: { serviceProfit: true },
-        }),
+        prisma.$queryRawUnsafe(
+          `SELECT
+              COALESCE((
+                SELECT SUM(service_profit)
+                  FROM money_service_transactions
+                 WHERE shop_id=$1::uuid AND created_at >= $2 AND created_at < $3
+              ),0)
+              + COALESCE((
+                SELECT SUM(fee_amount)
+                  FROM money_service_transactions_v2
+                 WHERE shop_id=$1::uuid
+                   AND created_at >= $2 AND created_at < $3
+                   AND voided_at IS NULL
+              ),0) AS "serviceProfit"`,
+          shopId,
+          today,
+          tomorrow,
+        ),
         prisma.customer.aggregate({
           where: { shopId, balance: { gt: 0 } },
           _sum: { balance: true },
@@ -85,7 +96,7 @@ module.exports = function attachDashboardPostgresApi(app) {
 
       const todaySaleIncome = number(todaySales._sum.total);
       const repairIncome = number(todayRepairPayments._sum.amount);
-      const moneyProfit = number(todayMoneyProfit._sum.serviceProfit);
+      const moneyProfit = number(todayMoneyProfit[0]?.serviceProfit);
       const stockBalance = stockRows.reduce(
         (sum, row) => sum + number(row.costPrice) * Number(row.inventoryBalance?.quantity || 0),
         0,
