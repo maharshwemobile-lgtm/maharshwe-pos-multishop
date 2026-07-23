@@ -1,7 +1,7 @@
 {
   "income": [
     { "value": "အခြား Service ဝင်ငွေ", "my": "အခြား Service ဝင်ငွေ", "en": "Other Service Income", "aliases": ["SERVICE_INCOME", "OTHER_SERVICE_INCOME", "Other Service Income", "Other Income"] },
-    { "value": "အခြား အရောင်းပိုင်း ဝင်ငွေ", "my": "အခြား အရောင်းပိုင်း ဝင်ငွေ", "en": "Other Sales Income", "aliases": ["OTHER_SALE_INCOME", "Other Sales Income"] },
+    { "value": "အခြား အရောင်းပိုင်း ဝင်ငွေ", "my": "အခြား အရောင်းပိုင်း ဝင်ငွေ", "en": "Other Sales Income", "aliases": ["OTHER_SALE_INCOME", "Other Sales Income", "အခြား အရောင်းပိုင် ဝင်ငွေ"] },
     { "value": "အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ", "my": "အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ", "en": "Other Top-up Income", "aliases": ["OTHER_TOPUP_INCOME", "Other Top-up Income"] },
     { "value": "အခြား အခြား ဝင်ငွေ", "my": "အခြား အခြား ဝင်ငွေ", "en": "Other Income", "aliases": ["OTHER_OTHER_INCOME"] }
   ],

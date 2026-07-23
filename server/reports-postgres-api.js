@@ -16,6 +16,10 @@ const {
   buildSummary,
 } = require('./report-builders');
 const { requireAuth, requireShopUser } = require('./auth-api');
+const {
+  businessRecordCategories,
+  normalizeBusinessRecordCategory,
+} = require('./business-record-categories');
 
 function requireReportAccess(req, res, next) {
   if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN') return next();
@@ -94,19 +98,40 @@ function buildMiniMartDailySales(activeSales) {
     .slice(0, 14);
 }
 
+const categoryValue = (type, englishName) => (
+  businessRecordCategories[type].find((item) => item.en === englishName)?.value
+);
+
 const OTHER_INCOME_CATEGORY_KEYS = {
-  otherServiceIncome: 'အခြား Service ဝင်ငွေ',
-  otherSaleIncome: 'အခြား အရောင်းပိုင် ဝင်ငွေ',
-  otherTopupIncome: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ',
-  otherOtherIncome: 'အခြား အခြား ဝင်ငွေ',
+  otherServiceIncome: categoryValue('income', 'Other Service Income'),
+  otherSaleIncome: categoryValue('income', 'Other Sales Income'),
+  otherTopupIncome: categoryValue('income', 'Other Top-up Income'),
+  otherOtherIncome: categoryValue('income', 'Other Income'),
 };
 
 const OTHER_EXPENSE_CATEGORY_KEYS = {
-  otherServiceExpense: 'အခြား Service ထွက်ငွေ',
-  otherSaleExpense: 'အခြား အရောင်းပိုင်း ထွက်ငွေ',
-  otherTopupExpense: 'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
-  otherOtherExpense: 'အခြား အခြား ထွက်ငွေ',
+  otherServiceExpense: categoryValue('expense', 'Other Service Expense'),
+  otherSaleExpense: categoryValue('expense', 'Other Sales Expense'),
+  otherTopupExpense: categoryValue('expense', 'Other Top-up Expense'),
+  otherOtherExpense: categoryValue('expense', 'Other Expense'),
 };
+
+function businessRecordMetric(type, category) {
+  const normalized = normalizeBusinessRecordCategory(type, category);
+  const keys = type === 'expense' ? OTHER_EXPENSE_CATEGORY_KEYS : OTHER_INCOME_CATEGORY_KEYS;
+  return Object.keys(keys).find((key) => keys[key] === normalized) || null;
+}
+
+function mergeBusinessRecordRows(target, rows, type) {
+  for (const raw of rows || []) {
+    const bucket = String(raw.bucket || '');
+    const metric = businessRecordMetric(type, raw.category);
+    if (!bucket || !metric) continue;
+    const row = target.get(bucket) || emptyCloseRow(bucket);
+    row[metric] = round(Number(row[metric] || 0) + number(raw.amount));
+    target.set(bucket, row);
+  }
+}
 
 function closePeriod(value) {
   const normalized = String(value || '').toLowerCase();
@@ -291,41 +316,29 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     ).catch(() => []),
     prisma.$queryRawUnsafe(
       `SELECT ${recordBucket} AS bucket,
-              COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceIncome",
-              COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleIncome",
-              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupIncome",
-              COALESCE(SUM(CASE WHEN category=$7 THEN amount ELSE 0 END),0) AS "otherOtherIncome"
+              category,
+              COALESCE(SUM(amount),0) AS amount
          FROM business_other_income
         WHERE shop_id=$1::uuid
           AND income_date >= $2::date
           AND income_date <= $3::date
-        GROUP BY 1`,
+        GROUP BY 1,2`,
       shopId,
       fromDay,
       toDay,
-      OTHER_INCOME_CATEGORY_KEYS.otherServiceIncome,
-      OTHER_INCOME_CATEGORY_KEYS.otherSaleIncome,
-      OTHER_INCOME_CATEGORY_KEYS.otherTopupIncome,
-      OTHER_INCOME_CATEGORY_KEYS.otherOtherIncome,
     ).catch(() => []),
     prisma.$queryRawUnsafe(
       `SELECT ${expenseBucket} AS bucket,
-              COALESCE(SUM(CASE WHEN category=$4 THEN amount ELSE 0 END),0) AS "otherServiceExpense",
-              COALESCE(SUM(CASE WHEN category=$5 THEN amount ELSE 0 END),0) AS "otherSaleExpense",
-              COALESCE(SUM(CASE WHEN category=$6 THEN amount ELSE 0 END),0) AS "otherTopupExpense",
-              COALESCE(SUM(CASE WHEN category=$7 THEN amount ELSE 0 END),0) AS "otherOtherExpense"
+              category,
+              COALESCE(SUM(amount),0) AS amount
          FROM business_expenses
         WHERE shop_id=$1::uuid
           AND expense_date >= $2::date
           AND expense_date <= $3::date
-        GROUP BY 1`,
+        GROUP BY 1,2`,
       shopId,
       fromDay,
       toDay,
-      OTHER_EXPENSE_CATEGORY_KEYS.otherServiceExpense,
-      OTHER_EXPENSE_CATEGORY_KEYS.otherSaleExpense,
-      OTHER_EXPENSE_CATEGORY_KEYS.otherTopupExpense,
-      OTHER_EXPENSE_CATEGORY_KEYS.otherOtherExpense,
     ).catch(() => []),
     prisma.$queryRawUnsafe(
       `SELECT ${closeBucket} AS bucket,
@@ -365,18 +378,8 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     row.billAdjustment = round(raw.billAdjustment);
     row.billEloadProfit = round(raw.billEloadProfit);
   });
-  mergeCloseRows(map, incomeRows, (row, raw) => {
-    row.otherSaleIncome = round(raw.otherSaleIncome);
-    row.otherServiceIncome = round(raw.otherServiceIncome);
-    row.otherTopupIncome = round(raw.otherTopupIncome);
-    row.otherOtherIncome = round(raw.otherOtherIncome);
-  });
-  mergeCloseRows(map, expenseRows, (row, raw) => {
-    row.otherSaleExpense = round(raw.otherSaleExpense);
-    row.otherServiceExpense = round(raw.otherServiceExpense);
-    row.otherTopupExpense = round(raw.otherTopupExpense);
-    row.otherOtherExpense = round(raw.otherOtherExpense);
-  });
+  mergeBusinessRecordRows(map, incomeRows, 'income');
+  mergeBusinessRecordRows(map, expenseRows, 'expense');
   mergeCloseRows(map, closingRows, (row, raw) => {
     row.closedDays = Number(raw.closedDays || 0);
     row.lastClosedAt = raw.lastClosedAt || null;

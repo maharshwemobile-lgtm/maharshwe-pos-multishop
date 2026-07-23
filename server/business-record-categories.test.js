@@ -14,6 +14,13 @@ test('legacy Other Income is normalized to Other Service Income', () => {
   );
 });
 
+test('legacy Other Sale spelling is normalized to the current sales category', () => {
+  assert.equal(
+    normalizeBusinessRecordCategory('income', 'အခြား အရောင်းပိုင် ဝင်ငွေ'),
+    businessRecordCategories.income[1].value,
+  );
+});
+
 test('unknown edit values cannot recreate stale categories', () => {
   assert.equal(
     normalizeBusinessRecordCategory('expense', 'stale-old-category'),
