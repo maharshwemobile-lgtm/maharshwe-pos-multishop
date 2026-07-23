@@ -23,6 +23,21 @@ import { apiDownload, apiFetch, clearSession, getSession } from './phase2Api';
 import './business-records.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
+const DEFAULT_INCOME_OPTIONS = [
+  { name: 'အခြား Service ဝင်ငွေ', value: 'အခြား Service ဝင်ငွေ' },
+  { name: 'အခြား အရောင်းပိုင်း ဝင်ငွေ', value: 'အခြား အရောင်းပိုင်း ဝင်ငွေ' },
+  { name: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ', value: 'အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ' },
+  { name: 'အခြား အခြား ဝင်ငွေ', value: 'အခြား အခြား ဝင်ငွေ' },
+];
+const DEFAULT_EXPENSE_OPTIONS = [
+  'အခြား Service ထွက်ငွေ',
+  'အခြား အရောင်းပိုင်း ထွက်ငွေ',
+  'အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ',
+  'အခြား အခြား ထွက်ငွေ',
+];
+const DEFAULT_INCOME_CATEGORY = DEFAULT_INCOME_OPTIONS[0].value;
+const DEFAULT_EXPENSE_CATEGORY = DEFAULT_EXPENSE_OPTIONS[0];
+const SYSTEM_ONLY_CATEGORIES = new Set(['Sales Income (Auto) From POS', 'Total Bill Sale', 'Money Service (Auto)']);
 
 function yangonToday() {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -52,7 +67,25 @@ function formatDateTime(value) {
 function categoryLabel(record, isMiniMart = false) {
   if (record.type === 'expense') return record.category || 'Expense';
   if (record.category === 'SERVICE_INCOME') return isMiniMart ? 'Other Income' : 'Service Income';
+  if (record.category && record.category !== 'OTHER_INCOME') return record.category;
   return 'Other Income';
+}
+
+function buildIncomeOptions(rows = []) {
+  const custom = rows
+    .filter((row) => row?.active !== false && !SYSTEM_ONLY_CATEGORIES.has(row.name))
+    .map((row) => ({ name: row.name, value: row.name }))
+    .filter((option) => !DEFAULT_INCOME_OPTIONS.some((item) => item.value === option.value));
+  return [...DEFAULT_INCOME_OPTIONS, ...custom];
+}
+
+function buildExpenseOptions(rows = []) {
+  const defaults = DEFAULT_EXPENSE_OPTIONS.map((name) => ({ name, value: name }));
+  const custom = rows
+    .filter((row) => row?.active !== false && !SYSTEM_ONLY_CATEGORIES.has(row.name))
+    .map((row) => ({ name: row.name, value: row.name }))
+    .filter((option) => !defaults.some((item) => item.value === option.value));
+  return [...defaults, ...custom];
 }
 
 function DetailModal({ record, onClose, isMiniMart = false }) {
@@ -87,16 +120,21 @@ function DetailModal({ record, onClose, isMiniMart = false }) {
   );
 }
 
-function EditModal({ record, accounts, isMiniMart, saving, onSave, onClose }) {
-  const [form, setForm] = useState(() => ({
-    businessDate: record?.businessDate || yangonToday(),
-    category: record?.type === 'income' ? (record?.category || 'OTHER_INCOME') : (record?.title || record?.category || ''),
-    title: record?.title || '',
-    amount: String(record?.amount || ''),
-    method: record?.method || 'CASH',
-    moneyAccountId: record?.moneyAccountId || '',
-    note: record?.note || '',
-  }));
+function EditModal({ record, accounts, incomeOptions, expenseOptions, saving, onSave, onClose }) {
+  const buildForm = (currentRecord) => ({
+    businessDate: currentRecord?.businessDate || yangonToday(),
+    category: currentRecord?.type === 'income' ? (currentRecord?.category || DEFAULT_INCOME_CATEGORY) : (currentRecord?.title || currentRecord?.category || DEFAULT_EXPENSE_CATEGORY),
+    title: currentRecord?.title || '',
+    amount: String(currentRecord?.amount || ''),
+    method: currentRecord?.method || 'CASH',
+    moneyAccountId: currentRecord?.moneyAccountId || '',
+    note: currentRecord?.note || '',
+  });
+  const [form, setForm] = useState(() => buildForm(record));
+
+  useEffect(() => {
+    setForm(buildForm(record));
+  }, [record]);
 
   if (!record) return null;
 
@@ -136,9 +174,9 @@ function EditModal({ record, accounts, isMiniMart, saving, onSave, onClose }) {
           <div className="br-form-grid">
             <label>Date<input required type="date" value={form.businessDate} onChange={(event) => update({ businessDate: event.target.value })} /></label>
             {record.type === 'income' ? (
-              <label>Category<select value={form.category} onChange={(event) => update({ category: event.target.value })}><option value="OTHER_INCOME">Other Income</option>{!isMiniMart ? <option value="SERVICE_INCOME">Service Income → Repair Income</option> : null}</select></label>
+              <label>Category<select value={form.category} onChange={(event) => update({ category: event.target.value })}>{incomeOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
             ) : (
-              <label>Category<input required value={form.category} onChange={(event) => update({ category: event.target.value })} maxLength={80} /></label>
+              <label>Category<select required value={form.category} onChange={(event) => update({ category: event.target.value })}>{expenseOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
             )}
             {record.type === 'income' ? (
               <label>Source<input required value={form.title} onChange={(event) => update({ title: event.target.value })} maxLength={80} /></label>
@@ -201,8 +239,11 @@ export default function BusinessRecordsPanel() {
   const [formMode, setFormMode] = useState('income');
   const [savingIncome, setSavingIncome] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
-  const [income, setIncome] = useState({ category: 'OTHER_INCOME', source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
-  const [expense, setExpense] = useState({ category: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+  const [catalogs, setCatalogs] = useState({ incomeCategories: [], expenseCategories: [] });
+  const [income, setIncome] = useState({ category: DEFAULT_INCOME_CATEGORY, source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+  const [expense, setExpense] = useState({ category: DEFAULT_EXPENSE_CATEGORY, amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+  const incomeOptions = useMemo(() => buildIncomeOptions(catalogs.incomeCategories), [catalogs.incomeCategories]);
+  const expenseOptions = useMemo(() => buildExpenseOptions(catalogs.expenseCategories), [catalogs.expenseCategories]);
 
   const params = useMemo(() => {
     const search = new URLSearchParams({
@@ -234,6 +275,18 @@ export default function BusinessRecordsPanel() {
     }
   };
 
+  const loadCatalogs = async () => {
+    try {
+      const response = await apiFetch('/api/finance/settings/catalogs');
+      setCatalogs({
+        incomeCategories: response.incomeCategories || [],
+        expenseCategories: response.expenseCategories || [],
+      });
+    } catch (requestError) {
+      handleError(requestError);
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setError('');
@@ -255,6 +308,22 @@ export default function BusinessRecordsPanel() {
   useEffect(() => {
     loadContext();
   }, [businessDate]);
+
+  useEffect(() => {
+    loadCatalogs();
+  }, []);
+
+  useEffect(() => {
+    if (!incomeOptions.some((option) => option.value === income.category)) {
+      setIncome((current) => ({ ...current, category: incomeOptions[0]?.value || DEFAULT_INCOME_CATEGORY }));
+    }
+  }, [incomeOptions.map((option) => option.value).join('|')]);
+
+  useEffect(() => {
+    if (!expenseOptions.some((option) => option.value === expense.category)) {
+      setExpense((current) => ({ ...current, category: expenseOptions[0]?.value || DEFAULT_EXPENSE_CATEGORY }));
+    }
+  }, [expenseOptions.map((option) => option.value).join('|')]);
 
   useEffect(() => setPage(1), [type, from, to, query]);
 
@@ -293,7 +362,7 @@ export default function BusinessRecordsPanel() {
           note: income.note,
         },
       });
-      setIncome({ category: 'OTHER_INCOME', source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+      setIncome({ category: DEFAULT_INCOME_CATEGORY, source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
       setType('income');
       setNotice(income.category === 'SERVICE_INCOME' && !isMiniMart ? 'Service income saved and added to repair income.' : 'Other income saved and account balance updated.');
       await loadContext();
@@ -322,7 +391,7 @@ export default function BusinessRecordsPanel() {
           note: expense.note,
         },
       });
-      setExpense({ category: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
+      setExpense({ category: expenseOptions[0]?.value || DEFAULT_EXPENSE_CATEGORY, amount: '', method: 'CASH', moneyAccountId: '', note: '' });
       setType('expense');
       setNotice('Expense saved and account balance updated.');
       await loadContext();
@@ -413,7 +482,7 @@ export default function BusinessRecordsPanel() {
         {formMode === 'income' ? (
           canWriteAccounting ? <form className="br-entry-form" onSubmit={submitIncome}>
             <div className="br-form-grid">
-              <label>Category<select value={income.category} onChange={(event) => setIncome({ ...income, category: event.target.value })}><option value="OTHER_INCOME">Other Income</option>{!isMiniMart ? <option value="SERVICE_INCOME">Service Income → Repair Income</option> : null}</select></label>
+              <label>Category<select value={income.category} onChange={(event) => setIncome({ ...income, category: event.target.value })}>{incomeOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
               <label>Source<input required value={income.source} onChange={(event) => setIncome({ ...income, source: event.target.value })} placeholder={income.category === 'SERVICE_INCOME' && !isMiniMart ? 'Repair service, software service…' : 'Commission, Rent, Bonus…'} maxLength={80} /></label>
               <label>Amount<input required type="number" min="1" step="1" value={income.amount} onChange={(event) => setIncome({ ...income, amount: event.target.value })} placeholder="0" /></label>
               <label>Method<select value={income.method} onChange={(event) => setIncome({ ...income, method: event.target.value, moneyAccountId: '' })}><option value="CASH">Cash</option><option value="KPAY">KBZPay</option><option value="WAVE_PAY">WavePay</option><option value="OTHER">Other</option></select></label>
@@ -427,7 +496,7 @@ export default function BusinessRecordsPanel() {
         {formMode === 'expense' ? (
           canWriteAccounting ? <form className="br-entry-form" onSubmit={submitExpense}>
             <div className="br-form-grid">
-              <label>Category<input required value={expense.category} onChange={(event) => setExpense({ ...expense, category: event.target.value })} placeholder="Electricity, Transport…" maxLength={80} /></label>
+              <label>Category<select required value={expense.category} onChange={(event) => setExpense({ ...expense, category: event.target.value })}>{expenseOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
               <label>Amount<input required type="number" min="1" step="1" value={expense.amount} onChange={(event) => setExpense({ ...expense, amount: event.target.value })} placeholder="0" /></label>
               <label>Method<select value={expense.method} onChange={(event) => setExpense({ ...expense, method: event.target.value, moneyAccountId: '' })}><option value="CASH">Cash</option><option value="KPAY">KBZPay</option><option value="WAVE_PAY">WavePay</option><option value="OTHER">Other</option></select></label>
               <label>Account<select value={expense.moneyAccountId} onChange={(event) => setExpense({ ...expense, moneyAccountId: event.target.value })}><option value="">Auto-select account</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}</select></label>
@@ -499,7 +568,7 @@ export default function BusinessRecordsPanel() {
       </div>
 
       <DetailModal record={selected} isMiniMart={isMiniMart} onClose={() => setSelected(null)} />
-      <EditModal record={editing} accounts={accounts} isMiniMart={isMiniMart} saving={savingEdit} onSave={saveEdit} onClose={() => setEditing(null)} />
+      <EditModal record={editing} accounts={accounts} incomeOptions={incomeOptions} expenseOptions={expenseOptions} saving={savingEdit} onSave={saveEdit} onClose={() => setEditing(null)} />
       <VoidModal record={voiding} saving={savingVoid} reason={voidReason} setReason={setVoidReason} onConfirm={confirmVoid} onClose={() => setVoiding(null)}/>
     </section>
   );

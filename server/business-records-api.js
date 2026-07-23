@@ -81,6 +81,7 @@ async function ensureRecordsSchema() {
         id UUID PRIMARY KEY,
         shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
         income_date DATE NOT NULL,
+        category TEXT NOT NULL DEFAULT 'OTHER_INCOME',
         source TEXT NOT NULL,
         amount NUMERIC(14,2) NOT NULL DEFAULT 0,
         method TEXT NOT NULL DEFAULT 'CASH',
@@ -93,6 +94,7 @@ async function ensureRecordsSchema() {
       await tx.$executeRawUnsafe(`ALTER TABLE business_expenses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`);
       await tx.$executeRawUnsafe(`ALTER TABLE business_other_income ADD COLUMN IF NOT EXISTS updated_by_id UUID REFERENCES users(id) ON DELETE SET NULL`);
       await tx.$executeRawUnsafe(`ALTER TABLE business_other_income ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`);
+      await tx.$executeRawUnsafe(`ALTER TABLE business_other_income ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'OTHER_INCOME'`);
       await tx.$executeRawUnsafe(`ALTER TABLE business_expenses
         ADD COLUMN IF NOT EXISTS voided_at TIMESTAMPTZ,
         ADD COLUMN IF NOT EXISTS void_reason TEXT,
@@ -130,12 +132,12 @@ function filterSql(type, from, to, query) {
 
 function normalizeRow(type, row) {
   const title = String(row.title || '');
-  const serviceIncome = type === 'income' && title.startsWith(SERVICE_PREFIX);
+  const serviceIncome = type === 'income' && (row.category === 'SERVICE_INCOME' || title.startsWith(SERVICE_PREFIX));
   return {
     id: row.id,
     type,
     businessDate: String(row.businessDate || '').slice(0, 10),
-    category: type === 'expense' ? title : (serviceIncome ? 'SERVICE_INCOME' : 'OTHER_INCOME'),
+    category: type === 'expense' ? title : (serviceIncome ? 'SERVICE_INCOME' : (row.category || 'OTHER_INCOME')),
     title: serviceIncome ? title.slice(SERVICE_PREFIX.length) : title,
     amount: Number(row.amount || 0),
     method: row.method || 'CASH',
@@ -171,6 +173,7 @@ async function findRecords(shopId, options) {
     `SELECT ${config.alias}.id,
             ${config.alias}.${config.dateColumn} AS "businessDate",
             ${config.alias}.${config.titleColumn} AS title,
+            ${type === 'income' ? `${config.alias}.category,` : ''}
             ${config.alias}.amount,
             ${config.alias}.method,
             ${config.alias}.money_account_id AS "moneyAccountId",
@@ -247,6 +250,7 @@ async function loadRecordForUpdate(tx, shopId, type, id) {
     `SELECT id,
             ${config.dateColumn} AS "businessDate",
             ${config.titleColumn} AS title,
+            ${type === 'income' ? 'category,' : ''}
             amount,
             method,
             money_account_id AS "moneyAccountId",
@@ -267,6 +271,7 @@ async function loadUpdatedRecord(tx, shopId, type, id) {
     `SELECT ${config.alias}.id,
             ${config.alias}.${config.dateColumn} AS "businessDate",
             ${config.alias}.${config.titleColumn} AS title,
+            ${type === 'income' ? `${config.alias}.category,` : ''}
             ${config.alias}.amount,
             ${config.alias}.method,
             ${config.alias}.money_account_id AS "moneyAccountId",
@@ -304,11 +309,11 @@ function editPayload(type, body) {
     return { businessDate, title, amount, method, moneyAccountId, note };
   }
 
-  const category = cleanText(body.category || 'OTHER_INCOME', 40);
+  const category = cleanText(body.category || 'OTHER_INCOME', 80);
   const source = cleanText(body.source, 80);
   if (!source) throw Object.assign(new Error('Income source is required'), { status: 400 });
   const title = category === 'SERVICE_INCOME' ? `${SERVICE_PREFIX}${source}` : source;
-  return { businessDate, title, amount, method, moneyAccountId, note };
+  return { businessDate, category, title, amount, method, moneyAccountId, note };
 }
 
 function attachBusinessRecordsApi(app) {
@@ -378,17 +383,7 @@ function attachBusinessRecordsApi(app) {
         }
 
         const config = configuration(type);
-        await tx.$executeRawUnsafe(
-          `UPDATE ${config.table}
-              SET ${config.dateColumn}=$3::date,
-                  ${config.titleColumn}=$4,
-                  amount=$5::numeric,
-                  method=$6,
-                  money_account_id=$7::uuid,
-                  note=$8,
-                  updated_by_id=$9::uuid,
-                  updated_at=NOW()
-            WHERE id=$1::uuid AND shop_id=$2::uuid`,
+        const updateValues = [
           id,
           req.auth.shopId,
           payload.businessDate,
@@ -398,6 +393,21 @@ function attachBusinessRecordsApi(app) {
           payload.moneyAccountId,
           payload.note || null,
           req.auth.userId || req.auth.id || null,
+        ];
+        if (type === 'income') updateValues.push(payload.category || 'OTHER_INCOME');
+        await tx.$executeRawUnsafe(
+          `UPDATE ${config.table}
+              SET ${config.dateColumn}=$3::date,
+                  ${type === 'income' ? 'category=$10,' : ''}
+                  ${config.titleColumn}=$4,
+                  amount=$5::numeric,
+                  method=$6,
+                  money_account_id=$7::uuid,
+                  note=$8,
+                  updated_by_id=$9::uuid,
+                  updated_at=NOW()
+            WHERE id=$1::uuid AND shop_id=$2::uuid`,
+          ...updateValues,
         );
 
         const row = await loadUpdatedRecord(tx, req.auth.shopId, type, id);
