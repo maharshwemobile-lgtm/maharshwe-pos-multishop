@@ -311,6 +311,7 @@ function editPayload(type, body) {
   }
 
   const category = normalizeBusinessRecordCategory('income', body.category);
+  if (!category) throw Object.assign(new Error('Income category is invalid'), { status: 400 });
   const source = cleanText(body.source, 80);
   if (!source) throw Object.assign(new Error('Income source is required'), { status: 400 });
   const title = category === 'SERVICE_INCOME' ? `${SERVICE_PREFIX}${source}` : source;
