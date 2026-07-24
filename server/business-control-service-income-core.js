@@ -1,5 +1,6 @@
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
+const { normalizeBusinessRecordCategory } = require('./business-record-categories');
 
 const SERVICE_PREFIX = '__SERVICE_INCOME__:';
 
@@ -33,11 +34,13 @@ async function serviceIncomeTotal(shopId, businessDate) {
 function classifyRecentIncome(rows) {
   return (rows || []).map((row) => {
     const source = String(row.source || '');
-    const serviceIncome = source.startsWith(SERVICE_PREFIX);
+    const legacyServiceIncome = source.startsWith(SERVICE_PREFIX);
+    const category = normalizeBusinessRecordCategory('income', row.category)
+      || (legacyServiceIncome ? normalizeBusinessRecordCategory('income', 'SERVICE_INCOME') : row.category);
     return {
       ...row,
-      category: serviceIncome ? 'SERVICE_INCOME' : 'OTHER_INCOME',
-      source: serviceIncome ? source.slice(SERVICE_PREFIX.length) : source,
+      category,
+      source: legacyServiceIncome ? source.slice(SERVICE_PREFIX.length) : source,
     };
   });
 }
@@ -84,15 +87,6 @@ function attachBusinessControlServiceIncomeCore(app) {
   );
 
   app.use('/api/business-control', (req, res, next) => {
-    if (req.method === 'POST' && req.path === '/other-income') {
-      const category = String(req.body?.category || 'OTHER_INCOME').toUpperCase();
-      const source = String(req.body?.source || '').trim();
-      if (category === 'SERVICE_INCOME' && source && !source.startsWith(SERVICE_PREFIX)) {
-        req.body.source = `${SERVICE_PREFIX}${source}`;
-      }
-      delete req.body.category;
-    }
-
     const originalJson = res.json.bind(res);
     res.json = async (payload) => {
       try {
