@@ -7,10 +7,20 @@ test('business record categories remain four stable choices per type', () => {
   assert.equal(businessRecordCategories.expense.length, 4);
 });
 
-test('legacy Other Income is normalized to Other Service Income', () => {
+test('every displayed category round-trips without becoming the first category', () => {
+  for (const type of ['income', 'expense']) {
+    for (const category of businessRecordCategories[type]) {
+      assert.equal(normalizeBusinessRecordCategory(type, category.value), category.value);
+      assert.equal(normalizeBusinessRecordCategory(type, category.en), category.value);
+      assert.equal(normalizeBusinessRecordCategory(type, category.my), category.value);
+    }
+  }
+});
+
+test('Other Income resolves to the distinct Other Income category', () => {
   assert.equal(
     normalizeBusinessRecordCategory('income', 'Other Income'),
-    businessRecordCategories.income[0].value,
+    businessRecordCategories.income[3].value,
   );
 });
 
@@ -21,9 +31,9 @@ test('legacy Other Sale spelling is normalized to the current sales category', (
   );
 });
 
-test('unknown edit values cannot recreate stale categories', () => {
+test('unknown edit values are rejected instead of becoming service records', () => {
   assert.equal(
     normalizeBusinessRecordCategory('expense', 'stale-old-category'),
-    businessRecordCategories.expense[0].value,
+    null,
   );
 });

@@ -591,6 +591,7 @@ function attachBusinessControlApiV2(app) {
     const method = clean(req.body?.method || 'CASH', 20).toUpperCase();
     const note = clean(req.body?.note, 500) || null;
     const requestedAccountId = clean(req.body?.moneyAccountId, 50) || null;
+    if (!category) throw new ApiError(400, 'Income category is invalid');
     if (!source) throw new ApiError(400, 'Other income source is required');
     if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(400, 'Other income amount must be greater than zero');
     if (!PAYMENT_METHODS.has(method)) throw new ApiError(400, 'Income method is invalid');

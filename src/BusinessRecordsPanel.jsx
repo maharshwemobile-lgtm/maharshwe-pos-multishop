@@ -54,9 +54,12 @@ function formatDateTime(value) {
 function categoryLabel(record, isMiniMart = false) {
   const rows = record.type === 'expense' ? businessRecordCategories.expense : businessRecordCategories.income;
   const category = String(record.category || '').trim().toLowerCase();
-  const match = rows.find((item) => item.value.toLowerCase() === category
+  const exact = rows.find((item) => item.value.toLowerCase() === category
     || item.en.toLowerCase() === category
-    || (item.aliases || []).some((alias) => String(alias).toLowerCase() === category));
+    || item.my.toLowerCase() === category);
+  const match = exact || rows.find((item) => (
+    (item.aliases || []).some((alias) => String(alias).toLowerCase() === category)
+  ));
   if (match) return t(match.en, match.my);
   const fallback = record.type === 'expense' ? rows[0] : (isMiniMart ? rows[3] : rows[0]);
   return t(fallback.en, fallback.my);
@@ -65,9 +68,13 @@ function categoryLabel(record, isMiniMart = false) {
 function normalizedCategory(type, value) {
   const rows = type === 'expense' ? businessRecordCategories.expense : businessRecordCategories.income;
   const input = String(value || '').trim().toLowerCase();
-  return rows.find((item) => item.value.toLowerCase() === input
+  const exact = rows.find((item) => item.value.toLowerCase() === input
     || item.en.toLowerCase() === input
-    || (item.aliases || []).some((alias) => String(alias).toLowerCase() === input))?.value || rows[0].value;
+    || item.my.toLowerCase() === input);
+  if (exact) return exact.value;
+  return rows.find((item) => (
+    (item.aliases || []).some((alias) => String(alias).toLowerCase() === input)
+  ))?.value || (type === 'expense' ? rows[0].value : rows[3].value);
 }
 
 function buildIncomeOptions() {
