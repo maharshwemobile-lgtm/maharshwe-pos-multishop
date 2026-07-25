@@ -45,6 +45,19 @@ function BusinessTypePicker({ value, onChange }) {
   );
 }
 
+function LifetimeFreePlan() {
+  return (
+    <div className="ms-lifetime-plan" aria-label="Lifetime Free plan">
+      <div className="ms-lifetime-plan-icon" aria-hidden="true">∞</div>
+      <div className="ms-lifetime-plan-copy">
+        <strong>Lifetime Free</strong>
+        <span>အခြေခံ POS လုပ်ဆောင်ချက်များကို အကန့်အသတ်မရှိ အခမဲ့သုံးနိုင်သည်</span>
+      </div>
+      <small>Free Plan</small>
+    </div>
+  );
+}
+
 export default function LoginRegisterGate({ onSession, forcePasswordChange = false }) {
   const [mode, setMode] = useState('login');
   const [loginForm, setLoginForm] = useState({ username: '', password: '', shopSlug: '' });
@@ -365,13 +378,13 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             <h1>Mahar POS</h1>
             <p>Google Register ဆက်လုပ်ရန် ဆိုင်အမျိုးအစား ရွေးပါ</p>
           </div>
+          <LifetimeFreePlan />
           {error ? <div className="ms-login-alert error">{error}</div> : null}
           <form className="ms-login-form" onSubmit={submitGoogleBusinessType}>
             <BusinessTypePicker value={googleBusinessType} onChange={(value) => { setGoogleBusinessType(value); setError(''); }} />
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Register လုပ်နေသည်...' : 'ရွေးပြီး Register ပြီး Dashboard ဝင်မည်'}</button>
             <button type="button" className="ms-login-secondary" disabled={loading} onClick={() => { setPendingGoogleCredential(''); switchMode('login'); }}>Google Login ပြန်လုပ်မည်</button>
           </form>
-          <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
         </section>
       </main>
     );
@@ -385,6 +398,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
           <h1>Mahar POS</h1>
           <p>{mode === 'login' ? 'အကောင့်ဝင်ရန်' : 'အကောင့်သစ် ဖွင့်ရန်'}</p>
         </div>
+        <LifetimeFreePlan />
         <div className="ms-login-tabs" role="tablist" aria-label="Login and register">
           <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => switchMode('login')}>Login</button>
           <button type="button" className={mode === 'register' ? 'active' : ''} onClick={() => switchMode('register')}>Register</button>
@@ -435,7 +449,6 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <input type="tel" name="phone" value={registerForm.phone} onChange={(event) => { setRegisterForm({ ...registerForm, phone: event.target.value }); setError(''); }} placeholder="09xxxxxxxxx" />
             </label>
             <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဖွင့်နေသည်...' : 'အကောင့်ဖွင့်မည်'}</button>
-            <p className="ms-login-trial">✅ ဖွင့်ပြီးနောက် 1 လ Free Trial အခမဲ့ သုံးနိုင်သည်</p>
             <p className="ms-login-footer">အကောင့်ရှိပြီးသားလား? <button type="button" onClick={() => switchMode('login')}>Login ဝင်ရန်</button></p>
             {GOOGLE_CLIENT_ID ? (
               <>

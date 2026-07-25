@@ -170,7 +170,7 @@ export default function GoogleAuthGate({ children }) {
       return;
     }
     if (!termsAccepted) {
-      setError('1-month free trial စည်းကမ်းချက်ကို လက်ခံပေးပါ။');
+      setError('Mahar POS အသုံးပြုမှု သဘောတူညီချက်ကို လက်ခံပေးပါ။');
       return;
     }
 
@@ -227,7 +227,7 @@ export default function GoogleAuthGate({ children }) {
           </div>
 
           <div className="ms-auth-brand-copy">
-            <p className="ms-auth-pill">1 Month Free Trial ပါဝင်သည်</p>
+            <p className="ms-auth-pill">Lifetime Free Plan ပါဝင်သည်</p>
             <h1>
               Mobile Shop ကို
               <span> စနစ်တကျထိန်းချုပ်ပါ</span>
@@ -275,7 +275,7 @@ export default function GoogleAuthGate({ children }) {
                 <p>
                   {mode === 'login'
                     ? 'Tenant ID / Shop Slug နှင့် username/password ဖြင့် Mahar POS Dashboard သို့ ဝင်ပါ။'
-                    : 'ဆိုင်အကောင့်အသစ်ဖွင့်ပြီး 1-month free trial ကို စတင်နိုင်ပါသည်။'}
+                    : 'ဆိုင်အကောင့်အသစ်ဖွင့်ပြီး Lifetime Free Plan ကို စတင်နိုင်ပါသည်။'}
                 </p>
               </div>
 
@@ -283,7 +283,7 @@ export default function GoogleAuthGate({ children }) {
                 <div className="auth-register-success ms-auth-success">
                   <b>Tenant created: {registerSuccess.tenant?.tenantId}</b>
                   <span>Shop Slug: {registerSuccess.tenant?.slug}</span>
-                  <small>1-month free trial active until {new Date(registerSuccess.tenant?.subscription?.endsAt).toLocaleDateString()}။ Tenant ID ကို Login form ထဲ auto-fill လုပ်ထားပြီးပါပြီ။</small>
+                  <small>Lifetime Free Plan စတင်ပြီးပါပြီ။ Tenant ID ကို Login form ထဲ auto-fill လုပ်ထားပြီးပါပြီ။</small>
                 </div>
               ) : null}
 
@@ -360,7 +360,7 @@ export default function GoogleAuthGate({ children }) {
                   <div className="ms-auth-google-wrap ms-auth-register-google">
                     <div className="auth-google-button ms-auth-google-render" ref={buttonRef} />
                     <p className="ms-auth-google-note">
-                      Gmail အသစ်ဖြင့်ဝင်ပါက tenant/shop အသစ်ကို 1-month free trial ဖြင့် auto-create လုပ်ပေးပါမယ်။
+                      Gmail အသစ်ဖြင့်ဝင်ပါက tenant/shop အသစ်ကို Lifetime Free Plan ဖြင့် auto-create လုပ်ပေးပါမယ်။
                     </p>
                   </div>
 
@@ -406,15 +406,15 @@ export default function GoogleAuthGate({ children }) {
                       </div>
                     </label>
                     <div className="ms-auth-trial-note">
-                      အကောင့်ဖွင့်ပြီးပါက Tenant ID ထုတ်ပေးပြီး 1-month free trial စတင်ပါမည်။ Renew လုပ်လျှင် data မပျက်ဘဲ ပြန်အသုံးပြုနိုင်ပါသည်။
+                      အကောင့်ဖွင့်ပြီးပါက Tenant ID ထုတ်ပေးပြီး Lifetime Free Plan ကို စတင်အသုံးပြုနိုင်ပါသည်။
                     </div>
                     <label className="ms-auth-terms">
                       <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-                      <span>1 Month Free Trial စည်းကမ်းချက်များနှင့် Mahar POS အသုံးပြုမှု သဘောတူညီချက်များကို လက်ခံပါသည်။</span>
+                      <span>Mahar POS အသုံးပြုမှု သဘောတူညီချက်နှင့် ကိုယ်ရေးအချက်အလက်ဆိုင်ရာ မူဝါဒကို လက်ခံပါသည်။</span>
                     </label>
                     <button type="submit" disabled={busy}>
                       {busy ? <Loader2 className="auth-gate-spin" size={19} /> : <UserPlus size={19} />}
-                      {busy ? 'Creating tenant…' : 'အကောင့်သစ်ဖွင့်ပြီး Trial စမည်'}
+                      {busy ? 'Creating tenant…' : 'အခမဲ့အကောင့် စတင်မည်'}
                     </button>
                   </form>
 
