@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { applyProjectLanguage } from './settings/ProjectLanguageRuntime.jsx';
 import './login-footer-actions.css';
 
 const LANGUAGE_KEY = 'mahar-pos-language-v2';
@@ -22,7 +23,7 @@ function applyLanguage(language) {
   } catch {
     // Ignore private-mode storage errors.
   }
-  document.documentElement.lang = language === 'en' ? 'en' : 'my';
+  applyProjectLanguage(language);
   window.dispatchEvent(new CustomEvent('mahar-language-changed', { detail: { language } }));
   window.dispatchEvent(new CustomEvent('mahar-project-settings-updated', { detail: { preferences: { language } } }));
 }
