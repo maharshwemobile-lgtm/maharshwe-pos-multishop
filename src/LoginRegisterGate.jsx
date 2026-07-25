@@ -13,19 +13,19 @@ const BUSINESS_TYPES = [
   {
     value: 'PHONE_SHOP',
     title: '📱 Phone Shop',
-    subtitle: 'ဖုန်းဆိုင် / Repair / IMEI / Money Service',
+    subtitle: 'Phone sales, repairs, IMEI and money services',
   },
   {
     value: 'MINI_MART',
     title: '🛒 Retail Shop',
-    subtitle: 'Barcode / Expiry / Grocery POS',
+    subtitle: 'Barcode, expiry dates and retail POS',
   },
 ];
 
 function BusinessTypePicker({ value, onChange }) {
   return (
     <div className="ms-business-type-field">
-      <span>ဆိုင်အမျိုးအစား <b>*</b></span>
+      <span>Business Type <b>*</b></span>
       <div className="ms-business-type-options">
         {BUSINESS_TYPES.map((item) => (
           <label key={item.value} className={`ms-business-type-card ${value === item.value ? 'active' : ''}`}>
@@ -51,7 +51,7 @@ function LifetimeFreePlan() {
       <div className="ms-lifetime-plan-icon" aria-hidden="true">∞</div>
       <div className="ms-lifetime-plan-copy">
         <strong>Lifetime Free</strong>
-        <span>အခြေခံ POS လုပ်ဆောင်ချက်များကို အကန့်အသတ်မရှိ အခမဲ့သုံးနိုင်သည်</span>
+        <span>Core POS features are free without a time limit.</span>
       </div>
       <small>Free Plan</small>
     </div>
@@ -396,7 +396,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         <div className="ms-login-brand">
           <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
           <h1>Mahar POS</h1>
-          <p>{mode === 'login' ? 'အကောင့်ဝင်ရန်' : 'အကောင့်သစ် ဖွင့်ရန်'}</p>
+          <p>{mode === 'login' ? 'Sign in to your account' : 'Create a new account'}</p>
         </div>
         <LifetimeFreePlan />
         <div className="ms-login-tabs" role="tablist" aria-label="Login and register">
@@ -411,7 +411,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
           <form className="ms-login-form" onSubmit={submitLogin}>
             <label>
               <span>Email / Username</span>
-              <input value={loginForm.username} onChange={(event) => { setLoginForm({ ...loginForm, username: event.target.value }); setError(''); }} placeholder="email@example.com သို့မဟုတ် username" autoComplete="username" autoFocus={!prefill} readOnly={!!prefill} />
+              <input value={loginForm.username} onChange={(event) => { setLoginForm({ ...loginForm, username: event.target.value }); setError(''); }} placeholder="Email address or username" autoComplete="username" autoFocus={!prefill} readOnly={!!prefill} />
             </label>
             <label>
               <span>Password</span>
@@ -419,42 +419,42 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             </label>
             {(needSlug || loginForm.shopSlug) ? (
               <label>
-                <span>ဆိုင်ကုဒ် / Tenant ID {needSlug ? <b>*</b> : null}</span>
+              <span>Shop Code / Tenant ID {needSlug ? <b>*</b> : null}</span>
                 <input value={loginForm.shopSlug} onChange={(event) => { setLoginForm({ ...loginForm, shopSlug: event.target.value }); setError(''); }} placeholder="ဥပမာ MS123456" readOnly={!!prefill && !needSlug} />
-                <small>မသိပါက ဆိုင် admin / owner ထံမေးပါ။ ပုံမှန် user တစ်ယောက်တည်းဆို ဒီအကွက် မလိုပါ။</small>
+                <small>Ask your shop admin or owner if you do not know it. A single-shop user can leave this blank.</small>
               </label>
             ) : null}
-            <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဝင်နေသည်...' : 'Login ဝင်မည်'}</button>
-            {GOOGLE_CLIENT_ID ? <><div className="ms-login-divider"><span>သို့မဟုတ်</span></div><div className="ms-login-google" ref={googleButtonRef} /></> : null}
-            <p className="ms-login-footer">အကောင့်မရှိသေးဘူးလား? <button type="button" onClick={() => switchMode('register')}>Register လုပ်ရန်</button></p>
+            <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
+            {GOOGLE_CLIENT_ID ? <><div className="ms-login-divider"><span>Or continue with</span></div><div className="ms-login-google" ref={googleButtonRef} /></> : null}
+            <p className="ms-login-footer">No account yet? <button type="button" onClick={() => switchMode('register')}>Create Account</button></p>
           </form>
         ) : (
           <form className="ms-login-form" onSubmit={submitRegister}>
             <label>
-              <span>ဆိုင်အမည် <b>*</b></span>
-              <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="ကျွန်ုပ်၏ဆိုင်" autoFocus />
+              <span>Shop Name <b>*</b></span>
+              <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="My Shop" autoFocus />
             </label>
             <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
             <label>
               <span>Email / Username <b>*</b></span>
-              <input name="username" value={registerForm.username} onChange={(event) => { setRegisterForm({ ...registerForm, username: event.target.value }); setError(''); }} placeholder="email@example.com သို့မဟုတ် username" autoComplete="username" />
-              <small>Email သို့မဟုတ် username သုံးနိုင်သည်။ ရှိပြီးသား account ဆို Login ဝင်ပါ။</small>
+              <input name="username" value={registerForm.username} onChange={(event) => { setRegisterForm({ ...registerForm, username: event.target.value }); setError(''); }} placeholder="Email address or username" autoComplete="username" />
+              <small>Use an email address or username. Sign in if the account already exists.</small>
             </label>
             <label>
               <span>Password <b>*</b></span>
-              <input type="password" name="password" value={registerForm.password} onChange={(event) => { setRegisterForm({ ...registerForm, password: event.target.value }); setError(''); }} placeholder="အနည်းဆုံး ၆ လုံး" autoComplete="new-password" />
+              <input type="password" name="password" value={registerForm.password} onChange={(event) => { setRegisterForm({ ...registerForm, password: event.target.value }); setError(''); }} placeholder="At least 6 characters" autoComplete="new-password" />
             </label>
             <label>
-              <span>ဖုန်းနံပါတ် <em>(ရွေးချယ်နိုင်)</em></span>
+              <span>Phone Number <em>(Optional)</em></span>
               <input type="tel" name="phone" value={registerForm.phone} onChange={(event) => { setRegisterForm({ ...registerForm, phone: event.target.value }); setError(''); }} placeholder="09xxxxxxxxx" />
             </label>
-            <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'ဖွင့်နေသည်...' : 'အကောင့်ဖွင့်မည်'}</button>
-            <p className="ms-login-footer">အကောင့်ရှိပြီးသားလား? <button type="button" onClick={() => switchMode('login')}>Login ဝင်ရန်</button></p>
+            <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Creating account...' : 'Create Account'}</button>
+            <p className="ms-login-footer">Already have an account? <button type="button" onClick={() => switchMode('login')}>Sign In</button></p>
             {GOOGLE_CLIENT_ID ? (
               <>
-                <div className="ms-login-divider"><span>သို့မဟုတ်</span></div>
+                <div className="ms-login-divider"><span>Or continue with</span></div>
                 <div className="ms-login-google-register">
-                  <b>Google ဖြင့် အမြန် Register</b>
+                  <b>Quick registration with Google</b>
                   <div className="ms-login-google" ref={googleButtonRef} />
                 </div>
               </>
