@@ -514,7 +514,9 @@ function attachProjectSettingsPostgresApi(app) {
         api: {
           ...currentApi,
           googleSheets: {
+            ...previous,
             ...googleSheets,
+            secret: previous.secret || '',
             lastTest: previous.lastTest || null,
           },
         },
@@ -543,7 +545,7 @@ function attachProjectSettingsPostgresApi(app) {
         method: input.method,
         signal: controller.signal,
         headers: input.method === 'POST' ? { 'Content-Type': 'application/json', Accept: 'application/json,text/plain,*/*' } : { Accept: 'application/json,text/plain,*/*' },
-        ...(input.method === 'POST' ? { body: JSON.stringify({ source: 'Mahar POS Settings Test', shopId: req.auth.shopId, testedAt: new Date().toISOString() }) } : {}),
+        ...(input.method === 'POST' ? { body: JSON.stringify({ secret: googleSheets.secret || '', source: 'Mahar POS Settings Test', shopId: req.auth.shopId, testedAt: new Date().toISOString() }) } : {}),
       });
       preview = (await response.text()).slice(0, 1000);
     } catch (error) {
