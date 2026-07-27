@@ -18,7 +18,7 @@ import {
 import { apiFetch, clearSession, getSession } from '../phase2Api';
 import ProjectUserAccessSettings from './ProjectUserAccessSettings.jsx';
 import GoogleSheetIntegrationSettingsV23 from './GoogleSheetIntegrationSettingsV23.jsx';
-import AgentApiSettings from './AgentApiSettings.jsx';
+
 import TelegramAutomationSettings from './TelegramAutomationSettings.jsx';
 import PostgreSQLSettingsHubV23 from './PostgreSQLSettingsHubV23.jsx';
 import './project-settings.css';
@@ -297,7 +297,7 @@ export default function ProjectSettingsCenter() {
 
         {data && section === 'operations' ? <PostgreSQLSettingsHubV23/> : null}
 
-        {data && section === 'integrations' ? <><TelegramAutomationSettings/><GoogleSheetIntegrationSettingsV23/><AgentApiSettings/></> : null}
+        {data && section === 'integrations' ? <><TelegramAutomationSettings/><GoogleSheetIntegrationSettingsV23/></> : null}
 
         {data && section === 'users' ? <ProjectUserAccessSettings notify={notify}/> : null}
 
