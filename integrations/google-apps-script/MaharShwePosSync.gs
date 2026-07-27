@@ -185,16 +185,18 @@ function ensureHeaders(sheet, incomingHeaders) {
 }
 
 function getRequiredProperty(name) {
-  const configMap = {
+  // Script Properties always win — update POS_SYNC_SECRET here without re-deploying the script
+  var fromProps = PropertiesService.getScriptProperties().getProperty(name);
+  if (fromProps) return fromProps;
+  // Fall back to values embedded at deploy time (POS Integrations page → Copy Apps Script Code)
+  var configMap = {
     POS_BASE_URL: POS_CONFIG.BASE_URL,
     POS_SHOP_SLUG: POS_CONFIG.SHOP_SLUG,
     POS_SYNC_SECRET: POS_CONFIG.SYNC_SECRET,
   };
-  const configured = configMap[name];
+  var configured = configMap[name];
   if (configured && configured.indexOf('__') !== 0) return configured;
-  const value = PropertiesService.getScriptProperties().getProperty(name);
-  if (!value) throw new Error(name + ' is not configured in Script Properties');
-  return value;
+  throw new Error(name + ' is not configured. Open Apps Script → Project Settings → Script Properties and add ' + name);
 }
 
 function jsonResponse(data) {
