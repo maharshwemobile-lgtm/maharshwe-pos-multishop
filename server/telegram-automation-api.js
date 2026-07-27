@@ -15,10 +15,12 @@ const DEFAULT_TELEGRAM = Object.freeze({
   botTokenLast4: '',
   botUsername: '',
   chatId: '',
+  webhookSecret: '',
   linkedTelegramId: '',
   linkedTelegramName: '',
   linkedUsers: {},
   saleNotifications: false,
+  auditLogNotifications: false,
   dailyReportEnabled: false,
   dailyReportTime: '21:00',
   lastSaleSentAt: null,
@@ -35,6 +37,7 @@ const settingsSchema = z.object({
   botUsername: cleanText(80),
   chatId: cleanText(80),
   saleNotifications: z.boolean().default(false),
+  auditLogNotifications: z.boolean().default(false),
   dailyReportEnabled: z.boolean().default(false),
   dailyReportTime: z.string().trim().regex(/^\d{2}:\d{2}$/).default('21:00'),
 });
@@ -114,11 +117,13 @@ function safeTelegram(settings, userId = '') {
   return {
     enabled: Boolean(settings.enabled),
     botUsername: settings.botUsername || '',
+    botDeepLink: settings.botUsername ? `https://t.me/${settings.botUsername}` : null,
     chatId: settings.chatId || '',
     hasBotToken: Boolean(settings.botToken),
     botTokenLast4: settings.botTokenLast4 || '',
     linkedTelegramId: settings.linkedTelegramId || '',
     linkedTelegramName: settings.linkedTelegramName || '',
+    webhookRegistered: Boolean(settings.webhookSecret),
     currentUserTelegram: currentUserTelegram.telegramId ? {
       telegramId: currentUserTelegram.telegramId || '',
       chatId: currentUserTelegram.chatId || '',
@@ -128,6 +133,7 @@ function safeTelegram(settings, userId = '') {
     } : null,
     linkedUserCount: Object.keys(linkedUsers).length,
     saleNotifications: Boolean(settings.saleNotifications),
+    auditLogNotifications: Boolean(settings.auditLogNotifications),
     dailyReportEnabled: Boolean(settings.dailyReportEnabled),
     dailyReportTime: settings.dailyReportTime || DEFAULT_TELEGRAM.dailyReportTime,
     lastSaleSentAt: settings.lastSaleSentAt || null,
@@ -193,9 +199,10 @@ async function audit(tx, req, action, details) {
   }).catch(() => null);
 }
 
+// Use chatId OR linkedTelegramId (the user's personal Telegram ID, set via /start)
 async function sendTelegramMessage(settings, text) {
   const token = clean(settings.botToken || process.env.TELEGRAM_BOT_TOKEN || '', 240);
-  const chatId = clean(settings.chatId || '', 80);
+  const chatId = clean(settings.chatId || settings.linkedTelegramId || '', 80);
   if (!token || !chatId) throw new ApiError(400, 'Telegram Bot Token / Chat ID မထည့်ရသေးပါ');
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
@@ -203,6 +210,7 @@ async function sendTelegramMessage(settings, text) {
     body: JSON.stringify({
       chat_id: chatId,
       text: clean(text, 3900),
+      parse_mode: 'HTML',
       disable_web_page_preview: true,
     }),
   });
@@ -230,6 +238,71 @@ function verifyTelegramLogin(payload, botToken) {
   const authDate = Number(payload.auth_date || 0) * 1000;
   if (!authDate || Date.now() - authDate > 86400000) throw new ApiError(401, 'Telegram login expired');
   return true;
+}
+
+// Register a Telegram webhook so the bot auto-captures chatId when user sends /start
+async function registerBotWebhook(shopId, botToken, appUrl) {
+  const secret = crypto.randomBytes(24).toString('hex');
+  const webhookUrl = `${appUrl.replace(/\/$/, '')}/api/telegram/webhook/${shopId}`;
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      url: webhookUrl,
+      secret_token: secret,
+      allowed_updates: ['message'],
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!data.ok) throw new Error(data.description || 'setWebhook failed');
+  return secret;
+}
+
+// Handle incoming Telegram update from the webhook
+async function handleBotWebhookUpdate(shopId, update) {
+  const msg = update.message;
+  if (!msg?.chat?.id || !msg?.from) return;
+  if (msg.chat.type !== 'private') return; // only DM chats
+
+  const chatId = String(msg.chat.id);
+  const fromId = String(msg.from.id);
+
+  const settings = await loadTelegramSettings(shopId);
+  if (!settings.botToken) return;
+
+  // Only the first person to /start the bot gets linked as the notification target
+  if (!settings.linkedTelegramId) {
+    const firstName = clean(msg.from.first_name || '', 120);
+    const lastName = clean(msg.from.last_name || '', 120);
+    const fullName = [firstName, lastName].filter(Boolean).join(' ') || clean(msg.from.username || '', 120) || `Telegram ${fromId}`;
+    const next = {
+      ...settings,
+      chatId,
+      linkedTelegramId: fromId,
+      linkedTelegramName: fullName,
+      enabled: true,
+    };
+    await prisma.$transaction((tx) => saveTelegramSettings(tx, shopId, next));
+
+    await fetch(`https://api.telegram.org/bot${settings.botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: `✅ Mahar POS Telegram Linked!\n\n${fullName} — notifications will be sent to this chat.\n\nSend /start anytime to check status.`,
+      }),
+    }).catch(() => null);
+  } else if (msg.text === '/start' || msg.text?.startsWith('/start ')) {
+    const isLinkedChat = settings.chatId === chatId || settings.linkedTelegramId === fromId;
+    const statusText = isLinkedChat
+      ? `✅ Mahar POS Telegram active.\n\nLinked as: ${settings.linkedTelegramName}\nAudit notifications: ${settings.auditLogNotifications ? 'On' : 'Off'}`
+      : `⚠️ This bot is already linked to another account. Contact the shop admin.`;
+    await fetch(`https://api.telegram.org/bot${settings.botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: statusText }),
+    }).catch(() => null);
+  }
 }
 
 function formatSaleMessage(shop, sale) {
@@ -340,7 +413,8 @@ function startTelegramAutomationRunner() {
     for (const row of rows) {
       const raw = plainObject(row.settings);
       const settings = mergeTelegram(plainObject(plainObject(raw.integrations).telegram));
-      if (!settings.enabled || !settings.dailyReportEnabled || !settings.botToken || !settings.chatId) continue;
+      const effectiveChatId = settings.chatId || settings.linkedTelegramId;
+      if (!settings.enabled || !settings.dailyReportEnabled || !settings.botToken || !effectiveChatId) continue;
       if (settings.lastReportDate === date) continue;
       if (time < (settings.dailyReportTime || '21:00')) continue;
       sendDailyReportNow(row.shopId).catch((error) => console.error('Telegram daily report failed:', error.message));
@@ -375,12 +449,46 @@ function attachTelegramAutomationApi(app) {
     if (Object.prototype.hasOwnProperty.call(input, 'chatId') && input.chatId !== undefined) {
       next.chatId = clean(input.chatId, 80);
     }
+    if (Object.prototype.hasOwnProperty.call(input, 'auditLogNotifications')) {
+      next.auditLogNotifications = Boolean(input.auditLogNotifications);
+    }
     if (input.clearBotToken) {
+      // Delete the webhook before clearing the token
+      if (current.botToken) {
+        fetch(`https://api.telegram.org/bot${current.botToken}/deleteWebhook`).catch(() => null);
+      }
       next.botToken = '';
       next.botTokenLast4 = '';
+      next.botUsername = '';
+      next.webhookSecret = '';
+      next.linkedTelegramId = '';
+      next.linkedTelegramName = '';
+      next.chatId = '';
     } else if (input.botToken) {
+      // Validate the token and auto-discover bot username
+      const getMeRes = await fetch(`https://api.telegram.org/bot${input.botToken}/getMe`);
+      const getMeData = await getMeRes.json().catch(() => ({}));
+      if (!getMeData.ok) throw new ApiError(422, 'Invalid Bot Token — Telegram rejected it. Double-check the token from @BotFather.');
+
       next.botToken = input.botToken;
       next.botTokenLast4 = input.botToken.slice(-4);
+      next.botUsername = getMeData.result?.username || next.botUsername;
+
+      // Register the webhook so users can link by sending /start (no chatId needed)
+      const appUrl = process.env.APP_URL || 'https://app.maharshwe.shop';
+      try {
+        const secret = await registerBotWebhook(req.auth.shopId, input.botToken, appUrl);
+        next.webhookSecret = secret;
+        // Reset linked state since token changed (new bot = fresh link)
+        if (current.botToken && current.botToken !== input.botToken) {
+          next.linkedTelegramId = '';
+          next.linkedTelegramName = '';
+          next.chatId = '';
+        }
+      } catch (e) {
+        console.error('Telegram webhook registration failed:', e.message);
+        // Don't block settings save — user can still use Login Widget as fallback
+      }
     }
     await prisma.$transaction(async (tx) => {
       await saveTelegramSettings(tx, req.auth.shopId, next);
@@ -389,7 +497,7 @@ function attachTelegramAutomationApi(app) {
         saleNotifications: next.saleNotifications,
         dailyReportEnabled: next.dailyReportEnabled,
         hasBotToken: Boolean(next.botToken),
-        hasChatId: Boolean(next.chatId),
+        hasChatId: Boolean(next.chatId || next.linkedTelegramId),
       });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     res.json({ ok: true, telegram: safeTelegram(next, req.auth.userId), message: 'Telegram automation settings saved' });
@@ -419,7 +527,7 @@ function attachTelegramAutomationApi(app) {
     const next = {
       ...current,
       enabled: true,
-      chatId: current.chatId || telegramId,
+      chatId: telegramId,           // always update to this user's Telegram ID
       linkedUsers: {
         ...linkedUsers,
         [req.auth.userId]: {
@@ -441,11 +549,45 @@ function attachTelegramAutomationApi(app) {
     });
     res.json({ ok: true, telegram: safeTelegram(next, req.auth.userId), message: 'Telegram account connected to this POS user' });
   }));
+
+  // Unlink Telegram: clear linked chat so someone else can /start
+  app.post('/api/project-settings/api/telegram/unlink', ...access, wrap(async (req, res) => {
+    const current = await loadTelegramSettings(req.auth.shopId);
+    const next = { ...current, linkedTelegramId: '', linkedTelegramName: '', chatId: '' };
+    await prisma.$transaction(async (tx) => {
+      await saveTelegramSettings(tx, req.auth.shopId, next);
+      await audit(tx, req, 'TELEGRAM_UNLINKED', { userId: req.auth.userId });
+    });
+    res.json({ ok: true, telegram: safeTelegram(next, req.auth.userId), message: 'Telegram account unlinked' });
+  }));
+}
+
+// Webhook endpoint: Telegram POSTs updates here when user messages the bot.
+// Must be attached before auth middleware (no JWT required — verified via secret token).
+function attachTelegramWebhookEndpoint(app) {
+  app.post('/api/telegram/webhook/:shopId', async (req, res) => {
+    try {
+      const { shopId } = req.params;
+      const secret = req.headers['x-telegram-bot-api-secret-token'];
+      const settings = await loadTelegramSettings(shopId);
+      if (!settings.webhookSecret || secret !== settings.webhookSecret) {
+        return res.status(403).json({ ok: false });
+      }
+      // Always respond 200 before processing — Telegram retries on non-2xx
+      res.json({ ok: true });
+      handleBotWebhookUpdate(shopId, req.body || {}).catch(() => null);
+    } catch {
+      res.json({ ok: true });
+    }
+  });
 }
 
 module.exports = {
   attachTelegramAutomationApi,
+  attachTelegramWebhookEndpoint,
   notifyTelegramSale,
   startTelegramAutomationRunner,
   sendDailyReportNow,
+  loadTelegramSettings,
+  sendTelegramMessage,
 };
