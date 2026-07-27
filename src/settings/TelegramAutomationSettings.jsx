@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BellRing, CheckCircle2, Link2, Link2Off, Loader2, Save, Send, ShieldCheck, UserRound } from 'lucide-react';
+import { BellRing, CheckCircle2, Link2, Link2Off, Loader2, Plus, Save, Send, ShieldCheck, Trash2, UserRound } from 'lucide-react';
 import { apiFetch } from '../phase2Api';
 
 const EMPTY = {
@@ -8,12 +8,14 @@ const EMPTY = {
   auditLogNotifications: false,
   dailyReportEnabled: false,
   dailyReportTime: '21:00',
+  notifyChatIds: [],
 };
 
 export default function TelegramAutomationSettings() {
   const [form, setForm] = useState(EMPTY);
   const [meta, setMeta] = useState({});
   const [botTokenInput, setBotTokenInput] = useState('');
+  const [newChatId, setNewChatId] = useState('');
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
   const widgetRef = useRef(null);
@@ -32,6 +34,7 @@ export default function TelegramAutomationSettings() {
         auditLogNotifications: Boolean(telegram.auditLogNotifications),
         dailyReportEnabled: Boolean(telegram.dailyReportEnabled),
         dailyReportTime: telegram.dailyReportTime || '21:00',
+        notifyChatIds: Array.isArray(telegram.notifyChatIds) ? telegram.notifyChatIds : [],
       });
     } catch (error) {
       setMessage(error.message || 'Telegram settings load failed');
@@ -97,6 +100,17 @@ export default function TelegramAutomationSettings() {
     }
   };
 
+  const addChatId = () => {
+    const id = newChatId.trim();
+    if (!id || form.notifyChatIds.includes(id) || form.notifyChatIds.length >= 20) return;
+    update({ notifyChatIds: [...form.notifyChatIds, id] });
+    setNewChatId('');
+  };
+
+  const removeChatId = (id) => {
+    update({ notifyChatIds: form.notifyChatIds.filter((x) => x !== id) });
+  };
+
   const save = async () => {
     setBusy('save');
     try {
@@ -108,6 +122,7 @@ export default function TelegramAutomationSettings() {
           auditLogNotifications: form.auditLogNotifications,
           dailyReportEnabled: form.dailyReportEnabled,
           dailyReportTime: form.dailyReportTime,
+          notifyChatIds: form.notifyChatIds,
         },
       });
       setMeta(response.telegram || {});
@@ -198,7 +213,8 @@ export default function TelegramAutomationSettings() {
         <div className="project-google-guide">
           <div><b>1</b><span><strong>Bot Token ထည့်မယ်</strong><small>@BotFather မှာ bot ဖန်တီးပြီး token paste ပါ။</small></span></div>
           <div><b>2</b><span><strong>/start ပို့မယ်</strong><small>Bot link ကိုနှိပ်ပြီး /start ပို့ပါ — Chat ID auto မှတ်ပါမည်။</small></span></div>
-          <div><b>3</b><span><strong>Notification ဖွင့်မယ်</strong><small>Sale, Audit Log, Daily Report — ရွေးချယ်ပါ။</small></span></div>
+          <div><b>3</b><span><strong>Group/Channel ထည့်မယ်</strong><small>Extra Chat IDs ထည့်ပြီး group/channel တွေကိုပါ ပို့နိုင်သည်။</small></span></div>
+          <div><b>4</b><span><strong>Notification ဖွင့်မယ်</strong><small>Sale, Audit Log, Daily Report — ရွေးချယ်ပါ။</small></span></div>
         </div>
 
         {/* Step 1: Bot Token */}
@@ -260,7 +276,45 @@ export default function TelegramAutomationSettings() {
           </div>
         )}
 
-        {/* Step 3: Notification toggles */}
+        {/* Step 3: Extra notification targets */}
+        {meta.hasBotToken && (
+          <div className="gs-code-card">
+            <div><b>Extra Chat IDs (Group / Channel)</b></div>
+            <p style={{ marginBottom: 8 }}>
+              Notification ကို Primary account အပြင် Group/Channel တွေကိုပါ ပို့ချင်ရင် Chat ID ထည့်ပါ။
+              Group တစ်ခုရဲ့ Chat ID ကို Bot ကို group ထဲ add ပြီး <code>/start</code> ပို့ပါ — auto ထည့်ပေးမည်
+              သို့မဟုတ် manually ထည့်နိုင်သည်။
+            </p>
+            {form.notifyChatIds.length > 0 && (
+              <ul style={{ margin: '0 0 8px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {form.notifyChatIds.map((id) => (
+                  <li key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--ps-row-bg, rgba(0,0,0,.04))', borderRadius: 6, padding: '4px 10px', fontFamily: 'monospace', fontSize: 13 }}>
+                    <span style={{ flex: 1 }}>{id}</span>
+                    <button type="button" onClick={() => removeChatId(id)} title="Remove" style={{ display: 'flex', padding: 2, background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                className="ps-input"
+                type="text"
+                placeholder="-1001234567890 (group/channel chat ID)"
+                value={newChatId}
+                onChange={(e) => setNewChatId(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addChatId(); } }}
+                style={{ flex: 1, fontFamily: 'monospace' }}
+              />
+              <button className="ps-primary" type="button" onClick={addChatId} disabled={!newChatId.trim() || form.notifyChatIds.length >= 20} title="Add">
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Notification toggles */}
         <div className="ps-grid-2">
           <label className="ps-switch-row">
             <span><b>Telegram ကိုဖွင့်မယ်</b><small>OFF ဖြစ်ရင် notification မပို့ပါ။</small></span>
