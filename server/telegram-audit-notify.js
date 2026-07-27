@@ -1,4 +1,4 @@
-const { loadTelegramSettings, sendTelegramMessage } = require('./telegram-automation-api');
+const { loadTelegramSettings, sendTelegramMessageToAll } = require('./telegram-automation-api');
 
 // Actions that are worth sending as audit notifications (skip noise)
 const NOTIFY_ACTIONS = new Set([
@@ -76,10 +76,7 @@ async function notifyTelegramAuditEvent(shopId, event) {
     if (!shouldNotify(event)) return;
     const settings = await loadTelegramSettings(shopId);
     if (!settings.enabled || !settings.auditLogNotifications) return;
-    // Use linkedTelegramId as fallback — no manual chatId entry needed (wallet-note style)
-    const effectiveChatId = settings.chatId || settings.linkedTelegramId;
-    if (!effectiveChatId) return;
-    await sendTelegramMessage({ ...settings, chatId: effectiveChatId }, formatAuditMessage(event));
+    await sendTelegramMessageToAll(settings, formatAuditMessage(event));
   } catch {
     // fire-and-forget — never block the request
   }
