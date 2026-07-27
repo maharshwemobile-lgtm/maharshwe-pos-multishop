@@ -56,7 +56,7 @@ const attachProjectSettingsPreferencesWrite = require('./project-settings-prefer
 const attachProjectSettingsBusinessWrite = require('./project-settings-business-write');
 const attachProjectSettingsAppearanceWrite = require('./project-settings-appearance-write');
 const attachProjectFunctionAccessMiddleware = require('./project-function-access-middleware');
-const attachAgentPosApi = require('./agent-pos-api');
+
 const { attachTelegramAutomationApi, attachTelegramWebhookEndpoint, startTelegramAutomationRunner } = require('./telegram-automation-api');
 const attachHardDbApi = require('./hard-db-api');
 const attachProductImportApi = require('./product-import-api');
@@ -109,7 +109,7 @@ if (isPostgreSql) {
   attachEcommerceStorefrontApi(app);
   attachGoogleSheetSyncV23Extension(app);
   attachGoogleSheetSyncApi(app);
-  attachAgentPosApi(app);
+
   attachTelegramWebhookEndpoint(app);
   attachTelegramAutomationApi(app);
   attachFinanceSettingsV23Api(app);
