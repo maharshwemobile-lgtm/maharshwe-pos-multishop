@@ -136,3 +136,116 @@ tr:hover td { background: var(--project-surface-2); }
 }
 
 .grid2 { gap: 12px; margin-bottom: 14px; }
+
+/* ========================================================================
+ * Responsive layer
+ *
+ * Replaces mobile-auto-fit-v21.css and ui-layout-hotfix-v24.css (41KB, 278
+ * !important between them). Those two spent their length enumerating page class
+ * names one by one to apply a handful of generic rules. Matching on the naming
+ * convention the pages already follow says the same thing once, and without
+ * !important, so page CSS can still override it where a page genuinely differs.
+ * ===================================================================== */
+
+html,
+body,
+#root {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* The drawer locks the page behind it. */
+body.mobile-nav-open { overflow: hidden; }
+
+/* A flex/grid child will not shrink below its content unless told to. This is what
+ * every "min-width:0" line in the old sheets was for, and it is what stops a wide
+ * table from pushing the whole page sideways. */
+:where(
+  main, .content, [class$="-page"], [class$="-card"], [class$="-panel"],
+  [class$="-workspace"], [class$="-grid"], [class$="-wrap"], section, article, form
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Wide content scrolls inside its own box rather than the page. The [class*="… "]
+ * form is needed because the suffix match only fires when the wrapper carries a
+ * single class. */
+:where([class$="-table-wrap"], [class*="-table-wrap "], .table-wrap) {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(input, select, textarea) { min-width: 0; }
+:where(button, input, select, textarea) { max-width: 100%; }
+
+/* Page headings that carry only actions: the topbar already shows the page name. */
+:where([class$="-actions-only"]) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  /* Multi-column layouts collapse rather than squeeze. */
+  :where(.stats, .quick, .miniStats, .grid2, [class$="-grid"], [class$="-form-grid"]) {
+    grid-template-columns: 1fr;
+  }
+
+  /* Toolbars stack, and their controls go full width so they stay tappable. */
+  :where(.toolbar, [class$="-toolbar"]) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  :where(.toolbar, [class$="-toolbar"]) :where(input, select, button) {
+    width: 100%;
+  }
+
+  :where([class$="-actions-only"]) { justify-content: stretch; }
+
+  :where(th, td) { padding: 9px 10px; }
+  :where(table) { font-size: 13px; }
+
+  /* Sheets take the full screen on a phone. */
+  :where([class$="-modal"]) {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  /* iOS zooms the page whenever a focused control is under 16px, so this one is a
+   * functional rule rather than styling. The :not() pair is there to carry enough
+   * specificity to beat page rules like `.stock-search-box input`; :where() or a bare
+   * element selector both lose to those. */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select:not([multiple]),
+  textarea:not([readonly]) {
+    font-size: 16px;
+  }
+}
+
+/* ---- Sale POS ----------------------------------------------------------
+ * sales-v10.css collapses the register to one column below 1280px, which puts the
+ * cart under a full page of products on a laptop. ui-layout-hotfix-v24.css used to
+ * override that; carrying the behaviour here is what let that sheet go. Belongs to
+ * the page, so it moves into NewSaleV10 when that page adopts the kit.
+ */
+@media (min-width: 980px) {
+  .sale10-main-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(400px, 0.75fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .sale10-cart-table-wrap { max-height: min(56dvh, 620px); }
+}
