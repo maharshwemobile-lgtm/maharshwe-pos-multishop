@@ -1,0 +1,375 @@
+/* ═══════════════════════════════════════════════════════════
+   Project Settings Center  –  psc-* design system
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.psc-page { display: grid; gap: 14px; position: relative; }
+
+/* ── Header banner ──────────────────────────────────────────── */
+.psc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 22px;
+  border: 1px solid #dfe8e3;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffff, #f4fbf7);
+}
+.psc-header-eyebrow {
+  display: block;
+  color: #16a34a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.psc-header h2 { margin: 0 0 3px; font-size: 22px; color: #0f172a; }
+.psc-header p  { margin: 0; color: #64748b; font-size: 12px; line-height: 1.7; max-width: 780px; }
+
+/* ── Two-column shell ───────────────────────────────────────── */
+.psc-shell {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+/* ── Sidebar nav ────────────────────────────────────────────── */
+.psc-nav {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid #dfe8e3;
+  border-radius: 16px;
+  background: #fff;
+  position: sticky;
+  top: 12px;
+}
+.psc-nav-sep { height: 1px; background: #eaeff0; margin: 3px 0; }
+.psc-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background .14s, color .14s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.psc-nav-btn:hover  { background: #f0fdf4; color: #15803d; }
+.psc-nav-btn.active { background: #dcfce7; color: #166534; font-weight: 800; }
+.psc-nav-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(100,116,139,.1);
+  color: #64748b;
+  transition: background .14s, color .14s;
+}
+.psc-nav-btn.active .psc-nav-icon { background: #16a34a; color: #fff; }
+
+/* ── Content area ───────────────────────────────────────────── */
+.psc-content { display: grid; gap: 12px; min-width: 0; }
+
+/* ── Card / Panel ───────────────────────────────────────────── */
+.psc-panel {
+  border: 1px solid #dfe8e3;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(15,23,42,.04);
+}
+
+/* ── Panel header ───────────────────────────────────────────── */
+.psc-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid #eef2f7;
+  background: #f9fbfc;
+}
+.psc-panel-head-left { display: flex; align-items: center; gap: 10px; }
+.psc-panel-head-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #dcfce7;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+.psc-panel-head-text h3 { margin: 0; font-size: 14px; color: #0f172a; }
+.psc-panel-head-text p  { margin: 2px 0 0; font-size: 10px; color: #64748b; line-height: 1.5; }
+.psc-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #dce5ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Form ───────────────────────────────────────────────────── */
+.psc-form { display: grid; gap: 12px; padding: 18px; }
+.psc-grid-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.psc-grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+/* ── Field ──────────────────────────────────────────────────── */
+.psc-field { display: flex; flex-direction: column; gap: 5px; }
+.psc-field > span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.psc-field input,
+.psc-field select,
+.psc-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 12px;
+  height: 40px;
+  border: 1px solid #dce5ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .14s, box-shadow .14s;
+}
+.psc-field textarea { height: auto; padding: 9px 12px; resize: vertical; }
+.psc-field input:focus,
+.psc-field select:focus,
+.psc-field textarea:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+}
+.psc-field input:disabled,
+.psc-field select:disabled,
+.psc-field textarea:disabled  { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+.psc-field input[readonly]    { background: #f8fafc; color: #94a3b8; }
+.psc-field small { color: #94a3b8; font-size: 10px; line-height: 1.5; }
+
+/* ── Sub-divider within form ────────────────────────────────── */
+.psc-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 1 / -1;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin: 2px 0;
+}
+.psc-divider::before,
+.psc-divider::after { content: ''; flex: 1; height: 1px; background: #eaeff0; }
+
+/* ── Toggle switch row ──────────────────────────────────────── */
+.psc-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid #e2ecf0;
+  border-radius: 10px;
+  background: #f9fbfc;
+  cursor: pointer;
+}
+.psc-toggle-text      { display: grid; gap: 2px; min-width: 0; }
+.psc-toggle-text b    { font-size: 13px; color: #334155; display: block; }
+.psc-toggle-text small{ font-size: 10px; color: #94a3b8; line-height: 1.4; display: block; }
+.psc-toggle input[type="checkbox"] {
+  width: 40px; height: 22px; flex-shrink: 0;
+  accent-color: #16a34a; cursor: pointer;
+}
+.psc-toggle-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+
+/* ── Actions bar ────────────────────────────────────────────── */
+.psc-actions { display: flex; align-items: center; gap: 8px; padding: 0 18px 18px; flex-wrap: wrap; }
+.psc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid #dce5ef;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .14s;
+}
+.psc-btn:hover        { background: #f8fafc; }
+.psc-btn.primary      { border-color: #16a34a; background: #16a34a; color: #fff; }
+.psc-btn.primary:hover{ background: #15803d; }
+.psc-btn:disabled     { opacity: .45; cursor: not-allowed; }
+
+/* ── License block ──────────────────────────────────────────── */
+.psc-license {
+  display: grid;
+  grid-template-columns: 175px minmax(0,1fr) 185px;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eef2f7;
+}
+.psc-lic-card {
+  padding: 12px 14px;
+  border: 1px solid #e2ecf0;
+  border-radius: 12px;
+  background: #f9fbfc;
+}
+.psc-lic-card.good    { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+.psc-lic-card.warning { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+.psc-lic-card.danger  { background:#fff1f2; border-color:#fecdd3; color:#9f1239; }
+.psc-lic-status       { display:flex; align-items:center; gap:10px; }
+.psc-lic-status small { display:block; font-size:10px; text-transform:uppercase; font-weight:900; opacity:.75; }
+.psc-lic-status b     { display:block; margin-top:3px; font-size:14px; }
+.psc-lic-bar          { height:6px; margin:10px 0 6px; border-radius:999px; background:#e2e8f0; overflow:hidden; }
+.psc-lic-bar i        { display:block; height:100%; border-radius:999px; background:#16a34a; }
+.psc-lic-meta         { display:flex; justify-content:space-between; gap:8px; font-size:11px; }
+.psc-lic-meta small   { color:#64748b; font-size:10px; }
+.psc-lic-renew small,
+.psc-lic-renew b,
+.psc-lic-renew span   { display:block; }
+.psc-lic-renew small  { font-size:10px; text-transform:uppercase; font-weight:900; opacity:.75; }
+.psc-lic-renew b      { margin:4px 0; font-size:14px; color:#0f172a; }
+.psc-lic-renew button {
+  min-height:34px; border:0; border-radius:9px; padding:0 12px;
+  background:#16a34a; color:#fff; font:inherit; font-size:12px; font-weight:800; cursor:pointer;
+}
+.psc-lic-renew span   { margin-top:5px; font-size:10px; color:#64748b; }
+
+/* ── Slip two-column layout ─────────────────────────────────── */
+.psc-two-col     { display:grid; grid-template-columns:minmax(0,1.3fr) 280px; gap:12px; }
+.psc-slip-sticky { position:sticky; top:12px; }
+.psc-paper {
+  width:100%; max-width:270px; margin:14px auto;
+  padding:16px 12px; border:1px dashed #94a3b8;
+  background:#fff; color:#111827;
+  font-family:ui-monospace,'Courier New',monospace; font-size:11px; text-align:center;
+}
+.psc-paper.narrow  { max-width:200px; }
+.psc-paper img     { width:52px; height:52px; object-fit:contain; margin-bottom:6px; }
+.psc-paper-logo    {
+  width:44px; height:44px; margin:0 auto 6px; border-radius:50%;
+  display:grid; place-items:center; background:#16a34a; color:#fff; font-weight:900;
+}
+.psc-paper h3      { margin:4px 0; font-size:12px; font-family:inherit; }
+.psc-paper p       { margin:5px 0; white-space:pre-wrap; }
+.psc-paper hr      { border:0; border-top:1px dashed #64748b; margin:8px 0; }
+.psc-paper-row     { display:flex; justify-content:space-between; gap:8px; margin:4px 0; }
+.psc-paper strong  { display:block; margin-top:8px; }
+
+/* ── Database status ────────────────────────────────────────── */
+.psc-db-status {
+  display:grid; grid-template-columns:repeat(3,1fr) auto;
+  gap:8px; padding:14px 18px; border-bottom:1px solid #eef2f7;
+}
+.psc-db-card { display:flex; align-items:center; gap:9px; padding:11px 12px; border:1px solid #e2ecf0; border-radius:10px; background:#f9fbfc; }
+.psc-db-card svg   { color:#16a34a; flex-shrink:0; }
+.psc-db-card small { display:block; font-size:10px; color:#64748b; }
+.psc-db-card b     { display:block; margin-top:2px; font-size:12px; }
+.psc-db-card code  { font-size:10px; word-break:break-all; color:#64748b; }
+
+/* ── States ─────────────────────────────────────────────────── */
+.psc-loading,.psc-empty { display:flex; align-items:center; justify-content:center; gap:8px; min-height:180px; color:#64748b; font-size:13px; }
+
+/* ── Toast ──────────────────────────────────────────────────── */
+.psc-toast {
+  position:fixed; z-index:9999; right:20px; top:20px; max-width:360px;
+  padding:12px 16px; border-radius:12px; color:#fff; font-size:13px; font-weight:700;
+  box-shadow:0 12px 30px rgba(15,23,42,.2); animation:pscSlideIn .22s ease;
+}
+.psc-toast.success { background:#16a34a; }
+.psc-toast.error   { background:#dc2626; }
+@keyframes pscSlideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+.psc-spin { animation:pscSpin .85s linear infinite; }
+@keyframes pscSpin { to { transform:rotate(360deg); } }
+
+/* ── Dark mode ──────────────────────────────────────────────── */
+.dark .psc-header         { background:linear-gradient(135deg,#0b1b33,#0f243f); border-color:#1e3555; }
+.dark .psc-header h2      { color:#f1f5f9; }
+.dark .psc-header p       { color:#94afc7; }
+.dark .psc-nav,.dark .psc-panel { background:#0b1b33; border-color:#1e3555; }
+.dark .psc-nav-sep        { background:#1e3555; }
+.dark .psc-nav-btn        { color:#94afc7; }
+.dark .psc-nav-btn:hover  { background:#0f243f; color:#e5eef8; }
+.dark .psc-nav-btn.active { background:#163b27; color:#4ade80; }
+.dark .psc-nav-btn .psc-nav-icon          { background:rgba(255,255,255,.08); color:#94afc7; }
+.dark .psc-nav-btn.active .psc-nav-icon   { background:#16a34a; color:#fff; }
+.dark .psc-panel-head     { background:#0f2440; border-color:#1e3555; }
+.dark .psc-panel-head-text h3 { color:#f1f5f9; }
+.dark .psc-panel-head-text p  { color:#94afc7; }
+.dark .psc-field input,.dark .psc-field select,.dark .psc-field textarea { background:#0f2440; border-color:#1e3555; color:#e5eef8; }
+.dark .psc-field input[readonly],.dark .psc-field input:disabled,
+.dark .psc-field select:disabled,.dark .psc-field textarea:disabled { background:#0a1a2e; color:#4b6280; }
+.dark .psc-toggle         { background:#0f2440; border-color:#1e3555; }
+.dark .psc-toggle-text b  { color:#e5eef8; }
+.dark .psc-btn            { background:#0b1b33; border-color:#1e3555; color:#e5eef8; }
+.dark .psc-btn.primary    { background:#16a34a; border-color:#16a34a; color:#fff; }
+.dark .psc-lic-card       { background:#0f2440; border-color:#1e3555; }
+.dark .psc-lic-card.good  { background:#0d2c18; border-color:#166534; color:#4ade80; }
+.dark .psc-lic-card.warning { background:#2d1a00; border-color:#92400e; color:#fcd34d; }
+.dark .psc-lic-card.danger  { background:#2c0a0a; border-color:#9f1239; color:#fca5a5; }
+.dark .psc-lic-renew b    { color:#f1f5f9; }
+.dark .psc-lic-renew span { color:#94afc7; }
+.dark .psc-db-card        { background:#0f2440; border-color:#1e3555; }
+.dark .psc-divider        { color:#4b6280; }
+.dark .psc-divider::before,.dark .psc-divider::after { background:#1e3555; }
+.dark .psc-paper          { background:#fff; color:#111827; }
+.dark .psc-icon-btn       { background:#0b1b33; border-color:#1e3555; color:#94afc7; }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .psc-shell { grid-template-columns: 1fr; }
+  .psc-nav { position:static; display:flex; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding:7px; gap:3px; border-radius:12px; }
+  .psc-nav::-webkit-scrollbar { display:none; }
+  .psc-nav-btn { min-width:max-content; min-height:38px; }
+  .psc-nav-sep { display:none; }
+  .psc-two-col { grid-template-columns:1fr; }
+  .psc-slip-sticky { position:static; }
+  .psc-license { grid-template-columns:1fr 1fr; }
+  .psc-db-status { grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width: 720px) {
+  .psc-grid-2,.psc-grid-3,.psc-toggle-grid,.psc-license { grid-template-columns:1fr; }
+  .psc-db-status { grid-template-columns:1fr 1fr; }
+  .psc-actions { flex-direction:column; align-items:stretch; }
+  .psc-actions .psc-btn { width:100%; justify-content:center; }
+  .psc-form { padding:14px; }
+  .psc-panel-head { padding:12px 14px; }
+}
+@media (max-width: 480px) {
+  .psc-db-status { grid-template-columns:1fr; }
+  .psc-toast { left:12px; right:12px; top:12px; max-width:none; }
+  .psc-header { padding:14px 16px; }
+}
