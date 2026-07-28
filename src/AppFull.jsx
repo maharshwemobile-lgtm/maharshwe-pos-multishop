@@ -41,7 +41,7 @@ const menu = [
   { name: 'Repairs', label: 'Repair Platform', icon: Wrench, color: '#f59e0b' },
   { name: 'Products', icon: Box, color: '#ec4899' },
   { name: 'Online Shop', label: 'E-commerce Website', icon: ShoppingBag, color: '#059669' },
-  { name: 'Prices', label: 'ဈေးနှုန်းနှင့် လျော့ဈေးများ', icon: BadgePercent, color: '#f97316' },
+  { name: 'Prices', label: 'Prices & Discounts', icon: BadgePercent, color: '#f97316' },
   { name: 'Stock', icon: PackagePlus, color: '#8b5cf6' },
   { name: 'Purchases', icon: Truck, color: '#06b6d4' },
   { name: 'Customers', label: 'Customers & Credit', icon: Users, color: '#10b981' },
@@ -83,7 +83,7 @@ const pageTitles = {
   Backup: 'Backup & Recovery',
   Settings: 'Project Settings',
   'About Us': 'About Us',
-  'Prices': 'ဈေးနှုန်းနှင့် လျော့ဈေးများ',
+  'Prices': 'Price & Discounts',
 };
 
 function recoverIndexedString(value) {
@@ -242,7 +242,7 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
       {businessLogo
         ? <img src={businessLogo} alt={`${businessName} logo`}/>
         : <span className="business-logo-fallback" aria-hidden="true">{businessInitials}</span>}
-      <div><b>{businessName}</b><span>{businessSubtitle}</span></div>
+      <div className="brand-text"><b>{businessName}</b><span>{businessSubtitle}</span></div>
     </div>
     <nav>
       {visibleMenu.map((item) => <button key={item.name} onClick={() => onSelect(item.name)} className={page === item.name ? 'active' : ''}><item.icon size={22} color={page === item.name ? '#fff' : '#94a3b8'} strokeWidth={2}/><span>{item.label || item.name}</span></button>)}
@@ -296,15 +296,9 @@ function Topbar({ page, toggle, settings, user, menuOpen }) {
   const isRepair = safePage === 'Repairs';
   const miniMart = isMiniMartBusiness(user);
   const phaseLabel = '';
-  const subtitle = safePage === 'Prices' ? '' : miniMart
-    ? (isDashboard
-      ? 'Mini Mart Daily Sales & Stock Overview'
-      : `${safeText(settings?.business?.name, 'PostgreSQL tenant connected')} · Mini Mart POS`)
-    : (isDashboard
-      ? 'Live Business Overview'
-      : (isRepair
-        ? `Advanced Repair Platform · ${safeText(settings?.business?.name, 'Mahar POS')}`
-        : `${safeText(settings?.business?.name, 'PostgreSQL tenant connected')} · License ${safeText(settings?.license?.status, '-')}`));
+  const subtitle = isDashboard
+    ? (miniMart ? 'Mini Mart Daily Sales & Stock Overview' : 'Live Business Overview')
+    : safeText(settings?.business?.name, '');
   return <header className="topbar">
     <button
       className={`icon phase9-mobile-menu-button ${menuOpen ? 'is-active' : ''}`}

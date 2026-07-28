@@ -64,3 +64,9 @@
   font-weight: 900;
   letter-spacing: .03em;
 }
+/* Brand area overflow — prevent long shop names from wrapping */
+.brand-text{min-width:0;overflow:hidden;flex:1}
+.brand-text b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.brand-text span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+/* Nav button label overflow */
+nav button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}

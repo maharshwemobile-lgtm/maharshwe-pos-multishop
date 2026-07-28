@@ -11,13 +11,6 @@
 }
 
 
-/* Global: hide in-app refresh buttons everywhere */
-button:has(svg.lucide-refresh-cw),
-button:has(.lucide-refresh-cw),
-.refresh-button,
-.payments-refresh-button {
-  display: none !important;
-}
 
 
 /* Mobile menu button: make sidebar access obvious */
@@ -334,4 +327,13 @@ html[lang="my"] .phase9-app {
   .topbar-user-profile { display: none; }
   .phase9-app .content { min-width: 0; overflow-x: clip; }
   .phase9-app :where(button, input, select) { min-height: 40px; }
+}
+/* Sidebar nav label truncation — prevent long Myanmar labels from wrapping */
+.phase9-sidebar nav button span,
+.sidebar nav button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
