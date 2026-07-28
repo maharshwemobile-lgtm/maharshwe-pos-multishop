@@ -234,10 +234,17 @@ async function deliverPending(limit = 25, shopId = null) {
       take,
     )
     : await prisma.$queryRawUnsafe(
-      `SELECT id,shop_id AS "shopId",dataset,action,entity_id AS "entityId",payload,created_at AS "createdAt"
-         FROM google_sheet_sync_outbox
-        WHERE status IN ('PENDING','FAILED') AND attempts < 20
-        ORDER BY created_at ASC LIMIT $1`,
+      `SELECT o.id,o.shop_id AS "shopId",o.dataset,o.action,o.entity_id AS "entityId",o.payload,o.created_at AS "createdAt"
+         FROM google_sheet_sync_outbox o
+         JOIN shop_settings ss ON ss.shop_id = o.shop_id
+        WHERE o.status IN ('PENDING','FAILED')
+          AND o.attempts < 20
+          AND (ss.settings->'api'->'googleSheets'->>'enabled')::boolean = true
+          AND (ss.settings->'api'->'googleSheets'->>'postUrl') IS NOT NULL
+          AND (ss.settings->'api'->'googleSheets'->>'postUrl') <> ''
+          AND (ss.settings->'api'->'googleSheets'->>'secret') IS NOT NULL
+          AND (ss.settings->'api'->'googleSheets'->>'secret') <> ''
+        ORDER BY o.created_at ASC LIMIT $1`,
       take,
     );
 
