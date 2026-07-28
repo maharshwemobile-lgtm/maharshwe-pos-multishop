@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Code2, Copy, Globe2, Loader2, RefreshCw, Save, Send, ShieldCheck } from 'lucide-react';
 import { apiFetch, getSession } from '../phase2Api';
 import GOOGLE_APPS_SCRIPT from '../../integrations/google-apps-script/MaharShwePosSync.gs?raw';
+import PULL_SYNC_SCRIPT from '../../integrations/google-apps-script/MaharPosGSheetPullSync.gs?raw';
 import './project-operations-v23.css';
 
 const EMPTY = {
@@ -71,6 +72,10 @@ export default function GoogleSheetIntegrationSettingsV23() {
     .replace('__POS_BASE_URL__', appBaseUrl)
     .replace('__POS_SHOP_SLUG__', effectiveShopSlug || 'YOUR_SHOP_SLUG')
     .replace('__POS_SYNC_SECRET__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, effectiveShopSlug, form.secret]);
+
+  const configuredPullScript = useMemo(() => PULL_SYNC_SCRIPT
+    .replace('__POS_BASE_URL__', appBaseUrl)
+    .replace('__POS_PULL_KEY__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, form.secret]);
 
   const load = async () => {
     setLoading(true);
@@ -172,22 +177,27 @@ export default function GoogleSheetIntegrationSettingsV23() {
 
     <div className="project-google-guide">
       <div>
-        <b>သုံးနည်းအကျဉ်း</b>
+        <b>Setup (တစ်ကြိမ်ပဲ လုပ်ဖို့လို)</b>
         <ol>
-          <li>Google Sheet ဖွင့် → Extensions → Apps Script ကိုဝင်ပါ။</li>
-          <li>Copy Apps Script Code ကိုနှိပ်ပြီး Apps Script ထဲ paste ပါ။</li>
-          <li>Deploy → New deployment → Web app → Anyone with the link ဖြင့် deploy ပါ။</li>
-          <li>ရလာတဲ့ Web App URL ကို Web App URL ထဲ paste → Enable → Save → Test POST နှိပ်ပါ။</li>
+          <li>Google Sheet ဖွင့် → Extensions → Apps Script ဝင်ပါ။</li>
+          <li><b>Copy Apps Script Code</b> → Apps Script ထဲ paste → <b>Deploy → Web App → Anyone</b> → Web App URL ကို မှတ်ပါ။</li>
+          <li>Apps Script → <b>Project Settings → Script Properties → Add property</b>:<br/><code>POS_SYNC_SECRET</code> = အောက်က Shared Secret ကို copy ပြီး paste ပါ။</li>
+          <li>Web App URL ကို ဒီမှာ paste → Enable → <b>Save → Test POST</b> နှိပ်ပါ။</li>
         </ol>
+        <p style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>
+          ✅ Script Properties မှာ Secret ထည့်ပြီးရင် Apps Script ကို re-deploy မလုပ်ရတော့ပါ — Secret ပြောင်းရင် Properties ထဲမှာပဲ ပြောင်းရင် ရပြီ။
+        </p>
       </div>
 
       <div className="project-google-guide-actions">
         <button type="button" onClick={() => notifyCopy(configuredAppsScript, 'Apps Script code copied')}><Code2 size={16}/> Copy Apps Script Code</button>
+        <button type="button" onClick={() => notifyCopy(configuredPullScript, 'Pull Sync Script copied')}><Code2 size={16}/> Copy Pull Sync Script</button>
       </div>
     </div>
 
     <div className="project-google-copy-grid">
       <CopyBox label="Shop Slug" value={effectiveShopSlug || 'YOUR_SHOP_SLUG'} onCopy={notifyCopy}/>
+      {form.secret ? <CopyBox label="Shared Secret → Script Properties: POS_SYNC_SECRET" value={form.secret} buttonLabel="Copy Secret" onCopy={notifyCopy}/> : null}
     </div>
 
     <form className="project-google-form" onSubmit={save}>

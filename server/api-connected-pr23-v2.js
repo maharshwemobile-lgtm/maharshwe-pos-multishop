@@ -56,7 +56,7 @@ const attachProjectSettingsPreferencesWrite = require('./project-settings-prefer
 const attachProjectSettingsBusinessWrite = require('./project-settings-business-write');
 const attachProjectSettingsAppearanceWrite = require('./project-settings-appearance-write');
 const attachProjectFunctionAccessMiddleware = require('./project-function-access-middleware');
-const attachAgentPosApi = require('./agent-pos-api');
+
 const { attachTelegramAutomationApi, attachTelegramWebhookEndpoint, startTelegramAutomationRunner } = require('./telegram-automation-api');
 const attachHardDbApi = require('./hard-db-api');
 const attachProductImportApi = require('./product-import-api');
@@ -69,6 +69,7 @@ const attachMoneyServiceV23Guards = require('./money-service-v23-guards');
 const attachMoneyServiceRatesV23Api = require('./money-service-rates-v23-api');
 const { attachMoneyServiceV23Api } = require('./money-service-v23-api');
 const attachGoogleSheetSyncV23Extension = require('./google-sheet-sync-v23-extension');
+const attachGoogleSheetPullReportApi = require('./google-sheet-pull-report-api');
 const { attachGoogleSheetSyncApi, attachGoogleSheetSyncCapture, startGoogleSheetSyncRunner } = require('./google-sheet-sync');
 
 const app = express();
@@ -108,8 +109,9 @@ if (isPostgreSql) {
   attachProjectFunctionAccessMiddleware(app);
   attachEcommerceStorefrontApi(app);
   attachGoogleSheetSyncV23Extension(app);
+  attachGoogleSheetPullReportApi(app);
   attachGoogleSheetSyncApi(app);
-  attachAgentPosApi(app);
+
   attachTelegramWebhookEndpoint(app);
   attachTelegramAutomationApi(app);
   attachFinanceSettingsV23Api(app);

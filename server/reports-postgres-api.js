@@ -681,3 +681,4 @@ function attachReportsPostgresApi(app) {
 }
 
 module.exports = attachReportsPostgresApi;
+module.exports.buildDailyCloseReport = buildDailyCloseReport;
