@@ -1,0 +1,138 @@
+/* Legacy bridge.
+ *
+ * The shell is built from the ui kit, but the ~100 pages inside it still use the old
+ * shared classes (.card, .stat, .toolbar, tables, form controls). Rather than let the
+ * two look like different apps until every page is rewritten, this sheet re-skins those
+ * shared classes to match the kit: same radii, same spacing scale, same borders, same
+ * control heights, all driven by the runtime tokens instead of hardcoded colours.
+ *
+ * It is loaded last so it wins over the accumulated hotfix sheets. As pages move to the
+ * kit their rules drop out of here, and this file shrinks to nothing.
+ */
+
+/* ---- surfaces ----------------------------------------------------------
+ * Pages do not share one card class — each has its own (.stock-card, .reports-card,
+ * .psw-card …). The suffix selectors below catch that whole family in one pass. They
+ * have the same specificity as a plain class, so loading this sheet last is what makes
+ * them win; that is deliberate, not incidental.
+ */
+.stat,
+.card,
+.quickCard,
+[class$="-card"],
+[class*="-card "],
+[class$="-panel"],
+[class*="-panel "] {
+  background: var(--project-surface);
+  border: 1px solid var(--project-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  color: var(--project-text);
+}
+
+.card { padding: 16px; }
+.stat { padding: 16px; gap: 14px; }
+.quickCard { padding: 16px; }
+
+@media (min-width: 640px) {
+  .card { padding: 20px; }
+}
+
+/* ---- card headers and toolbars ----------------------------------------- */
+.cardHead,
+.toolbar {
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.card h3,
+.cardHead h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--project-text);
+}
+
+/* ---- form controls ------------------------------------------------------ */
+.cardHead button,
+.toolbar button,
+.toolbar select,
+.toolbar input,
+label input,
+label select,
+label textarea {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--project-border);
+  border-radius: 10px;
+  background: var(--project-surface);
+  color: var(--project-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.cardHead button:focus-visible,
+.toolbar button:focus-visible,
+.toolbar select:focus,
+.toolbar input:focus,
+label input:focus,
+label select:focus,
+label textarea:focus {
+  border-color: var(--project-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--project-accent) 20%, transparent);
+  outline: none;
+}
+
+/* ---- primary action ----------------------------------------------------- */
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 0 !important;
+  border-radius: 10px;
+  background: var(--project-accent) !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.primary:hover { filter: brightness(0.95); }
+
+/* ---- tables ------------------------------------------------------------- */
+th,
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--project-border);
+  color: var(--project-text);
+}
+
+th {
+  background: var(--project-surface-2);
+  color: var(--project-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+tr:hover td { background: var(--project-surface-2); }
+
+/* ---- badges ------------------------------------------------------------- */
+.badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ---- grids -------------------------------------------------------------- */
+.stats,
+.quick {
+  gap: 12px;
+  margin: 0 0 14px;
+}
+
+.grid2 { gap: 12px; margin-bottom: 14px; }

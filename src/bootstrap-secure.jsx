@@ -17,6 +17,9 @@ import './mobile-auto-fit-v21.css';
 import './ui-polish-v22.css';
 import './product-category-icon.css';
 import './ui-layout-hotfix-v24.css';
+// Last: re-skins the shared legacy classes to match the ui kit, so pages that have not
+// been migrated yet still look like they belong to the same app as the shell.
+import './legacy-bridge.css';
 
 const RUNTIME_VERSION = '20260723-stable-record-categories-date-picker';
 
