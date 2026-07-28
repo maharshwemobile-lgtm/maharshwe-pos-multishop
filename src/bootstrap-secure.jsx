@@ -5,6 +5,9 @@ import AppErrorBoundary from './AppErrorBoundary.jsx';
 import { installResponsiveViewportV21 } from './responsiveViewportV21.js';
 import { installProductIconRuntimeV22 } from './productIconRuntimeV22.js';
 import { installDatePickerRuntime } from './datePickerRuntime.js';
+// Tailwind first, so the hand-written CSS below still wins on pages that have not
+// been migrated to the ui kit yet.
+import './tailwind.css';
 import './styles.css';
 import './pos/pos-minimal-overrides.css';
 import './pos/pos-payment-selector-direct-v23.css';
