@@ -32,6 +32,7 @@ import PushNotificationControl from './PushNotificationControl.jsx';
 import LoginRegisterGate from './LoginRegisterGate.jsx';
 import { PROJECT_LOGO_URL } from './projectBrand.js';
 import { apiFetch, clearSession, getSession, saveSession, subscribeSession } from './phase2Api';
+import { cn } from './components/ui.jsx';
 
 const menu = [
   { name: 'Dashboard', icon: Home, color: '#3b82f6' },
@@ -236,29 +237,75 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
       window.location.href = '/';
     }
   };
-  return <aside className={`sidebar phase9-sidebar ${open ? 'is-open' : 'is-closing'}`} aria-label="Main navigation">
-    <button type="button" className="phase9-sidebar-close" onClick={onClose} aria-label="Close menu"><X size={20}/></button>
-    <div className="brand">
+  // The drawer slide is still driven by phase9-navigation.css on mobile; everything
+  // inside it is now utilities so the sidebar no longer depends on styles.css.
+  return <aside
+    className={cn(
+      'phase9-sidebar flex w-70 shrink-0 flex-col gap-4 self-start overflow-y-auto',
+      'sticky top-0 h-dvh bg-slate-900 p-4 text-slate-200',
+      open ? 'is-open' : 'is-closing'
+    )}
+    aria-label="Main navigation"
+  >
+    <button
+      type="button"
+      className="phase9-sidebar-close absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-xl border border-white/15 bg-white/10 text-white"
+      onClick={onClose}
+      aria-label="Close menu"
+    >
+      <X size={20}/>
+    </button>
+
+    <div className="flex items-center gap-3 pr-10">
       {businessLogo
-        ? <img src={businessLogo} alt={`${businessName} logo`}/>
-        : <span className="business-logo-fallback" aria-hidden="true">{businessInitials}</span>}
-      <div className="brand-text"><b>{businessName}</b><span>{businessSubtitle}</span></div>
+        ? <img src={businessLogo} alt={`${businessName} logo`} className="h-14 w-14 shrink-0 rounded-2xl bg-white object-contain p-1"/>
+        : <span aria-hidden="true" className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-green-500/30 bg-green-100 text-lg font-black text-green-700">{businessInitials}</span>}
+      <div className="min-w-0">
+        <b className="block truncate text-lg text-green-400">{businessName}</b>
+        <span className="block truncate text-xs text-slate-300">{businessSubtitle}</span>
+      </div>
     </div>
-    <nav>
-      {visibleMenu.map((item) => <button key={item.name} onClick={() => onSelect(item.name)} className={page === item.name ? 'active' : ''}><item.icon size={22} color={page === item.name ? '#fff' : '#94a3b8'} strokeWidth={2}/><span>{item.label || item.name}</span></button>)}
-      <button onClick={handleLogout} style={{ marginTop: 'auto', color: '#ef4444' }}><LogOut size={22} color="#ef4444" strokeWidth={2}/><span>Logout</span></button>
+
+    <nav className="flex flex-1 flex-col gap-1">
+      {visibleMenu.map((item) => (
+        <button
+          key={item.name}
+          type="button"
+          onClick={() => onSelect(item.name)}
+          aria-current={page === item.name ? 'page' : undefined}
+          className={cn(
+            // `min-h-11!` beats phase9-navigation.css's global `:where(button){min-height:36px}`,
+            // which is unlayered and would otherwise win over a utility.
+            'flex min-h-11! items-center gap-3 rounded-xl px-3 text-left text-sm font-bold transition',
+            page === item.name
+              ? 'bg-green-600 text-white shadow-lg shadow-green-600/25'
+              : 'bg-transparent text-slate-200 hover:bg-white/10'
+          )}
+        >
+          <item.icon size={20} strokeWidth={2} className={cn('shrink-0', page === item.name ? 'text-white' : 'text-slate-400')}/>
+          <span className="min-w-0 flex-1 truncate">{item.label || item.name}</span>
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="mt-auto flex min-h-11! items-center gap-3 rounded-xl bg-transparent px-3 text-left text-sm font-bold text-red-400 transition hover:bg-red-500/10"
+      >
+        <LogOut size={20} strokeWidth={2} className="shrink-0"/>
+        <span>Logout</span>
+      </button>
     </nav>
+
     <a
-      className="help"
+      className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-0.5 rounded-2xl border border-white/10 bg-white/5 p-4 no-underline"
       href={TELEGRAM_COMMUNITY_URL}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Open Mahar Shwe Telegram support community"
-      style={{ color: 'inherit', cursor: 'pointer', textDecoration: 'none' }}
     >
-      <Headphones/>
-      <b>Telegram Community</b>
-      <span>Open support group</span>
+      <Headphones className="row-span-2 shrink-0 text-slate-300"/>
+      <b className="truncate text-sm">Telegram Community</b>
+      <span className="truncate text-xs text-slate-400">Open support group</span>
     </a>
   </aside>;
 }
@@ -295,31 +342,36 @@ function Topbar({ page, toggle, settings, user, menuOpen }) {
   const isDashboard = safePage === 'Dashboard';
   const isRepair = safePage === 'Repairs';
   const miniMart = isMiniMartBusiness(user);
-  const phaseLabel = '';
   const subtitle = isDashboard
     ? (miniMart ? 'Mini Mart Daily Sales & Stock Overview' : 'Live Business Overview')
     : safeText(settings?.business?.name, '');
-  return <header className="topbar">
+  return <header className="sticky top-0 z-50 flex min-h-16 items-center gap-3 border-b border-line bg-surface/90 px-3 backdrop-blur sm:gap-4 sm:px-6">
     <button
-      className={`icon phase9-mobile-menu-button ${menuOpen ? 'is-active' : ''}`}
+      className={cn(
+        'grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition',
+        menuOpen ? 'border-slate-900 bg-slate-900 text-white' : 'border-line bg-surface text-ink'
+      )}
       onClick={toggle}
       aria-label={menuOpen ? 'Close menu' : 'Open menu'}
       aria-expanded={menuOpen ? 'true' : 'false'}
       type="button"
     >
-      {menuOpen ? <X size={24}/> : <Menu size={24}/>}
-      <span>{menuOpen ? 'Close' : 'Menu'}</span>
+      {menuOpen ? <X size={22}/> : <Menu size={22}/>}
     </button>
-    <img src={logo} alt="Mahar POS logo" style={{width:52,height:52,borderRadius:14,objectFit:'contain'}}/>
-    <div className="topbar-title-copy">
-      {phaseLabel ? <span className="topbar-phase-label">{phaseLabel}</span> : null}
-      <h1>{title}</h1>
-      {subtitle ? <p>{subtitle}</p> : null}
+
+    <img src={logo} alt="Mahar POS logo" className="hidden h-11 w-11 shrink-0 rounded-xl object-contain sm:block"/>
+
+    <div className="min-w-0 flex-1">
+      <h1 className="truncate text-base font-bold text-ink sm:text-xl">{title}</h1>
+      {subtitle ? <p className="truncate text-xs text-muted">{subtitle}</p> : null}
     </div>
-    <div style={{marginLeft:'auto'}}/>
+
     <GlobalLanguageSwitcher/>
     <PushNotificationControl/>
-    <div className="profile"><div><b>{safeText(settings?.business?.name, safeText(user?.shop?.name, 'Business'))}</b><small>{safeText(user?.role, 'Secure Login')}</small></div></div>
+    <div className="hidden min-w-0 text-right lg:block">
+      <b className="block truncate text-sm text-ink">{safeText(settings?.business?.name, safeText(user?.shop?.name, 'Business'))}</b>
+      <small className="block truncate text-xs text-muted">{safeText(user?.role, 'Secure Login')}</small>
+    </div>
   </header>;
 }
 
@@ -537,7 +589,7 @@ export default function AppFull() {
   return <ProjectLanguageRuntime><ProjectFunctionGuard>
     <div className="app phase9-app">
       {sidebarRendered ? <><div className={`phase9-sidebar-backdrop ${sidebarOpen ? 'is-open' : 'is-closing'}`} onClick={() => setSidebarOpen(false)}/><Sidebar page={validPageName(page)} onSelect={selectPage} onClose={() => setSidebarOpen(false)} visibleMenu={visibleMenu} settings={projectSettings} user={user} open={sidebarOpen}/></> : null}
-      <main><Topbar page={validPageName(page)} toggle={() => setSidebarOpen((value) => !value)} settings={projectSettings} user={user} menuOpen={sidebarOpen}/><div className="content"><AppMenuTour open={showMenuTour} isMobile={isMobileShell} onOpenMenu={() => setSidebarOpen(true)} onDismiss={() => { window.localStorage.setItem(menuTourDismissKey, '1'); setMenuTourDismissed(true); setSidebarOpen(false); }} user={user}/><SubscriptionLimitedBanner user={user}/><Page page={validPageName(page)} setPage={setPage} user={user} onboardingGuide={onboardingGuide}/></div></main>
+      <main className="flex min-w-0 flex-1 flex-col"><Topbar page={validPageName(page)} toggle={() => setSidebarOpen((value) => !value)} settings={projectSettings} user={user} menuOpen={sidebarOpen}/><div className="min-w-0 flex-1 p-3 pb-20 sm:p-5"><AppMenuTour open={showMenuTour} isMobile={isMobileShell} onOpenMenu={() => setSidebarOpen(true)} onDismiss={() => { window.localStorage.setItem(menuTourDismissKey, '1'); setMenuTourDismissed(true); setSidebarOpen(false); }} user={user}/><SubscriptionLimitedBanner user={user}/><Page page={validPageName(page)} setPage={setPage} user={user} onboardingGuide={onboardingGuide}/></div></main>
     </div>
   </ProjectFunctionGuard></ProjectLanguageRuntime>;
 }

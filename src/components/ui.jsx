@@ -86,7 +86,9 @@ export function Button({
     primary: 'bg-accent text-white hover:brightness-95',
     secondary: 'border border-line bg-surface text-ink hover:bg-surface-2',
     danger: 'bg-red-600 text-white hover:bg-red-700',
-    ghost: 'text-muted hover:bg-surface-2',
+    // bg-transparent is explicit because preflight is not loaded, so a bare <button>
+    // would otherwise keep the browser's default grey button face.
+    ghost: 'bg-transparent text-muted hover:bg-surface-2',
   };
   return (
     <button
@@ -98,7 +100,8 @@ export function Button({
         'inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold transition',
         'disabled:cursor-not-allowed disabled:opacity-60',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-        size === 'sm' ? 'min-h-9 px-2.5 py-1.5 text-xs' : 'min-h-10 px-4 py-2 text-sm',
+        // `!` beats phase9-navigation.css's unlayered `:where(button){min-height:36px}`.
+        size === 'sm' ? 'min-h-9! px-2.5 py-1.5 text-xs' : 'min-h-10! px-4 py-2 text-sm',
         variants[variant],
         className
       )}
@@ -221,7 +224,7 @@ export function Modal({ open, onClose, title, children, wide }) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="min-h-10 min-w-10 shrink-0 rounded-lg p-2 text-muted hover:bg-surface-2"
+            className="min-h-10 min-w-10 shrink-0 rounded-lg bg-transparent p-2 text-muted hover:bg-surface-2"
           >
             <X size={20} />
           </button>
