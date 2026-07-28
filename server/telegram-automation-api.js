@@ -15,6 +15,7 @@ const DEFAULT_TELEGRAM = Object.freeze({
   botTokenLast4: '',
   botUsername: '',
   chatId: '',
+  notifyChatIds: [],        // extra group/channel IDs to fan-out notifications to
   webhookSecret: '',
   linkedTelegramId: '',
   linkedTelegramName: '',
@@ -36,6 +37,7 @@ const settingsSchema = z.object({
   clearBotToken: z.boolean().optional(),
   botUsername: cleanText(80),
   chatId: cleanText(80),
+  notifyChatIds: z.array(z.string().trim().max(80)).max(20).optional(),
   saleNotifications: z.boolean().default(false),
   auditLogNotifications: z.boolean().default(false),
   dailyReportEnabled: z.boolean().default(false),
@@ -114,11 +116,15 @@ function mergeTelegram(raw) {
 function safeTelegram(settings, userId = '') {
   const linkedUsers = plainObject(settings.linkedUsers);
   const currentUserTelegram = userId ? plainObject(linkedUsers[userId]) : {};
+  const notifyChatIds = Array.isArray(settings.notifyChatIds)
+    ? settings.notifyChatIds.map((id) => clean(id, 80)).filter(Boolean)
+    : [];
   return {
     enabled: Boolean(settings.enabled),
     botUsername: settings.botUsername || '',
     botDeepLink: settings.botUsername ? `https://t.me/${settings.botUsername}` : null,
     chatId: settings.chatId || '',
+    notifyChatIds,
     hasBotToken: Boolean(settings.botToken),
     botTokenLast4: settings.botTokenLast4 || '',
     linkedTelegramId: settings.linkedTelegramId || '',
@@ -217,6 +223,34 @@ async function sendTelegramMessage(settings, text) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.ok === false) throw new ApiError(502, data.description || 'Telegram send failed');
   return data.result;
+}
+
+// Send to primary chatId + all notifyChatIds in parallel (fire-and-forget safe)
+async function sendTelegramMessageToAll(settings, text) {
+  const token = clean(settings.botToken || process.env.TELEGRAM_BOT_TOKEN || '', 240);
+  if (!token) throw new ApiError(400, 'Telegram Bot Token မထည့်ရသေးပါ');
+
+  const primaryId = clean(settings.chatId || settings.linkedTelegramId || '', 80);
+  const extras = Array.isArray(settings.notifyChatIds)
+    ? settings.notifyChatIds.map((id) => clean(id, 80)).filter(Boolean)
+    : [];
+
+  const allIds = primaryId ? [primaryId, ...extras.filter((id) => id !== primaryId)] : extras;
+  if (!allIds.length) throw new ApiError(400, 'Telegram Chat ID မသတ်မှတ်ရသေးပါ');
+
+  const cleanText = clean(text, 3900);
+  const results = await Promise.allSettled(allIds.map((chatId) =>
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: cleanText, parse_mode: 'HTML', disable_web_page_preview: true }),
+    }).then((r) => r.json())
+  ));
+
+  const first = results[0];
+  if (first.status === 'rejected') throw new ApiError(502, first.reason?.message || 'Telegram send failed');
+  if (first.value?.ok === false) throw new ApiError(502, first.value.description || 'Telegram send failed');
+  return first.value?.result;
 }
 
 function telegramLoginSecret(botToken) {
@@ -387,7 +421,7 @@ async function notifyTelegramSale({ shopId, sale }) {
   const settings = await loadTelegramSettings(shopId);
   if (!settings.enabled || !settings.saleNotifications) return { skipped: true };
   const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { name: true, slug: true } });
-  const result = await sendTelegramMessage(settings, formatSaleMessage(shop, sale));
+  const result = await sendTelegramMessageToAll(settings, formatSaleMessage(shop, sale));
   const next = { ...settings, lastSaleSentAt: new Date().toISOString() };
   await prisma.$transaction((tx) => saveTelegramSettings(tx, shopId, next)).catch(() => null);
   return { ok: true, messageId: result?.message_id || null };
@@ -414,7 +448,8 @@ function startTelegramAutomationRunner() {
       const raw = plainObject(row.settings);
       const settings = mergeTelegram(plainObject(plainObject(raw.integrations).telegram));
       const effectiveChatId = settings.chatId || settings.linkedTelegramId;
-      if (!settings.enabled || !settings.dailyReportEnabled || !settings.botToken || !effectiveChatId) continue;
+      const hasTarget = effectiveChatId || (Array.isArray(settings.notifyChatIds) && settings.notifyChatIds.length > 0);
+      if (!settings.enabled || !settings.dailyReportEnabled || !settings.botToken || !hasTarget) continue;
       if (settings.lastReportDate === date) continue;
       if (time < (settings.dailyReportTime || '21:00')) continue;
       sendDailyReportNow(row.shopId).catch((error) => console.error('Telegram daily report failed:', error.message));
@@ -448,6 +483,9 @@ function attachTelegramAutomationApi(app) {
     }
     if (Object.prototype.hasOwnProperty.call(input, 'chatId') && input.chatId !== undefined) {
       next.chatId = clean(input.chatId, 80);
+    }
+    if (Object.prototype.hasOwnProperty.call(input, 'notifyChatIds') && Array.isArray(input.notifyChatIds)) {
+      next.notifyChatIds = input.notifyChatIds.map((id) => clean(id, 80)).filter(Boolean).slice(0, 20);
     }
     if (Object.prototype.hasOwnProperty.call(input, 'auditLogNotifications')) {
       next.auditLogNotifications = Boolean(input.auditLogNotifications);
@@ -590,4 +628,5 @@ module.exports = {
   sendDailyReportNow,
   loadTelegramSettings,
   sendTelegramMessage,
+  sendTelegramMessageToAll,
 };
