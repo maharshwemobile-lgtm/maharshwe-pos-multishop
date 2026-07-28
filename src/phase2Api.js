@@ -41,6 +41,11 @@ function applySavedPageSize(path) {
   const [pathname, query = ''] = text.split('?');
   if (!['/api/pos/catalog', '/api/repair-platform/jobs'].includes(pathname)) return text;
   const params = new URLSearchParams(query);
+  // An explicit limit from the caller wins. The POS product grid measures the space it
+  // has and asks for exactly that many rows, and lookups like barcode search or a
+  // count-only fetch pass their own limit too. The saved Page Size preference is only
+  // the default for callers that do not care.
+  if (params.has('limit')) return text;
   params.set('limit', String(savedPageSize()));
   return `${pathname}?${params.toString()}`;
 }

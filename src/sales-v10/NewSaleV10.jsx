@@ -42,7 +42,14 @@ import { playPaymentSuccessSound, playPosAddSound } from './salesAudio';
 import ProductCategoryIcon from '../ProductCategoryIcon.jsx';
 import WebBarcodeScanner from '../pos/WebBarcodeScanner.jsx';
 
-const PAGE_SIZE = 10;
+// Product list fills whatever space the screen gives it instead of a fixed 10.
+// Bounds keep the request sane on very small and very large displays.
+const MIN_PAGE_SIZE = 8;
+const MAX_PAGE_SIZE = 60;
+const FALLBACK_PAGE_SIZE = 12;
+const GRID_CARD_FALLBACK_H = 210;
+const LIST_ROW_FALLBACK_H = 54;
+const PAGER_RESERVE_H = 78;
 const EMPTY_CUSTOMER = { name: '', phone: '' };
 const EMPTY_PAYMENT = { method: '', methodId: '', methodCode: '', methodName: '', reference: '', cashReceived: '' };
 const CASH_PAYMENT_METHOD = { key: 'CASH', id: '', name: 'Cash', code: 'CASH', kind: 'CASH', accountName: 'Cash', legacyMethod: 'CASH', balance: 0 };
@@ -238,6 +245,8 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [categoryId, setCategoryId] = useState('');
   const [productView, setProductView] = useState('grid');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(FALLBACK_PAGE_SIZE);
+  const productListRef = useRef(null);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -373,7 +382,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const loadCatalog = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (query.trim()) params.set('q', query.trim());
       if (categoryId) params.set('categoryId', categoryId);
       const data = await apiFetch(`/api/pos/catalog?${params.toString()}`);
@@ -392,8 +401,43 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   useEffect(() => {
     const timer = window.setTimeout(loadCatalog, 180);
     return () => window.clearTimeout(timer);
-  }, [query, categoryId, page]);
-  useEffect(() => { setPage(1); }, [query, categoryId]);
+  }, [query, categoryId, page, pageSize]);
+  useEffect(() => { setPage(1); }, [query, categoryId, pageSize]);
+
+  // Measure the rendered list and ask for as many products as actually fit.
+  // Rounding to whole rows avoids a ragged half-filled last row.
+  useEffect(() => {
+    const measure = () => {
+      const host = productListRef.current;
+      if (!host) return;
+      const grid = host.querySelector('.sale10-product-grid');
+      const target = grid || host;
+      const rect = target.getBoundingClientRect();
+      if (!rect.height && !rect.top) return;
+      const styles = window.getComputedStyle(target);
+      const columns = grid
+        ? Math.max(1, styles.gridTemplateColumns.split(' ').filter(Boolean).length)
+        : 1;
+      const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
+      const sample = target.querySelector('.sale10-product-grid-card') || target.querySelector('tbody tr');
+      const sampleHeight = sample ? sample.getBoundingClientRect().height : 0;
+      const cardHeight = sampleHeight || (grid ? GRID_CARD_FALLBACK_H : LIST_ROW_FALLBACK_H);
+      const rowHeight = cardHeight + gap;
+      if (rowHeight <= 0) return;
+      const available = window.innerHeight - rect.top - PAGER_RESERVE_H;
+      // One extra row past the fold so the space below never looks empty.
+      const rows = Math.max(2, Math.round(available / rowHeight) + 1);
+      const next = Math.min(MAX_PAGE_SIZE, Math.max(MIN_PAGE_SIZE, columns * rows));
+      setPageSize((current) => (current === next ? current : next));
+    };
+
+    const timer = window.setTimeout(measure, 60);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('resize', measure);
+    };
+  }, [productView, catalog.length]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (!cart.length) clearDraft(session);
@@ -720,6 +764,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
             </div>
           </div>
 
+          <div ref={productListRef} className="sale10-product-list-host">
           {loading && catalog.length === 0 ? (
             <div className="stock-loading"><Loader2 className="stock-spin" /> Loading products…</div>
           ) : availableCatalog.length === 0 ? (
@@ -795,6 +840,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
             </div>
             )
           )}
+          </div>
 
           <footer className="stock-pagination">
             <span>Showing {availableCatalog.length} of {totalItems} products</span>
