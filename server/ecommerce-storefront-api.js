@@ -395,29 +395,52 @@ function attachEcommerceStorefrontApi(app) {
 
   app.patch('/api/ecommerce/orders/:id/status', requireAuth, handle(async (req, res) => {
     const status = z.enum(['PENDING', 'CONFIRMED', 'READY', 'COMPLETED', 'CANCELLED']).parse(req.body.status);
-    const order = await prisma.ecommerceOrder.findFirst({ where: { id: req.params.id, shopId: req.auth.shopId }, include: { items: true } });
-    if (!order) notFound('Order not found');
-    const updated = await prisma.$transaction(async (tx) => {
-      if (status === 'COMPLETED' && order.status !== 'COMPLETED') {
-        for (const item of order.items) {
-          const balance = await tx.inventoryBalance.findUnique({ where: { productVariantId: item.productVariantId } });
-          if (!balance || balance.quantity < item.quantity) { const error = new Error(`Stock is not enough for ${item.productNameSnapshot}`); error.status = 409; throw error; }
-          const after = balance.quantity - item.quantity;
-          await tx.inventoryBalance.update({ where: { productVariantId: item.productVariantId }, data: { quantity: after } });
-          await tx.stockMovement.create({ data: { shopId: req.auth.shopId, productVariantId: item.productVariantId, type: 'SALE', quantityChange: -item.quantity, beforeQuantity: balance.quantity, afterQuantity: after, referenceType: 'ECOMMERCE_ORDER', referenceId: order.id, userId: req.auth.userId, note: order.orderNumber } });
+    const exists = await prisma.ecommerceOrder.findFirst({ where: { id: req.params.id, shopId: req.auth.shopId }, select: { id: true } });
+    if (!exists) notFound('Order not found');
+
+    // Stock moves here, so this needs the same care the order-creation path takes:
+    // the order is re-read inside the transaction and each balance row is locked before
+    // it is read. Previously the status guard compared against a copy fetched before the
+    // transaction, so two "Complete" clicks arriving together both saw the old status and
+    // both deducted stock; the balance read-then-write had no lock either, which loses one
+    // of two concurrent updates.
+    const updated = await withSerializableRetry(() => prisma.$transaction(async (tx) => {
+      const order = await tx.ecommerceOrder.findFirst({ where: { id: req.params.id, shopId: req.auth.shopId }, include: { items: true } });
+      if (!order) notFound('Order not found');
+      if (order.status === status) return order;
+
+      const applyStock = async (item, direction) => {
+        await tx.$queryRawUnsafe('SELECT id FROM inventory_balances WHERE product_variant_id = $1::uuid FOR UPDATE', item.productVariantId);
+        const balance = await tx.inventoryBalance.findUnique({ where: { productVariantId: item.productVariantId } });
+        if (!balance) {
+          if (direction < 0) { const error = new Error(`Stock is not enough for ${item.productNameSnapshot}`); error.status = 409; throw error; }
+          return;
         }
+        if (direction < 0 && balance.quantity < item.quantity) { const error = new Error(`Stock is not enough for ${item.productNameSnapshot}`); error.status = 409; throw error; }
+        const after = balance.quantity + direction * item.quantity;
+        await tx.inventoryBalance.update({ where: { productVariantId: item.productVariantId }, data: { quantity: after } });
+        await tx.stockMovement.create({ data: {
+          shopId: req.auth.shopId,
+          productVariantId: item.productVariantId,
+          type: direction < 0 ? 'SALE' : 'SALE_RETURN',
+          quantityChange: direction * item.quantity,
+          beforeQuantity: balance.quantity,
+          afterQuantity: after,
+          referenceType: 'ECOMMERCE_ORDER',
+          referenceId: order.id,
+          userId: req.auth.userId,
+          note: direction < 0 ? order.orderNumber : `${order.orderNumber} reopened`,
+        } });
+      };
+
+      if (status === 'COMPLETED' && order.status !== 'COMPLETED') {
+        for (const item of order.items) await applyStock(item, -1);
       }
       if (status !== 'COMPLETED' && order.status === 'COMPLETED') {
-        for (const item of order.items) {
-          const balance = await tx.inventoryBalance.findUnique({ where: { productVariantId: item.productVariantId } });
-          if (!balance) continue;
-          const after = balance.quantity + item.quantity;
-          await tx.inventoryBalance.update({ where: { productVariantId: item.productVariantId }, data: { quantity: after } });
-          await tx.stockMovement.create({ data: { shopId: req.auth.shopId, productVariantId: item.productVariantId, type: 'SALE_RETURN', quantityChange: item.quantity, beforeQuantity: balance.quantity, afterQuantity: after, referenceType: 'ECOMMERCE_ORDER', referenceId: order.id, userId: req.auth.userId, note: `${order.orderNumber} reopened` } });
-        }
+        for (const item of order.items) await applyStock(item, 1);
       }
       return tx.ecommerceOrder.update({ where: { id: order.id }, data: { status }, include: { items: true } });
-    });
+    }, { isolationLevel: 'Serializable' }));
     const customer = updated.customerId ? await prisma.ecommerceCustomer.findFirst({ where: { id: updated.customerId, shopId: req.auth.shopId } }) : null;
     const telegram = await notifyStoreCustomer(customer, updated);
     res.json({ ok: true, order: updated, telegram: { configured: telegram.configured, sent: telegram.sent === true } });
@@ -588,16 +611,54 @@ function attachEcommerceStorefrontApi(app) {
       return res.set('Cache-Control', 'no-store').json({ ok: true, products: sanitize(rows) });
     }
     const where = { ...baseWhere, ...(search ? { name: { contains: search, mode: 'insensitive' } } : {}), ...(brand ? { brand } : {}), ...(categoryId ? { categoryId } : {}) };
-    const [rows, optionRows] = await Promise.all([
-      prisma.product.findMany({ where, include: publicInclude, orderBy: [{ ecommerceDetail: { featured: 'desc' } }, { name: 'asc' }] }),
-      prisma.product.findMany({ where: baseWhere, select: { brand: true, category: true } }),
+    const orderBy = [{ ecommerceDetail: { featured: 'desc' } }, { name: 'asc' }];
+
+    // The filter dropdowns only need the distinct values, not every row that has them.
+    const optionsQuery = Promise.all([
+      prisma.product.findMany({ where: baseWhere, select: { brand: true }, distinct: ['brand'] }),
+      prisma.product.findMany({ where: baseWhere, select: { category: true }, distinct: ['categoryId'] }),
     ]);
+
     const stockTotal = (product) => product.variants.reduce((sum, variant) => sum + Number(variant.inventoryBalance?.quantity || 0), 0);
     const lowStock = (product) => product.variants.some((variant) => { const balance = variant.inventoryBalance; return balance && Number(balance.quantity) > 0 && Number(balance.quantity) <= Number(balance.minAlertQuantity || 0); });
-    const filtered = rows.filter((product) => { const quantity = stockTotal(product); if (stockLevel === 'IN_STOCK') return quantity > 0; if (stockLevel === 'LOW_STOCK') return lowStock(product); if (stockLevel === 'OUT_OF_STOCK') return quantity <= 0; return true; });
-    const brands = [...new Set(optionRows.map((product) => product.brand).filter(Boolean))].sort();
-    const categories = [...new Map(optionRows.filter((product) => product.category).map((product) => [product.category.id, product.category])).values()].sort((a, b) => a.name.localeCompare(b.name));
-    res.set('Cache-Control', 'no-store'); res.json({ ok: true, page, pageSize: take, total: filtered.length, totalPages: Math.max(1, Math.ceil(filtered.length / take)), brands, categories, products: sanitize(filtered.slice((page - 1) * take, page * take)) });
+
+    // Stock level is derived from the variant balances, so it can only be applied after
+    // loading the rows. Every other filter maps straight to SQL, which is the usual case
+    // — page through it in the database rather than fetching the whole catalogue on each
+    // request just to slice ten products off it.
+    const needsStockFilter = ['IN_STOCK', 'LOW_STOCK', 'OUT_OF_STOCK'].includes(stockLevel);
+    let total;
+    let pageRows;
+    let options;
+    if (needsStockFilter) {
+      const [rows, opts] = await Promise.all([
+        prisma.product.findMany({ where, include: publicInclude, orderBy }),
+        optionsQuery,
+      ]);
+      const filtered = rows.filter((product) => {
+        const quantity = stockTotal(product);
+        if (stockLevel === 'IN_STOCK') return quantity > 0;
+        if (stockLevel === 'LOW_STOCK') return lowStock(product);
+        return quantity <= 0;
+      });
+      total = filtered.length;
+      pageRows = filtered.slice((page - 1) * take, page * take);
+      options = opts;
+    } else {
+      const [count, rows, opts] = await Promise.all([
+        prisma.product.count({ where }),
+        prisma.product.findMany({ where, include: publicInclude, orderBy, skip: (page - 1) * take, take }),
+        optionsQuery,
+      ]);
+      total = count;
+      pageRows = rows;
+      options = opts;
+    }
+
+    const [brandRows, categoryRows] = options;
+    const brands = [...new Set(brandRows.map((product) => product.brand).filter(Boolean))].sort();
+    const categories = [...new Map(categoryRows.filter((product) => product.category).map((product) => [product.category.id, product.category])).values()].sort((a, b) => a.name.localeCompare(b.name));
+    res.set('Cache-Control', 'no-store'); res.json({ ok: true, page, pageSize: take, total, totalPages: Math.max(1, Math.ceil(total / take)), brands, categories, products: sanitize(pageRows) });
   }));
 
   app.post('/api/public/store/:slug/orders', publicWriteLimiter, handle(async (req, res) => {
