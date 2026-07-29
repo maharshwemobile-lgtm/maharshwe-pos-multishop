@@ -537,6 +537,99 @@ async function applyAccountChange(tx, req, account, amount, direction, note) {
   });
 }
 
+// The record writers below are shared by the HTTP routes and the Telegram bot,
+// so both paths post the same money-account movement and audit trail.
+function actorFromRequest(req) {
+  return {
+    shopId: req.auth.shopId,
+    userId: req.auth.userId,
+    ip: req.ip || null,
+    userAgent: req.headers?.['user-agent'] || null,
+  };
+}
+
+function actorRequest(actor) {
+  return {
+    auth: { shopId: actor.shopId, userId: actor.userId },
+    ip: actor.ip || null,
+    headers: { 'user-agent': actor.userAgent || 'mahar-pos-server' },
+  };
+}
+
+async function recordExpense(actor, input) {
+  const req = actorRequest(actor);
+  const expenseDate = parseBusinessDate(input.expenseDate);
+  if (expenseDate > currentYangonDate()) throw new ApiError(400, 'Future expense dates are not allowed');
+  const category = normalizeBusinessRecordCategory('expense', input.category);
+  const amount = Number(input.amount);
+  const method = clean(input.method || 'CASH', 20).toUpperCase();
+  const note = clean(input.note, 500) || null;
+  const requestedAccountId = clean(input.moneyAccountId, 50) || null;
+  if (!category) throw new ApiError(400, 'Expense category is required');
+  if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(400, 'Expense amount must be greater than zero');
+  if (!PAYMENT_METHODS.has(method)) throw new ApiError(400, 'Expense method is invalid');
+
+  const id = crypto.randomUUID();
+  await prisma.$transaction(async (tx) => {
+    const account = await resolveAccount(tx, actor.shopId, requestedAccountId, method);
+    await applyAccountChange(tx, req, account, amount, -1, `[EXPENSE:${category}] ${note || ''}`.trim());
+    await tx.$executeRawUnsafe(
+      `INSERT INTO business_expenses (id,shop_id,expense_date,category,amount,method,money_account_id,note,created_by_id,created_at)
+       VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7::uuid,$8,$9::uuid,NOW())`,
+      id, actor.shopId, expenseDate, category, amount, method, account?.id || null, note, actor.userId,
+    );
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
+
+  await audit(req, 'BUSINESS_EXPENSE_CREATED', 'business_expense', id, { expenseDate, category, amount, method, note });
+  queuePush(() => sendPushToShop({
+    shopId: actor.shopId,
+    eventType: 'MONEY_ACCOUNT_MOVEMENT',
+    title: 'Money account movement',
+    body: 'A business expense updated a money account. Open Mahar POS to review.',
+    url: '/accounting',
+    data: { source: 'business-expense', expenseId: id },
+  }), 'business expense movement push');
+  return { id, expenseDate, category, amount, method, note };
+}
+
+async function recordOtherIncome(actor, input) {
+  const req = actorRequest(actor);
+  const incomeDate = parseBusinessDate(input.incomeDate);
+  if (incomeDate > currentYangonDate()) throw new ApiError(400, 'Future income dates are not allowed');
+  const category = normalizeBusinessRecordCategory('income', input.category);
+  const source = clean(input.source, 80);
+  const amount = Number(input.amount);
+  const method = clean(input.method || 'CASH', 20).toUpperCase();
+  const note = clean(input.note, 500) || null;
+  const requestedAccountId = clean(input.moneyAccountId, 50) || null;
+  if (!category) throw new ApiError(400, 'Income category is invalid');
+  if (!source) throw new ApiError(400, 'Other income source is required');
+  if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(400, 'Other income amount must be greater than zero');
+  if (!PAYMENT_METHODS.has(method)) throw new ApiError(400, 'Income method is invalid');
+
+  const id = crypto.randomUUID();
+  await prisma.$transaction(async (tx) => {
+    const account = await resolveAccount(tx, actor.shopId, requestedAccountId, method);
+    await applyAccountChange(tx, req, account, amount, 1, `[OTHER_INCOME:${source}] ${note || ''}`.trim());
+    await tx.$executeRawUnsafe(
+      `INSERT INTO business_other_income (id,shop_id,income_date,category,source,amount,method,money_account_id,note,created_by_id,created_at)
+       VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7,$8::uuid,$9,$10::uuid,NOW())`,
+      id, actor.shopId, incomeDate, category, source, amount, method, account?.id || null, note, actor.userId,
+    );
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
+
+  await audit(req, 'BUSINESS_OTHER_INCOME_CREATED', 'business_other_income', id, { incomeDate, category, source, amount, method, note });
+  queuePush(() => sendPushToShop({
+    shopId: actor.shopId,
+    eventType: 'MONEY_ACCOUNT_MOVEMENT',
+    title: 'Money account movement',
+    body: 'Other income updated a money account. Open Mahar POS to review.',
+    url: '/accounting',
+    data: { source: 'business-income', incomeId: id },
+  }), 'business income movement push');
+  return { id, incomeDate, category, source, amount, method, note };
+}
+
 function attachBusinessControlApiV2(app) {
   const read = [requireAuth, requireShopUser, requireAccountingRead];
   const write = [requireAuth, requireShopUser, requireWritableSubscription, requireAccountingWrite];
@@ -548,75 +641,13 @@ function attachBusinessControlApiV2(app) {
   }));
 
   app.post('/api/business-control/expenses', ...write, wrap(async (req, res) => {
-    const expenseDate = parseBusinessDate(req.body?.expenseDate);
-    if (expenseDate > currentYangonDate()) throw new ApiError(400, 'Future expense dates are not allowed');
-    const category = normalizeBusinessRecordCategory('expense', req.body?.category);
-    const amount = Number(req.body?.amount);
-    const method = clean(req.body?.method || 'CASH', 20).toUpperCase();
-    const note = clean(req.body?.note, 500) || null;
-    const requestedAccountId = clean(req.body?.moneyAccountId, 50) || null;
-    if (!category) throw new ApiError(400, 'Expense category is required');
-    if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(400, 'Expense amount must be greater than zero');
-    if (!PAYMENT_METHODS.has(method)) throw new ApiError(400, 'Expense method is invalid');
-
-    const id = crypto.randomUUID();
-    await prisma.$transaction(async (tx) => {
-      const account = await resolveAccount(tx, req.auth.shopId, requestedAccountId, method);
-      await applyAccountChange(tx, req, account, amount, -1, `[EXPENSE:${category}] ${note || ''}`.trim());
-      await tx.$executeRawUnsafe(
-        `INSERT INTO business_expenses (id,shop_id,expense_date,category,amount,method,money_account_id,note,created_by_id,created_at)
-         VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7::uuid,$8,$9::uuid,NOW())`,
-        id, req.auth.shopId, expenseDate, category, amount, method, account?.id || null, note, req.auth.userId,
-      );
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
-
-    await audit(req, 'BUSINESS_EXPENSE_CREATED', 'business_expense', id, { expenseDate, category, amount, method, note });
-    queuePush(() => sendPushToShop({
-      shopId: req.auth.shopId,
-      eventType: 'MONEY_ACCOUNT_MOVEMENT',
-      title: 'Money account movement',
-      body: 'A business expense updated a money account. Open Mahar POS to review.',
-      url: '/accounting',
-      data: { source: 'business-expense', expenseId: id },
-    }), 'business expense movement push');
-    res.status(201).json({ ok: true, message: 'Expense saved', ...(await buildOverview(req.auth.shopId, expenseDate)) });
+    const result = await recordExpense(actorFromRequest(req), req.body || {});
+    res.status(201).json({ ok: true, message: 'Expense saved', ...(await buildOverview(req.auth.shopId, result.expenseDate)) });
   }));
 
   app.post('/api/business-control/other-income', ...write, wrap(async (req, res) => {
-    const incomeDate = parseBusinessDate(req.body?.incomeDate);
-    if (incomeDate > currentYangonDate()) throw new ApiError(400, 'Future income dates are not allowed');
-    const category = normalizeBusinessRecordCategory('income', req.body?.category);
-    const source = clean(req.body?.source, 80);
-    const amount = Number(req.body?.amount);
-    const method = clean(req.body?.method || 'CASH', 20).toUpperCase();
-    const note = clean(req.body?.note, 500) || null;
-    const requestedAccountId = clean(req.body?.moneyAccountId, 50) || null;
-    if (!category) throw new ApiError(400, 'Income category is invalid');
-    if (!source) throw new ApiError(400, 'Other income source is required');
-    if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(400, 'Other income amount must be greater than zero');
-    if (!PAYMENT_METHODS.has(method)) throw new ApiError(400, 'Income method is invalid');
-
-    const id = crypto.randomUUID();
-    await prisma.$transaction(async (tx) => {
-      const account = await resolveAccount(tx, req.auth.shopId, requestedAccountId, method);
-      await applyAccountChange(tx, req, account, amount, 1, `[OTHER_INCOME:${source}] ${note || ''}`.trim());
-      await tx.$executeRawUnsafe(
-        `INSERT INTO business_other_income (id,shop_id,income_date,category,source,amount,method,money_account_id,note,created_by_id,created_at)
-         VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7,$8::uuid,$9,$10::uuid,NOW())`,
-        id, req.auth.shopId, incomeDate, category, source, amount, method, account?.id || null, note, req.auth.userId,
-      );
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
-
-    await audit(req, 'BUSINESS_OTHER_INCOME_CREATED', 'business_other_income', id, { incomeDate, category, source, amount, method, note });
-    queuePush(() => sendPushToShop({
-      shopId: req.auth.shopId,
-      eventType: 'MONEY_ACCOUNT_MOVEMENT',
-      title: 'Money account movement',
-      body: 'Other income updated a money account. Open Mahar POS to review.',
-      url: '/accounting',
-      data: { source: 'business-income', incomeId: id },
-    }), 'business income movement push');
-    res.status(201).json({ ok: true, message: 'Other income saved', ...(await buildOverview(req.auth.shopId, incomeDate)) });
+    const result = await recordOtherIncome(actorFromRequest(req), req.body || {});
+    res.status(201).json({ ok: true, message: 'Other income saved', ...(await buildOverview(req.auth.shopId, result.incomeDate)) });
   }));
 
   app.post('/api/business-control/daily-closing', ...close, wrap(async (req, res) => {
@@ -678,3 +709,5 @@ function attachBusinessControlApiV2(app) {
 }
 
 module.exports = attachBusinessControlApiV2;
+module.exports.recordExpense = recordExpense;
+module.exports.recordOtherIncome = recordOtherIncome;

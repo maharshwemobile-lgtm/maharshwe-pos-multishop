@@ -998,3 +998,6 @@ function attachRepairPlatformApi(app) {
 }
 
 module.exports = attachRepairPlatformApi;
+// Shared with the Telegram bot so a repair booked from chat goes through the
+// same numbering, status history and event trail as the web intake form.
+module.exports.createRepair = createRepair;

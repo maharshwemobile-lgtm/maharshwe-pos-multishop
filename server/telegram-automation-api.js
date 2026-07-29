@@ -11,9 +11,13 @@ const { buildDailyCloseReport } = require('./reports-postgres-api');
 const {
   isQuickGreeting,
   resolveQuickAction,
+  resolveQuickFlow,
+  isCancelWord,
   quickKeyboard,
   menuText,
   buildQuickReply,
+  startFlow,
+  continueFlow,
 } = require('./telegram-quick-menu');
 
 const SETTINGS_VERSION = 1;
@@ -340,11 +344,44 @@ async function handleBotWebhookUpdate(shopId, update) {
     const isLinkedChat = allowedChatIds.has(chatId) || settings.linkedTelegramId === fromId;
 
     if (!isLinkedChat) {
-      await sendBotMessage(settings.botToken, chatId, '⚠️ This bot is already linked to another account. Contact the shop admin.');
+      // Multi chat: tell the newcomer their own Chat ID so an admin can add it
+      // under Project Settings → Telegram → Notify Chat IDs.
+      const who = clean([msg.from.first_name, msg.from.last_name].filter(Boolean).join(' ') || msg.from.username || '', 120);
+      await sendBotMessage(settings.botToken, chatId, [
+        'ℹ️ ဒီ chat ကို ခွင့်မပြုရသေးပါ။',
+        '',
+        `👤 ${who || 'Telegram user'}`,
+        `🆔 Chat ID: <code>${chatId}</code>`,
+        '',
+        'Mahar POS → Project Settings → Telegram → <b>Notify Chat IDs</b> မှာ ဒီ ID ကို ထည့်ပေးဖို့ shop admin ကို ပြောပါ။',
+      ].join('\n'));
       return;
     }
 
     const text = msg.text || '';
+
+    // A running action flow owns the conversation until it finishes or is cancelled
+    const flowReply = await continueFlow(shopId, chatId, text).catch((error) => ({
+      text: `⚠️ ${error.message || 'Flow failed'}`,
+      keyboard: quickKeyboard(),
+    }));
+    if (flowReply) {
+      await sendBotMessage(settings.botToken, chatId, flowReply.text, flowReply.keyboard);
+      return;
+    }
+
+    const flow = resolveQuickFlow(text);
+    if (flow) {
+      const started = await startFlow(shopId, chatId, flow);
+      await sendBotMessage(settings.botToken, chatId, started.text, started.keyboard);
+      return;
+    }
+
+    if (isCancelWord(text)) {
+      await sendBotMessage(settings.botToken, chatId, 'ℹ️ လုပ်နေတာ မရှိပါ။', quickKeyboard());
+      return;
+    }
+
     const action = resolveQuickAction(text);
 
     if (action) {
