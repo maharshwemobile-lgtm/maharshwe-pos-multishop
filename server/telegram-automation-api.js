@@ -7,6 +7,7 @@ const {
   requireShopUser,
   requireWritableSubscription,
 } = require('./auth-api');
+const { buildDailyCloseReport } = require('./reports-postgres-api');
 
 const SETTINGS_VERSION = 1;
 const DEFAULT_TELEGRAM = Object.freeze({
@@ -400,19 +401,59 @@ async function buildDailyReport(shopId) {
   const moneyRow = money?.[0] || {};
   const billerRow = biller?.[0] || {};
   const paymentLines = (payments || []).map((row) => `- ${row.method}: ${mmk(row.amount)}`);
+
+  // Other income and expense (the Other Records page) come from the same builder the
+  // Reports page and the Google Sheet pull use, so the three always agree.
+  let close = {};
+  try {
+    const report = await buildDailyCloseReport(shopId, date, date, 'daily');
+    close = report?.rows?.[0] || report?.totals || {};
+  } catch {
+    close = {};
+  }
+
+  const n = (value) => Number(value || 0);
+  const otherIncomeTotal = n(close.otherSaleIncome) + n(close.otherServiceIncome)
+    + n(close.otherTopupIncome) + n(close.otherOtherIncome);
+  const expenseTotal = n(close.otherSaleExpense) + n(close.otherServiceExpense)
+    + n(close.otherTopupExpense) + n(close.otherOtherExpense);
+  const incomeTotal = n(sale.total) + n(moneyRow.fee) + n(billerRow.profit) + otherIncomeTotal;
+
+  const line = (label, value) => `• ${label}: ${mmk(value)}`;
+
   return [
-    `📊 Daily Auto Report`,
-    `Shop: ${shop?.name || shop?.slug || 'Mahar POS'}`,
-    `Date: ${date}`,
+    `📌 Daily Report`,
+    `🏪 ${shop?.name || shop?.slug || 'Mahar POS'}`,
+    `📅 Date: ${date}`,
     '',
-    `Sales Count: ${sale.count || 0}`,
-    `Product Sales: ${mmk(sale.total)}`,
-    `Product Profit: ${mmk(sale.profit)}`,
-    `Money Service Fee: ${mmk(moneyRow.fee)}`,
-    `Bill/Eload Sold: ${mmk(billerRow.sold)}`,
-    `Bill/Eload Profit: ${mmk(billerRow.profit)}`,
+    '━━━━━━━━━━━━━━',
+    '💰 ဝင်ငွေများ',
+    line('Product Sales', sale.total),
+    line('Money Service Fee', moneyRow.fee),
+    line('Bill/Eload Profit', billerRow.profit),
+    line('Other Sale Income', close.otherSaleIncome),
+    line('Other Service Income', close.otherServiceIncome),
+    line('Other Top-up Income', close.otherTopupIncome),
+    line('Other Income', close.otherOtherIncome),
     '',
-    `Payments:`,
+    `✅ Income Total: ${mmk(incomeTotal)}`,
+    `📎 Other Income Total: ${mmk(otherIncomeTotal)}`,
+    '',
+    '━━━━━━━━━━━━━━',
+    '💸 ထွက်ငွေများ',
+    line('Other Sale Expense', close.otherSaleExpense),
+    line('Other Service Expense', close.otherServiceExpense),
+    line('Other Top-up Expense', close.otherTopupExpense),
+    line('Other Expense', close.otherOtherExpense),
+    '',
+    `❗️ Expense Total: ${mmk(expenseTotal)}`,
+    '',
+    '━━━━━━━━━━━━━━',
+    `📊 Net: ${mmk(incomeTotal - expenseTotal)}`,
+    `🧾 Sales Count: ${sale.count || 0}`,
+    `📈 Product Profit: ${mmk(sale.profit)}`,
+    '',
+    `💳 Payments:`,
     ...(paymentLines.length ? paymentLines : ['- No payment records']),
   ].join('\n');
 }

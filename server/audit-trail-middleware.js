@@ -24,6 +24,9 @@ function descriptor(method, pathname) {
     [/^\/api\/repair-platform\/jobs\/[^/]+\/device$/, 'REPAIR_DEVICE_LINKED', 'repair', 'Linked IMEI or serial to repair'],
     [/^\/api\/repair-platform\/jobs\/[^/]+\/referral$/, 'REPAIR_REFERRAL_CREATED', 'repair_referral', 'Created a repair referral'],
     [/^\/api\/repair-platform\/referrals\/claim$/, 'REPAIR_REFERRAL_CLAIMED', 'repair_referral', 'Claimed a repair referral'],
+    [/^\/api\/business-control\/expenses$/, 'BUSINESS_EXPENSE_CREATED', 'business_expense', 'Recorded an expense'],
+    [/^\/api\/business-control\/other-income$/, 'BUSINESS_OTHER_INCOME_CREATED', 'business_other_income', 'Recorded other income'],
+    [/^\/api\/business-control\/daily-closing$/, 'BUSINESS_DAY_CLOSED', 'business_day_close', 'Closed the business day'],
     [/^\/api\/(stock|inventory)/, `INVENTORY_${method}`, 'inventory', 'Changed inventory data'],
     [/^\/api\/(products|catalog)/, `PRODUCT_${method}`, 'product', 'Changed product data'],
     [/^\/api\/(repair-platform|repairs|service)/, `REPAIR_${method}`, 'repair', 'Changed repair data'],
@@ -92,6 +95,12 @@ function attachAuditTrailMiddleware(app) {
       };
 
       (async () => {
+        // The Telegram feed is about the action, not about which layer recorded it, so
+        // it fires regardless of the de-duplication below. Previously it sat after the
+        // early return, which meant any API writing its own audit row — Other Records
+        // income and expense among them — never notified at all.
+        notifyTelegramAuditEvent(event.shopId, event).catch(() => null);
+
         // Most domain APIs already write a precise legacy audit row inside
         // their transaction. Do not add a second generic row for the same
         // request; keep the global writer only as a fallback for unlogged APIs.
@@ -109,7 +118,6 @@ function attachAuditTrailMiddleware(app) {
         if (domainAuditAlreadyWritten) return;
 
         await appendAuditEvent(event);
-        notifyTelegramAuditEvent(event.shopId, event).catch(() => null);
         const userCaptureAlreadyQueued = pathname.startsWith('/api/users') || pathname.startsWith('/api/project-settings');
         if (!userCaptureAlreadyQueued) {
           await queueGoogleSheetSync({

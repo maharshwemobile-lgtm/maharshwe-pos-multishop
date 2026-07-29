@@ -5,6 +5,7 @@ const NOTIFY_ACTIONS = new Set([
   'SALE_CREATED', 'SALE_VOIDED',
   'CUSTOMER_CREDIT_COLLECTED', 'CUSTOMER_CREATED', 'CUSTOMER_UPDATED',
   'MONEY_ACCOUNT_TRANSFERRED', 'MONEY_ACCOUNT_ADJUSTED',
+  'BUSINESS_OTHER_INCOME_CREATED', 'BUSINESS_EXPENSE_CREATED', 'BUSINESS_DAY_CLOSED',
   'REPAIR_INTAKE_CREATED', 'REPAIR_STATUS_CHANGED', 'REPAIR_FINANCE_UPDATED',
   'REPAIR_PROVIDER_LINKED', 'REPAIR_REFERRAL_CREATED', 'REPAIR_REFERRAL_CLAIMED',
   'REPAIR_EXTERNAL_IMPORTED', 'REPAIR_DEVICE_LINKED',
@@ -14,6 +15,7 @@ const NOTIFY_ACTIONS = new Set([
 const NOTIFY_ENTITY_TYPES = new Set([
   'sale', 'customer', 'money_account', 'repair', 'repair_referral',
   'inventory', 'product', 'user',
+  'business_other_income', 'business_expense', 'business_day_close',
 ]);
 
 const ACTION_EMOJI = {
@@ -24,6 +26,9 @@ const ACTION_EMOJI = {
   CUSTOMER_UPDATED: '✏️',
   MONEY_ACCOUNT_TRANSFERRED: '💸',
   MONEY_ACCOUNT_ADJUSTED: '⚖️',
+  BUSINESS_OTHER_INCOME_CREATED: '📥',
+  BUSINESS_EXPENSE_CREATED: '📤',
+  BUSINESS_DAY_CLOSED: '🔒',
   REPAIR_INTAKE_CREATED: '🔧',
   REPAIR_STATUS_CHANGED: '🔄',
   REPAIR_FINANCE_UPDATED: '💰',
@@ -67,6 +72,14 @@ function formatAuditMessage(event) {
   if (body.invoiceNumber) lines.splice(1, 0, `🧾 ${body.invoiceNumber}`);
   if (body.status) lines.splice(-1, 0, `📌 Status: ${body.status}`);
   if (body.total != null) lines.splice(-1, 0, `💰 ${Number(body.total).toLocaleString()} MMK`);
+
+  // Income and expense records carry what happened in their own fields rather than
+  // a total, so surface those too — an amount is the whole point of the alert.
+  if (body.amount != null) lines.splice(-1, 0, `💰 ${Number(body.amount).toLocaleString()} MMK`);
+  if (body.category) lines.splice(-1, 0, `🏷 ${body.category}`);
+  if (body.source) lines.splice(-1, 0, `📎 ${body.source}`);
+  if (body.method) lines.splice(-1, 0, `💳 ${body.method}`);
+  if (body.note) lines.splice(-1, 0, `📝 ${body.note}`);
 
   return lines.join('\n');
 }
