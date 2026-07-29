@@ -274,9 +274,7 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
           onClick={() => onSelect(item.name)}
           aria-current={page === item.name ? 'page' : undefined}
           className={cn(
-            // `min-h-11!` beats phase9-navigation.css's global `:where(button){min-height:36px}`,
-            // which is unlayered and would otherwise win over a utility.
-            'flex min-h-11! items-center gap-3 rounded-xl px-3 text-left text-sm font-bold transition',
+            'flex min-h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-bold transition',
             page === item.name
               ? 'bg-green-600 text-white shadow-lg shadow-green-600/25'
               : 'bg-transparent text-slate-200 hover:bg-white/10'
@@ -289,7 +287,7 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
       <button
         type="button"
         onClick={handleLogout}
-        className="mt-auto flex min-h-11! items-center gap-3 rounded-xl bg-transparent px-3 text-left text-sm font-bold text-red-400 transition hover:bg-red-500/10"
+        className="mt-auto flex min-h-11 items-center gap-3 rounded-xl bg-transparent px-3 text-left text-sm font-bold text-red-400 transition hover:bg-red-500/10"
       >
         <LogOut size={20} strokeWidth={2} className="shrink-0"/>
         <span>Logout</span>

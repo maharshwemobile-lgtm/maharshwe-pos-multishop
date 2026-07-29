@@ -216,6 +216,39 @@ body.mobile-nav-open { overflow: hidden; }
   :where(th, td) { padding: 9px 10px; }
   :where(table) { font-size: 13px; }
 
+  /* Secondary actions are dropped on phones so the primary one stays reachable.
+   * Refresh, export and print are all recoverable on a larger screen. Print can opt
+   * back in with .allow-mobile-print where a page needs it. */
+  :where(
+    button:has(svg.lucide-refresh-cw),
+    button:has(svg.lucide-download),
+    button:has(svg.lucide-upload),
+    button:has(svg.lucide-file-down),
+    button:has(svg.lucide-file-up),
+    button:has(svg.lucide-printer):not(.allow-mobile-print),
+    .refresh-button,
+    .export-button
+  ) {
+    display: none;
+  }
+
+  /* Row-level actions get compact so they fit beside their row. */
+  :where(.stock-action, .p2-actions button, .repair-open-button) {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  :where(.notice, .subscription-limited-banner) { margin: 0 0 8px; }
+}
+
+/* A tighter type scale on phones, where the desktop sizes are oversized. */
+@media (max-width: 560px) {
+  :where(h1) { font-size: 20px; }
+  :where(h2) { font-size: 19px; }
+  :where(h3) { font-size: 17px; }
+  :where(.stat, .quickCard) { padding: 13px; }
+
   /* Sheets take the full screen on a phone. */
   :where([class$="-modal"]) {
     width: 100%;

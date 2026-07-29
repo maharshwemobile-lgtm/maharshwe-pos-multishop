@@ -100,8 +100,7 @@ export function Button({
         'inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold transition',
         'disabled:cursor-not-allowed disabled:opacity-60',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-        // `!` beats phase9-navigation.css's unlayered `:where(button){min-height:36px}`.
-        size === 'sm' ? 'min-h-9! px-2.5 py-1.5 text-xs' : 'min-h-10! px-4 py-2 text-sm',
+        size === 'sm' ? 'min-h-9 px-2.5 py-1.5 text-xs' : 'min-h-10 px-4 py-2 text-sm',
         variants[variant],
         className
       )}
