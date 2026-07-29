@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowDownToLine,
+  ArrowRight,
   ArrowUpFromLine,
   Banknote,
   CheckCircle2,
@@ -224,28 +225,56 @@ function MoneyServiceForm({ settings, onSaved }) {
     }
   };
 
-  return <section className="msc-clean-card msc-entry-card">
-    <header>
-      <div><span>MONEY SERVICE</span><h3>New Transaction</h3><p>{form.mode === 'CASH_OUT' ? 'Customer wallet ဝင်ငွေကိုယူပြီး Cash ထုတ်ပေးပါမယ်။' : 'ကိုယ့် Wallet ထဲကငွေထွက်ပြီး Customer ဆီက Cash ဝင်ပါမယ်။'}</p></div>
-      <div className="msc-db-badge">PostgreSQL Only</div>
-    </header>
+  const walletName = methods.find((item) => item.id === form.paymentMethodId)?.name || 'Wallet';
+  const cashName = cashOptions.find((item) => item.id === form.cashAccountId)?.name || 'Cash';
+
+  return <section className="msc-clean-card msc-entry-card msc-simple-entry">
+    <div className="msc-service-switch">
+      <button type="button" className={form.mode === 'TRANSFER' ? 'active' : ''} onClick={() => changeMode('TRANSFER')}><ArrowUpFromLine size={18}/> ငွေလွှဲ Transfer</button>
+      <button type="button" className={form.mode === 'CASH_OUT' ? 'active cashout' : ''} onClick={() => changeMode('CASH_OUT')}><ArrowDownToLine size={18}/> ငွေထုတ် Cash Out</button>
+    </div>
+
+    <p className="msc-flow-line">
+      {form.mode === 'CASH_OUT'
+        ? <><b>{walletName}</b> ထဲ ငွေဝင် <ArrowRight size={14}/> <b>{cashName}</b> ကနေ Cash ထုတ်ပေး</>
+        : <><b>{walletName}</b> ကနေ ငွေလွှဲထွက် <ArrowRight size={14}/> <b>{cashName}</b> ထဲ Cash ဝင်</>}
+    </p>
+
     {message ? <div className="msc-message">{message}</div> : null}
+
     <form onSubmit={submit} className="msc-clean-form">
-      <div className="msc-service-switch">
-        <button type="button" className={form.mode === 'TRANSFER' ? 'active' : ''} onClick={() => changeMode('TRANSFER')}><ArrowUpFromLine size={18}/> Transfer</button>
-        <button type="button" className={form.mode === 'CASH_OUT' ? 'active cashout' : ''} onClick={() => changeMode('CASH_OUT')}><ArrowDownToLine size={18}/> Cash Out</button>
+      <div className="msc-amount-block">
+        <label className="msc-amount-field">
+          <span>{form.mode === 'CASH_OUT' ? 'ငွေထုတ်ပမာဏ' : 'ငွေလွှဲပမာဏ'} *</span>
+          <input type="number" min="1" inputMode="numeric" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} placeholder="0"/>
+        </label>
+        <div className="msc-amount-side">
+          <div className="msc-fee-row">
+            <span>Service Fee</span>
+            {form.feeMode === 'CUSTOM'
+              ? <input type="number" min="0" value={form.feeAmount} onChange={(event) => setForm({ ...form, feeAmount: event.target.value })} autoFocus/>
+              : <b>{money(fee)}</b>}
+            <button type="button" onClick={() => setForm({ ...form, feeMode: form.feeMode === 'CUSTOM' ? 'AUTO' : 'CUSTOM', feeAmount: form.feeMode === 'CUSTOM' ? '' : String(autoFee) })}>
+              {form.feeMode === 'CUSTOM' ? `Auto ${rate}%` : 'ကိုယ်တိုင်ထည့်'}
+            </button>
+          </div>
+          <div className="msc-total-row">
+            <span>{form.mode === 'CASH_OUT' ? 'Wallet ဝင်ငွေ' : 'Customer ပေးရမည်'}</span>
+            <b>{money(total)}</b>
+          </div>
+          {due > 0 ? <div className="msc-total-row due"><span>ကြွေးကျန်</span><b>{money(due)}</b></div> : null}
+        </div>
       </div>
 
       <div className="msc-form-row">
         <label>
-          <span>{form.mode === 'CASH_OUT' ? 'Customer Transfer Wallet' : 'Sending Wallet'} *</span>
+          <span>{form.mode === 'CASH_OUT' ? 'ငွေဝင်မည့် Wallet' : 'ငွေထွက်မည့် Wallet'} *</span>
           <select value={form.paymentMethodId} onChange={(event) => setForm({ ...form, paymentMethodId: event.target.value })}>
             {methods.map((item) => <option key={item.id} value={item.id}>{item.name} · {money(item.balance)}</option>)}
           </select>
-          <small>{form.mode === 'CASH_OUT' ? 'Customer က ဒီ Wallet ထဲကို လွှဲပေးပါမယ်။' : 'ဒီ Wallet ထဲကနေ ငွေလွှဲထွက်ပါမယ်။'}</small>
         </label>
         <label>
-          <span>{form.mode === 'CASH_OUT' ? 'Cash Payout Account' : 'Cash Receiving Account'} *</span>
+          <span>{form.mode === 'CASH_OUT' ? 'Cash ထုတ်မည့် Account' : 'Cash ဝင်မည့် Account'} *</span>
           <select value={form.cashAccountId} onChange={(event) => setForm({ ...form, cashAccountId: event.target.value })}>
             <option value="">Choose account</option>
             {cashAccounts.length ? <optgroup label="Cash">
@@ -255,25 +284,25 @@ function MoneyServiceForm({ settings, onSaved }) {
               {otherAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} · {money(account.balance)}</option>)}
             </optgroup> : null}
           </select>
-          <small>{form.mode === 'CASH_OUT' ? 'Cash Out ဖြစ်လို့ ဒီ Cash account ကနေ ငွေထုတ်ပေးပါမယ်။' : 'Transfer ဖြစ်လို့ Customer ဆီက ဒီ account ထဲကို ငွေဝင်ပါမယ်။'}</small>
         </label>
       </div>
 
-      <div className="msc-form-row">
-        <label><span>Amount *</span><input type="number" min="1" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} placeholder="0"/></label>
-        <label><span>Service Fee</span><div className="msc-fee-input"><input type="number" min="0" value={form.feeMode === 'CUSTOM' ? form.feeAmount : autoFee} onChange={(event) => setForm({ ...form, feeMode: 'CUSTOM', feeAmount: event.target.value })}/><button type="button" onClick={() => setForm({ ...form, feeMode: 'AUTO', feeAmount: '' })}>Auto {rate}%</button></div></label>
-      </div>
-
       {form.mode === 'TRANSFER' ? <div className="msc-form-row">
-        <label><span>Receiver Name *</span><input value={form.receiverName} onChange={(event) => setForm({ ...form, receiverName: event.target.value })} placeholder="Receiver name"/></label>
-        <label><span>Receiver Phone *</span><input value={form.receiverPhone} onChange={(event) => setForm({ ...form, receiverPhone: event.target.value })} placeholder="09..."/></label>
+        <label><span>လက်ခံသူ အမည် *</span><input value={form.receiverName} onChange={(event) => setForm({ ...form, receiverName: event.target.value })} placeholder="Receiver name"/></label>
+        <label><span>လက်ခံသူ ဖုန်း *</span><input value={form.receiverPhone} onChange={(event) => setForm({ ...form, receiverPhone: event.target.value })} placeholder="09..."/></label>
       </div> : <div className="msc-form-row">
-        <label><span>Withdrawer Name</span><input value={form.withdrawerName} onChange={(event) => setForm({ ...form, withdrawerName: event.target.value })} placeholder="Optional"/></label>
-        <label><span>Withdrawer Phone</span><input value={form.withdrawerPhone} onChange={(event) => setForm({ ...form, withdrawerPhone: event.target.value })} placeholder="Optional"/></label>
+        <label><span>ငွေထုတ်သူ အမည်</span><input value={form.withdrawerName} onChange={(event) => setForm({ ...form, withdrawerName: event.target.value })} placeholder="Optional"/></label>
+        <label><span>ငွေထုတ်သူ ဖုန်း</span><input value={form.withdrawerPhone} onChange={(event) => setForm({ ...form, withdrawerPhone: event.target.value })} placeholder="Optional"/></label>
       </div>}
 
+      <div className="msc-payment-line">
+        <label className={form.paymentTiming === 'PAID_NOW' ? 'active' : ''}><input type="radio" checked={form.paymentTiming === 'PAID_NOW'} onChange={() => setForm({ ...form, paymentTiming: 'PAID_NOW', dueDate: '' })}/> ပြီးပြီ</label>
+        <label className={form.paymentTiming === 'PAY_LATER' ? 'active warning' : ''}><input type="radio" checked={form.paymentTiming === 'PAY_LATER'} onChange={() => setForm({ ...form, paymentTiming: 'PAY_LATER' })}/> ကြွေးကျန်</label>
+        {form.paymentTiming === 'PAY_LATER' ? <input type="date" value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })}/> : null}
+      </div>
+
       <details className="msc-optional-clean">
-        <summary>Optional sender / reference fields</summary>
+        <summary>ပေးပို့သူ / Reference (မထည့်လည်းရ)</summary>
         <div className="msc-form-row">
           <label><span>Sender Name</span><input value={form.senderName} onChange={(event) => setForm({ ...form, senderName: event.target.value })}/></label>
           <label><span>Sender Phone</span><input value={form.senderPhone} onChange={(event) => setForm({ ...form, senderPhone: event.target.value })}/></label>
@@ -282,22 +311,9 @@ function MoneyServiceForm({ settings, onSaved }) {
         </div>
       </details>
 
-      <div className="msc-payment-line">
-        <label className={form.paymentTiming === 'PAID_NOW' ? 'active' : ''}><input type="radio" checked={form.paymentTiming === 'PAID_NOW'} onChange={() => setForm({ ...form, paymentTiming: 'PAID_NOW', dueDate: '' })}/> Done now</label>
-        <label className={form.paymentTiming === 'PAY_LATER' ? 'active warning' : ''}><input type="radio" checked={form.paymentTiming === 'PAY_LATER'} onChange={() => setForm({ ...form, paymentTiming: 'PAY_LATER' })}/> Pending / Debt</label>
-        {form.paymentTiming === 'PAY_LATER' ? <input type="date" value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })}/> : null}
-      </div>
-
-      <div className="msc-total-strip">
-        <div><span>Amount</span><b>{money(amount)}</b></div>
-        <div><span>Fee</span><b>{money(fee)}</b></div>
-        <div><span>{form.mode === 'CASH_OUT' ? 'Wallet Received' : 'Customer Pays'}</span><b>{money(total)}</b></div>
-        {due > 0 ? <div className="due"><span>Due</span><b>{money(due)}</b></div> : null}
-      </div>
-
       <footer>
         <button type="button" onClick={reset}>Clear</button>
-        <button className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} Save to PostgreSQL</button>
+        <button className="primary" disabled={busy}>{busy ? <Loader2 className="msc-spin" size={17}/> : <CheckCircle2 size={17}/>} သိမ်းမည်</button>
       </footer>
     </form>
   </section>;
@@ -841,6 +857,7 @@ function BillerBalanceReport({ settings, onSaved }) {
 
 export default function MoneyServiceCenterV23() {
   const [view, setView] = useState('transfer');
+  const [transferTab, setTransferTab] = useState('new');
   const [settings, setSettings] = useState({ rates: {}, paymentMethods: [], accounts: [] });
   const [dashboard, setDashboard] = useState({ summary: {}, recent: [] });
   const [billerSummary, setBillerSummary] = useState({ rows: [], totals: {} });
@@ -955,11 +972,11 @@ export default function MoneyServiceCenterV23() {
 
     {message ? <div className="msc-message">{message}</div> : null}
 
-    {view === 'transfer' ? <section className="msc-postgres-summary">
-      <article><Banknote/><span>Today Fees</span><b>{money(summary.todayFee)}</b><small>{summary.todayCount || 0} PostgreSQL rows</small></article>
-      <article><ArrowUpFromLine/><span>Transfer</span><b>{money(summary.todayTransferAmount)}</b><small>Wallet out / Cash in</small></article>
-      <article><ArrowDownToLine/><span>Cash Out</span><b>{money(summary.todayCashOutAmount)}</b><small>Customer wallet in / Cash out</small></article>
-      <article><Wallet/><span>Pending Due</span><b>{money(summary.totalDue)}</b><small>{summary.pendingCount || 0} pending</small></article>
+    {view === 'transfer' ? <section className="msc-today-strip">
+      <article><span>ယနေ့ Fee</span><b>{money(summary.todayFee)}</b><small>{summary.todayCount || 0} ကြိမ်</small></article>
+      <article><span>ငွေလွှဲ Transfer</span><b>{money(summary.todayTransferAmount)}</b></article>
+      <article><span>ငွေထုတ် Cash Out</span><b>{money(summary.todayCashOutAmount)}</b></article>
+      <article className={Number(summary.totalDue || 0) > 0 ? 'warn' : ''}><span>ကြွေးကျန်</span><b>{money(summary.totalDue)}</b><small>{summary.pendingCount || 0} ခု</small></article>
     </section> : null}
 
     {view !== 'transfer' && view !== 'billerHistory' ? <section className="msc-postgres-summary biller-only">
@@ -969,11 +986,16 @@ export default function MoneyServiceCenterV23() {
       <article><History/><span>Top Biller Today</span><b>{topBiller?.billerName || '-'}</b><small>{topBiller ? money(topBiller.sold) : 'No sale yet'}</small></article>
     </section> : null}
 
-    {view === 'transfer' ? <div className="msc-transfer-entry">
+    {view === 'transfer' ? <div className="msc-sub-switch">
+      <button type="button" className={transferTab === 'new' ? 'active' : ''} onClick={() => setTransferTab('new')}><Plus size={16}/> အသစ်မှတ်မည်</button>
+      <button type="button" className={transferTab === 'history' ? 'active' : ''} onClick={() => setTransferTab('history')}><History size={16}/> မှတ်တမ်း</button>
+    </div> : null}
+
+    {view === 'transfer' && transferTab === 'new' ? <div className="msc-transfer-entry">
       <MoneyServiceForm settings={settings} onSaved={async (transaction) => { setDetailId(transaction.id); await refresh(); }}/>
     </div> : null}
 
-    {view === 'transfer' ? <section className="msc-history">
+    {view === 'transfer' && transferTab === 'history' ? <section className="msc-history">
       <div className="msc-history-tools msc-transfer-history-filters">
         <label><span>From</span><input type="date" value={from} onChange={(event) => setFrom(event.target.value)}/></label>
         <label><span>To</span><input type="date" value={to} onChange={(event) => setTo(event.target.value)}/></label>

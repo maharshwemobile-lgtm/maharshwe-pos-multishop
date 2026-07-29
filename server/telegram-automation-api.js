@@ -8,6 +8,13 @@ const {
   requireWritableSubscription,
 } = require('./auth-api');
 const { buildDailyCloseReport } = require('./reports-postgres-api');
+const {
+  isQuickGreeting,
+  resolveQuickAction,
+  quickKeyboard,
+  menuText,
+  buildQuickReply,
+} = require('./telegram-quick-menu');
 
 const SETTINGS_VERSION = 1;
 const DEFAULT_TELEGRAM = Object.freeze({
@@ -319,25 +326,65 @@ async function handleBotWebhookUpdate(shopId, update) {
     };
     await prisma.$transaction((tx) => saveTelegramSettings(tx, shopId, next));
 
-    await fetch(`https://api.telegram.org/bot${settings.botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: `✅ Mahar POS Telegram Linked!\n\n${fullName} — notifications will be sent to this chat.\n\nSend /start anytime to check status.`,
-      }),
-    }).catch(() => null);
-  } else if (msg.text === '/start' || msg.text?.startsWith('/start ')) {
-    const isLinkedChat = settings.chatId === chatId || settings.linkedTelegramId === fromId;
-    const statusText = isLinkedChat
-      ? `✅ Mahar POS Telegram active.\n\nLinked as: ${settings.linkedTelegramName}\nAudit notifications: ${settings.auditLogNotifications ? 'On' : 'Off'}`
-      : `⚠️ This bot is already linked to another account. Contact the shop admin.`;
-    await fetch(`https://api.telegram.org/bot${settings.botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: statusText }),
-    }).catch(() => null);
+    await sendBotMessage(
+      settings.botToken,
+      chatId,
+      `✅ Mahar POS Telegram Linked!\n\n${fullName} — notifications will be sent to this chat.\n\n<b>Hi</b> လို့ ရိုက်ပါ — Quick menu ပေါ်ပါမယ်။`,
+      quickKeyboard(),
+    );
+  } else {
+    const allowedChatIds = new Set([
+      settings.chatId,
+      ...(Array.isArray(settings.notifyChatIds) ? settings.notifyChatIds.map((id) => clean(id, 80)) : []),
+    ].filter(Boolean));
+    const isLinkedChat = allowedChatIds.has(chatId) || settings.linkedTelegramId === fromId;
+
+    if (!isLinkedChat) {
+      await sendBotMessage(settings.botToken, chatId, '⚠️ This bot is already linked to another account. Contact the shop admin.');
+      return;
+    }
+
+    const text = msg.text || '';
+    const action = resolveQuickAction(text);
+
+    if (action) {
+      // Quick Function: answer with the live PostgreSQL summary for that area
+      let reply = '';
+      try {
+        reply = await buildQuickReply(shopId, action);
+      } catch (error) {
+        reply = `⚠️ Data ဖတ်မရပါ: ${error.message || 'unknown error'}`;
+      }
+      await sendBotMessage(settings.botToken, chatId, reply || 'No data', quickKeyboard());
+      return;
+    }
+
+    if (isQuickGreeting(text)) {
+      const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { name: true, slug: true } }).catch(() => null);
+      const status = `🔗 ${settings.linkedTelegramName || 'Linked'} · 🔔 Alerts: ${settings.auditLogNotifications ? 'On' : 'Off'}`;
+      await sendBotMessage(settings.botToken, chatId, menuText(shop?.name || shop?.slug, status), quickKeyboard());
+      return;
+    }
+
+    if (text) {
+      await sendBotMessage(settings.botToken, chatId, 'ℹ️ <b>Hi</b> လို့ ရိုက်ပါ — Repair / Customers / Money Service / Other Records menu ပေါ်ပါမယ်။', quickKeyboard());
+    }
   }
+}
+
+async function sendBotMessage(botToken, chatId, text, replyMarkup) {
+  const body = {
+    chat_id: chatId,
+    text: clean(text, 3900),
+    parse_mode: 'HTML',
+    disable_web_page_preview: true,
+  };
+  if (replyMarkup) body.reply_markup = replyMarkup;
+  return fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => null);
 }
 
 function formatSaleMessage(shop, sale) {
