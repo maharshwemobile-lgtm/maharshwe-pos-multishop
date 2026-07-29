@@ -163,20 +163,28 @@ function MoneyServiceForm({ settings, onSaved }) {
 
   const methods = useMemo(() => (settings.paymentMethods || []).filter((method) => method.supportsMoneyService !== false && method.kind !== 'CASH' && method.accountId), [settings.paymentMethods]);
   const accounts = settings.accounts || [];
-  const cashAccounts = accounts.filter((account) => account.type === 'CASH');
+  const cashAccounts = useMemo(() => accounts.filter((account) => account.type === 'CASH'), [accounts]);
+  const otherAccounts = useMemo(() => accounts.filter((account) => account.type !== 'CASH'), [accounts]);
+  // Cash Out must settle from a CASH account (server guard). Transfer may land in any active account.
+  const cashOptions = form.mode === 'CASH_OUT' ? cashAccounts : [...cashAccounts, ...otherAccounts];
   const method = methods.find((item) => item.id === form.paymentMethodId);
   const { rate, autoFee, fee, total } = computeFee(settings, method, form);
   const amount = Number(form.amount || 0);
   const isPending = form.paymentTiming === 'PAY_LATER';
   const due = isPending ? (form.mode === 'CASH_OUT' ? amount : total) : 0;
 
+  const cashOptionIds = cashOptions.map((account) => account.id).join(',');
+
   useEffect(() => {
     setForm((current) => ({
       ...current,
       paymentMethodId: current.paymentMethodId || methods[0]?.id || '',
-      cashAccountId: current.cashAccountId || cashAccounts[0]?.id || accounts[0]?.id || '',
+      // keep the chosen account when it is still selectable, otherwise fall back to the first valid one
+      cashAccountId: cashOptions.some((account) => account.id === current.cashAccountId)
+        ? current.cashAccountId
+        : (cashOptions[0]?.id || ''),
     }));
-  }, [methods.length, accounts.length]);
+  }, [methods.length, cashOptionIds]);
 
   const changeMode = (mode) => setForm((current) => ({ ...current, mode, paymentTiming: 'PAID_NOW', dueDate: '' }));
 
@@ -191,7 +199,7 @@ function MoneyServiceForm({ settings, onSaved }) {
     event.preventDefault();
     setMessage('');
     if (!form.paymentMethodId) return setMessage('Wallet account ရွေးရန်လိုပါတယ်');
-    if (!form.cashAccountId) return setMessage('Cash account မရှိသေးပါ');
+    if (!form.cashAccountId) return setMessage(cashOptions.length ? 'Cash account ရွေးရန်လိုပါတယ်' : 'Cash account မရှိသေးပါ — Money Accounts မှာ အရင်ဖန်တီးပါ');
     if (amount <= 0) return setMessage('Amount is required');
     if (form.mode === 'TRANSFER' && (!form.receiverName.trim() || !form.receiverPhone.trim())) return setMessage('Receiver name and phone are required');
 
@@ -237,9 +245,17 @@ function MoneyServiceForm({ settings, onSaved }) {
           <small>{form.mode === 'CASH_OUT' ? 'Customer က ဒီ Wallet ထဲကို လွှဲပေးပါမယ်။' : 'ဒီ Wallet ထဲကနေ ငွေလွှဲထွက်ပါမယ်။'}</small>
         </label>
         <label>
-          <span>{form.mode === 'CASH_OUT' ? 'Receiving Wallet' : 'Cash Receiving Account'} *</span>
-          <input value={`${cashAccounts[0]?.name || 'Cash'} · ${money(cashAccounts[0]?.balance || 0)}`} readOnly />
-          <small>{form.mode === 'CASH_OUT' ? 'Cash Out ဖြစ်လို့ Cash account ကနေ အလိုအလျောက်ထုတ်ပေးပါမယ်။' : 'Transfer ဖြစ်လို့ Customer ဆီက Cash ဝင်ပါမယ်။'}</small>
+          <span>{form.mode === 'CASH_OUT' ? 'Cash Payout Account' : 'Cash Receiving Account'} *</span>
+          <select value={form.cashAccountId} onChange={(event) => setForm({ ...form, cashAccountId: event.target.value })}>
+            <option value="">Choose account</option>
+            {cashAccounts.length ? <optgroup label="Cash">
+              {cashAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} · {money(account.balance)}</option>)}
+            </optgroup> : null}
+            {form.mode !== 'CASH_OUT' && otherAccounts.length ? <optgroup label="Other accounts">
+              {otherAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} · {money(account.balance)}</option>)}
+            </optgroup> : null}
+          </select>
+          <small>{form.mode === 'CASH_OUT' ? 'Cash Out ဖြစ်လို့ ဒီ Cash account ကနေ ငွေထုတ်ပေးပါမယ်။' : 'Transfer ဖြစ်လို့ Customer ဆီက ဒီ account ထဲကို ငွေဝင်ပါမယ်။'}</small>
         </label>
       </div>
 

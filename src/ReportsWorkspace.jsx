@@ -5,13 +5,16 @@ import {
   BarChart3,
   Boxes,
   CalendarDays,
+  ChevronDown,
   CheckCircle2,
   CircleDollarSign,
   Download,
   FileSpreadsheet,
+  LayoutGrid,
   Loader2,
   PackageSearch,
   ReceiptText,
+  RefreshCw,
   Smartphone,
   TrendingUp,
   Users,
@@ -22,6 +25,14 @@ import { apiFetch, clearSession } from './phase2Api';
 import './reports-workspace.css';
 
 const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
+const shortMoney = (value) => {
+  const amount = Number(value || 0);
+  const sign = amount < 0 ? '-' : '';
+  const abs = Math.abs(amount);
+  if (abs >= 1000000) return `${sign}${(abs / 1000000).toFixed(abs >= 10000000 ? 0 : 1)}M`;
+  if (abs >= 1000) return `${sign}${(abs / 1000).toFixed(abs >= 10000 ? 0 : 1)}K`;
+  return `${sign}${abs.toLocaleString('en-US')}`;
+};
 const day = (value) => new Date(value).toISOString().slice(0, 10);
 
 function defaultDates() {
@@ -45,15 +56,37 @@ function TrendBadge({ value }) {
   </span>;
 }
 
+function rangePresets() {
+  const today = new Date();
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const startOfYear = new Date(today.getFullYear(), 0, 1);
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - 6);
+  const monthStart = new Date(today);
+  monthStart.setDate(monthStart.getDate() - 29);
+  return [
+    { id: 'today', label: 'Today', from: day(today), to: day(today) },
+    { id: '7d', label: '7 Days', from: day(weekStart), to: day(today) },
+    { id: '30d', label: '30 Days', from: day(monthStart), to: day(today) },
+    { id: 'month', label: 'This Month', from: day(startOfMonth), to: day(today) },
+    { id: 'year', label: 'This Year', from: day(startOfYear), to: day(today) },
+  ];
+}
+
 export default function ReportsWorkspace({ onNavigate }) {
   const defaults = defaultDates();
   const [fromDate, setFromDate] = useState(defaults.from);
   const [toDate, setToDate] = useState(defaults.to);
   const [closePeriod, setClosePeriod] = useState('daily');
   const [closePage, setClosePage] = useState(1);
+  const [openBucket, setOpenBucket] = useState('');
+  const [tab, setTab] = useState('overview');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  const presets = useMemo(rangePresets, []);
+  const activePreset = presets.find((preset) => preset.from === fromDate && preset.to === toDate)?.id || '';
 
   const handleError = (error) => {
     if (error?.status === 401) {
@@ -95,6 +128,7 @@ export default function ReportsWorkspace({ onNavigate }) {
     : closePeriod === 'yearly'
       ? { name: 'Yearly', bucket: 'Year', title: 'Yearly Close စာရင်းချုပ်', range: 'Year range preview' }
       : { name: 'Daily', bucket: 'Day', title: 'Daily Close စာရင်းချုပ်', range: 'Daily transaction preview' };
+
   const cards = useMemo(() => [
     { label: 'Sales Revenue', value: money(summary.revenue), icon: ReceiptText, tone: 'green', trend: summary.revenueChange },
     { label: 'Sales Profit', value: money(summary.salesProfit), icon: TrendingUp, tone: 'blue', trend: summary.profitChange },
@@ -108,14 +142,26 @@ export default function ReportsWorkspace({ onNavigate }) {
   const paymentTotal = (data?.paymentMix || []).reduce((sum, row) => sum + Number(row.amount || 0), 0) || 1;
   const maxProductRevenue = Math.max(1, ...topProductRows.map((row) => Number(row.revenue || 0)));
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: LayoutGrid },
+    { id: 'close', label: `${closePeriodMeta.name} Close`, icon: CalendarDays },
+    { id: 'performance', label: 'Products & Staff', icon: PackageSearch },
+    ...(miniMart.enabled ? [{ id: 'inventory', label: 'Inventory', icon: Boxes }] : []),
+    { id: 'operations', label: 'Operations', icon: CheckCircle2 },
+  ];
+
+  useEffect(() => {
+    if (!tabs.some((item) => item.id === tab)) setTab('overview');
+  }, [miniMart.enabled]);
+
   useEffect(() => {
     setClosePage(1);
+    setOpenBucket('');
   }, [closePeriod, closeRows.length]);
 
-  const setCloseToday = () => {
-    const today = day(new Date());
-    setFromDate(today);
-    setToDate(today);
+  const applyPreset = (preset) => {
+    setFromDate(preset.from);
+    setToDate(preset.to);
   };
 
   const exportDailyCloseExcel = () => {
@@ -130,7 +176,7 @@ export default function ReportsWorkspace({ onNavigate }) {
       ['Net Profit', dailyCloseReport.totals?.netProfit || 0],
       [],
       [`${closePeriodMeta.name} Transactions`, dailyCloseReport.period || closePeriod],
-      [closePeriodMeta.bucket, 'Product Sales', 'Service Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Other Other Income', 'Other Income Subtotal', 'Income Total', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Other Other Expense', 'Other Expense Subtotal'],
+      [closePeriodMeta.bucket, 'Product Sales', 'Service Income', 'Money Service Fee', 'Other Sale Income', 'Other Service Income', 'Other Top-up Income', 'Other Other Income', 'Other Income Subtotal', 'Income Total', 'Other Sale Expense', 'Other Service Expense', 'Other Top-up Expense', 'Other Other Expense', 'Other Expense Subtotal', 'Expense Total', 'Net Profit'],
       ...(dailyCloseReport.rows || []).map((row) => [
         row.bucket,
         row.salePosIncome,
@@ -147,6 +193,8 @@ export default function ReportsWorkspace({ onNavigate }) {
         row.otherTopupExpense,
         row.otherOtherExpense,
         row.otherExpenseSubtotal,
+        row.expenseTotal,
+        row.netProfit,
       ]),
     ];
     const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><table>${rows.map((row) => `<tr>${row.map((cell) => `<td>${excelCell(cell)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
@@ -159,19 +207,78 @@ export default function ReportsWorkspace({ onNavigate }) {
     URL.revokeObjectURL(url);
   };
 
-  return <section className="reports-page">
-    {message ? <div className="reports-message">{message}</div> : null}
+  const closeTotals = dailyCloseReport.totals || {};
 
-    <div className="reports-summary-grid">
-      {cards.map((card) => <article key={card.label}>
-        <div className={`reports-summary-icon reports-tone-${card.tone}`}><card.icon size={23} /></div>
-        <span>{card.label}</span>
-        <b>{card.value}</b>
-        {card.trend !== undefined ? <TrendBadge value={card.trend} /> : <small>{card.note}</small>}
-      </article>)}
+  return <section className="reports-page">
+    <div className="rw-toolbar">
+      <div className="rw-range-presets">
+        {presets.map((preset) => <button
+          key={preset.id}
+          type="button"
+          className={activePreset === preset.id ? 'active' : ''}
+          onClick={() => applyPreset(preset)}
+        >{preset.label}</button>)}
+      </div>
+      <div className="rw-range-dates">
+        <label><CalendarDays size={15} /><span>From</span><input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value || defaults.from)} /></label>
+        <label><CalendarDays size={15} /><span>To</span><input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value || defaults.to)} /></label>
+        <button type="button" className="rw-refresh" onClick={load} disabled={loading} title="Refresh"><RefreshCw size={15} className={loading ? 'reports-spin' : ''} /> Refresh</button>
+      </div>
     </div>
 
-    <section className="reports-card reports-daily-close-card">
+    <nav className="rw-tabs">
+      {tabs.map((item) => <button
+        key={item.id}
+        type="button"
+        className={tab === item.id ? 'active' : ''}
+        onClick={() => setTab(item.id)}
+      ><item.icon size={16} /> {item.label}</button>)}
+    </nav>
+
+    {message ? <div className="reports-message">{message}</div> : null}
+
+    {tab === 'overview' ? <>
+      <div className="reports-summary-grid">
+        {cards.map((card) => <article key={card.label}>
+          <div className={`reports-summary-icon reports-tone-${card.tone}`}><card.icon size={23} /></div>
+          <span>{card.label}</span>
+          <b>{card.value}</b>
+          {card.trend !== undefined ? <TrendBadge value={card.trend} /> : <small>{card.note}</small>}
+        </article>)}
+      </div>
+
+      <div className="reports-main-grid">
+        <section className="reports-card reports-trend-card">
+          <header><div><b>Revenue & Cashflow Trend</b><small>Daily revenue, profit and payments received</small></div><BarChart3 size={21} /></header>
+          <div className="reports-chart-legend"><span className="revenue">Revenue</span><span className="received">Received</span><span className="profit">Profit</span></div>
+          <div className="reports-trend-chart">
+            {(data?.trend || []).map((row) => <div className="reports-day-column" key={row.date} title={`${row.date}\nRevenue ${money(row.revenue)}\nReceived ${money(row.received)}\nProfit ${money(row.profit)}`}>
+              <div className="reports-bars">
+                <i className="revenue" style={{ height: `${Math.max(2, row.revenue / maxTrend * 100)}%` }} />
+                <i className="received" style={{ height: `${Math.max(2, row.received / maxTrend * 100)}%` }} />
+                <i className="profit" style={{ height: `${Math.max(2, row.profit / maxTrend * 100)}%` }} />
+              </div>
+              <small>{row.date.slice(5)}</small>
+            </div>)}
+            {!data?.trend?.length ? <div className="reports-empty">No trend data.</div> : null}
+          </div>
+        </section>
+
+        <section className="reports-card reports-payment-card">
+          <header><div><b>Payment Mix</b><small>Sale and repair payments</small></div><Smartphone size={21} /></header>
+          <div className="reports-payment-list">
+            {(data?.paymentMix || []).map((row) => <div key={row.method}>
+              <span><b>{row.method.replaceAll('_', ' ')}</b><small>{money(row.amount)}</small></span>
+              <div><i style={{ width: `${row.amount / paymentTotal * 100}%` }} /></div>
+              <em>{Math.round(row.amount / paymentTotal * 100)}%</em>
+            </div>)}
+            {!data?.paymentMix?.length ? <div className="reports-empty">No payments in this period.</div> : null}
+          </div>
+        </section>
+      </div>
+    </> : null}
+
+    {tab === 'close' ? <section className="reports-card reports-daily-close-card">
       <header>
         <div>
           <b>{closePeriodMeta.title}</b>
@@ -184,135 +291,93 @@ export default function ReportsWorkspace({ onNavigate }) {
           <button type="button" className="export" onClick={exportDailyCloseExcel} disabled={!dailyCloseReport.rows?.length}><Download size={16} /> Export to Excel</button>
         </div>
       </header>
-      {closePeriod === 'daily' ? (
-        <div className="reports-close-filter-row">
-          <button type="button" onClick={setCloseToday}>Today</button>
-          <label><CalendarDays size={16} /><span>From</span><input type="date" value={fromDate} max={toDate} onChange={(event) => setFromDate(event.target.value || defaults.from)} /></label>
-          <label><CalendarDays size={16} /><span>To</span><input type="date" value={toDate} min={fromDate} onChange={(event) => setToDate(event.target.value || defaults.to)} /></label>
-          <small>{closePeriodMeta.name}: {fromDate} → {toDate}</small>
-        </div>
-      ) : null}
-      <div className="reports-close-total-grid">
-        <article><span>{closePeriodMeta.name} Income Total</span><b className="positive">{money(dailyCloseReport.totals?.incomeTotal)}</b></article>
-        <article><span>ဘေ / Eload ရောင်းချမှုပမာဏ</span><b>{money(dailyCloseReport.totals?.billSoldVolume)}</b></article>
-        <article><span>ဘေ / Eload လက်ကျန်</span><b>{money(dailyCloseReport.totals?.billClosingBalance)}</b></article>
-        <article><span>{closePeriodMeta.name} Expense Total</span><b className="negative">{money(dailyCloseReport.totals?.expenseTotal)}</b></article>
-        <article><span>{closePeriodMeta.name} Net Profit</span><b className={Number(dailyCloseReport.totals?.netProfit || 0) >= 0 ? 'positive' : 'negative'}>{money(dailyCloseReport.totals?.netProfit)}</b></article>
-        <article><span>{closePeriod === 'daily' ? 'Closed Days' : closePeriodMeta.name === 'Monthly' ? 'Closed Months' : 'Closed Years'}</span><b>{Number(dailyCloseReport.totals?.closedDays || 0).toLocaleString()}</b></article>
+
+      <div className="rw-close-totals">
+        <article className="rw-total-strong"><span>{closePeriodMeta.name} Income Total</span><b className="positive">{money(closeTotals.incomeTotal)}</b></article>
+        <article className="rw-total-strong"><span>{closePeriodMeta.name} Expense Total</span><b className="negative">{money(closeTotals.expenseTotal)}</b></article>
+        <article className="rw-total-strong"><span>{closePeriodMeta.name} Net Profit</span><b className={Number(closeTotals.netProfit || 0) >= 0 ? 'positive' : 'negative'}>{money(closeTotals.netProfit)}</b></article>
+        <article><span>ဘေ / Eload ရောင်းချမှုပမာဏ</span><b>{money(closeTotals.billSoldVolume)}</b></article>
+        <article><span>ဘေ / Eload လက်ကျန်</span><b>{money(closeTotals.billClosingBalance)}</b></article>
+        <article><span>{closePeriod === 'daily' ? 'Closed Days' : closePeriod === 'monthly' ? 'Closed Months' : 'Closed Years'}</span><b>{Number(closeTotals.closedDays || 0).toLocaleString()}</b></article>
       </div>
-      <div className="reports-table-wrap reports-wide-table-wrap">
-        <table className="reports-table reports-close-table">
+
+      <div className="reports-table-wrap">
+        <table className="reports-table rw-close-table">
           <thead>
             <tr>
               <th>{closePeriodMeta.bucket}</th>
               <th>Product Sales</th>
-              <th>Service Income</th>
-              <th>Money Service Fee</th>
-              <th>Other Sale Income</th>
-              <th>Other Service Income</th>
-              <th>Other Top-up Income</th>
-              <th>Other Other Income</th>
-              <th>Other Income Subtotal</th>
+              <th>Service</th>
+              <th>Money Fee</th>
+              <th>Other Income</th>
               <th>Income Total</th>
-              <th>Other Sale Expense</th>
-              <th>Other Service Expense</th>
-              <th>Other Top-up Expense</th>
-              <th>Other Other Expense</th>
-              <th>Other Expense Subtotal</th>
+              <th>Expense Total</th>
+              <th>Net Profit</th>
+              <th aria-label="detail" />
             </tr>
           </thead>
           <tbody>
-            {closeVisibleRows.map((row) => (
-              <tr key={`compact-${row.bucket}`}>
-                <td><b>{row.bucket}</b></td>
+            {closeVisibleRows.map((row) => <React.Fragment key={row.bucket}>
+              <tr className={openBucket === row.bucket ? 'rw-row-open' : ''}>
+                <td><b>{row.bucket}</b><small>{row.saleCount || 0} sales{Number(row.closedDays || 0) > 0 ? ' · closed' : ''}</small></td>
                 <td>{money(row.salePosIncome)}</td>
                 <td>{money(row.servicePosIncome)}</td>
                 <td>{money(row.moneyServiceFee)}</td>
-                <td>{money(row.otherSaleIncome)}</td>
-                <td>{money(row.otherServiceIncome)}</td>
-                <td>{money(row.otherTopupIncome)}</td>
-                <td>{money(row.otherOtherIncome)}</td>
-                <td><strong className="positive">{money(row.otherIncomeSubtotal)}</strong></td>
+                <td>{money(row.otherIncomeSubtotal)}</td>
                 <td><strong className="positive">{money(row.incomeTotal)}</strong></td>
-                <td>{money(row.otherSaleExpense)}</td>
-                <td>{money(row.otherServiceExpense)}</td>
-                <td>{money(row.otherTopupExpense)}</td>
-                <td>{money(row.otherOtherExpense)}</td>
-                <td><strong className="negative">{money(row.otherExpenseSubtotal)}</strong></td>
-              </tr>
-            ))}
-            {!dailyCloseReport.rows?.length ? <tr><td colSpan="15"><div className="reports-empty">No Daily Close summary data in this date range.</div></td></tr> : null}
-          </tbody>
-        </table>
-        <table className="reports-table reports-close-table" style={{ display: 'none' }}>
-          <thead>
-            <tr>
-              <th rowSpan="2">{closePeriodMeta.bucket}</th>
-              <th colSpan="5">Bill / Eload Balance</th>
-              <th colSpan="9">INCOME များ</th>
-              <th colSpan="8">Expense များ</th>
-              <th rowSpan="2">Net Profit</th>
-              <th rowSpan="2">Closed</th>
-            </tr>
-            <tr>
-              <th>Bill Opening</th>
-              <th>Bill Refill</th>
-              <th>Bill Sold</th>
-              <th>Bill Adjustment</th>
-              <th>Bill Closing</th>
-              <th>Sale POS</th>
-              <th>Service POS</th>
-              <th>Money Service Fee</th>
-              <th>Other Sale ဝင်ငွေ</th>
-              <th>Other Service ဝင်ငွေ</th>
-              <th>Other ငွေဖြည့်ကဒ် ဝင်ငွေ</th>
-              <th>Other အခြား ဝင်ငွေ</th>
-              <th>Other ဝင်ငွေ စုစုပေါင်း</th>
-              <th>Total</th>
-              <th>Sale POS Cost</th>
-              <th>Service POS Cost</th>
-              <th>Other Sale အထွက်</th>
-              <th>Other Service အထွက်</th>
-              <th>Other ငွေဖြည့်ကဒ် အထွက်</th>
-              <th>Other အခြား ထွက်ငွေ</th>
-              <th>Other ထွက်ငွေ စုစုပေါင်း</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {closeVisibleRows.map((row) => (
-              <tr key={row.bucket}>
-                <td><b>{row.bucket}</b><small>{row.saleCount || 0} sales</small></td>
-                <td>{money(row.billOpeningBalance)}</td>
-                <td>{money(row.billRefill)}</td>
-                <td>{money(row.billSoldVolume)}</td>
-                <td>{money(row.billAdjustment)}</td>
-                <td>{money(row.billClosingBalance)}</td>
-                <td>{money(row.salePosIncome)}</td>
-                <td>{money(row.servicePosIncome)}</td>
-                <td>{money(row.moneyServiceFee)}</td>
-                <td>{money(row.otherSaleIncome)}</td>
-                <td>{money(row.otherServiceIncome)}</td>
-                <td>{money(row.otherTopupIncome)}</td>
-                <td>{money(row.otherOtherIncome)}</td>
-                <td><strong className="positive">{money(row.otherIncomeSubtotal)}</strong></td>
-                <td><strong className="positive">{money(row.incomeTotal)}</strong></td>
-                <td>{money(row.salePosExpense)}</td>
-                <td>{money(row.servicePosExpense)}</td>
-                <td>{money(row.otherSaleExpense)}</td>
-                <td>{money(row.otherServiceExpense)}</td>
-                <td>{money(row.otherTopupExpense)}</td>
-                <td>{money(row.otherOtherExpense)}</td>
-                <td><strong className="negative">{money(row.otherExpenseSubtotal)}</strong></td>
                 <td><strong className="negative">{money(row.expenseTotal)}</strong></td>
                 <td><strong className={Number(row.netProfit || 0) >= 0 ? 'positive' : 'negative'}>{money(row.netProfit)}</strong></td>
-                <td>{Number(row.closedDays || 0) > 0 ? <CheckCircle2 size={17} /> : '-'}</td>
+                <td className="rw-detail-toggle">
+                  <button type="button" onClick={() => setOpenBucket(openBucket === row.bucket ? '' : row.bucket)} aria-expanded={openBucket === row.bucket}>
+                    <ChevronDown size={16} className={openBucket === row.bucket ? 'rw-chevron-open' : ''} />
+                  </button>
+                </td>
               </tr>
-            ))}
-            {!dailyCloseReport.rows?.length ? <tr><td colSpan="25"><div className="reports-empty">No Daily Close summary data in this date range.</div></td></tr> : null}
+              {openBucket === row.bucket ? <tr className="rw-detail-row">
+                <td colSpan="9">
+                  <div className="rw-detail-grid">
+                    <div>
+                      <h4>Income အသေးစိတ်</h4>
+                      <p><span>Sale POS</span><b>{money(row.salePosIncome)}</b></p>
+                      <p><span>Service POS</span><b>{money(row.servicePosIncome)}</b></p>
+                      <p><span>Money Service Fee</span><b>{money(row.moneyServiceFee)}</b></p>
+                      <p><span>Bill / Eload Profit</span><b>{money(row.billEloadProfit)}</b></p>
+                      <p><span>Other ဝင်ငွေ စုစုပေါင်း</span><b className="positive">{money(row.otherIncomeSubtotal)}</b></p>
+                    </div>
+                    <div>
+                      <h4>Other ဝင်ငွေ</h4>
+                      <p><span>Sale</span><b>{money(row.otherSaleIncome)}</b></p>
+                      <p><span>Service</span><b>{money(row.otherServiceIncome)}</b></p>
+                      <p><span>ငွေဖြည့်ကဒ်</span><b>{money(row.otherTopupIncome)}</b></p>
+                      <p><span>အခြား</span><b>{money(row.otherOtherIncome)}</b></p>
+                    </div>
+                    <div>
+                      <h4>Expense အသေးစိတ်</h4>
+                      <p><span>Sale POS Cost</span><b>{money(row.salePosExpense)}</b></p>
+                      <p><span>Service POS Cost</span><b>{money(row.servicePosExpense)}</b></p>
+                      <p><span>Other Sale</span><b>{money(row.otherSaleExpense)}</b></p>
+                      <p><span>Other Service</span><b>{money(row.otherServiceExpense)}</b></p>
+                      <p><span>Other ငွေဖြည့်ကဒ်</span><b>{money(row.otherTopupExpense)}</b></p>
+                      <p><span>Other အခြား</span><b>{money(row.otherOtherExpense)}</b></p>
+                      <p><span>Other ထွက်ငွေ စုစုပေါင်း</span><b className="negative">{money(row.otherExpenseSubtotal)}</b></p>
+                    </div>
+                    <div>
+                      <h4>Bill / Eload Balance</h4>
+                      <p><span>Opening</span><b>{money(row.billOpeningBalance)}</b></p>
+                      <p><span>Refill</span><b>{money(row.billRefill)}</b></p>
+                      <p><span>Sold</span><b>{money(row.billSoldVolume)}</b></p>
+                      <p><span>Adjustment</span><b>{money(row.billAdjustment)}</b></p>
+                      <p><span>Closing</span><b>{money(row.billClosingBalance)}</b></p>
+                    </div>
+                  </div>
+                </td>
+              </tr> : null}
+            </React.Fragment>)}
+            {!closeRows.length ? <tr><td colSpan="9"><div className="reports-empty">No {closePeriodMeta.name} Close summary data in this date range.</div></td></tr> : null}
           </tbody>
         </table>
       </div>
+
       <div className="reports-close-pagination">
         <span>Showing {closeVisibleRows.length} of {closeRows.length} · 10 item per page</span>
         <div>
@@ -321,39 +386,9 @@ export default function ReportsWorkspace({ onNavigate }) {
           <button type="button" disabled={closePage >= closeTotalPages} onClick={() => setClosePage((value) => Math.min(closeTotalPages, value + 1))}>Next</button>
         </div>
       </div>
-    </section>
+    </section> : null}
 
-    <div className="reports-main-grid">
-      <section className="reports-card reports-trend-card">
-        <header><div><b>Revenue & Cashflow Trend</b><small>Daily revenue, profit and payments received</small></div><BarChart3 size={21} /></header>
-        <div className="reports-chart-legend"><span className="revenue">Revenue</span><span className="received">Received</span><span className="profit">Profit</span></div>
-        <div className="reports-trend-chart">
-          {(data?.trend || []).map((row) => <div className="reports-day-column" key={row.date} title={`${row.date}\nRevenue ${money(row.revenue)}\nReceived ${money(row.received)}\nProfit ${money(row.profit)}`}>
-            <div className="reports-bars">
-              <i className="revenue" style={{ height: `${Math.max(2, row.revenue / maxTrend * 100)}%` }} />
-              <i className="received" style={{ height: `${Math.max(2, row.received / maxTrend * 100)}%` }} />
-              <i className="profit" style={{ height: `${Math.max(2, row.profit / maxTrend * 100)}%` }} />
-            </div>
-            <small>{row.date.slice(5)}</small>
-          </div>)}
-          {!data?.trend?.length ? <div className="reports-empty">No trend data.</div> : null}
-        </div>
-      </section>
-
-      <section className="reports-card reports-payment-card">
-        <header><div><b>Payment Mix</b><small>Sale and repair payments</small></div><Smartphone size={21} /></header>
-        <div className="reports-payment-list">
-          {(data?.paymentMix || []).map((row) => <div key={row.method}>
-            <span><b>{row.method.replaceAll('_', ' ')}</b><small>{money(row.amount)}</small></span>
-            <div><i style={{ width: `${row.amount / paymentTotal * 100}%` }} /></div>
-            <em>{Math.round(row.amount / paymentTotal * 100)}%</em>
-          </div>)}
-          {!data?.paymentMix?.length ? <div className="reports-empty">No payments in this period.</div> : null}
-        </div>
-      </section>
-    </div>
-
-    <div className="reports-secondary-grid">
+    {tab === 'performance' ? <div className="reports-secondary-grid">
       <section className="reports-card">
         <header><div><b>Top Products</b><small>ရောင်းအားကောင်းဆုံး 10 ခု</small></div><PackageSearch size={21} /></header>
         <div className="reports-table-wrap"><table className="reports-table"><thead><tr><th>Product</th><th>Qty</th><th>Revenue</th><th>Profit</th></tr></thead><tbody>
@@ -369,17 +404,21 @@ export default function ReportsWorkspace({ onNavigate }) {
           {!data?.staff?.length ? <tr><td colSpan="5"><div className="reports-empty">No staff performance data.</div></td></tr> : null}
         </tbody></table></div>
       </section>
-    </div>
+    </div> : null}
 
-    {miniMart.enabled ? <section className="reports-card">
-      <header><div><b>Inventory Reports</b><small>Daily sales, expiry, low stock, supplier purchase and profit</small></div><Boxes size={21} /></header>
-      <div className="reports-snapshot-grid">
-        <div><h3>Profit Report</h3><p><span>Revenue</span><b>{money(miniMart.profitReport?.revenue)}</b></p><p><span>Cost</span><b>{money(miniMart.profitReport?.cost)}</b></p><p><span>Profit</span><b>{money(miniMart.profitReport?.profit)}</b></p><p><span>Margin</span><b>{Number(miniMart.profitReport?.margin || 0).toFixed(1)}%</b></p></div>
-        <div><h3>Expiry Report</h3><p><span>Expired</span><b>{miniMart.expirySummary?.expired || 0}</b></p><p><span>Near Expiry</span><b>{miniMart.expirySummary?.nearExpiry || 0}</b></p><p><span>Tracked Items</span><b>{miniMart.expirySummary?.tracked || 0}</b></p></div>
-        <div><h3>Supplier Purchase</h3><p><span>Suppliers</span><b>{miniMart.supplierPurchaseReport?.length || 0}</b></p><p><span>Total Purchased</span><b>{money((miniMart.supplierPurchaseReport || []).reduce((sum, row) => sum + Number(row.amount || 0), 0))}</b></p><p><span>Low Stock</span><b>{miniMart.lowStockReport?.length || 0}</b></p></div>
+    {tab === 'inventory' && miniMart.enabled ? <>
+      <div className="rw-inventory-kpis">
+        <article><span>Revenue</span><b>{money(miniMart.profitReport?.revenue)}</b></article>
+        <article><span>Cost</span><b>{money(miniMart.profitReport?.cost)}</b></article>
+        <article><span>Profit</span><b className="positive">{money(miniMart.profitReport?.profit)}</b></article>
+        <article><span>Margin</span><b>{Number(miniMart.profitReport?.margin || 0).toFixed(1)}%</b></article>
+        <article><span>Expired</span><b className="negative">{miniMart.expirySummary?.expired || 0}</b></article>
+        <article><span>Near Expiry</span><b>{miniMart.expirySummary?.nearExpiry || 0}</b></article>
+        <article><span>Low Stock</span><b>{miniMart.lowStockReport?.length || 0}</b></article>
+        <article><span>Purchased</span><b>{shortMoney((miniMart.supplierPurchaseReport || []).reduce((sum, row) => sum + Number(row.amount || 0), 0))} MMK</b></article>
       </div>
 
-      <div className="reports-secondary-grid" style={{ padding: '0 16px 16px' }}>
+      <div className="reports-secondary-grid">
         <section className="reports-card">
           <header><div><b>Daily Sales</b><small>Latest sale days</small></div><ReceiptText size={21} /></header>
           <div className="reports-table-wrap"><table className="reports-table"><thead><tr><th>Date</th><th>Invoices</th><th>Units</th><th>Revenue</th><th>Profit</th></tr></thead><tbody>
@@ -412,23 +451,25 @@ export default function ReportsWorkspace({ onNavigate }) {
           </tbody></table></div>
         </section>
       </div>
-    </section> : null}
+    </> : null}
 
-    <div className="reports-operations-grid">
-      <article><div className="reports-tone-cyan"><Boxes size={22} /></div><span><b>Inventory Health</b><small>{summary.lowStockCount || 0} low stock · {summary.outOfStockCount || 0} out of stock</small></span><button type="button" onClick={() => onNavigate?.('Stock')}>Open Stock</button></article>
-      <article><div className="reports-tone-orange"><WalletCards size={22} /></div><span><b>Customer Credit</b><small>{money(summary.receivable)} · {summary.owingCustomers || 0} owing</small></span><button type="button" onClick={() => onNavigate?.('Customers')}>Open Credit</button></article>
-      <article><div className="reports-tone-blue"><Wrench size={22} /></div><span><b>Repair Operations</b><small>{summary.completedRepairs || 0}/{summary.repairs || 0} completed</small></span><button type="button" onClick={() => onNavigate?.('Repairs')}>Open Repairs</button></article>
-      <article><div className="reports-tone-purple"><CircleDollarSign size={22} /></div><span><b>Payments</b><small>{money(summary.totalReceived)} received</small></span><button type="button" onClick={() => onNavigate?.('Accounting')}>Open Accounts</button></article>
-    </div>
-
-    <section className="reports-card reports-snapshot-card">
-      <header><div><b>Operational Snapshot</b><small>Accounts, repair status and business exceptions</small></div><CheckCircle2 size={21} /></header>
-      <div className="reports-snapshot-grid">
-        <div><h3>Account Balances</h3>{(data?.accounts || []).map((row) => <p key={row.id}><span>{row.name}</span><b>{money(row.balance)}</b></p>)}</div>
-        <div><h3>Repair Status</h3>{(data?.repairStatuses || []).map((row) => <p key={row.status}><span>{row.status.replaceAll('_', ' ')}</span><b>{row.count}</b></p>)}</div>
-        <div><h3>Exceptions</h3><p><span>Voided Sales</span><b>{summary.voidedSales || 0}</b></p><p><span>Returned Sales</span><b>{summary.returnedSales || 0}</b></p><p><span>Discount Given</span><b>{money(summary.discount)}</b></p></div>
+    {tab === 'operations' ? <>
+      <div className="reports-operations-grid">
+        <article><div className="reports-tone-cyan"><Boxes size={22} /></div><span><b>Inventory Health</b><small>{summary.lowStockCount || 0} low stock · {summary.outOfStockCount || 0} out of stock</small></span><button type="button" onClick={() => onNavigate?.('Stock')}>Open Stock</button></article>
+        <article><div className="reports-tone-orange"><WalletCards size={22} /></div><span><b>Customer Credit</b><small>{money(summary.receivable)} · {summary.owingCustomers || 0} owing</small></span><button type="button" onClick={() => onNavigate?.('Customers')}>Open Credit</button></article>
+        <article><div className="reports-tone-blue"><Wrench size={22} /></div><span><b>Repair Operations</b><small>{summary.completedRepairs || 0}/{summary.repairs || 0} completed</small></span><button type="button" onClick={() => onNavigate?.('Repairs')}>Open Repairs</button></article>
+        <article><div className="reports-tone-purple"><CircleDollarSign size={22} /></div><span><b>Payments</b><small>{money(summary.totalReceived)} received</small></span><button type="button" onClick={() => onNavigate?.('Accounting')}>Open Accounts</button></article>
       </div>
-    </section>
+
+      <section className="reports-card reports-snapshot-card">
+        <header><div><b>Operational Snapshot</b><small>Accounts, repair status and business exceptions</small></div><CheckCircle2 size={21} /></header>
+        <div className="reports-snapshot-grid">
+          <div><h3>Account Balances</h3>{(data?.accounts || []).map((row) => <p key={row.id}><span>{row.name}</span><b>{money(row.balance)}</b></p>)}</div>
+          <div><h3>Repair Status</h3>{(data?.repairStatuses || []).map((row) => <p key={row.status}><span>{row.status.replaceAll('_', ' ')}</span><b>{row.count}</b></p>)}</div>
+          <div><h3>Exceptions</h3><p><span>Voided Sales</span><b>{summary.voidedSales || 0}</b></p><p><span>Returned Sales</span><b>{summary.returnedSales || 0}</b></p><p><span>Discount Given</span><b>{money(summary.discount)}</b></p></div>
+        </div>
+      </section>
+    </> : null}
 
     {loading ? <div className="reports-loading"><Loader2 className="reports-spin" /> Building report…</div> : null}
   </section>;
