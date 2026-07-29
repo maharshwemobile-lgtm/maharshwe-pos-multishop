@@ -200,7 +200,7 @@ function IntakeModal({ onClose, onSaved, notify }) {
             <label>IMEI / Serial<input value={form.imeiSerial} onChange={(event) => field('imeiSerial', event.target.value)} placeholder="Device history key" /></label>
             <label>Priority<select value={form.priority} onChange={(event) => field('priority', event.target.value)}><option>NORMAL</option><option>LOW</option><option>HIGH</option><option>URGENT</option></select></label>
             <label className="span-2">Intake Condition<textarea value={form.intakeCondition} onChange={(event) => field('intakeCondition', event.target.value)} placeholder="Screen crack, water mark, body condition..." /></label>
-            <label className="span-2">Accessories<input value={form.accessoriesText} onChange={(event) => field('accessoriesText', event.target.value)} placeholder="SIM tray, charger, case (comma separated)" /></label>
+            <label className="span-2">Included Accessories<input value={form.accessoriesText} onChange={(event) => field('accessoriesText', event.target.value)} placeholder="SIM tray, charger, case (comma separated)" /></label>
             <label className="span-2">Notes<textarea value={form.notes} onChange={(event) => field('notes', event.target.value)} /></label>
           </> : null}
         </div>
@@ -281,7 +281,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
               <div><dt>Device</dt><dd>{repair.deviceBrand || ''} {repair.deviceModel}</dd></div>
               <div><dt>Problem</dt><dd>{repair.problem}</dd></div>
               <div><dt>Condition</dt><dd>{repair.intakeCondition || '-'}</dd></div>
-              <div><dt>Accessories</dt><dd>{repair.accessories?.join(', ') || '-'}</dd></div>
+              <div><dt>Included Accessories</dt><dd>{repair.accessories?.join(', ') || '-'}</dd></div>
               <div><dt>Diagnosis</dt><dd>{repair.diagnosis || '-'}</dd></div>
               <div><dt>Resolution</dt><dd>{repair.resolution || '-'}</dd></div>
               <div><dt>Technician</dt><dd>{repair.technicianName || repair.technicianUsername || '-'}</dd></div>

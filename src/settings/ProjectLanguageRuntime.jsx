@@ -499,7 +499,11 @@ Object.assign(MYANMAR, {
   History: 'မှတ်တမ်း',
   'Repair Information': 'Repair အချက်အလက်',
   Condition: 'အခြေအနေ',
-  Accessories: 'ပါဝင်ပစ္စည်းများ',
+  // Two different things share the word in English. "Accessories" as a product category
+  // is stock the shop sells; "Included Accessories" on a repair intake is what the
+  // customer handed in with the device.
+  Accessories: 'ဖုန်းအပိုပစ္စည်း',
+  'Included Accessories': 'ပါဝင်ပစ္စည်းများ',
   Diagnosis: 'စစ်ဆေးချက်',
   Resolution: 'ဖြေရှင်းချက်',
   Technician: 'Technician',
