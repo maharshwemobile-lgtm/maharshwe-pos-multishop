@@ -377,6 +377,124 @@ async function audit(req, action, entityId, details) {
   await prisma.auditLog.create({ data: { shopId: req.auth.shopId, userId: req.auth.userId, action, entityType: 'money_service_transaction_v2', entityId, details, ipAddress: req.ip || null, userAgent: req.headers['user-agent'] || null } }).catch(() => {});
 }
 
+// Actor-shaped request stand-in so the writers below can be called from the
+// Telegram bot as well as from an HTTP route.
+function actorRequest(actor) {
+  return {
+    auth: { shopId: actor.shopId, userId: actor.userId },
+    ip: actor.ip || null,
+    headers: { 'user-agent': actor.userAgent || 'mahar-pos-server' },
+  };
+}
+
+async function recordMoneyServiceTransaction(actor, body) {
+  const req = actorRequest(actor);
+  await seedPaymentMethods(actor.shopId, actor.userId);
+  const input = parse(transactionSchema, body || {});
+  const [method, cash, rates] = await Promise.all([getMethod(actor.shopId, input.paymentMethodId), getAccount(actor.shopId, input.cashAccountId), getRates(actor.shopId)]);
+  const wallet = await getLinkedWalletAccount(actor.shopId, method.accountId);
+  if (wallet.id === cash.id) throw new ApiError(400, 'Cash/collection account and wallet must be different');
+  if (input.mode === 'CASH_OUT' && cash.type !== 'CASH') throw new ApiError(400, 'Cash Out requires a CASH account');
+  const rateKey = `${method.code}_${input.mode}`;
+  const rate = number(rates[rateKey] ?? rates[`${wallet.type}_${input.mode}`] ?? 0);
+  const fee = input.feeMode === 'CUSTOM' ? number(input.feeAmount) : Math.max(number(rates.minimumFee), roundFee(input.amount * rate / 100, rates.roundTo));
+  const customerPays = input.amount + fee;
+  const customerReceives = input.amount;
+  const cashOutPending = input.mode === 'CASH_OUT' && input.paymentTiming === 'PAY_LATER';
+  let paid = customerPays;
+  if (input.mode === 'TRANSFER' && input.paymentTiming === 'PAY_LATER') paid = 0;
+  if (input.mode === 'TRANSFER' && input.paymentTiming === 'PARTIAL') paid = Math.min(customerPays, Math.max(0, number(input.paidAmount)));
+  if (cashOutPending) paid = 0;
+  const due = cashOutPending ? input.amount : Math.max(0, customerPays - paid);
+  const paymentStatus = due <= 0.005 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'PENDING';
+  const id = crypto.randomUUID();
+  const txNumber = transactionNumber();
+
+  const transaction = await prisma.$transaction(async (tx) => {
+    const cashCurrent = await tx.moneyAccount.findUnique({ where: { id: cash.id } });
+    const walletCurrent = await tx.moneyAccount.findUnique({ where: { id: wallet.id } });
+    const cashChange = input.mode === 'TRANSFER' ? paid : (cashOutPending ? 0 : -input.amount);
+    const walletChange = input.mode === 'TRANSFER' ? -input.amount : customerPays;
+    const cashAfter = number(cashCurrent.balance) + cashChange;
+    const walletAfter = number(walletCurrent.balance) + walletChange;
+    if (cashAfter < -0.005) throw new ApiError(409, `${cash.name} ထဲမှာ ငွေလက်ကျန်မလုံလောက်ပါ`);
+    if (walletAfter < -0.005) throw new ApiError(409, `${wallet.name} ထဲမှာ ငွေလက်ကျန်မလုံလောက်ပါ`);
+    await tx.moneyAccount.update({ where: { id: cash.id }, data: { balance: cashAfter } });
+    await tx.moneyAccount.update({ where: { id: wallet.id }, data: { balance: walletAfter } });
+    await tx.$executeRawUnsafe(`INSERT INTO money_service_transactions_v2(id,shop_id,transaction_number,mode,payment_method_id,cash_account_id,wallet_account_id,sender_name,sender_phone,receiver_name,receiver_phone,withdrawer_name,withdrawer_phone,amount,fee_mode,fee_rate,fee_amount,customer_pays,customer_receives,payment_status,paid_amount,due_amount,due_date,reference,note,created_by_id,created_at,updated_at)
+      VALUES($1::uuid,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23::date,$24,$25,$26::uuid,NOW(),NOW())`,
+      id, actor.shopId, txNumber, input.mode, method.id, cash.id, wallet.id, clean(input.senderName,180), clean(input.senderPhone,60), clean(input.receiverName,180), clean(input.receiverPhone,60), clean(input.withdrawerName,180), clean(input.withdrawerPhone,60), input.amount, input.feeMode, rate, fee, customerPays, customerReceives, paymentStatus, paid, due, input.dueDate || null, clean(input.reference,180), clean(input.note), actor.userId);
+    const paymentRecordAmount = input.mode === 'CASH_OUT' ? customerPays : paid;
+    if (paymentRecordAmount > 0) {
+      await tx.$executeRawUnsafe(`INSERT INTO money_service_payments_v2(id,shop_id,transaction_id,payment_method_id,account_id,amount,note,collected_by_id,created_at) VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7,$8::uuid,NOW())`,
+        crypto.randomUUID(), actor.shopId, id, method.id, input.mode === 'TRANSFER' ? cash.id : wallet.id, paymentRecordAmount, cashOutPending ? 'Wallet received; cash payout pending' : 'Initial payment', actor.userId);
+    }
+    return { id, transactionNumber: txNumber, mode: input.mode, walletName: method.name, cashAccountName: cash.name, amount: input.amount, feeAmount: fee, feeRate: rate, customerPays, customerReceives, paymentStatus, paidAmount: paid, dueAmount: due, dueDate: input.dueDate || null, receiverName: input.receiverName || '', receiverPhone: input.receiverPhone || '', withdrawerName: input.withdrawerName || '', withdrawerPhone: input.withdrawerPhone || '', createdAt: new Date().toISOString() };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
+
+  await audit(req, 'MONEY_SERVICE_V2_CREATED', id, { transactionNumber: txNumber, mode: input.mode, amount: input.amount, fee, paid, due, paymentStatus });
+  await queueGoogleSheetSync({ shopId: actor.shopId, dataset: 'remittances', action: 'CREATE_V2', entityId: id, payload: transaction });
+  queuePush(() => sendPushToShop({
+    shopId: actor.shopId,
+    eventType: 'MONEY_ACCOUNT_MOVEMENT',
+    title: 'Money account movement',
+    body: 'A money service transaction was recorded. Open Mahar POS to review.',
+    url: '/accounting',
+    data: { source: 'money-service', transactionId: id },
+  }), 'money service movement push');
+  return transaction;
+}
+
+async function recordBillerTransaction(actor, transactionType, body) {
+  const req = actorRequest(actor);
+  await seedBillers(actor.shopId);
+  const schema = transactionType === 'ADJUSTMENT' ? adjustmentSchema : billerTxBaseSchema;
+  const input = parse(schema, body || {});
+  const id = crypto.randomUUID();
+  const result = await prisma.$transaction(async (tx) => {
+    const biller = await findBillerForUpdate(tx, actor.shopId, input.billerId);
+    const current = number(biller.currentBalance);
+    const defaultAdjustMode = biller.saleAdjustMode || biller.saleadjustmode || 'NONE';
+    const defaultAdjustPercent = number(biller.saleAdjustPercent ?? biller.saleadjustpercent);
+    const requestedAdjustMode = input.balanceAdjustMode || 'NONE';
+    const requestedAdjustPercent = number(input.balanceAdjustPercent);
+    const adjustMode = transactionType === 'SOLD' ? (requestedAdjustMode !== 'NONE' || requestedAdjustPercent > 0 ? requestedAdjustMode : defaultAdjustMode) : 'NONE';
+    const adjustPercent = transactionType === 'SOLD' ? (requestedAdjustMode !== 'NONE' || requestedAdjustPercent > 0 ? requestedAdjustPercent : defaultAdjustPercent) : 0;
+    const effectRaw = adjustMode === 'ADD_PERCENT'
+      ? input.amount * (1 + adjustPercent / 100)
+      : adjustMode === 'SUBTRACT_PERCENT'
+        ? input.amount * (1 - adjustPercent / 100)
+        : input.amount;
+    const balanceEffectAmount = transactionType === 'SOLD' ? round(Math.max(0, effectRaw)) : input.amount;
+    const balanceDelta = transactionType === 'SOLD' ? -balanceEffectAmount : input.amount;
+    const closing = current + balanceDelta;
+    const isProviderCreditBiller = /atom\s*eload/i.test(biller.name || '');
+    if (transactionType === 'SOLD' && closing < -0.005 && !isProviderCreditBiller) throw new ApiError(409, 'Biller balance is not enough');
+    const profit = input.profitAmount ?? (transactionType === 'SOLD' && input.costAmount !== null && input.costAmount !== undefined ? input.amount - number(input.costAmount) : 0);
+    const isCreditSale = transactionType === 'SOLD' && input.paymentTiming === 'PAY_LATER';
+    const paidAmount = transactionType === 'SOLD'
+      ? (isCreditSale ? 0 : input.paymentTiming === 'PARTIAL' ? Math.min(input.amount, number(input.paidAmount)) : input.amount)
+      : 0;
+    const dueAmount = transactionType === 'SOLD' ? Math.max(0, input.amount - paidAmount) : 0;
+    const paymentStatus = dueAmount <= 0.005 ? 'PAID' : paidAmount > 0 ? 'PARTIAL' : 'PENDING';
+    const accountDelta = transactionType === 'SOLD' ? paidAmount : transactionType === 'REFILL' ? -input.amount : 0;
+    const account = await applyPaymentAccountChange(tx, actor.shopId, maybeUuid(input.paymentAccountId), accountDelta);
+    await tx.$executeRawUnsafe(`INSERT INTO biller_transactions(id,shop_id,branch_id,biller_id,transaction_type,amount,balance_effect_amount,balance_adjust_mode,balance_adjust_percent,cost_amount,profit_amount,customer_phone,payment_method,payment_account_id,payment_status,paid_amount,due_amount,due_date,staff_id,note,transaction_date,created_by_id,created_at,updated_at)
+      VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::"BillerTransactionType",$6,$7,$8,$9,$10,$11,$12,$13,$14::uuid,$15::"PaymentStatus",$16,$17,$18::date,$19::uuid,$20,$21::timestamptz,$22::uuid,NOW(),NOW())`,
+      id, actor.shopId, maybeUuid(input.branchId) || biller.branchId || null, biller.id, transactionType, input.amount, balanceEffectAmount, adjustMode, adjustPercent, input.costAmount ?? null, profit,
+      clean(input.customerPhone,80), clean(input.paymentMethod,80), maybeUuid(input.paymentAccountId), paymentStatus, paidAmount, dueAmount, input.dueDate || null, maybeUuid(input.staffId), clean(input.note), txDate(input.transactionDate), actor.userId);
+    if (transactionType === 'OPENING') {
+      await tx.$executeRawUnsafe('UPDATE billers SET opening_balance=opening_balance+$3,current_balance=$4,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, actor.shopId, input.amount, closing);
+    } else {
+      await tx.$executeRawUnsafe('UPDATE billers SET current_balance=$3,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, actor.shopId, closing);
+    }
+    return { id, billerId: biller.id, billerName: biller.name, transactionType, amount: input.amount, balanceEffectAmount, balanceAdjustMode: adjustMode, balanceAdjustPercent: adjustPercent, profitAmount: profit, paidAmount, dueAmount, paymentStatus, beforeBalance: current, closingBalance: closing, account };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
+  await audit(req, `BILLER_${transactionType}_CREATED`, id, result);
+  await queueGoogleSheetSync({ shopId: actor.shopId, dataset: 'money-service', action: `BILLER_${transactionType}`, entityId: id, payload: result });
+  return result;
+}
+
 function attachMoneyServiceV23Api(app) {
   const read = [requireAuth, requireShopUser, requireAccountingRead];
   const write = [requireAuth, requireShopUser, requireWritableSubscription, requireAccountingWrite];
@@ -573,51 +691,12 @@ function attachMoneyServiceV23Api(app) {
 
   async function createBillerTransaction(req, res, transactionType) {
     try {
-      await seedBillers(req.auth.shopId);
-      const schema = transactionType === 'ADJUSTMENT' ? adjustmentSchema : billerTxBaseSchema;
-      const input = parse(schema, req.body || {});
-      const id = crypto.randomUUID();
-      const result = await prisma.$transaction(async (tx) => {
-        const biller = await findBillerForUpdate(tx, req.auth.shopId, input.billerId);
-        const current = number(biller.currentBalance);
-        const defaultAdjustMode = biller.saleAdjustMode || biller.saleadjustmode || 'NONE';
-        const defaultAdjustPercent = number(biller.saleAdjustPercent ?? biller.saleadjustpercent);
-        const requestedAdjustMode = input.balanceAdjustMode || 'NONE';
-        const requestedAdjustPercent = number(input.balanceAdjustPercent);
-        const adjustMode = transactionType === 'SOLD' ? (requestedAdjustMode !== 'NONE' || requestedAdjustPercent > 0 ? requestedAdjustMode : defaultAdjustMode) : 'NONE';
-        const adjustPercent = transactionType === 'SOLD' ? (requestedAdjustMode !== 'NONE' || requestedAdjustPercent > 0 ? requestedAdjustPercent : defaultAdjustPercent) : 0;
-        const effectRaw = adjustMode === 'ADD_PERCENT'
-          ? input.amount * (1 + adjustPercent / 100)
-          : adjustMode === 'SUBTRACT_PERCENT'
-            ? input.amount * (1 - adjustPercent / 100)
-            : input.amount;
-        const balanceEffectAmount = transactionType === 'SOLD' ? round(Math.max(0, effectRaw)) : input.amount;
-        const balanceDelta = transactionType === 'SOLD' ? -balanceEffectAmount : input.amount;
-        const closing = current + balanceDelta;
-        const isProviderCreditBiller = /atom\s*eload/i.test(biller.name || '');
-        if (transactionType === 'SOLD' && closing < -0.005 && !isProviderCreditBiller) throw new ApiError(409, 'Biller balance is not enough');
-        const profit = input.profitAmount ?? (transactionType === 'SOLD' && input.costAmount !== null && input.costAmount !== undefined ? input.amount - number(input.costAmount) : 0);
-        const isCreditSale = transactionType === 'SOLD' && input.paymentTiming === 'PAY_LATER';
-        const paidAmount = transactionType === 'SOLD'
-          ? (isCreditSale ? 0 : input.paymentTiming === 'PARTIAL' ? Math.min(input.amount, number(input.paidAmount)) : input.amount)
-          : 0;
-        const dueAmount = transactionType === 'SOLD' ? Math.max(0, input.amount - paidAmount) : 0;
-        const paymentStatus = dueAmount <= 0.005 ? 'PAID' : paidAmount > 0 ? 'PARTIAL' : 'PENDING';
-        const accountDelta = transactionType === 'SOLD' ? paidAmount : transactionType === 'REFILL' ? -input.amount : 0;
-        const account = await applyPaymentAccountChange(tx, req.auth.shopId, maybeUuid(input.paymentAccountId), accountDelta);
-        await tx.$executeRawUnsafe(`INSERT INTO biller_transactions(id,shop_id,branch_id,biller_id,transaction_type,amount,balance_effect_amount,balance_adjust_mode,balance_adjust_percent,cost_amount,profit_amount,customer_phone,payment_method,payment_account_id,payment_status,paid_amount,due_amount,due_date,staff_id,note,transaction_date,created_by_id,created_at,updated_at)
-          VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::"BillerTransactionType",$6,$7,$8,$9,$10,$11,$12,$13,$14::uuid,$15::"PaymentStatus",$16,$17,$18::date,$19::uuid,$20,$21::timestamptz,$22::uuid,NOW(),NOW())`,
-          id, req.auth.shopId, maybeUuid(input.branchId) || biller.branchId || null, biller.id, transactionType, input.amount, balanceEffectAmount, adjustMode, adjustPercent, input.costAmount ?? null, profit,
-          clean(input.customerPhone,80), clean(input.paymentMethod,80), maybeUuid(input.paymentAccountId), paymentStatus, paidAmount, dueAmount, input.dueDate || null, maybeUuid(input.staffId), clean(input.note), txDate(input.transactionDate), req.auth.userId);
-        if (transactionType === 'OPENING') {
-          await tx.$executeRawUnsafe('UPDATE billers SET opening_balance=opening_balance+$3,current_balance=$4,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, req.auth.shopId, input.amount, closing);
-        } else {
-          await tx.$executeRawUnsafe('UPDATE billers SET current_balance=$3,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, req.auth.shopId, closing);
-        }
-        return { id, billerId: biller.id, billerName: biller.name, transactionType, amount: input.amount, balanceEffectAmount, balanceAdjustMode: adjustMode, balanceAdjustPercent: adjustPercent, profitAmount: profit, paidAmount, dueAmount, paymentStatus, beforeBalance: current, closingBalance: closing, account };
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
-      await audit(req, `BILLER_${transactionType}_CREATED`, id, result);
-      await queueGoogleSheetSync({ shopId: req.auth.shopId, dataset: 'money-service', action: `BILLER_${transactionType}`, entityId: id, payload: result });
+      const result = await recordBillerTransaction({
+        shopId: req.auth.shopId,
+        userId: req.auth.userId,
+        ip: req.ip || null,
+        userAgent: req.headers['user-agent'] || null,
+      }, transactionType, req.body || {});
       return res.status(201).json({ ok: true, message: `${transactionType} saved`, transaction: result });
     } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller transaction failed', details: error.details }); }
   }
@@ -777,59 +856,13 @@ function attachMoneyServiceV23Api(app) {
 
   app.post('/api/money-service/transactions', ...write, async (req, res) => {
     try {
-      await seedPaymentMethods(req.auth.shopId, req.auth.userId);
-      const input = parse(transactionSchema, req.body || {});
-      const [method, cash, rates] = await Promise.all([getMethod(req.auth.shopId, input.paymentMethodId), getAccount(req.auth.shopId, input.cashAccountId), getRates(req.auth.shopId)]);
-      const wallet = await getLinkedWalletAccount(req.auth.shopId, method.accountId);
-      if (wallet.id === cash.id) throw new ApiError(400, 'Cash/collection account and wallet must be different');
-      const rateKey = `${method.code}_${input.mode}`;
-      const rate = number(rates[rateKey] ?? rates[`${wallet.type}_${input.mode}`] ?? 0);
-      const fee = input.feeMode === 'CUSTOM' ? number(input.feeAmount) : Math.max(number(rates.minimumFee), roundFee(input.amount * rate / 100, rates.roundTo));
-      const customerPays = input.amount + fee;
-      const customerReceives = input.amount;
-      const cashOutPending = input.mode === 'CASH_OUT' && input.paymentTiming === 'PAY_LATER';
-      let paid = customerPays;
-      if (input.mode === 'TRANSFER' && input.paymentTiming === 'PAY_LATER') paid = 0;
-      if (input.mode === 'TRANSFER' && input.paymentTiming === 'PARTIAL') paid = Math.min(customerPays, Math.max(0, number(input.paidAmount)));
-      if (cashOutPending) paid = 0;
-      const due = cashOutPending ? input.amount : Math.max(0, customerPays - paid);
-      const paymentStatus = due <= 0.005 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'PENDING';
-      const id = crypto.randomUUID();
-      const txNumber = transactionNumber();
-
-      const transaction = await prisma.$transaction(async (tx) => {
-        const cashCurrent = await tx.moneyAccount.findUnique({ where: { id: cash.id } });
-        const walletCurrent = await tx.moneyAccount.findUnique({ where: { id: wallet.id } });
-        const cashChange = input.mode === 'TRANSFER' ? paid : (cashOutPending ? 0 : -input.amount);
-        const walletChange = input.mode === 'TRANSFER' ? -input.amount : customerPays;
-        const cashAfter = number(cashCurrent.balance) + cashChange;
-        const walletAfter = number(walletCurrent.balance) + walletChange;
-        if (cashAfter < -0.005) throw new ApiError(409, `${cash.name} ထဲမှာ ငွေလက်ကျန်မလုံလောက်ပါ`);
-        if (walletAfter < -0.005) throw new ApiError(409, `${wallet.name} ထဲမှာ ငွေလက်ကျန်မလုံလောက်ပါ`);
-        await tx.moneyAccount.update({ where: { id: cash.id }, data: { balance: cashAfter } });
-        await tx.moneyAccount.update({ where: { id: wallet.id }, data: { balance: walletAfter } });
-        await tx.$executeRawUnsafe(`INSERT INTO money_service_transactions_v2(id,shop_id,transaction_number,mode,payment_method_id,cash_account_id,wallet_account_id,sender_name,sender_phone,receiver_name,receiver_phone,withdrawer_name,withdrawer_phone,amount,fee_mode,fee_rate,fee_amount,customer_pays,customer_receives,payment_status,paid_amount,due_amount,due_date,reference,note,created_by_id,created_at,updated_at)
-          VALUES($1::uuid,$2::uuid,$3,$4,$5::uuid,$6::uuid,$7::uuid,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23::date,$24,$25,$26::uuid,NOW(),NOW())`,
-          id, req.auth.shopId, txNumber, input.mode, method.id, cash.id, wallet.id, clean(input.senderName,180), clean(input.senderPhone,60), clean(input.receiverName,180), clean(input.receiverPhone,60), clean(input.withdrawerName,180), clean(input.withdrawerPhone,60), input.amount, input.feeMode, rate, fee, customerPays, customerReceives, paymentStatus, paid, due, input.dueDate || null, clean(input.reference,180), clean(input.note), req.auth.userId);
-        const paymentRecordAmount = input.mode === 'CASH_OUT' ? customerPays : paid;
-        if (paymentRecordAmount > 0) {
-          await tx.$executeRawUnsafe(`INSERT INTO money_service_payments_v2(id,shop_id,transaction_id,payment_method_id,account_id,amount,note,collected_by_id,created_at) VALUES($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7,$8::uuid,NOW())`,
-            crypto.randomUUID(), req.auth.shopId, id, method.id, input.mode === 'TRANSFER' ? cash.id : wallet.id, paymentRecordAmount, cashOutPending ? 'Wallet received; cash payout pending' : 'Initial payment', req.auth.userId);
-        }
-        return { id, transactionNumber: txNumber, mode: input.mode, walletName: method.name, amount: input.amount, feeAmount: fee, feeRate: rate, customerPays, customerReceives, paymentStatus, paidAmount: paid, dueAmount: due, dueDate: input.dueDate || null, receiverName: input.receiverName || '', receiverPhone: input.receiverPhone || '', withdrawerName: input.withdrawerName || '', withdrawerPhone: input.withdrawerPhone || '', createdAt: new Date().toISOString() };
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
-
-      await audit(req, 'MONEY_SERVICE_V2_CREATED', id, { transactionNumber: txNumber, mode: input.mode, amount: input.amount, fee, paid, due, paymentStatus });
-      await queueGoogleSheetSync({ shopId: req.auth.shopId, dataset: 'remittances', action: 'CREATE_V2', entityId: id, payload: transaction });
-      queuePush(() => sendPushToShop({
+      const transaction = await recordMoneyServiceTransaction({
         shopId: req.auth.shopId,
-        eventType: 'MONEY_ACCOUNT_MOVEMENT',
-        title: 'Money account movement',
-        body: 'A money service transaction was recorded. Open Mahar POS to review.',
-        url: '/accounting',
-        data: { source: 'money-service', transactionId: id },
-      }), 'money service movement push');
-      return res.status(201).json({ ok: true, message: paymentStatus === 'PAID' ? 'Transaction saved' : 'Transaction saved with customer due', transaction });
+        userId: req.auth.userId,
+        ip: req.ip || null,
+        userAgent: req.headers['user-agent'] || null,
+      }, req.body || {});
+      return res.status(201).json({ ok: true, message: transaction.paymentStatus === 'PAID' ? 'Transaction saved' : 'Transaction saved with customer due', transaction });
     } catch (error) {
       console.error('Money Service V2 create:', error);
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Transaction save failed', details: error.details });
@@ -878,4 +911,12 @@ function attachMoneyServiceV23Api(app) {
   });
 }
 
-module.exports = { attachMoneyServiceV23Api, ensureMoneyServiceV23Schema: ensureSchema };
+module.exports = {
+  attachMoneyServiceV23Api,
+  ensureMoneyServiceV23Schema: ensureSchema,
+  // shared with the Telegram bot
+  recordMoneyServiceTransaction,
+  recordBillerTransaction,
+  seedMoneyServiceDefaults: seedPaymentMethods,
+  seedBillerDefaults: seedBillers,
+};

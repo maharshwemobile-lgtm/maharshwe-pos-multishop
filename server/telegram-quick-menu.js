@@ -23,6 +23,9 @@ const ACTIONS = [
 
 // Write flows — these create real records, so each one confirms before saving.
 const FLOWS = [
+  { key: 'MONEY_NEW', button: '➕ ငွေလွှဲ/ငွေထုတ်', match: ['ငွေလွှဲငွေထုတ်', 'ငွေလွှဲ ငွေထုတ်', 'ငွေလွှဲမယ်', 'ငွေထုတ်မယ်', 'money new', 'new transfer'] },
+  { key: 'BILL_SALE', button: '➕ Bill/Eload ရောင်း', match: ['billeload ရောင်း', 'bill eload ရောင်း', 'bill ရောင်း', 'eload ရောင်း', 'bill sale'] },
+  { key: 'BILL_REFILL', button: '➕ Bill/Eload ဖြည့်', match: ['billeload ဖြည့်', 'bill eload ဖြည့်', 'bill ဖြည့်', 'eload ဖြည့်', 'refill'] },
   { key: 'REPAIR_NEW', button: '➕ Repair မှတ်မယ်', match: ['repair မှတ်မယ်', 'repair new', 'new repair', 'ပြုပြင် မှတ်မယ်'] },
   { key: 'EXPENSE_NEW', button: '➕ အထွက် မှတ်မယ်', match: ['အထွက် မှတ်မယ်', 'အထွက်', 'expense', 'ထွက်ငွေ'] },
   { key: 'INCOME_NEW', button: '➕ ဝင်ငွေ မှတ်မယ်', match: ['ဝင်ငွေ မှတ်မယ်', 'income new', 'new income'] },
@@ -80,7 +83,9 @@ function quickKeyboard() {
     keyboard: [
       [{ text: ACTIONS[0].button }, { text: ACTIONS[1].button }],
       [{ text: ACTIONS[2].button }, { text: ACTIONS[3].button }],
-      [{ text: FLOWS[0].button }, { text: FLOWS[1].button }, { text: FLOWS[2].button }],
+      [{ text: FLOWS[0].button }, { text: FLOWS[1].button }],
+      [{ text: FLOWS[2].button }, { text: FLOWS[3].button }],
+      [{ text: FLOWS[4].button }, { text: FLOWS[5].button }],
     ],
     resize_keyboard: true,
     is_persistent: true,
@@ -110,6 +115,9 @@ function menuText(shopName, statusLine) {
     '📋 Other Records — ဝင်ငွေ / ထွက်ငွေ / Top-up',
     '',
     '<b>မှတ်တမ်းတင်ရန်</b>',
+    '➕ ငွေလွှဲ/ငွေထုတ် — Money Service',
+    '➕ Bill/Eload ရောင်း — Top-up ရောင်းချမှု',
+    '➕ Bill/Eload ဖြည့် — Balance Refill',
     '➕ Repair မှတ်မယ် — ပြုပြင်ရေး အသစ်',
     '➕ အထွက် မှတ်မယ် — ထွက်ငွေ စာရင်း',
     '➕ ဝင်ငွေ မှတ်မယ် — ဝင်ငွေ စာရင်း',
@@ -359,10 +367,54 @@ const INCOME_CATEGORIES = [
 
 function optionKeyboard(options) {
   return {
-    keyboard: [...options.map((option) => [{ text: option }]), [{ text: '❌ ရပ်မယ်' }]],
+    keyboard: [...options.map((option) => [{ text: option.label }]), [{ text: '❌ ရပ်မယ်' }]],
     resize_keyboard: true,
     is_persistent: true,
   };
+}
+
+// Options are either a fixed list or loaded from the shop's own data
+async function stepOptions(step, shopId, data) {
+  if (step.options) return step.options.map((value) => ({ label: value, value }));
+  if (step.loadOptions) return step.loadOptions(shopId, data);
+  return null;
+}
+
+async function walletOptions(shopId) {
+  // same defaults the Money Service page seeds when it opens
+  const { seedMoneyServiceDefaults } = require('./money-service-v23-api');
+  await seedMoneyServiceDefaults(shopId, await shopActorUserId(shopId)).catch(() => null);
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT m.id, m.name, COALESCE(a.balance,0) AS balance
+       FROM finance_payment_methods m
+       LEFT JOIN money_accounts a ON a.id = m.account_id
+      WHERE m.shop_id=$1::uuid AND m.active AND m.supports_money_service
+        AND m.account_id IS NOT NULL AND m.kind <> 'CASH'
+      ORDER BY m.sort_order, LOWER(m.name)`,
+    shopId,
+  );
+  return (rows || []).map((row) => ({ label: `${row.name} · ${mmk(row.balance)}`, value: row.id }));
+}
+
+async function accountOptions(shopId, onlyCash) {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, name, type, balance FROM money_accounts
+      WHERE shop_id=$1::uuid AND active ${onlyCash ? "AND type='CASH'" : ''}
+      ORDER BY (type='CASH') DESC, LOWER(name)`,
+    shopId,
+  );
+  return (rows || []).map((row) => ({ label: `${row.name} · ${mmk(row.balance)}`, value: row.id }));
+}
+
+async function billerOptions(shopId) {
+  const { seedBillerDefaults } = require('./money-service-v23-api');
+  await seedBillerDefaults(shopId).catch(() => null);
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, name, current_balance AS balance FROM billers
+      WHERE shop_id=$1::uuid AND is_active ORDER BY LOWER(name)`,
+    shopId,
+  );
+  return (rows || []).map((row) => ({ label: `${row.name} · ${mmk(row.balance)}`, value: row.id }));
 }
 
 function confirmKeyboard() {
@@ -384,6 +436,90 @@ function isConfirmWord(text) {
 }
 
 const FLOW_DEFS = {
+  MONEY_NEW: {
+    title: '💸 ငွေလွှဲ / ငွေထုတ်',
+    steps: [
+      {
+        field: 'mode',
+        ask: 'ဘယ်ဟာလဲ?',
+        required: true,
+        loadOptions: async () => ([
+          { label: '🔁 ငွေလွှဲ Transfer', value: 'TRANSFER' },
+          { label: '🏧 ငွေထုတ် Cash Out', value: 'CASH_OUT' },
+        ]),
+      },
+      {
+        field: 'paymentMethodId',
+        ask: '📲 ဘယ် Wallet လဲ?',
+        required: true,
+        loadOptions: (shopId) => walletOptions(shopId),
+      },
+      {
+        field: 'cashAccountId',
+        // Cash Out settles from a CASH account (server guard), Transfer may land anywhere
+        ask: '💵 ဘယ် Cash account လဲ?',
+        required: true,
+        loadOptions: (shopId, data) => accountOptions(shopId, data.mode === 'CASH_OUT'),
+      },
+      { field: 'amount', ask: '💰 ပမာဏ ဘယ်လောက်လဲ?', amount: true, required: true },
+      {
+        field: 'feeAmount',
+        ask: '🧾 Service Fee? (Auto ဆိုရင် Auto နှိပ်ပါ၊ မဟုတ်ရင် ဂဏန်းရိုက်ပါ)',
+        amount: true,
+        freeAmountWithOptions: true,
+        loadOptions: async () => ([{ label: '⚙️ Auto', value: 'AUTO' }]),
+      },
+      { field: 'receiverName', ask: '👤 လက်ခံသူ အမည်?', required: true, when: (data) => data.mode === 'TRANSFER' },
+      { field: 'receiverPhone', ask: '📞 လက်ခံသူ ဖုန်း?', required: true, when: (data) => data.mode === 'TRANSFER' },
+      { field: 'withdrawerName', ask: '👤 ငွေထုတ်သူ အမည်? (မလိုရင် - ရိုက်ပါ)', skippable: true, when: (data) => data.mode === 'CASH_OUT' },
+    ],
+    summary: (data) => [
+      data.mode === 'CASH_OUT' ? '🏧 <b>ငွေထုတ် Cash Out</b>' : '🔁 <b>ငွေလွှဲ Transfer</b>',
+      `📲 ${data.paymentMethodIdLabel}`,
+      `💵 ${data.cashAccountIdLabel}`,
+      `💰 ${mmk(data.amount)}`,
+      `🧾 Fee: ${data.feeAmount === 'AUTO' ? 'Auto' : mmk(data.feeAmount)}`,
+      data.mode === 'TRANSFER' ? `👤 ${data.receiverName} · ${data.receiverPhone}` : `👤 ${data.withdrawerName || '-'}`,
+      '',
+      'မှန်ရင် ✅ မှတ်မယ် နှိပ်ပါ',
+    ].join('\n'),
+  },
+  BILL_SALE: {
+    title: '📱 Bill / Eload ရောင်း',
+    steps: [
+      { field: 'billerId', ask: '🏪 ဘယ် Biller လဲ?', required: true, loadOptions: (shopId) => billerOptions(shopId) },
+      { field: 'amount', ask: '💰 ရောင်းငွေ ဘယ်လောက်လဲ?', amount: true, required: true },
+      { field: 'profitAmount', ask: '📈 အမြတ် ဘယ်လောက်လဲ? (မရှိရင် 0)', amount: true },
+      { field: 'paymentAccountId', ask: '💵 ငွေဝင်မယ့် Account?', required: true, loadOptions: (shopId) => accountOptions(shopId, false) },
+      { field: 'customerPhone', ask: '📞 Customer ဖုန်း? (မလိုရင် - ရိုက်ပါ)', skippable: true },
+    ],
+    summary: (data) => [
+      '📱 <b>Bill / Eload ရောင်း</b>',
+      `🏪 ${data.billerIdLabel}`,
+      `💰 ရောင်းငွေ: ${mmk(data.amount)}`,
+      `📈 အမြတ်: ${mmk(data.profitAmount)}`,
+      `💵 ${data.paymentAccountIdLabel}`,
+      `📞 ${data.customerPhone || '-'}`,
+      '',
+      'မှန်ရင် ✅ မှတ်မယ် နှိပ်ပါ',
+    ].join('\n'),
+  },
+  BILL_REFILL: {
+    title: '🔋 Bill / Eload ဖြည့်',
+    steps: [
+      { field: 'billerId', ask: '🏪 ဘယ် Biller ကို ဖြည့်မလဲ?', required: true, loadOptions: (shopId) => billerOptions(shopId) },
+      { field: 'amount', ask: '💰 ဖြည့်မယ့် ပမာဏ?', amount: true, required: true },
+      { field: 'paymentAccountId', ask: '💵 ဘယ် Account ကနေ ပေးမလဲ?', required: true, loadOptions: (shopId) => accountOptions(shopId, false) },
+    ],
+    summary: (data) => [
+      '🔋 <b>Bill / Eload ဖြည့်</b>',
+      `🏪 ${data.billerIdLabel}`,
+      `💰 ${mmk(data.amount)}`,
+      `💵 ${data.paymentAccountIdLabel} ကနေ ထုတ်သုံးမည်`,
+      '',
+      'မှန်ရင် ✅ မှတ်မယ် နှိပ်ပါ',
+    ].join('\n'),
+  },
   REPAIR_NEW: {
     title: '🔧 Repair အသစ်',
     steps: [
@@ -440,18 +576,33 @@ const FLOW_DEFS = {
   },
 };
 
-function askFor(flowKey, stepIndex) {
+// steps whose `when` is false for the collected data are skipped entirely
+function nextStepIndex(def, data, fromIndex) {
+  let index = fromIndex;
+  while (index < def.steps.length && def.steps[index].when && !def.steps[index].when(data)) index += 1;
+  return index;
+}
+
+async function askFor(shopId, flowKey, stepIndex, data) {
   const def = FLOW_DEFS[flowKey];
   const step = def.steps[stepIndex];
+  const options = await stepOptions(step, shopId, data || {});
+  if (options && !options.length) {
+    return { text: `⚠️ ရွေးစရာ မရှိပါ (${step.ask})။ Mahar POS မှာ အရင် ဖန်တီးပါ။`, keyboard: quickKeyboard(), abort: true };
+  }
   return {
     text: `${def.title} — ${stepIndex + 1}/${def.steps.length}\n\n${step.ask}`,
-    keyboard: step.options ? optionKeyboard(step.options) : cancelKeyboard(),
+    keyboard: options ? optionKeyboard(options) : cancelKeyboard(),
   };
 }
 
 async function startFlow(shopId, chatId, flowKey) {
-  await setSession(shopId, chatId, flowKey, 0, {});
-  return askFor(flowKey, 0);
+  const def = FLOW_DEFS[flowKey];
+  const first = nextStepIndex(def, {}, 0);
+  const ask = await askFor(shopId, flowKey, first, {});
+  if (ask.abort) return { text: ask.text, keyboard: ask.keyboard };
+  await setSession(shopId, chatId, flowKey, first, {});
+  return ask;
 }
 
 // The shop user a Telegram-created record is attributed to.
@@ -467,6 +618,56 @@ async function shopActorUserId(shopId) {
 async function saveFlow(shopId, flowKey, data) {
   const userId = await shopActorUserId(shopId);
   if (!userId) throw new Error('Shop user not found');
+
+  if (flowKey === 'MONEY_NEW') {
+    const { recordMoneyServiceTransaction } = require('./money-service-v23-api');
+    const useAuto = data.feeAmount === 'AUTO' || data.feeAmount === '' || data.feeAmount === undefined;
+    const saved = await recordMoneyServiceTransaction({ shopId, userId, userAgent: 'telegram-bot' }, {
+      mode: data.mode,
+      paymentMethodId: data.paymentMethodId,
+      cashAccountId: data.cashAccountId,
+      amount: Number(data.amount),
+      feeMode: useAuto ? 'AUTO' : 'CUSTOM',
+      feeAmount: useAuto ? undefined : Number(data.feeAmount),
+      receiverName: data.receiverName || undefined,
+      receiverPhone: data.receiverPhone || undefined,
+      withdrawerName: data.withdrawerName || undefined,
+      paymentTiming: 'PAID_NOW',
+      note: 'Telegram',
+    });
+    return [
+      saved.mode === 'CASH_OUT' ? '✅ ငွေထုတ် မှတ်ပြီးပါပြီ' : '✅ ငွေလွှဲ မှတ်ပြီးပါပြီ',
+      '',
+      `🔖 ${saved.transactionNumber}`,
+      `💰 ${mmk(saved.amount)}`,
+      `🧾 Fee: ${mmk(saved.feeAmount)}`,
+      `📲 ${saved.walletName} · 💵 ${saved.cashAccountName}`,
+      saved.mode === 'CASH_OUT' ? `📥 Wallet ဝင်ငွေ: ${mmk(saved.customerPays)}` : `📤 Customer ပေးရမည်: ${mmk(saved.customerPays)}`,
+    ].join('\n');
+  }
+
+  if (flowKey === 'BILL_SALE' || flowKey === 'BILL_REFILL') {
+    const { recordBillerTransaction } = require('./money-service-v23-api');
+    const type = flowKey === 'BILL_SALE' ? 'SOLD' : 'REFILL';
+    const saved = await recordBillerTransaction({ shopId, userId, userAgent: 'telegram-bot' }, type, {
+      billerId: data.billerId,
+      amount: Number(data.amount),
+      profitAmount: flowKey === 'BILL_SALE' ? Number(data.profitAmount || 0) : undefined,
+      customerPhone: data.customerPhone || undefined,
+      paymentMethod: 'CASH',
+      paymentAccountId: data.paymentAccountId,
+      paymentTiming: 'PAID_NOW',
+      note: 'Telegram',
+    });
+    return [
+      type === 'SOLD' ? '✅ Bill / Eload ရောင်းချမှု မှတ်ပြီးပါပြီ' : '✅ Bill / Eload ဖြည့်ပြီးပါပြီ',
+      '',
+      `🏪 ${saved.billerName}`,
+      `💰 ${mmk(saved.amount)}`,
+      ...(type === 'SOLD' ? [`📈 အမြတ်: ${mmk(saved.profitAmount)}`] : []),
+      `🔋 လက်ကျန်: ${mmk(saved.closingBalance)}`,
+    ].join('\n');
+  }
 
   if (flowKey === 'REPAIR_NEW') {
     const { ensureRepairPlatformSchema } = require('./repair-platform-schema');
@@ -552,13 +753,24 @@ async function continueFlow(shopId, chatId, text) {
 
   const step = def.steps[stepIndex];
   const raw = String(text || '').trim();
-
-  if (step.options && !step.options.includes(raw)) {
-    return { text: 'အောက်က အမျိုးအစားထဲကနေ ရွေးပါ။', keyboard: optionKeyboard(step.options) };
-  }
+  const options = await stepOptions(step, shopId, data);
 
   let value = raw;
-  if (isSkipWord(raw)) {
+  let label = raw;
+
+  if (options) {
+    const picked = options.find((option) => option.label === raw);
+    if (picked) {
+      value = picked.value;
+    } else if (step.freeAmountWithOptions) {
+      // "Auto" button or a typed amount
+      const amount = parseAmount(raw);
+      if (!Number.isFinite(amount) || amount < 0) return { text: 'Auto နှိပ်ပါ ဒါမှမဟုတ် ဂဏန်းရိုက်ပါ။', keyboard: optionKeyboard(options) };
+      value = amount;
+    } else {
+      return { text: 'အောက်က စာရင်းထဲကနေ ရွေးပါ။', keyboard: optionKeyboard(options) };
+    }
+  } else if (isSkipWord(raw)) {
     if (step.required) return { text: 'ဒါက မဖြစ်မနေ လိုအပ်ပါတယ်။', keyboard: cancelKeyboard() };
     value = '';
   } else if (step.amount) {
@@ -570,14 +782,19 @@ async function continueFlow(shopId, chatId, text) {
     return { text: 'ဖြည့်ပေးပါ။', keyboard: cancelKeyboard() };
   }
 
-  const nextData = { ...data, [step.field]: value };
-  const nextIndex = stepIndex + 1;
+  const nextData = { ...data, [step.field]: value, [`${step.field}Label`]: label };
+  const nextIndex = nextStepIndex(def, nextData, stepIndex + 1);
   await setSession(shopId, chatId, session.flow, nextIndex, nextData);
 
   if (nextIndex >= def.steps.length) {
     return { text: def.summary(nextData), keyboard: confirmKeyboard() };
   }
-  return askFor(session.flow, nextIndex);
+  const ask = await askFor(shopId, session.flow, nextIndex, nextData);
+  if (ask.abort) {
+    await clearSession(shopId, chatId);
+    return { text: ask.text, keyboard: ask.keyboard };
+  }
+  return ask;
 }
 
 async function buildQuickReply(shopId, actionKey) {
