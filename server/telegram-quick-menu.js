@@ -543,7 +543,10 @@ async function continueFlow(shopId, chatId, text) {
       return { text: result, keyboard: quickKeyboard() };
     } catch (error) {
       await clearSession(shopId, chatId);
-      return { text: `⚠️ မှတ်လို့မရပါ: ${error.message || 'unknown error'}`, keyboard: quickKeyboard() };
+      const reason = /insufficient/i.test(error.message || '')
+        ? 'Money Account လက်ကျန် မလုံလောက်ပါ။ Mahar POS မှာ လက်ကျန်ကို အရင်ညှိပါ။'
+        : (error.message || 'unknown error');
+      return { text: `⚠️ မှတ်လို့မရပါ — ${reason}`, keyboard: quickKeyboard() };
     }
   }
 
