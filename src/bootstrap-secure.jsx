@@ -5,19 +5,15 @@ import AppErrorBoundary from './AppErrorBoundary.jsx';
 import { installResponsiveViewportV21 } from './responsiveViewportV21.js';
 import { installProductIconRuntimeV22 } from './productIconRuntimeV22.js';
 import { installDatePickerRuntime } from './datePickerRuntime.js';
-// Tailwind first, so the hand-written CSS below still wins on pages that have not
-// been migrated to the ui kit yet.
-import './tailwind.css';
 import './styles.css';
 import './pos/pos-minimal-overrides.css';
 import './pos/pos-payment-selector-direct-v23.css';
 import './project-runtime-theme.css';
 import './typography-v20.css';
+import './mobile-auto-fit-v21.css';
 import './ui-polish-v22.css';
 import './product-category-icon.css';
-// Last: re-skins the shared legacy classes to match the ui kit, so pages that have not
-// been migrated yet still look like they belong to the same app as the shell.
-import './legacy-bridge.css';
+import './ui-layout-hotfix-v24.css';
 
 const RUNTIME_VERSION = '20260723-stable-record-categories-date-picker';
 
