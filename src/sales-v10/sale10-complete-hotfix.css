@@ -1,7 +1,7 @@
 .sale10-complete-modal {
   position: relative;
   width: min(430px, 100%);
-  padding: 24px;
+  padding:16px;
 }
 .sale10-complete-close {
   position: absolute;
@@ -46,7 +46,7 @@
 @media (max-width: 520px) {
   .sale10-complete-modal {
     width: min(360px, 100%);
-    padding: 22px 16px 16px;
+    padding:15px 12px 12px;
   }
   .sale10-complete-icon {
     width: 58px;

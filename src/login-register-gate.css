@@ -3,7 +3,7 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:32px 20px;
+  padding:22px 14px;
   background:
     radial-gradient(circle at 12% 8%, rgba(16,185,129,.18), transparent 31%),
     radial-gradient(circle at 88% 92%, rgba(249,115,22,.16), transparent 29%),
@@ -14,7 +14,7 @@
   background:rgba(255,255,255,.94);
   border:1px solid rgba(255,255,255,.9);
   border-radius:28px;
-  padding:30px;
+  padding:20px;
   box-shadow:0 28px 90px rgba(15,23,42,.14),0 4px 18px rgba(15,118,110,.08);
   backdrop-filter:blur(18px);
 }
@@ -70,7 +70,7 @@
 }
 .ms-login-alert{
   border-radius:13px;
-  padding:13px 14px;
+  padding:10px 11px;
   margin-bottom:14px;
   font-size:13px;
   line-height:1.55;
@@ -88,7 +88,7 @@
 .ms-login-form{
   display:flex;
   flex-direction:column;
-  gap:14px;
+  gap:11px;
 }
 .ms-login-form label{
   display:flex;
@@ -114,7 +114,7 @@
   box-sizing:border-box;
   border:1px solid #d1d5db;
   border-radius:12px;
-  padding:12px 13px;
+  padding:12px 10px;
   background:#fff;
   color:#111827;
   font-size:14px;
@@ -136,7 +136,7 @@
   width:100%;
   border:0;
   border-radius:14px;
-  padding:14px;
+  padding:11px;
   background:linear-gradient(135deg,#059669,#047857);
   color:#fff;
   font-size:14px;
@@ -177,7 +177,7 @@
   display:grid;
   gap:10px;
   justify-items:center;
-  padding:13px 12px;
+  padding:10px 12px;
   border:1px solid #d1fae5;
   border-radius:16px;
   background:linear-gradient(180deg,#ecfdf5,#fff);
@@ -215,7 +215,7 @@
   grid-template-columns:42px minmax(0,1fr) auto;
   align-items:center;
   gap:11px;
-  padding:12px 13px;
+  padding:12px 10px;
   border:1px solid #a7f3d0;
   border-radius:16px;
   background:linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 62%,#fff7ed 100%);
@@ -305,7 +305,7 @@
 .dark .ms-lifetime-plan span{color:#b8c9c4}
 @media(max-width:520px){
   .ms-login-page{padding:12px}
-  .ms-login-card{padding:20px;border-radius:22px}
+  .ms-login-card{padding:14px;border-radius:22px}
   .ms-login-brand h1{font-size:21px}
   .ms-lifetime-plan{grid-template-columns:38px minmax(0,1fr)}
   .ms-lifetime-plan-icon{width:38px;height:38px}
@@ -316,7 +316,7 @@
 .ms-business-type-field>span{font-weight:800;color:#334155}
 .ms-business-type-field b{color:#dc2626}
 .ms-business-type-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.ms-business-type-card{position:relative;display:grid!important;gap:4px;padding:13px!important;border:1px solid #dce5ef;border-radius:14px;background:#fff;cursor:pointer;transition:.18s ease}
+.ms-business-type-card{position:relative;display:grid!important;gap:4px;padding:10px!important;border:1px solid #dce5ef;border-radius:14px;background:#fff;cursor:pointer;transition:.18s ease}
 .ms-business-type-card input{position:absolute;opacity:0;pointer-events:none}
 .ms-business-type-card strong{font-size:14px;color:#0f172a}
 .ms-business-type-card small{font-size:11px;color:#64748b;line-height:1.35}

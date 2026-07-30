@@ -19,7 +19,7 @@
   .phase9-mobile-menu-button{
     width:auto!important;
     min-width:92px!important;
-    padding:0 13px!important;
+    padding:0 10px!important;
     gap:7px!important;
     border-color:#22c55e!important;
     color:#0f766e!important;
@@ -106,7 +106,7 @@ body{overscroll-behavior-y:none}
   :where(h2){font-size:21px!important}
   :where(h3){font-size:17px!important}
   :where(.card,[class$="-card"]){border-radius:13px!important}
-  :where(.stat,.quickCard){padding:13px!important}
+  :where(.stat,.quickCard){padding:10px!important}
   :where(input,select,textarea,button){font-size:16px}
 }
 
@@ -206,7 +206,7 @@ body{overscroll-behavior-y:none}
   border-radius:18px;
   background:linear-gradient(135deg,#ffffff,#eff6ff);
   box-shadow:0 24px 70px rgba(15,23,42,.20);
-  padding:18px;
+  padding:13px;
   color:#0f172a;
 }
 .app-menu-tour-badge{
@@ -224,7 +224,7 @@ body{overscroll-behavior-y:none}
   border:0;
   border-radius:12px;
   min-height:40px;
-  padding:0 14px;
+  padding:0 11px;
   font-weight:900;
   cursor:pointer;
 }
@@ -251,7 +251,7 @@ body{overscroll-behavior-y:none}
   }
   .app-menu-tour-card{
     border-radius:16px;
-    padding:14px;
+    padding:11px;
   }
   .app-menu-tour-card h3{font-size:17px}
   .app-menu-tour-actions{

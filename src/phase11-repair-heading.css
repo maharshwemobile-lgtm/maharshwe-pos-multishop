@@ -1,9 +1,9 @@
-.phase11-repair-heading{padding:18px 20px;border:1px solid #dfe8e3;border-radius:16px;background:linear-gradient(135deg,#fff,#fffaf0)}
+.phase11-repair-heading{padding:13px 14px;border:1px solid #dfe8e3;border-radius:16px;background:linear-gradient(135deg,#fff,#fffaf0)}
 .phase11-repair-root .repair-operations-workspace .repair-platform-page>.repair-page-heading>div:first-child{display:none}
 .phase11-repair-root .repair-operations-workspace .repair-platform-page>.repair-page-heading{justify-content:flex-end;margin:0}
 .repair-finance-tools-single{grid-template-columns:1fr}
-.phase11-repair-bottom-tools{display:flex;flex-direction:column;gap:16px;margin-top:2px;padding-top:18px;border-top:2px solid #e2e8f0}
-.phase11-repair-bottom-heading{padding:18px 20px;border:1px solid #dfe8e3;border-radius:16px;background:linear-gradient(135deg,#fff,#fffaf0)}
+.phase11-repair-bottom-tools{display:flex;flex-direction:column;gap:12px;margin-top:2px;padding-top:18px;border-top:2px solid #e2e8f0}
+.phase11-repair-bottom-heading{padding:13px 14px;border:1px solid #dfe8e3;border-radius:16px;background:linear-gradient(135deg,#fff,#fffaf0)}
 .phase11-repair-bottom-heading span{display:block;margin-bottom:5px;color:#16a34a;font-size:11px;font-weight:950;letter-spacing:.1em}
 .phase11-repair-bottom-heading h2{margin:0;color:#0f172a;font-size:20px}
 .phase11-repair-bottom-heading p{margin:6px 0 0;color:#64748b;font-size:12px;line-height:1.5}

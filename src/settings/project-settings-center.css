@@ -3,14 +3,14 @@
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Page shell ─────────────────────────────────────────────── */
-.psc-page { display: grid; gap: 14px; position: relative; }
+.psc-page { display: grid; gap:11px; position: relative; }
 
 /* ── Header banner ──────────────────────────────────────────── */
 .psc-header {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  padding: 18px 22px;
+  gap:12px;
+  padding:13px 15px;
   border: 1px solid #dfe8e3;
   border-radius: 18px;
   background: linear-gradient(135deg, #ffffff, #f4fbf7);
@@ -31,7 +31,7 @@
 .psc-shell {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
-  gap: 14px;
+  gap:11px;
   align-items: start;
 }
 
@@ -99,7 +99,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 18px;
+  padding:10px 13px;
   border-bottom: 1px solid #eef2f7;
   background: #f9fbfc;
 }
@@ -130,7 +130,7 @@
 }
 
 /* ── Form ───────────────────────────────────────────────────── */
-.psc-form { display: grid; gap: 12px; padding: 18px; }
+.psc-form { display: grid; gap: 12px; padding:13px; }
 .psc-grid-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
 .psc-grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
 
@@ -194,7 +194,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 14px;
+  padding:11px 11px;
   border: 1px solid #e2ecf0;
   border-radius: 10px;
   background: #f9fbfc;
@@ -210,14 +210,14 @@
 .psc-toggle-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 
 /* ── Actions bar ────────────────────────────────────────────── */
-.psc-actions { display: flex; align-items: center; gap: 8px; padding: 0 18px 18px; flex-wrap: wrap; }
+.psc-actions { display: flex; align-items: center; gap: 8px; padding:0 13px 13px; flex-wrap: wrap; }
 .psc-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   min-height: 40px;
-  padding: 0 16px;
+  padding:0 12px;
   border: 1px solid #dce5ef;
   border-radius: 10px;
   background: #fff;
@@ -238,11 +238,11 @@
   display: grid;
   grid-template-columns: 175px minmax(0,1fr) 185px;
   gap: 10px;
-  padding: 14px 18px;
+  padding:11px 13px;
   border-bottom: 1px solid #eef2f7;
 }
 .psc-lic-card {
-  padding: 12px 14px;
+  padding:12px 11px;
   border: 1px solid #e2ecf0;
   border-radius: 12px;
   background: #f9fbfc;
@@ -273,7 +273,7 @@
 .psc-slip-sticky { position:sticky; top:12px; }
 .psc-paper {
   width:100%; max-width:270px; margin:14px auto;
-  padding:16px 12px; border:1px dashed #94a3b8;
+  padding:12px 12px; border:1px dashed #94a3b8;
   background:#fff; color:#111827;
   font-family:ui-monospace,'Courier New',monospace; font-size:11px; text-align:center;
 }
@@ -292,7 +292,7 @@
 /* ── Database status ────────────────────────────────────────── */
 .psc-db-status {
   display:grid; grid-template-columns:repeat(3,1fr) auto;
-  gap:8px; padding:14px 18px; border-bottom:1px solid #eef2f7;
+  gap:8px; padding:11px 13px; border-bottom:1px solid #eef2f7;
 }
 .psc-db-card { display:flex; align-items:center; gap:9px; padding:11px 12px; border:1px solid #e2ecf0; border-radius:10px; background:#f9fbfc; }
 .psc-db-card svg   { color:#16a34a; flex-shrink:0; }
@@ -306,7 +306,7 @@
 /* ── Toast ──────────────────────────────────────────────────── */
 .psc-toast {
   position:fixed; z-index:9999; right:20px; top:20px; max-width:360px;
-  padding:12px 16px; border-radius:12px; color:#fff; font-size:13px; font-weight:700;
+  padding:12px 12px; border-radius:12px; color:#fff; font-size:13px; font-weight:700;
   box-shadow:0 12px 30px rgba(15,23,42,.2); animation:pscSlideIn .22s ease;
 }
 .psc-toast.success { background:#16a34a; }
@@ -365,11 +365,11 @@
   .psc-db-status { grid-template-columns:1fr 1fr; }
   .psc-actions { flex-direction:column; align-items:stretch; }
   .psc-actions .psc-btn { width:100%; justify-content:center; }
-  .psc-form { padding:14px; }
-  .psc-panel-head { padding:12px 14px; }
+  .psc-form { padding:11px; }
+  .psc-panel-head { padding:12px 11px; }
 }
 @media (max-width: 480px) {
   .psc-db-status { grid-template-columns:1fr; }
   .psc-toast { left:12px; right:12px; top:12px; max-width:none; }
-  .psc-header { padding:14px 16px; }
+  .psc-header { padding:11px 12px; }
 }

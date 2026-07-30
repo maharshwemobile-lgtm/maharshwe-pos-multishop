@@ -37,7 +37,7 @@
 }
 
 .expense-category-modal > header {
-  padding: 14px;
+  padding:11px;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -56,7 +56,7 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
-  padding: 14px;
+  padding:11px;
 }
 
 .expense-category-add input,
@@ -79,7 +79,7 @@
 .expense-category-list {
   display: grid;
   gap: 8px;
-  padding: 0 14px 14px;
+  padding:0 11px 11px;
 }
 
 .expense-category-list article {

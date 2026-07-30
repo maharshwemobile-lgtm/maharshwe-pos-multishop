@@ -284,7 +284,7 @@ label textarea {
 @media (min-width: 980px) and (max-width: 1279px) {
   .sale10-main-grid {
     grid-template-columns: minmax(0, 1fr) minmax(340px, 390px) !important;
-    gap: 14px !important;
+    gap:11px !important;
   }
 
   .sale10-payment-methods {
@@ -312,7 +312,7 @@ label textarea {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 14px 0;
+  padding:10px 11px 0;
   color: #64748b;
   font-size: 11px;
 }
@@ -465,7 +465,7 @@ label textarea {
 }
 
 .sale10-cart-heading {
-  padding: 11px 13px !important;
+  padding:11px 10px !important;
 }
 
 .sale10-cart-table-wrap {

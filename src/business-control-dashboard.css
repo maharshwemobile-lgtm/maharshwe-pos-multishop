@@ -1,6 +1,6 @@
 .business-control-dashboard {
   display: grid;
-  gap: 16px;
+  gap:12px;
   color: var(--app-text, #10241a);
 }
 
@@ -19,8 +19,8 @@
   display: grid;
   grid-template-columns: minmax(230px, 1fr) auto minmax(190px, auto);
   align-items: center;
-  gap: 16px;
-  padding: 18px;
+  gap:12px;
+  padding:13px;
   border-radius: 14px;
   background:
     radial-gradient(circle at 100% 0, rgba(246, 181, 0, .13), transparent 16rem),
@@ -82,7 +82,7 @@
   justify-content: center;
   gap: 8px;
   min-height: 42px;
-  padding: 0 15px;
+  padding:0 11px;
   border: 1px solid #047857;
   border-radius: 9px;
   background: linear-gradient(135deg, #13a36f, #047857);
@@ -115,7 +115,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 12px 14px;
+  padding:12px 11px;
   border-radius: 10px;
   font-weight: 850;
 }
@@ -137,7 +137,7 @@
 .bc-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 13px;
+  gap:10px;
 }
 
 .bc-metric {
@@ -146,7 +146,7 @@
   align-items: flex-start;
   gap: 12px;
   min-height: 112px;
-  padding: 16px;
+  padding:12px;
   overflow: hidden;
   border-radius: 12px;
 }
@@ -233,7 +233,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 13px 15px;
+  padding:10px 11px;
   border-radius: 10px;
 }
 .bc-account-card svg { color: #07845c; }
@@ -246,13 +246,13 @@
 .bc-secondary-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(330px, .75fr);
-  gap: 14px;
+  gap:11px;
 }
 .bc-secondary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .bc-panel {
   min-width: 0;
-  padding: 16px;
+  padding:12px;
   border-radius: 13px;
 }
 
@@ -321,7 +321,7 @@
 .bc-chart-shell:before,.bc-chart-shell:after{content:"";position:absolute;left:36px;right:8px;border-top:1px dashed rgba(100,116,139,.17)}
 .bc-chart-shell:before{top:34%}.bc-chart-shell:after{top:65%}
 .bc-chart-scale{position:absolute;z-index:1;left:7px;top:16px;bottom:27px;display:flex;flex-direction:column;justify-content:space-between;color:var(--app-muted,#68776f);font-size:8px;font-weight:750}
-.bc-chart{position:relative;z-index:2;height:210px;padding:15px 9px 0;border-bottom:0;gap:11px}
+.bc-chart{position:relative;z-index:2;height:210px;padding:11px 9px 0;border-bottom:0;gap:11px}
 .bc-bar-column{grid-template-rows:20px 1fr 24px;gap:5px}
 .bc-bar-column>b{font-size:9px;font-weight:850;white-space:nowrap}
 .bc-bar-column>div{align-items:flex-end}
@@ -404,7 +404,7 @@
 .bc-closed-box {
   display: flex;
   gap: 12px;
-  padding: 14px;
+  padding:11px;
   border: 1px solid #9dd9bb;
   border-radius: 10px;
   background: #eaf9f1;
@@ -441,7 +441,7 @@
   box-sizing: border-box;
 }
 .bc-expense-panel form button { width: 100%; margin-top: 10px; }
-.bc-permission-note { padding: 13px; border-radius: 8px; background: #fff7dc; color: #8a5b00; font-size: 12px; }
+.bc-permission-note { padding:10px; border-radius: 8px; background: #fff7dc; color: #8a5b00; font-size: 12px; }
 
 .bc-record-switch-panel {
   display: grid;
@@ -481,7 +481,7 @@
 }
 .bc-inline-record-form {
   margin-top: 2px;
-  padding: 14px;
+  padding:11px;
   border: 1px solid var(--app-border, #dfeade);
   border-radius: 12px;
   background: var(--app-soft, #f7fbf8);
@@ -526,7 +526,7 @@
 .bc-quick-links b { font-size: 11px; }
 .bc-quick-links small { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 9px; }
 
-.mini-mart-module-hub { display: grid; gap: 13px; }
+.mini-mart-module-hub { display: grid; gap:10px; }
 .mini-mart-module-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -600,7 +600,7 @@ html.dark .bc-permission-note { background: #332b16; color: #f5cc62; }
 @media (max-width: 560px) {
   .business-control-dashboard { gap: 11px; }
   .bc-control-bar,
-  .bc-panel { padding: 13px; }
+  .bc-panel { padding:10px; }
   .bc-metrics,
   .bc-account-grid,
   .bc-form-grid,

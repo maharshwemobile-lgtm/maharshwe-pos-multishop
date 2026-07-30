@@ -9,7 +9,7 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:28px;
+  padding:19px;
   overflow:hidden;
   background:#020617;
   color:#0f172a;
@@ -117,7 +117,7 @@
 .ms-auth-logo-link{
   display:inline-flex;
   align-items:center;
-  gap:13px;
+  gap:10px;
   color:#fff;
   text-decoration:none;
 }
@@ -157,7 +157,7 @@
   align-items:center;
   gap:9px;
   margin-top:28px;
-  padding:9px 14px;
+  padding:9px 11px;
   border:1px solid rgba(147,197,253,.28);
   border-radius:999px;
   background:rgba(59,130,246,.10);
@@ -178,7 +178,7 @@
   width:max-content;
   max-width:100%;
   margin:0 0 26px;
-  padding:9px 15px;
+  padding:9px 11px;
   border-radius:999px;
   background:rgba(37,99,235,.22);
   color:#dbeafe;
@@ -220,7 +220,7 @@
 
 .ms-auth-feature-grid div{
   min-height:92px;
-  padding:16px;
+  padding:12px;
   border:1px solid rgba(148,163,184,.20);
   border-radius:20px;
   background:rgba(15,23,42,.52);
@@ -254,7 +254,7 @@
   display:inline-flex;
   align-items:center;
   min-height:38px;
-  padding:0 13px;
+  padding:0 10px;
   border:1px solid rgba(255,255,255,.16);
   border-radius:999px;
   color:#dbeafe;
@@ -281,8 +281,8 @@
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:18px;
-  padding:20px 40px;
+  gap:13px;
+  padding:14px 26px;
   border-bottom:1px solid #eef2f7;
 }
 
@@ -332,7 +332,7 @@
 .ms-auth-scroll{
   flex:1;
   overflow-y:auto;
-  padding:34px 42px;
+  padding:23px 42px;
 }
 
 .ms-auth-form-wrap{
@@ -349,7 +349,7 @@
   align-items:center;
   gap:8px;
   margin-bottom:13px;
-  padding:9px 14px;
+  padding:9px 11px;
   border:1px solid #dbeafe;
   border-radius:999px;
   background:#eff6ff;
@@ -375,7 +375,7 @@
 .auth-register-success,
 .auth-gate-error{
   margin:0 0 18px;
-  padding:13px 15px;
+  padding:10px 11px;
   border-radius:17px;
   font-size:13px;
   font-weight:850;
@@ -467,7 +467,7 @@
 .auth-gate-form{
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:12px;
   text-align:left;
 }
 
@@ -489,7 +489,7 @@
   min-height:48px;
   border:1px solid #dbe3ee;
   border-radius:17px;
-  padding:0 15px;
+  padding:0 11px;
   background:#f8fafc;
   color:#0f172a;
   font:inherit;
@@ -533,7 +533,7 @@
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:14px;
+  gap:11px;
 }
 
 .ms-auth-check{
@@ -603,7 +603,7 @@
 }
 
 .ms-auth-trial-note{
-  padding:14px;
+  padding:11px;
   border:1px solid #bfdbfe;
   border-radius:18px;
   background:#eff6ff;
@@ -638,7 +638,7 @@
 }
 
 .ms-auth-footer{
-  padding:18px 34px;
+  padding:13px 23px;
   border-top:1px solid #eef2f7;
   color:#94a3b8;
   text-align:center;
@@ -690,7 +690,7 @@
   }
 
   .ms-auth-header{
-    padding:16px;
+    padding:12px;
     align-items:flex-start;
     flex-direction:column;
   }
@@ -704,7 +704,7 @@
   }
 
   .ms-auth-scroll{
-    padding:22px 18px;
+    padding:15px 13px;
   }
 
   .ms-auth-title-block h2{
@@ -721,6 +721,6 @@
   }
 
   .ms-auth-footer{
-    padding:16px 18px;
+    padding:12px 13px;
   }
 }
