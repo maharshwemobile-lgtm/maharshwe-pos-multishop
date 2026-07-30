@@ -81,7 +81,10 @@ function wrap(handler) {
         return res.status(error.status).json({ ok: false, message: error.message, details: error.details });
       }
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') return res.status(409).json({ ok: false, message: 'Duplicate SKU, barcode, or name' });
+        if (error.code === 'P2002') {
+          const target = [].concat(error.meta?.target || []).join(', ');
+          return res.status(409).json({ ok: false, message: `ဒီအမည်/ကုဒ် ရှိပြီးသားပါ${target ? ` (${target})` : ''} — တခြားတစ်ခု သုံးပါ` });
+        }
         if (error.code === 'P2025') return res.status(404).json({ ok: false, message: 'Record not found' });
       }
       console.error('Catalog/stock API:', error);
@@ -218,6 +221,23 @@ function attachCatalogStockApi(app) {
 
   app.post('/api/categories', ...write, wrap(async (req, res) => {
     const input = parse(categoryCreate, req.body || {});
+    // A hidden category still occupies the (shop, name) unique slot, so adding the
+    // same name again used to fail. Bring the hidden one back instead.
+    const existing = await prisma.category.findFirst({
+      where: { shopId: req.auth.shopId, name: { equals: input.name, mode: 'insensitive' } },
+    });
+    if (existing?.active) throw new ApiError(409, `"${existing.name}" category ရှိပြီးသားပါ`);
+    if (existing) {
+      const restored = await prisma.$transaction(async (tx) => {
+        const updated = await tx.category.update({
+          where: { id: existing.id },
+          data: { active: true, ...(input.kind !== undefined ? { kind: clean(input.kind) } : {}) },
+        });
+        await addAudit(tx, req, 'CATEGORY_RESTORED', 'category', existing.id, { name: updated.name });
+        return updated;
+      });
+      return res.status(201).json({ ok: true, category: restored, restored: true });
+    }
     const category = await prisma.$transaction(async (tx) => {
       const created = await tx.category.create({
         data: { shopId: req.auth.shopId, name: input.name, kind: clean(input.kind), active: input.active ?? true },

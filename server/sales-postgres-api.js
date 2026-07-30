@@ -9,6 +9,7 @@ const {
 } = require('./auth-api');
 const { queuePush, sendPushToShop } = require('./push-notifications-api');
 const { notifyTelegramSale } = require('./telegram-automation-api');
+const { retireDemoDataAfterFirstSale } = require('./onboarding-demo-cleanup');
 
 const uuid = z.string().uuid();
 const money = z.coerce.number().finite().min(0);
@@ -534,6 +535,9 @@ function attachSalesPostgresApi(app) {
       shopId: req.auth.shopId,
       sale: result,
     }), 'telegram sale notification');
+
+    // First real sale retires the onboarding demo data for good
+    queuePush(() => retireDemoDataAfterFirstSale(req.auth.shopId), 'demo data retirement');
 
     res.status(201).json({ ok: true, message: 'Sale completed', sale: result });
   }));

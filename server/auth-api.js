@@ -645,8 +645,10 @@ async function maybeAutoCleanupDemoData(user) {
     const onboarding = plainObject(settings.onboardingDemo);
     const loginCount = Number(onboarding.loginCount || 0) + 1;
     const lifecycleCompleted = Boolean(onboarding.demoLifecycleCompletedAt || onboarding.lastAutoCleanupAt);
+    // A shop that has ever rung up a sale is past the demo stage
+    const soldBefore = (await prisma.sale.count({ where: { shopId: user.shopId } }).catch(() => 0)) > 0;
 
-    if (loginCount >= 3 && !lifecycleCompleted) {
+    if (soldBefore && !lifecycleCompleted) {
       const now = new Date().toISOString();
       const result = await cleanupDemoData(user.shopId);
       await prisma.shopSettings.update({
@@ -659,6 +661,7 @@ async function maybeAutoCleanupDemoData(user) {
               loginCount,
               demoSeededAt: null,
               demoLifecycleCompletedAt: now,
+              retiredBy: onboarding.retiredBy || "FIRST_SALE",
               lastAutoCleanupAt: now,
               lastAutoCleanupResult: result,
             },
@@ -669,7 +672,7 @@ async function maybeAutoCleanupDemoData(user) {
     }
 
     let seedResult = null;
-    if (loginCount === 1 && !onboarding.demoSeededAt && !lifecycleCompleted) {
+    if (loginCount === 1 && !onboarding.demoSeededAt && !lifecycleCompleted && !soldBefore) {
       const realProductCount = await prisma.product.count({
         where: {
           shopId: user.shopId,

@@ -30,7 +30,14 @@ const PHONE_DEFAULT_CATEGORIES = [
   { name: 'Electronics', kind: 'ELECTRONICS' },
   { name: 'Spare Parts', kind: 'REPAIR_PART' },
 ];
-const PHONE_CATEGORY_KINDS = new Set(PHONE_DEFAULT_CATEGORIES.map((item) => item.kind));
+
+const MINI_MART_DEFAULT_CATEGORIES = [
+  { name: 'Grocery', kind: 'GROCERY' },
+  { name: 'Drinks', kind: 'DRINK' },
+  { name: 'Snacks', kind: 'SNACK' },
+  { name: 'Household', kind: 'HOUSEHOLD' },
+  { name: 'Personal Care', kind: 'PERSONAL_CARE' },
+];
 
 const inferPhoneBrandModel = (value) => {
   const name = String(value || '').replace(/\s+/g, ' ').trim();
@@ -197,6 +204,8 @@ export default function ProductsPage({ onboardingGuide }) {
   const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
   const canManage = !user || user.role === 'SUPER_ADMIN' || user.permissions?.inventory === true;
   const showCost = !user || user.role === 'SUPER_ADMIN' || user.permissions?.viewCost === true;
+  // Mini Mart lines are single SKUs — variants only make sense for the phone shop
+  const allowsVariants = (category) => !isMiniMart && categoryAllowsVariants(category);
 
   const notify = (type, text) => {
     setMessage({ type, text });
@@ -213,8 +222,11 @@ export default function ProductsPage({ onboardingGuide }) {
     try {
       const data = await apiFetch('/api/categories');
       let rows = data.categories || [];
-      if (!isMiniMart && rows.length === 0 && canManage) {
-        for (const category of PHONE_DEFAULT_CATEGORIES) {
+      // a shop with no category at all cannot save a product, so start it off with
+      // the defaults for its business type
+      if (rows.length === 0 && canManage) {
+        const defaults = isMiniMart ? MINI_MART_DEFAULT_CATEGORIES : PHONE_DEFAULT_CATEGORIES;
+        for (const category of defaults) {
           try { await apiFetch('/api/categories', { method: 'POST', body: category }); } catch (error) {
             if (error?.status !== 409) throw error;
           }
@@ -223,6 +235,22 @@ export default function ProductsPage({ onboardingGuide }) {
         rows = seeded.categories || [];
       }
       setCategories(rows);
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  // Create a category straight from the product form so adding a product never
+  // dead-ends on a missing category.
+  const addCategoryInline = async () => {
+    const name = window.prompt(t('New category name', 'Category အသစ် နာမည်'));
+    if (!name || !name.trim()) return;
+    try {
+      const created = await apiFetch('/api/categories', { method: 'POST', body: { name: name.trim(), kind: null } });
+      await loadCategories();
+      const id = created?.category?.id;
+      if (id) setProductEditor((current) => current ? { ...current, form: { ...current.form, categoryId: id } } : current);
+      notify('success', t('Category added.', 'Category ထည့်ပြီးပါပြီ'));
     } catch (error) {
       handleError(error);
     }
@@ -327,7 +355,8 @@ export default function ProductsPage({ onboardingGuide }) {
     const editor = productEditor;
     const form = editor.form;
     if (!form.name.trim()) return notify('error', t('Please enter a product name.', 'Product name ထည့်ပါ'));
-    if (!form.categoryId) return notify('error', t('Please select a category.', 'Category တစ်ခု ရွေးပါ'));
+    // Mini Mart items often have no category at all — only the phone shop needs one
+    if (!isMiniMart && !form.categoryId) return notify('error', t('Please select a category.', 'Category တစ်ခု ရွေးပါ'));
 
     const common = {
       categoryId: form.categoryId || null,
@@ -361,9 +390,8 @@ export default function ProductsPage({ onboardingGuide }) {
         setProductEditor(null);
         await Promise.all([loadProducts(), loadCategories()]);
         const category = categories.find((item) => item.id === form.categoryId);
-        const categoryKind = String(category?.kind || '').toUpperCase();
-        const canUseVariants = categoryKind === 'NEW' || categoryKind === 'SECOND_HAND' || !['ACCESSORIES', 'REPAIR_PART'].includes(categoryKind);
-        if (createdProduct?.id && canUseVariants && window.confirm(t('Product saved. Add an optional variant now?', 'Product သိမ်းပြီးပါပြီ။ Optional Variant ထပ်ထည့်မလား?'))) {
+        // Mini Mart saves everything from this one form, so never push variants there
+        if (createdProduct?.id && allowsVariants(category) && window.confirm(t('Product saved. Add an optional variant now?', 'Product သိမ်းပြီးပါပြီ။ Optional Variant ထပ်ထည့်မလား?'))) {
           openVariant(createdProduct);
           return;
         }
@@ -471,6 +499,8 @@ export default function ProductsPage({ onboardingGuide }) {
     productNameHint: 'ဥပမာ: Coca Cola 350ml, ဆန် ၂၄ပြည်, ဆီ ၁လီတာ',
     productNamePlaceholder: 'ဥပမာ: Coca Cola 350ml',
     categoryHint: 'ဥပမာ: Drinks, Food, Household, Medicine',
+    categoryFieldHint: 'မထည့်လည်း ရပါတယ်။ အသစ်ထည့်ချင်ရင် ဘေးက 📁 ကို နှိပ်ပါ။',
+    formSubtitle: 'ပစ္စည်းနာမည်၊ ဈေးနှုန်းနဲ့ လက်ကျန် ထည့်ပြီး သိမ်းလိုက်ပါ။',
     variantLabel: 'Item Option / Package *',
     variantHint: 'Package/Size ကိုရေးပါ။ ဥပမာ: 350ml / 1kg / 12pcs box / Single',
     variantPlaceholder: 'ဥပမာ: 350ml',
@@ -492,6 +522,8 @@ export default function ProductsPage({ onboardingGuide }) {
     productNameHint: 'ဥပမာ: Redmi Note 15 Pro, iPhone 13, Type-C Charger',
     productNamePlaceholder: 'ဥပမာ: Redmi Note 15 Pro',
     categoryHint: 'ဥပမာ: Phones, Cases, Charger, Power Bank',
+    categoryFieldHint: 'Phone, Accessories, Electronics သို့ Spare Parts ရွေးပါ။ အသစ်ထည့်ချင်ရင် ဘေးက 📁 ကို နှိပ်ပါ။',
+    formSubtitle: 'Product အချက်အလက်ကို ဆိုင်ရဲ့ database ထဲ သိမ်းပါမယ်။',
     brandHint: 'Brand ထည့်ပါ။ ဥပမာ: Redmi / Vivo / iPhone / Samsung',
     modelHint: 'Model ထည့်ပါ။ ဥပမာ: Note 15 Pro / Y28 / 13 Pro Max',
     variantLabel: 'Display Name / Specs *',
@@ -567,11 +599,11 @@ export default function ProductsPage({ onboardingGuide }) {
                       <td>{prices.length ? money(Math.min(...prices)) : '—'}</td>
                       {showCost ? <td>{costs.length ? money(Math.min(...costs)) : '—'}</td> : null}
                       <td><span className={`p2-status ${product.active ? 'p2-status-active' : 'p2-status-inactive'}`}>{product.active ? 'Active' : 'Inactive'}</span></td>
-                      <td><div className="p2-actions">{canManage && categoryAllowsVariants(product.category) ? <button type="button" title="Add optional variant" onClick={() => openVariant(product)}><Plus size={16} /></button> : null}{canManage ? <button type="button" title="Edit product" onClick={() => openEditProduct(product)}><Edit3 size={16} /></button> : null}{canManage && product.active ? <button type="button" className="p2-danger" title="Deactivate product" onClick={() => deactivateProduct(product)}><Trash2 size={16} /></button> : null}</div></td>
+                      <td><div className="p2-actions">{canManage && allowsVariants(product.category) ? <button type="button" title="Add optional variant" onClick={() => openVariant(product)}><Plus size={16} /></button> : null}{canManage ? <button type="button" title="Edit product" onClick={() => openEditProduct(product)}><Edit3 size={16} /></button> : null}{canManage && product.active ? <button type="button" className="p2-danger" title="Deactivate product" onClick={() => deactivateProduct(product)}><Trash2 size={16} /></button> : null}</div></td>
                     </tr>
                     {isOpen ? <tr className="p2-variant-row"><td /><td colSpan={showCost ? 8 : 7}>
                       <div className="p2-variant-panel">
-                        <div className="p2-variant-title"><div><Layers3 size={18} /><b>{categoryAllowsVariants(product.category) ? 'Variants (Optional)' : 'Stock & Price'}</b></div>{canManage && categoryAllowsVariants(product.category) ? <button type="button" onClick={() => openVariant(product)}><Plus size={16} /> Add Variant</button> : null}</div>
+                        <div className="p2-variant-title"><div><Layers3 size={18} /><b>{allowsVariants(product.category) ? 'Variants (Optional)' : 'Stock & Price'}</b></div>{canManage && allowsVariants(product.category) ? <button type="button" onClick={() => openVariant(product)}><Plus size={16} /> Add Variant</button> : null}</div>
                         {variants.length === 0 ? <div className="p2-empty-small">Variant မရှိသေးပါ</div> : <table><thead><tr><th>{isMiniMart ? 'Package / Option' : 'Variant'}</th><th>SKU / Barcode</th><th>{isMiniMart ? 'Unit' : 'RAM / Storage'}</th><th>{isMiniMart ? 'Expiry' : 'Color'}</th><th>{isMiniMart ? 'Barcode' : 'Unit'}</th><th>Stock</th><th>Alert</th><th>Selling</th>{showCost ? <th>Cost / Min</th> : null}<th /></tr></thead><tbody>{variants.map((variant) => {
                           const stock = Number(variant.inventory?.quantity || 0);
                           const alert = Number(variant.inventory?.minAlertQuantity || 0);
@@ -590,7 +622,7 @@ export default function ProductsPage({ onboardingGuide }) {
         <footer className="p2-pagination"><span>Page {page} / {totalPages} · Total {total}</span><div><button type="button" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</button><button type="button" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>Next</button></div></footer>
       </section>
 
-      {productEditor ? <Modal wide title={productEditor.mode === 'create' ? 'Add Product' : 'Edit Product'} subtitle="Product information ကို PostgreSQL tenant database ထဲ သိမ်းပါမယ်။" onClose={() => setProductEditor(null)}>
+      {productEditor ? <Modal wide title={productEditor.mode === 'create' ? 'Add Product' : 'Edit Product'} subtitle={productCopy.formSubtitle} onClose={() => setProductEditor(null)}>
         <form onSubmit={saveProduct} className="p2-form">
           <div className="p2-form-grid">
             <Field label={productCopy.productNameLabel} hint={productCopy.productNameHint}><input value={productEditor.form.name} onChange={(event) => {
@@ -598,7 +630,7 @@ export default function ProductsPage({ onboardingGuide }) {
               const inferred = inferPhoneBrandModel(name);
               setProductEditor({ ...productEditor, form: { ...productEditor.form, name, ...(inferred.brand ? inferred : {}) } });
             }} placeholder={productCopy.productNamePlaceholder} required autoFocus /></Field>
-            <Field label="Category *" hint="Phone, Accessories, Electronics သို့ Spare Parts ရွေးပါ။"><div className="p2-inline-field-action"><select required value={productEditor.form.categoryId} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, categoryId: event.target.value } })}><option value="">Select Category</option>{categories.filter((category) => category.active && PHONE_CATEGORY_KINDS.has(String(category.kind || '').toUpperCase())).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>{canManage ? <button type="button" className="p2-icon-button" onClick={() => setCategoryEditor(true)} aria-label="Open category manager"><FolderPlus size={16} /></button> : null}</div></Field>
+            <Field label={isMiniMart ? 'Category' : 'Category *'} hint={productCopy.categoryFieldHint}><div className="p2-inline-field-action"><select required={!isMiniMart} value={productEditor.form.categoryId} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, categoryId: event.target.value } })}><option value="">{isMiniMart ? t('No category', 'Category မထည့်ပါ') : t('Select Category', 'Category ရွေးပါ')}</option>{categories.filter((category) => category.active).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>{canManage ? <button type="button" className="p2-icon-button" onClick={addCategoryInline} aria-label={t('Add category', 'Category အသစ်ထည့်')} title={t('Add category', 'Category အသစ်ထည့်')}><FolderPlus size={16} /></button> : null}</div></Field>
             {!isMiniMart ? <Field label="Brand" hint="တစ်ခါထည့်ဖူးသော Brand ကို ရိုက်ရှာပြီး ရွေးနိုင်ပါတယ်။"><input list="remembered-product-brands" value={productEditor.form.brand} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, brand: event.target.value } })} placeholder="Vivo / Redmi / Samsung" /><datalist id="remembered-product-brands">{rememberedBrands.map((brand) => <option key={brand} value={brand} />)}</datalist></Field> : null}
             {!isMiniMart ? <Field label="Model" hint="ရွေးထားသော Brand အတွက် Model အသစ် သို့မဟုတ် မှတ်ထားပြီးသား Model ထည့်ပါ။"><input list="remembered-product-models" value={productEditor.form.model} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, model: event.target.value } })} placeholder="Y28 / Note 15 Pro" /><datalist id="remembered-product-models">{rememberedModels.map((model) => <option key={model} value={model} />)}</datalist></Field> : null}
             {productEditor.mode === 'create' ? <>

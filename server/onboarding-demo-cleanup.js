@@ -439,4 +439,42 @@ async function seedDemoDataForShop({ shopId, userId }) {
   });
 }
 
-module.exports = { cleanupDemoData, seedDemoDataForShop };
+function settingsObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+// Demo data is training wheels: the moment a shop rings up a sale it is a real
+// shop, so the demo rows go and never come back.
+async function retireDemoDataAfterFirstSale(shopId) {
+  if (!shopId) return null;
+  const row = await prisma.shopSettings.findUnique({ where: { shopId }, select: { settings: true } });
+  const settings = settingsObject(row?.settings);
+  const onboarding = settingsObject(settings.onboardingDemo);
+  if (onboarding.demoLifecycleCompletedAt) return null;
+
+  const result = await cleanupDemoData(shopId);
+  const now = new Date().toISOString();
+  await prisma.shopSettings.upsert({
+    where: { shopId },
+    create: {
+      shopId,
+      settings: { onboardingDemo: { demoSeededAt: null, demoLifecycleCompletedAt: now, retiredBy: 'FIRST_SALE', lastAutoCleanupAt: now, lastAutoCleanupResult: result } },
+    },
+    update: {
+      settings: {
+        ...settings,
+        onboardingDemo: {
+          ...onboarding,
+          demoSeededAt: null,
+          demoLifecycleCompletedAt: now,
+          retiredBy: 'FIRST_SALE',
+          lastAutoCleanupAt: now,
+          lastAutoCleanupResult: result,
+        },
+      },
+    },
+  });
+  return result;
+}
+
+module.exports = { cleanupDemoData, seedDemoDataForShop, retireDemoDataAfterFirstSale };
