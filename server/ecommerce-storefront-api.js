@@ -453,7 +453,7 @@ function attachEcommerceStorefrontApi(app) {
     const planText = String(subscription?.notes || '').toLowerCase();
     const verified = Boolean(subscription && subscription.status === 'ACTIVE' && subscription.endsAt > new Date() && !planText.includes('trial') && !planText.includes('free'));
     res.set('Cache-Control', 'public, max-age=60');
-    const vpnBotName = String(process.env.MAIN_BOT_USERNAME || 'maharshwemobilebot').replace(/^@/, '').trim();
+    const vpnBotName = String(process.env.MAIN_BOT_USERNAME || 'maharshwebot').replace(/^@/, '').trim();
     res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, telegramUrl: shop.ecommerceSettings.telegramUrl, vpnBotUrl: `https://t.me/${vpnBotName}`, googleClientId: String(process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID), mapUrl: shop.ecommerceSettings.mapUrl, address: shop.address, verified, verificationType: verified ? 'PAID' : null, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
   }));
 

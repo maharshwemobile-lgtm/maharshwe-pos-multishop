@@ -190,7 +190,7 @@
     if(action==='logout'){await request(`${API}/customer/logout`,{method:'POST',body:'{}'}).catch(()=>null);state.customer=null;return render()}
     if(target.dataset.orderStatus){state.orderStatus=target.dataset.orderStatus;render();return}
     if(target.dataset.category!==undefined){state.categoryId=target.dataset.category;state.tab='shop';return loadProducts(true)}
-    if(target.dataset.vpnPlan){const base=state.store?.vpnBotUrl||'https://t.me/maharshwemobilebot';window.open(`${base}?start=vpn_${encodeURIComponent(target.dataset.vpnPlan)}`,'_blank','noopener,noreferrer');return}
+    if(target.dataset.vpnPlan){const base=state.store?.vpnBotUrl||'https://t.me/maharshwebot';window.open(`${base}?start=vpn_${encodeURIComponent(target.dataset.vpnPlan)}`,'_blank','noopener,noreferrer');return}
     if(target.dataset.quick){const quick=target.dataset.quick;if(quick==='orders'){state.tab='orders';return render()}if(quick==='favourites'){state.favouriteOnly=true;state.tab='shop';return render()}if(quick==='address'){state.infoSheet='address';return render()}if(quick==='coupons'){state.infoSheet='coupons';return render()}if(quick==='messages'){if(state.store.telegramUrl)open(state.store.telegramUrl,'_blank','noopener');else toast('ဆိုင်၏ Telegram Support မသတ်မှတ်ရသေးပါ');return}}
     if(target.dataset.filterCategory!==undefined){state.categoryId=target.dataset.filterCategory;return render()}
     if(target.dataset.filterBrand!==undefined){state.brand=target.dataset.filterBrand;return render()}
