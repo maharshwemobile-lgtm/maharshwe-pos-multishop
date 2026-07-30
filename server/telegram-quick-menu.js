@@ -590,8 +590,11 @@ async function askFor(shopId, flowKey, stepIndex, data) {
   if (options && !options.length) {
     return { text: `⚠️ ရွေးစရာ မရှိပါ (${step.ask})။ Mahar POS မှာ အရင် ဖန်တီးပါ။`, keyboard: quickKeyboard(), abort: true };
   }
+  // count only the steps that still apply, so Transfer shows 7 and Cash Out 6
+  const applicable = def.steps.filter((item) => !item.when || item.when(data || {}));
+  const position = applicable.indexOf(step) + 1;
   return {
-    text: `${def.title} — ${stepIndex + 1}/${def.steps.length}\n\n${step.ask}`,
+    text: `${def.title} — ${position || stepIndex + 1}/${applicable.length}\n\n${step.ask}`,
     keyboard: options ? optionKeyboard(options) : cancelKeyboard(),
   };
 }
