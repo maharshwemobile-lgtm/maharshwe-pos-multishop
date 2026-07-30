@@ -30,24 +30,23 @@ const PHONE_SHOP_CONTENT = {
 const MINI_MART_CONTENT = {
   'Sale POS': {
     badge: 'FIRST LOGIN',
-    title: 'Product / Unit / Expiry / Stock အရင်ထည့်ပါ',
-    text: 'ရောင်းချမှုအတွက် Products page မှာ Barcode, Unit, Expiry Date, Price, Opening Stock အရင်သတ်မှတ်ပါ။',
-    actions: [{ key: 'go-products', label: 'Products page ဖွင့်မယ်', page: 'Products', icon: Box }],
+    title: 'ပစ္စည်းတွေ အရင်ထည့်ပါ',
+    text: 'ရောင်းဖို့အတွက် Items / Products မှာ ပစ္စည်းနာမည်၊ ဈေးနှုန်းနဲ့ လက်ကျန် အရင်ထည့်ပါ။',
+    actions: [{ key: 'go-products', label: 'Items / Products ဖွင့်မယ်', page: 'Products', icon: Box }],
   },
   Products: {
     badge: 'PRODUCT SETUP',
-    title: 'Product → Unit → Expiry → Opening Stock ထည့်ပါ',
-    text: 'Add Product ပြီးရင် Add Variant မှာ Barcode, Unit, Expiry Date, Selling Price, Opening Stock ထည့်ပါ။ ပြီးမှ Sale POS မှာရောင်းပါ။',
+    title: 'Add Product တစ်ခါတည်းနဲ့ ပြီးပါပြီ',
+    text: 'ပစ္စည်းနာမည်၊ ဈေးနှုန်း၊ လက်ကျန်ကို Add Product form တစ်ခုတည်းမှာ ထည့်လိုက်ပါ။ Category မထည့်လည်း ရပါတယ်။',
     actions: [
       { key: 'add-product', label: 'Add Product form ဖွင့်မယ်', action: 'add-product', icon: Box },
-      { key: 'add-variant', label: 'Variant / Unit / Expiry ထည့်မယ်', action: 'add-variant', icon: PackagePlus },
       { key: 'go-sale', label: 'Sale POS မှာရောင်းမယ်', page: 'Sale POS', icon: ShoppingCart },
     ],
   },
   Stock: {
     badge: 'STOCK GUIDE',
-    title: 'Stock / Expiry ကို Variant မှတစ်ဆင့်စစ်ပါ',
-    text: 'Opening Stock, Low Stock Alert, Expiry Date ကို Variant ထဲမှာထည့်ပြီး Sale POS မှာရောင်းပါ။',
+    title: 'လက်ကျန်နဲ့ သက်တမ်း စစ်ပါ',
+    text: 'ပစ္စည်းတစ်ခုချင်းစီရဲ့ လက်ကျန်၊ Low Stock သတိပေးချက်နဲ့ သက်တမ်းကုန်ရက်ကို ဒီမှာ ပြင်နိုင်ပါတယ်။',
     actions: [{ key: 'go-sale', label: 'Sale POS သွားမယ်', page: 'Sale POS', icon: ShoppingCart }],
   },
 };

@@ -210,17 +210,18 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
 
 
-        {!isMiniMart ? <section className="bc-quick-links">
+        {/* Mini Mart gets the same shortcuts minus the pages its menu hides */}
+        <section className="bc-quick-links">
           {[
             ['New Sale', ShoppingCart, 'Sale POS'],
             !isMiniMart ? ['Repair Platform', Wrench, 'Repairs'] : null,
             isMiniMart ? ['Sales History', Clock3, 'Sales History'] : null,
-            isMiniMart ? ['Money / Bill', CircleDollarSign, 'Money Service'] : null,
+            isMiniMart ? ['Items / Products', PackageSearch, 'Products'] : null,
             ['Finance', Wallet, 'Accounting'],
             ['Purchasing', Truck, 'Purchases'],
             ['Reports', BarChart3, 'Reports'],
           ].filter(Boolean).map(([label, Icon, page]) => <button type="button" key={label} onClick={() => onNavigate(page)}><Icon size={21} /><span><b>{label}</b><small>Open workspace</small></span></button>)}
-        </section> : null}
+        </section>
       </> : null}
     </div>
   );

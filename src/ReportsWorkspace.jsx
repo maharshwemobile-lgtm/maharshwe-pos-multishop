@@ -132,11 +132,11 @@ export default function ReportsWorkspace({ onNavigate }) {
   const cards = useMemo(() => [
     { label: 'Sales Revenue', value: money(summary.revenue), icon: ReceiptText, tone: 'green', trend: summary.revenueChange },
     { label: 'Sales Profit', value: money(summary.salesProfit), icon: TrendingUp, tone: 'blue', trend: summary.profitChange },
-    { label: 'Payments Received', value: money(summary.totalReceived), icon: CircleDollarSign, tone: 'purple', note: `${money(summary.repairReceived)} repairs` },
+    { label: 'Payments Received', value: money(summary.totalReceived), icon: CircleDollarSign, tone: 'purple', note: miniMart.enabled ? `${summary.invoices || 0} invoices` : `${money(summary.repairReceived)} repairs` },
     { label: 'Customer Receivable', value: money(summary.receivable), icon: WalletCards, tone: 'orange', note: `${summary.owingCustomers || 0} customers` },
     { label: 'Inventory Cost Value', value: money(summary.inventoryCostValue), icon: Boxes, tone: 'cyan', note: `${summary.lowStockCount || 0} low stock` },
     { label: 'Average Ticket', value: money(summary.averageTicket), icon: FileSpreadsheet, tone: 'red', note: `${summary.invoices || 0} invoices` },
-  ], [summary]);
+  ], [summary, miniMart.enabled]);
 
   const maxTrend = Math.max(1, ...(data?.trend || []).map((row) => Math.max(row.revenue, row.received)));
   const paymentTotal = (data?.paymentMix || []).reduce((sum, row) => sum + Number(row.amount || 0), 0) || 1;
@@ -457,7 +457,7 @@ export default function ReportsWorkspace({ onNavigate }) {
       <div className="reports-operations-grid">
         <article><div className="reports-tone-cyan"><Boxes size={22} /></div><span><b>Inventory Health</b><small>{summary.lowStockCount || 0} low stock · {summary.outOfStockCount || 0} out of stock</small></span><button type="button" onClick={() => onNavigate?.('Stock')}>Open Stock</button></article>
         <article><div className="reports-tone-orange"><WalletCards size={22} /></div><span><b>Customer Credit</b><small>{money(summary.receivable)} · {summary.owingCustomers || 0} owing</small></span><button type="button" onClick={() => onNavigate?.('Customers')}>Open Credit</button></article>
-        <article><div className="reports-tone-blue"><Wrench size={22} /></div><span><b>Repair Operations</b><small>{summary.completedRepairs || 0}/{summary.repairs || 0} completed</small></span><button type="button" onClick={() => onNavigate?.('Repairs')}>Open Repairs</button></article>
+        {miniMart.enabled ? null : <article><div className="reports-tone-blue"><Wrench size={22} /></div><span><b>Repair Operations</b><small>{summary.completedRepairs || 0}/{summary.repairs || 0} completed</small></span><button type="button" onClick={() => onNavigate?.('Repairs')}>Open Repairs</button></article>}
         <article><div className="reports-tone-purple"><CircleDollarSign size={22} /></div><span><b>Payments</b><small>{money(summary.totalReceived)} received</small></span><button type="button" onClick={() => onNavigate?.('Accounting')}>Open Accounts</button></article>
       </div>
 
@@ -465,7 +465,7 @@ export default function ReportsWorkspace({ onNavigate }) {
         <header><div><b>Operational Snapshot</b><small>Accounts, repair status and business exceptions</small></div><CheckCircle2 size={21} /></header>
         <div className="reports-snapshot-grid">
           <div><h3>Account Balances</h3>{(data?.accounts || []).map((row) => <p key={row.id}><span>{row.name}</span><b>{money(row.balance)}</b></p>)}</div>
-          <div><h3>Repair Status</h3>{(data?.repairStatuses || []).map((row) => <p key={row.status}><span>{row.status.replaceAll('_', ' ')}</span><b>{row.count}</b></p>)}</div>
+          {miniMart.enabled ? null : <div><h3>Repair Status</h3>{(data?.repairStatuses || []).map((row) => <p key={row.status}><span>{row.status.replaceAll('_', ' ')}</span><b>{row.count}</b></p>)}</div>}
           <div><h3>Exceptions</h3><p><span>Voided Sales</span><b>{summary.voidedSales || 0}</b></p><p><span>Returned Sales</span><b>{summary.returnedSales || 0}</b></p><p><span>Discount Given</span><b>{money(summary.discount)}</b></p></div>
         </div>
       </section>

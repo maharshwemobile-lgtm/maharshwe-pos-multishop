@@ -100,12 +100,12 @@ function DetailModal({ sale, loading, printing, showExpiry, onClose, onReprint, 
 
             <div className="stock-history-table-wrap sale10-detail-table-wrap">
               <table className="stock-history-table sale10-detail-table">
-                <thead><tr><th>Product / Variant</th><th>IMEI / Serial</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Line Total</th></tr></thead>
+                <thead><tr><th>{showExpiry ? 'Product' : 'Product / Variant'}</th>{showExpiry ? null : <th>IMEI / Serial</th>}<th>Qty</th><th>Unit Price</th><th>Discount</th><th>Line Total</th></tr></thead>
                 <tbody>
                   {(sale.itemRows || []).map((item) => (
                     <tr key={item.id}>
                       <td><b>{[item.productName, item.variantName].filter(Boolean).join(' · ')}</b>{itemMeta(item, showExpiry) ? <small>{itemMeta(item, showExpiry)}</small> : null}</td>
-                      <td>{item.imeiSerial || '-'}</td>
+                      {showExpiry ? null : <td>{item.imeiSerial || '-'}</td>}
                       <td>{item.quantity}{item.unit ? ` ${item.unit}` : ''}</td>
                       <td>{money(item.unitPrice)}</td>
                       <td>{money(item.discount)}</td>
@@ -389,7 +389,7 @@ export default function SalesHistoryV10() {
         <div className="stock-toolbar sale10-history-toolbar">
           <div className="stock-search-box">
             <Search size={18} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Invoice, customer, phone, product or IMEI" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={showExpiry ? 'Invoice, customer, phone or product' : 'Invoice, customer, phone, product or IMEI'} />
           </div>
           <input className="sale10-filter-input" value={cashier} onChange={(event) => setCashier(event.target.value)} placeholder="Cashier" />
           <label className="sale10-date-filter"><CalendarDays size={16} /><input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>

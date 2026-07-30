@@ -40,8 +40,11 @@ export default function PurchasingWorkspaceV2({ initialTab = 'suppliers' }) {
   const visibleTabs = isMiniMart ? miniMartTabs : tabs;
 
   useEffect(() => {
-    setTab(initialTab);
-  }, [initialTab]);
+    // Mini Mart and phone shop expose different tabs, so never land on one the
+    // current business type cannot show — that renders an empty workspace.
+    const allowed = visibleTabs.some((item) => item.id === initialTab);
+    setTab(allowed ? initialTab : visibleTabs[0].id);
+  }, [initialTab, isMiniMart]);
 
   const notify = (type, text) => {
     setMessage({ type, text });
