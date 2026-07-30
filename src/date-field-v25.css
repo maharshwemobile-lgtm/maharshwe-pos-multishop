@@ -8,15 +8,26 @@
 }
 
 .mp-date-field:not(.mp-date-field-bare) {
-  width: 100%;
-  min-height: 44px;
   box-sizing: border-box;
-  padding: 10px 12px;
+  max-width: 100%;
+  padding: 8px 12px;
   border: 1px solid #dce5ef;
   border-radius: 10px;
   background: #fff;
   color: #334155;
   font-weight: 700;
+}
+
+/* filter bars: keep the natural width so neighbours stay on the same row */
+.mp-date-field-inline {
+  width: auto;
+  min-height: 42px;
+}
+
+/* stacked form fields: fill the column, like every other input beside them */
+.mp-date-field-block {
+  width: 100%;
+  min-height: 44px;
 }
 
 .mp-date-field:not(.mp-date-field-bare):hover {
@@ -55,13 +66,15 @@
   opacity: .7;
 }
 
-/* 16px keeps iOS Safari from zooming the page when the field is focused */
+/* 16px keeps iOS Safari from zooming the page when the field is focused.
+   Filter bars stack on small screens anyway, so the field may fill the row. */
 @media (max-width: 760px) {
   .mp-date-field {
     font-size: 16px;
   }
 
   .mp-date-field:not(.mp-date-field-bare) {
-    min-height: 46px;
+    width: 100%;
+    min-height: 44px;
   }
 }

@@ -18,11 +18,27 @@ function isBare(input) {
   }
 }
 
+// A stacked form field should fill its column; a field sitting in a filter bar
+// must stay its natural width or it pushes every neighbour onto its own line.
+function isStackedField(input) {
+  const parent = input.parentElement;
+  if (!parent) return false;
+  try {
+    const style = window.getComputedStyle(parent);
+    if (style.display.includes('flex')) return style.flexDirection.startsWith('column');
+    if (style.display.includes('grid')) return true;
+    return parent.tagName === 'LABEL' && style.display === 'block';
+  } catch {
+    return false;
+  }
+}
+
 function enhance(input) {
   if (!input || input.dataset.mpDateField === '1') return;
   input.dataset.mpDateField = '1';
   input.classList.add('mp-date-field');
   if (isBare(input)) input.classList.add('mp-date-field-bare');
+  else input.classList.add(isStackedField(input) ? 'mp-date-field-block' : 'mp-date-field-inline');
 
   input.addEventListener('click', () => {
     if (input.disabled || input.readOnly) return;
