@@ -111,7 +111,7 @@ const MYANMAR = {
   'Business Profile': 'ဆိုင်အချက်အလက်',
   'Appearance & Language': 'အပြင်အဆင်နှင့် ဘာသာစကား',
   'API Configure': 'API ချိတ်ဆက်မှု',
-  'Users & Access': 'User နှင့် အသုံးပြုခွင့်',
+  'Users & Access': 'အသုံးပြုသူများ',
   'Shop Info': 'ဆိုင်အချက်အလက်',
   'Slip & Print': 'Slip နှင့် ပရင့်',
   'Appearance': 'အပြင်အဆင်',
