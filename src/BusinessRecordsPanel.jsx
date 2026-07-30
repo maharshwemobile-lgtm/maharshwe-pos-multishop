@@ -83,12 +83,24 @@ function normalizedCategory(type, value) {
   ))?.value || (type === 'expense' ? rows[0].value : rows[3].value);
 }
 
-function buildIncomeOptions() {
-  return businessRecordCategories.income.map((item) => ({ name: t(item.en, item.my), value: item.value }));
+// A Mini Mart has no repair bench, so the service income/expense pair only
+// clutters its category picker. Existing records keep their label either way.
+const SERVICE_ALIASES = new Set(['OTHER_SERVICE_INCOME', 'OTHER_SERVICE_EXPENSE']);
+
+function serviceCategory(item) {
+  return (item.aliases || []).some((alias) => SERVICE_ALIASES.has(String(alias)));
 }
 
-function buildExpenseOptions() {
-  return businessRecordCategories.expense.map((item) => ({ name: t(item.en, item.my), value: item.value }));
+function buildIncomeOptions(isMiniMart = false) {
+  return businessRecordCategories.income
+    .filter((item) => !isMiniMart || !serviceCategory(item))
+    .map((item) => ({ name: t(item.en, item.my), value: item.value }));
+}
+
+function buildExpenseOptions(isMiniMart = false) {
+  return businessRecordCategories.expense
+    .filter((item) => !isMiniMart || !serviceCategory(item))
+    .map((item) => ({ name: t(item.en, item.my), value: item.value }));
 }
 
 function DetailModal({ record, onClose, isMiniMart = false }) {
@@ -248,8 +260,8 @@ export default function BusinessRecordsPanel() {
   const [languageVersion, setLanguageVersion] = useState(0);
   const [income, setIncome] = useState({ category: DEFAULT_INCOME_CATEGORY, source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
   const [expense, setExpense] = useState({ category: DEFAULT_EXPENSE_CATEGORY, amount: '', method: 'CASH', moneyAccountId: '', note: '' });
-  const incomeOptions = useMemo(() => buildIncomeOptions(), [languageVersion]);
-  const expenseOptions = useMemo(() => buildExpenseOptions(), [languageVersion]);
+  const incomeOptions = useMemo(() => buildIncomeOptions(isMiniMart), [languageVersion, isMiniMart]);
+  const expenseOptions = useMemo(() => buildExpenseOptions(isMiniMart), [languageVersion, isMiniMart]);
 
   useEffect(() => {
     const handleLanguage = () => setLanguageVersion((value) => value + 1);

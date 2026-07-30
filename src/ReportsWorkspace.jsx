@@ -250,7 +250,7 @@ export default function ReportsWorkspace({ onNavigate }) {
       <div className="reports-main-grid">
         <section className="reports-card reports-trend-card">
           <header><div><b>Revenue & Cashflow Trend</b><small>Daily revenue, profit and payments received</small></div><BarChart3 size={21} /></header>
-          <div className="reports-chart-legend"><span className="revenue">Revenue</span><span className="received">Received</span><span className="profit">Profit</span></div>
+          <div className="reports-chart-legend"><span className="revenue">Revenue</span><span className="received">Payments Received</span><span className="profit">Profit</span></div>
           <div className="reports-trend-chart">
             {(data?.trend || []).map((row) => <div className="reports-day-column" key={row.date} title={`${row.date}\nRevenue ${money(row.revenue)}\nReceived ${money(row.received)}\nProfit ${money(row.profit)}`}>
               <div className="reports-bars">
