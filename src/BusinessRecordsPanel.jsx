@@ -260,8 +260,45 @@ export default function BusinessRecordsPanel() {
   const [languageVersion, setLanguageVersion] = useState(0);
   const [income, setIncome] = useState({ category: DEFAULT_INCOME_CATEGORY, source: '', amount: '', method: 'CASH', moneyAccountId: '', note: '' });
   const [expense, setExpense] = useState({ category: DEFAULT_EXPENSE_CATEGORY, amount: '', method: 'CASH', moneyAccountId: '', note: '' });
-  const incomeOptions = useMemo(() => buildIncomeOptions(isMiniMart), [languageVersion, isMiniMart]);
-  const expenseOptions = useMemo(() => buildExpenseOptions(isMiniMart), [languageVersion, isMiniMart]);
+  // shop-defined categories loaded from the server, merged after the built-ins
+  const [customCategories, setCustomCategories] = useState({ income: [], expense: [] });
+  const incomeOptions = useMemo(
+    () => [...buildIncomeOptions(isMiniMart), ...customCategories.income.map((row) => ({ name: row.name, value: row.name, custom: true }))],
+    [languageVersion, isMiniMart, customCategories.income],
+  );
+  const expenseOptions = useMemo(
+    () => [...buildExpenseOptions(isMiniMart), ...customCategories.expense.map((row) => ({ name: row.name, value: row.name, custom: true }))],
+    [languageVersion, isMiniMart, customCategories.expense],
+  );
+
+  const loadCustomCategories = async () => {
+    try {
+      const response = await apiFetch('/api/business-control/record-categories');
+      setCustomCategories({ income: response.custom?.income || [], expense: response.custom?.expense || [] });
+    } catch {
+      // a failed load just means no custom categories are offered this session
+    }
+  };
+
+  useEffect(() => { loadCustomCategories(); }, []);
+
+  // "+ Category အသစ်" in either picker: create it, then select it straight away
+  const addCategory = async (categoryType, applySelection) => {
+    const name = window.prompt(categoryType === 'expense'
+      ? t('New expense category name', 'ထွက်ငွေ အမျိုးအစား အသစ်')
+      : t('New income category name', 'ဝင်ငွေ အမျိုးအစား အသစ်'));
+    if (!name || !name.trim()) return;
+    try {
+      const response = await apiFetch('/api/business-control/record-categories', {
+        method: 'POST',
+        body: { type: categoryType, name: name.trim() },
+      });
+      await loadCustomCategories();
+      if (response.category?.name) applySelection(response.category.name);
+    } catch (requestError) {
+      handleError(requestError);
+    }
+  };
 
   useEffect(() => {
     const handleLanguage = () => setLanguageVersion((value) => value + 1);
@@ -496,7 +533,10 @@ export default function BusinessRecordsPanel() {
         {formMode === 'income' ? (
           canWriteAccounting ? <form className="br-entry-form" onSubmit={submitIncome}>
             <div className="br-form-grid">
-              <label>{t('Category', 'အမျိုးအစား')}<select value={income.category} onChange={(event) => setIncome({ ...income, category: event.target.value })}>{incomeOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
+              <label>{t('Category', 'အမျိုးအစား')}<select value={income.category} onChange={(event) => {
+                if (event.target.value === '__new__') { addCategory('income', (name) => setIncome((current) => ({ ...current, category: name }))); return; }
+                setIncome({ ...income, category: event.target.value });
+              }}>{incomeOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}<option value="__new__">{t('+ Add new category', '+ အမျိုးအစား အသစ်ထည့်မည်')}</option></select></label>
               <label>{t('Source', 'ဝင်ငွေအကြောင်းအရာ')}<input required value={income.source} onChange={(event) => setIncome({ ...income, source: event.target.value })} placeholder={isMiniMart
                 ? t('Example: top-up sale or commission', 'ဥပမာ - ငွေဖြည့်ကဒ်ရောင်းချမှု သို့မဟုတ် ကော်မရှင်')
                 : t('Example: repair service or commission', 'ဥပမာ - ဖုန်းပြင်ခ သို့မဟုတ် ကော်မရှင်')} maxLength={80} /></label>
@@ -512,7 +552,10 @@ export default function BusinessRecordsPanel() {
         {formMode === 'expense' ? (
           canWriteAccounting ? <form className="br-entry-form" onSubmit={submitExpense}>
             <div className="br-form-grid">
-              <label>{t('Category', 'အမျိုးအစား')}<select required value={expense.category} onChange={(event) => setExpense({ ...expense, category: event.target.value })}>{expenseOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}</select></label>
+              <label>{t('Category', 'အမျိုးအစား')}<select required value={expense.category} onChange={(event) => {
+                if (event.target.value === '__new__') { addCategory('expense', (name) => setExpense((current) => ({ ...current, category: name }))); return; }
+                setExpense({ ...expense, category: event.target.value });
+              }}>{expenseOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}<option value="__new__">{t('+ Add new category', '+ အမျိုးအစား အသစ်ထည့်မည်')}</option></select></label>
               <label>{t('Amount', 'ငွေပမာဏ')}<input required type="number" min="1" step="1" value={expense.amount} onChange={(event) => setExpense({ ...expense, amount: event.target.value })} placeholder="0" /></label>
               <label>{t('Method', 'ငွေပေးချေမှုနည်းလမ်း')}<select value={expense.method} onChange={(event) => setExpense({ ...expense, method: event.target.value, moneyAccountId: '' })}><option value="CASH">{t('Cash', 'ငွေသား')}</option><option value="KPAY">KBZPay</option><option value="WAVE_PAY">WavePay</option><option value="OTHER">{t('Other', 'အခြား')}</option></select></label>
               <label>{t('Account', 'ငွေစာရင်း')}<select value={expense.moneyAccountId} onChange={(event) => setExpense({ ...expense, moneyAccountId: event.target.value })}><option value="">{t('Auto-select account', 'ငွေစာရင်း အလိုအလျောက်ရွေးမည်')}</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}</select></label>

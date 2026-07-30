@@ -1,0 +1,67 @@
+/* Date fields, project wide — matches the Wallet Note field: one tall tap
+   target, whole field opens the picker, calendar icon always visible.
+   Inputs already framed by a wrapper keep that frame (.mp-date-field-bare). */
+
+.mp-date-field {
+  cursor: pointer;
+  font: inherit;
+}
+
+.mp-date-field:not(.mp-date-field-bare) {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #dce5ef;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  font-weight: 700;
+}
+
+.mp-date-field:not(.mp-date-field-bare):hover {
+  border-color: #bfd3e8;
+}
+
+.mp-date-field:not(.mp-date-field-bare):focus {
+  outline: 0;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, .15);
+}
+
+.mp-date-field:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.mp-date-field::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: .55;
+  padding: 2px;
+}
+
+.mp-date-field::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.dark .mp-date-field:not(.mp-date-field-bare) {
+  background: #0b1b33;
+  color: #e5eef8;
+  border-color: #1e3555;
+}
+
+.dark .mp-date-field::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: .7;
+}
+
+/* 16px keeps iOS Safari from zooming the page when the field is focused */
+@media (max-width: 760px) {
+  .mp-date-field {
+    font-size: 16px;
+  }
+
+  .mp-date-field:not(.mp-date-field-bare) {
+    min-height: 46px;
+  }
+}

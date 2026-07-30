@@ -122,6 +122,17 @@ async function ensureBusinessControlSchema() {
         )`,
         `CREATE INDEX IF NOT EXISTS business_other_income_shop_date_idx ON business_other_income(shop_id, income_date DESC, created_at DESC)`,
         `ALTER TABLE business_other_income ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'OTHER_INCOME'`,
+        // Shop-defined income/expense categories, on top of the shared built-in list
+        `CREATE TABLE IF NOT EXISTS business_record_categories (
+          id UUID PRIMARY KEY,
+          shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+          type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          active BOOLEAN NOT NULL DEFAULT TRUE,
+          created_by_id UUID REFERENCES users(id) ON DELETE SET NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS business_record_categories_unique_idx ON business_record_categories(shop_id, type, LOWER(name))`,
         `ALTER TABLE daily_closings ADD COLUMN IF NOT EXISTS repair_income_total NUMERIC(14,2) NOT NULL DEFAULT 0`,
         `ALTER TABLE daily_closings ADD COLUMN IF NOT EXISTS repair_profit_total NUMERIC(14,2) NOT NULL DEFAULT 0`,
         `ALTER TABLE daily_closings ADD COLUMN IF NOT EXISTS expense_total NUMERIC(14,2) NOT NULL DEFAULT 0`,
@@ -537,6 +548,29 @@ async function applyAccountChange(tx, req, account, amount, direction, note) {
   });
 }
 
+// Shop-defined categories live beside the shared built-in list. A record may use
+// either, so resolution falls back to the shop's own names before rejecting.
+const CATEGORY_TYPES = new Set(['income', 'expense']);
+
+async function customCategories(shopId, type) {
+  await ensureBusinessControlSchema();
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, name FROM business_record_categories
+      WHERE shop_id=$1::uuid AND type=$2 AND active ORDER BY LOWER(name)`,
+    shopId, type,
+  ).catch(() => []);
+  return rows || [];
+}
+
+async function resolveRecordCategory(shopId, type, value) {
+  const builtIn = normalizeBusinessRecordCategory(type, value);
+  if (builtIn) return builtIn;
+  const wanted = clean(value, 80).toLowerCase();
+  if (!wanted) return null;
+  const rows = await customCategories(shopId, type);
+  return rows.find((row) => String(row.name).toLowerCase() === wanted)?.name || null;
+}
+
 // The record writers below are shared by the HTTP routes and the Telegram bot,
 // so both paths post the same money-account movement and audit trail.
 function actorFromRequest(req) {
@@ -560,7 +594,7 @@ async function recordExpense(actor, input) {
   const req = actorRequest(actor);
   const expenseDate = parseBusinessDate(input.expenseDate);
   if (expenseDate > currentYangonDate()) throw new ApiError(400, 'Future expense dates are not allowed');
-  const category = normalizeBusinessRecordCategory('expense', input.category);
+  const category = await resolveRecordCategory(actor.shopId, 'expense', input.category);
   const amount = Number(input.amount);
   const method = clean(input.method || 'CASH', 20).toUpperCase();
   const note = clean(input.note, 500) || null;
@@ -596,7 +630,7 @@ async function recordOtherIncome(actor, input) {
   const req = actorRequest(actor);
   const incomeDate = parseBusinessDate(input.incomeDate);
   if (incomeDate > currentYangonDate()) throw new ApiError(400, 'Future income dates are not allowed');
-  const category = normalizeBusinessRecordCategory('income', input.category);
+  const category = await resolveRecordCategory(actor.shopId, 'income', input.category);
   const source = clean(input.source, 80);
   const amount = Number(input.amount);
   const method = clean(input.method || 'CASH', 20).toUpperCase();
@@ -638,6 +672,49 @@ function attachBusinessControlApiV2(app) {
   app.get('/api/business-control/overview', ...read, wrap(async (req, res) => {
     const businessDate = parseBusinessDate(req.query.date);
     res.json({ ok: true, ...(await buildOverview(req.auth.shopId, businessDate)) });
+  }));
+
+  app.get('/api/business-control/record-categories', ...read, wrap(async (req, res) => {
+    const [income, expense] = await Promise.all([
+      customCategories(req.auth.shopId, 'income'),
+      customCategories(req.auth.shopId, 'expense'),
+    ]);
+    res.json({ ok: true, builtIn: businessRecordCategories, custom: { income, expense } });
+  }));
+
+  app.post('/api/business-control/record-categories', ...write, wrap(async (req, res) => {
+    const type = clean(req.body?.type, 10).toLowerCase();
+    const name = clean(req.body?.name, 80);
+    if (!CATEGORY_TYPES.has(type)) throw new ApiError(400, 'Category type must be income or expense');
+    if (!name) throw new ApiError(400, 'Category name is required');
+
+    const rows = type === 'expense' ? businessRecordCategories.expense : businessRecordCategories.income;
+    if (rows.some((item) => item.value.toLowerCase() === name.toLowerCase() || item.en.toLowerCase() === name.toLowerCase())) {
+      throw new ApiError(409, `"${name}" ရှိပြီးသားပါ`);
+    }
+    const existing = await customCategories(req.auth.shopId, type);
+    const already = existing.find((row) => String(row.name).toLowerCase() === name.toLowerCase());
+    if (already) return res.status(200).json({ ok: true, category: already, existing: true });
+
+    const id = crypto.randomUUID();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO business_record_categories (id, shop_id, type, name, active, created_by_id, created_at)
+       VALUES ($1::uuid, $2::uuid, $3, $4, TRUE, $5::uuid, NOW())`,
+      id, req.auth.shopId, type, name, req.auth.userId,
+    );
+    await audit(req, 'BUSINESS_RECORD_CATEGORY_CREATED', 'business_record_category', id, { type, name });
+    res.status(201).json({ ok: true, category: { id, name } });
+  }));
+
+  app.delete('/api/business-control/record-categories/:id', ...write, wrap(async (req, res) => {
+    const id = clean(req.params.id, 50);
+    const updated = await prisma.$executeRawUnsafe(
+      'UPDATE business_record_categories SET active=FALSE WHERE id=$1::uuid AND shop_id=$2::uuid',
+      id, req.auth.shopId,
+    );
+    if (!updated) throw new ApiError(404, 'Category not found');
+    await audit(req, 'BUSINESS_RECORD_CATEGORY_HIDDEN', 'business_record_category', id, {});
+    res.json({ ok: true, id });
   }));
 
   app.post('/api/business-control/expenses', ...write, wrap(async (req, res) => {
