@@ -19,7 +19,7 @@ import {
   WalletCards,
   X,
 } from 'lucide-react';
-import { apiFetch, clearSession } from './phase2Api';
+import { apiFetch, clearSession, getSession } from './phase2Api';
 import { pickLanguageText } from './settings/ProjectLanguageRuntime.jsx';
 import './customers-credit.css';
 
@@ -275,6 +275,14 @@ function DetailModal({ customer, loading, onClose, onCollect, onEdit, onOpenHist
 }
 
 export default function CustomersCreditPage({ onNavigate }) {
+  // Repairs are hidden for Mini Mart, so its customer list should not count them
+  const shopSession = getSession();
+  const isMiniMart = String(
+    shopSession?.shop?.businessType
+    || shopSession?.user?.shop?.businessType
+    || shopSession?.businessType
+    || 'PHONE_SHOP',
+  ).toUpperCase() === 'MINI_MART';
   const [data, setData] = useState({ customers: [], summary: {}, total: 0, totalPages: 1 });
   const [query, setQuery] = useState('');
   const [balanceFilter, setBalanceFilter] = useState('');
@@ -401,7 +409,7 @@ export default function CustomersCreditPage({ onNavigate }) {
 
         <div className="credit-table-wrap">
           <table className="credit-table">
-            <thead><tr><th>Customer</th><th>Phone</th><th>Address</th><th>Sales</th><th>Repairs</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Customer</th><th>Phone</th><th>Address</th><th>Sales</th>{isMiniMart ? null : <th>Repairs</th>}<th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               {(data.customers || []).map((customer) => (
                 <tr key={customer.id}>
@@ -409,13 +417,13 @@ export default function CustomersCreditPage({ onNavigate }) {
                   <td>{customer.phone || '-'}</td>
                   <td>{customer.address || '-'}</td>
                   <td>{customer.saleCount}</td>
-                  <td>{customer.repairCount}</td>
+                  {isMiniMart ? null : <td>{customer.repairCount}</td>}
                   <td><b className={customer.balance > 0 ? 'credit-outstanding' : ''}>{money(customer.balance)}</b></td>
                   <td><span className={`credit-status ${customer.balance > 0 ? 'owing' : 'clear'}`}>{customer.balance > 0 ? 'Owing' : 'Clear'}</span></td>
                   <td><div className="credit-row-actions"><button type="button" onClick={() => openDetail(customer)}><History size={15} /> View</button><button type="button" onClick={() => setEditor({ customer })}><Edit3 size={15} /> Edit</button><button type="button" onClick={() => setBalanceCustomer(customer)}><CircleDollarSign size={15} /> Debt</button><button type="button" className="collect" onClick={() => setCollectionCustomer(customer)} disabled={customer.balance <= 0}><Banknote size={15} /> Collect</button></div></td>
                 </tr>
               ))}
-              {!data.customers?.length && !loading ? <tr><td colSpan="8"><div className="credit-empty"><Users size={30} /><span>No customers found.</span></div></td></tr> : null}
+              {!data.customers?.length && !loading ? <tr><td colSpan={isMiniMart ? 7 : 8}><div className="credit-empty"><Users size={30} /><span>No customers found.</span></div></td></tr> : null}
             </tbody>
           </table>
           {loading ? <div className="credit-loading"><Loader2 className="credit-spin" /> Loading customers…</div> : null}
