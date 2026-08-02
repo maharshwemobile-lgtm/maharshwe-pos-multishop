@@ -34,3 +34,12 @@
 body {
   font-family: 'Geist', 'Pyidaungsu', 'Noto Sans Myanmar', 'Myanmar Text', system-ui, sans-serif;
 }
+
+/* Regular weight only.
+   The stylesheets declare 900 in 235 places, 800 in 111 and 950 in 56 — weights
+   that read far heavier in Geist than in the face they were tuned for. One
+   override keeps every element at Geist Regular. */
+body,
+body * {
+  font-weight: 400 !important;
+}
