@@ -15,6 +15,7 @@ import './ui-polish-v22.css';
 import './product-category-icon.css';
 import './ui-layout-hotfix-v24.css';
 import './date-field-v25.css';
+import './font-geist-v26.css';
 
 const RUNTIME_VERSION = '20260723-stable-record-categories-date-picker';
 
