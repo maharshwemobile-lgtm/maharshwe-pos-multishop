@@ -32,7 +32,7 @@
   display: block;
   margin-bottom: 4px;
   color: #07845c;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 950;
   letter-spacing: .11em;
 }
@@ -109,7 +109,7 @@
 .bc-day-state b,
 .bc-day-state small { display: block; }
 .bc-day-state b { font-size: 12px; }
-.bc-day-state small { margin-top: 2px; font-size: 10px; opacity: .8; }
+.bc-day-state small { margin-top: 2px; font-size:12px; opacity: .8; }
 
 .bc-alert {
   display: flex;
@@ -180,7 +180,7 @@
 .bc-metric-copy small { display: block; }
 .bc-metric-copy span { color: var(--app-muted, #68776f); font-size: 12px; font-weight: 850; }
 .bc-metric-copy strong { margin: 5px 0; color: var(--app-text, #10241a); font-size: 19px; line-height: 1.25; }
-.bc-metric-copy small { color: var(--app-muted, #7b8981); font-size: 10px; line-height: 1.35; }
+.bc-metric-copy small { color: var(--app-muted, #7b8981); font-size:12px; line-height: 1.35; }
 .bc-metric-breakdown {
   display: grid;
   gap: 1px;
@@ -239,7 +239,7 @@
 .bc-account-card svg { color: #07845c; }
 .bc-account-card span,
 .bc-account-card b { display: block; }
-.bc-account-card span { color: var(--app-muted, #68776f); font-size: 10px; font-weight: 850; }
+.bc-account-card span { color: var(--app-muted, #68776f); font-size:12px; font-weight: 850; }
 .bc-account-card b { margin-top: 3px; font-size: 14px; }
 
 .bc-main-grid,
@@ -282,7 +282,7 @@
   min-width: 0;
   text-align: center;
 }
-.bc-bar-column > b { color: var(--app-muted, #68776f); font-size: 10px; }
+.bc-bar-column > b { color: var(--app-muted, #68776f); font-size:12px; }
 .bc-bar-column > div { position: relative; display: flex; align-items: flex-end; justify-content: center; min-height: 0; }
 .bc-bar-column i {
   display: block;
@@ -292,7 +292,7 @@
   background: linear-gradient(180deg, #f6b500, #13a36f);
   box-shadow: 0 7px 14px rgba(19, 163, 111, .18);
 }
-.bc-bar-column > span { color: var(--app-muted, #68776f); font-size: 10px; font-weight: 800; }
+.bc-bar-column > span { color: var(--app-muted, #68776f); font-size:12px; font-weight: 800; }
 
 .bc-trend-summary {
   display: grid;
@@ -305,14 +305,14 @@
   border-radius: 8px;
   background: var(--app-soft, #f4f9f6);
   color: var(--app-muted, #68776f);
-  font-size: 10px;
+  font-size:12px;
 }
 .bc-trend-summary b { display: block; margin-top: 4px; color: var(--app-text, #10241a); font-size: 12px; }
 
 /* Modern seven-day sales chart */
 .bc-trend-panel{overflow:hidden;background:linear-gradient(145deg,#fff 0%,#fbfefc 55%,#f0fdf6 100%)}
 .bc-trend-heading{align-items:flex-start!important}
-.bc-trend-heading small{display:block;margin-top:4px;color:var(--app-muted,#68776f);font-size:10px}
+.bc-trend-heading small{display:block;margin-top:4px;color:var(--app-muted,#68776f);font-size:12px}
 .bc-trend-total{min-width:145px;padding:9px 11px;border:1px solid rgba(19,163,111,.16);border-radius:11px;background:rgba(255,255,255,.78);text-align:right;box-shadow:0 8px 22px rgba(15,118,82,.07)}
 .bc-trend-total span,.bc-trend-total b{display:block}
 .bc-trend-total span{color:var(--app-muted,#68776f);font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
@@ -334,7 +334,7 @@
 .bc-trend-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
 .bc-trend-summary span{padding:11px 12px;border:1px solid rgba(19,163,111,.11);border-radius:10px;background:rgba(255,255,255,.72)}
 .bc-trend-summary b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:640px){.bc-trend-heading{gap:8px}.bc-trend-total{min-width:118px;padding:8px}.bc-trend-total b{font-size:11px}.bc-chart-shell{padding-left:30px}.bc-chart-shell:before,.bc-chart-shell:after{left:30px}.bc-chart{height:185px;gap:5px;padding-inline:4px}.bc-bar-column i{width:min(28px,72%)}.bc-bar-column>b{font-size:8px}.bc-trend-summary{grid-template-columns:1fr}.bc-trend-summary span{display:flex;align-items:center;justify-content:space-between;gap:10px}.bc-trend-summary b{margin-top:0}}
+@media(max-width:640px){.bc-trend-heading{gap:8px}.bc-trend-total{min-width:118px;padding:8px}.bc-trend-total b{font-size:12px}.bc-chart-shell{padding-left:30px}.bc-chart-shell:before,.bc-chart-shell:after{left:30px}.bc-chart{height:185px;gap:5px;padding-inline:4px}.bc-bar-column i{width:min(28px,72%)}.bc-bar-column>b{font-size:8px}.bc-trend-summary{grid-template-columns:1fr}.bc-trend-summary span{display:flex;align-items:center;justify-content:space-between;gap:10px}.bc-trend-summary b{margin-top:0}}
 
 .bc-action-alert {
   display: flex;
@@ -354,7 +354,7 @@
 .bc-action-alert b,
 .bc-action-alert span { display: block; }
 .bc-action-alert b { font-size: 13px; }
-.bc-action-alert span { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 10px; }
+.bc-action-alert span { margin-top: 3px; color: var(--app-muted, #68776f); font-size:12px; }
 
 .bc-low-stock-list { margin-top: 12px; }
 .bc-low-stock-list > div,
@@ -366,7 +366,7 @@
   padding: 9px 0;
   border-bottom: 1px solid var(--app-border, #edf2ee);
 }
-.bc-low-stock-list span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.bc-low-stock-list span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size:12px; }
 .bc-low-stock-list b { min-width: 34px; padding: 4px 7px; border-radius: 6px; text-align: center; background: #fff3cf; color: #8a5b00; }
 .bc-low-stock-list b.danger { background: #ffe5e5; color: #b91c1c; }
 .bc-low-stock-list p { display: flex; align-items: center; gap: 7px; color: #047857; font-size: 12px; }
@@ -382,7 +382,7 @@
   border: 1px solid var(--app-border, #e1ece4);
   border-radius: 8px;
   color: var(--app-muted, #68776f);
-  font-size: 10px;
+  font-size:12px;
 }
 .bc-closing-summary b { display: block; margin-top: 4px; color: var(--app-text, #10241a); font-size: 13px; }
 
@@ -399,7 +399,7 @@
   box-sizing: border-box;
 }
 .bc-close-button { width: 100%; }
-.bc-helper { display: block; margin-top: 8px; color: var(--app-muted, #68776f); text-align: center; font-size: 10px; }
+.bc-helper { display: block; margin-top: 8px; color: var(--app-muted, #68776f); text-align: center; font-size:12px; }
 
 .bc-closed-box {
   display: flex;
@@ -412,15 +412,15 @@
 }
 .bc-closed-box b,
 .bc-closed-box span { display: block; }
-.bc-closed-box span { margin-top: 3px; font-size: 11px; }
-.bc-closed-box p { margin: 7px 0 0; color: #315f4d; font-size: 11px; }
+.bc-closed-box span { margin-top: 3px; font-size:12px; }
+.bc-closed-box p { margin: 7px 0 0; color: #315f4d; font-size:12px; }
 
 .bc-expense-panel form > label,
 .bc-form-grid label {
   display: grid;
   gap: 5px;
   color: var(--app-muted, #68776f);
-  font-size: 10px;
+  font-size:12px;
   font-weight: 850;
 }
 .bc-form-grid {
@@ -469,7 +469,7 @@
 .bc-record-actions button svg { color: #07845c; flex: 0 0 auto; }
 .bc-record-actions button b,
 .bc-record-actions button small { display: block; }
-.bc-record-actions button small { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 10px; }
+.bc-record-actions button small { margin-top: 3px; color: var(--app-muted, #68776f); font-size:12px; }
 .bc-record-actions button.active {
   border-color: #13a36f;
   background: #eaf9f1;
@@ -498,10 +498,10 @@
 .bc-expense-list { margin-top: 13px; }
 .bc-expense-list span b,
 .bc-expense-list span small { display: block; }
-.bc-expense-list span b { font-size: 11px; }
+.bc-expense-list span b { font-size:12px; }
 .bc-expense-list span small { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 9px; }
 .bc-expense-list strong { color: #b91c1c; font-size: 12px; }
-.bc-expense-list p { color: var(--app-muted, #68776f); font-size: 11px; }
+.bc-expense-list p { color: var(--app-muted, #68776f); font-size:12px; }
 
 .bc-quick-links {
   display: grid;
@@ -523,7 +523,7 @@
 .bc-quick-links span,
 .bc-quick-links b,
 .bc-quick-links small { display: block; min-width: 0; }
-.bc-quick-links b { font-size: 11px; }
+.bc-quick-links b { font-size:12px; }
 .bc-quick-links small { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 9px; }
 
 .mini-mart-module-hub { display: grid; gap:10px; }
@@ -564,7 +564,7 @@
 .mini-mart-module-card b,
 .mini-mart-module-card small { display: block; min-width: 0; }
 .mini-mart-module-card b { font-size: 12px; line-height: 1.25; }
-.mini-mart-module-card small { margin-top: 3px; color: var(--app-muted, #68776f); font-size: 10px; line-height: 1.35; }
+.mini-mart-module-card small { margin-top: 3px; color: var(--app-muted, #68776f); font-size:12px; line-height: 1.35; }
 
 html.dark .business-control-dashboard {
   --app-card: #12221d;

@@ -1,7 +1,7 @@
 .grand-admin-page{display:grid;gap:12px;min-width:0}
 .grand-heading,.grand-card,.grand-health,.grand-metrics article{background:#fff;border:1px solid #e2e8f0;border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
 .grand-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:13px;padding:14px}
-.grand-heading span{font-size:11px;font-weight:950;letter-spacing:.12em;color:#2563eb}
+.grand-heading span{font-size:12px;font-weight:950;letter-spacing:.12em;color:#2563eb}
 .grand-heading h2{margin:6px 0 8px;font-size:28px}
 .grand-heading p{margin:0;max-width:900px;color:#64748b;line-height:1.6}
 .grand-heading button,.grand-toolbar button,.grand-table button,.grand-switch-list button,.grand-user-list button,.grand-modal button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #dbe3ef;background:#fff;border-radius:11px;padding:9px 12px;font-weight:950;cursor:pointer;color:#334155}
@@ -13,15 +13,15 @@
 .grand-health>div{display:flex;align-items:center;gap:9px}.grand-health>div span{display:block;color:#64748b;font-size:12px}
 .grand-health article{border:1px solid #e2e8f0;border-radius:13px;padding:10px;background:#f8fafc;display:grid;gap:3px}
 .grand-health article.ok svg{color:#16a34a}.grand-health article.warn svg{color:#d97706}
-.grand-health article span{font-size:11px;color:#64748b}.grand-health article b{font-size:12px}
+.grand-health article span{font-size:12px;color:#64748b}.grand-health article b{font-size:12px}
 .grand-toolbar{display:flex;gap:10px;padding:11px;border-bottom:1px solid #eef2f7}
 .grand-toolbar label{flex:1;height:42px;display:flex;align-items:center;gap:8px;border:1px solid #dbe3ef;border-radius:12px;background:#f8fafc;padding:0 12px}
 .grand-toolbar input{width:100%;border:0;background:transparent;outline:0}
 .grand-table-wrap{overflow:auto}.grand-table{width:100%;min-width:1100px;border-collapse:collapse}
 .grand-table th,.grand-table td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left;vertical-align:middle}
-.grand-table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc}
+.grand-table th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc}
 .grand-table td b,.grand-table td span,.grand-table td small{display:block}.grand-table td span,.grand-table td small{color:#64748b;font-size:12px;margin-top:3px}
-.grand-table i{display:inline-flex;border-radius:999px;padding:4px 8px;font-style:normal;font-size:11px;font-weight:950}
+.grand-table i{display:inline-flex;border-radius:999px;padding:4px 8px;font-style:normal;font-size:12px;font-weight:950}
 .grand-table i.green,.grand-user-list .green{background:#dcfce7;color:#166534}.grand-table i.blue{background:#dbeafe;color:#1d4ed8}.grand-table i.red{background:#fee2e2;color:#b91c1c}.grand-table i.gray{background:#f1f5f9;color:#475569}
 .grand-control-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grand-section-title{padding:11px;border-bottom:1px solid #eef2f7}.grand-section-title b,.grand-section-title span{display:block}.grand-section-title span{margin-top:3px;color:#64748b;font-size:12px}

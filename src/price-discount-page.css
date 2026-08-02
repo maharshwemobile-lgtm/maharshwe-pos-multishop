@@ -1,6 +1,6 @@
 .price-page{display:flex;flex-direction:column;gap:13px;min-width:0}
 .price-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:13px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:14px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
-.price-heading span{font-size:11px;font-weight:950;letter-spacing:.12em;color:#f97316}
+.price-heading span{font-size:12px;font-weight:950;letter-spacing:.12em;color:#f97316}
 .price-heading h2{margin:5px 0 8px;font-size:28px}
 .price-heading p{margin:0;max-width:900px;color:#64748b;line-height:1.6}
 .price-heading button,.price-toolbar button,.price-edit,.price-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #dbe3ef;background:#fff;border-radius:10px;padding:9px 12px;font-weight:900;cursor:pointer;color:#334155}
@@ -18,7 +18,7 @@
 .price-table-wrap{overflow-x:auto}
 .price-table{width:100%;border-collapse:collapse;min-width:980px}
 .price-table th,.price-table td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left;vertical-align:middle}
-.price-table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc}
+.price-table th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;background:#f8fafc}
 .price-table td span,.price-table td small{display:block;color:#64748b;font-size:12px;margin-top:3px}
 .price-product-cell b{font-size:14px}
 .price-table input{width:132px;height:38px;border:1px solid #dbe3ef;border-radius:9px;padding:0 9px;font-weight:850}
@@ -51,8 +51,8 @@
 .price-bulk-panel.is-empty{display:none!important}
 .price-table th,.price-table td{padding:9px 11px}
 .price-product-cell b{font-size:13px}
-.price-table td span,.price-table td small{font-size:10px;margin-top:2px}
-.price-edit{padding:7px 9px;font-size:11px}
+.price-table td span,.price-table td small{font-size:12px;margin-top:2px}
+.price-edit{padding:7px 9px;font-size:12px}
 .price-footer{padding:9px 12px}
 
 /* PR56: Product-style price edit modal */
@@ -68,7 +68,7 @@
   display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-bottom:1px solid #eef2f7
 }
 .price-modal footer{border-top:1px solid #eef2f7;border-bottom:0}
-.price-modal header span{font-size:11px;font-weight:950;letter-spacing:.1em;color:#f97316}
+.price-modal header span{font-size:12px;font-weight:950;letter-spacing:.1em;color:#f97316}
 .price-modal header h3{margin:3px 0 4px;font-size:20px}
 .price-modal header p{margin:0;color:#64748b;font-size:13px}
 .price-modal header button,.price-modal footer button{

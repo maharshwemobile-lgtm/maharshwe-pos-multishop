@@ -314,7 +314,7 @@ label textarea {
   gap: 10px;
   padding:10px 11px 0;
   color: #64748b;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .sale10-card-label b {
@@ -371,14 +371,14 @@ label textarea {
 }
 
 .sale10-product-table .stock-product-cell small {
-  font-size: 10px !important;
+  font-size:12px !important;
 }
 
 .sale10-product-table .stock-quantity-badge {
   min-width: 34px !important;
   height: 26px !important;
   border-radius: 8px !important;
-  font-size: 11px !important;
+  font-size:12px !important;
 }
 
 .sale10-product-price {
@@ -527,7 +527,7 @@ label textarea {
   height: 30px !important;
   border-radius: 8px !important;
   padding: 0 7px !important;
-  font-size: 11px !important;
+  font-size:12px !important;
 }
 
 .sale10-cart-line-total b {
@@ -568,7 +568,7 @@ label textarea {
 }
 
 .sale10-payment-methods button b {
-  font-size: 11px !important;
+  font-size:12px !important;
 }
 
 .sale10-payment-methods button small {
@@ -587,12 +587,12 @@ label textarea {
 .sale10-checkout-panel .stock-field {
   gap: 3px !important;
   margin-bottom: 7px !important;
-  font-size: 11px !important;
+  font-size:12px !important;
 }
 
 .sale10-checkout-panel .stock-field > span,
 .sale10-payment-block-title {
-  font-size: 10px !important;
+  font-size:12px !important;
   line-height: 1.1 !important;
 }
 
@@ -603,7 +603,7 @@ label textarea {
   height: 30px !important;
   padding: 0 8px !important;
   border-radius: 8px !important;
-  font-size: 11px !important;
+  font-size:12px !important;
 }
 
 .sale10-checkout-panel .sale10-discount-field small {
@@ -627,7 +627,7 @@ label textarea {
   border-radius: 8px !important;
   background: #fff !important;
   text-align: center !important;
-  font-size: 11px !important;
+  font-size:12px !important;
 }
 
 .sale10-total-lines > div span,
@@ -643,7 +643,7 @@ label textarea {
   padding-top: 5px !important;
   border-top: 0 !important;
   background: #ecfdf5 !important;
-  font-size: 11px !important;
+  font-size:12px !important;
 }
 
 .sale10-total-lines .grand b {
@@ -674,7 +674,7 @@ label textarea {
   margin-bottom: 7px !important;
   padding: 7px 9px !important;
   border-radius: 8px !important;
-  font-size: 10px !important;
+  font-size:12px !important;
 }
 
 .sale10-review-button {
@@ -809,7 +809,7 @@ label textarea {
   }
 
   .sale10-product-table .stock-product-cell b {
-    font-size: 11px !important;
+    font-size:12px !important;
   }
 
   .sale10-product-table .stock-product-cell small {
@@ -883,7 +883,7 @@ label textarea {
   .sale10-cart-price-field .sale10-price-input {
     height: 26px !important;
     padding: 0 5px !important;
-    font-size: 10px !important;
+    font-size:12px !important;
   }
 
   .sale10-cart-line-total b {
@@ -946,11 +946,11 @@ label textarea {
   }
 
   .sale10-total-lines > div b {
-    font-size: 10px !important;
+    font-size:12px !important;
   }
 
   .sale10-total-lines .grand b {
-    font-size: 11px !important;
+    font-size:12px !important;
   }
 }
 

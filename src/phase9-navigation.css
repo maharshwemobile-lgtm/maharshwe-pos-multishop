@@ -96,7 +96,7 @@ body{overscroll-behavior-y:none}
   :where(button:has(svg.lucide-refresh-cw),button:has(.lucide-refresh-cw),button:has(svg.lucide-download),button:has(.lucide-download),button:has(svg.lucide-upload),button:has(.lucide-upload),button:has(svg.lucide-printer):not(.allow-mobile-print),button:has(.lucide-printer):not(.allow-mobile-print),button:has(svg.lucide-file-down),button:has(.lucide-file-down),button:has(svg.lucide-file-up),button:has(.lucide-file-up),.refresh-button,.payments-refresh-button,.stock-refresh-button,.export-button){display:none!important}
   :where(.reports-heading-actions button:not(.primary),.repair-page-heading button:not(.primary),.payments-heading-actions button:not(.payments-transfer-button)){display:none!important}
   :where(.stock-row-actions,.p2-actions,.repair-page-heading>div:last-child){gap:5px!important}
-  :where(.stock-action,.p2-actions button,.repair-open-button){min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
+  :where(.stock-action,.p2-actions button,.repair-open-button){min-height:34px!important;padding:6px 8px!important;font-size:12px!important}
   :where(.notice,.subscription-limited-banner){margin:0 0 8px!important}
 }
 @media(max-width:560px){
@@ -212,7 +212,7 @@ body{overscroll-behavior-y:none}
 .app-menu-tour-badge{
   display:inline-flex;
   margin-bottom:7px;
-  font-size:10px;
+  font-size:12px;
   font-weight:950;
   letter-spacing:.14em;
   color:#2563eb;
@@ -291,7 +291,7 @@ body{overscroll-behavior-y:none}
 
 @media (max-width: 700px) {
   .global-language-switcher > svg { display: none; }
-  .global-language-switcher button { min-height: 30px; padding: 4px 7px; font-size: 10px; }
+  .global-language-switcher button { min-height: 30px; padding: 4px 7px; font-size:12px; }
 }
 
 /* Shared POS shell polish: consistent controls, readable Myanmar text and safe overflow. */

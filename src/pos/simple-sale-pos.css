@@ -115,7 +115,7 @@
   align-items:center;
   gap:5px;
   color:var(--compact-muted);
-  font-size:11px;
+  font-size:12px;
   white-space:nowrap;
 }
 
@@ -129,7 +129,7 @@
   border-radius:999px;
   background:#fff;
   color:var(--compact-muted);
-  font-size:10px;
+  font-size:12px;
   font-weight:800;
   cursor:pointer;
 }
@@ -157,7 +157,7 @@
   border-radius:999px;
   background:#f8fbf9;
   color:var(--compact-muted);
-  font-size:11px;
+  font-size:12px;
   font-weight:800;
   cursor:pointer;
 }
@@ -212,7 +212,7 @@
 
 .compact-pos-product-name{
   min-height:30px;
-  font-size:11px;
+  font-size:12px;
   line-height:1.4;
   font-weight:800;
 }
@@ -292,7 +292,7 @@
   background:var(--compact-accent);
   color:#fff;
   text-align:center;
-  font-size:10px;
+  font-size:12px;
 }
 
 .compact-pos-cart-head>button{
@@ -305,7 +305,7 @@
   border-radius:8px;
   background:#fff;
   color:var(--compact-danger);
-  font-size:10px;
+  font-size:12px;
   font-weight:800;
   cursor:pointer;
 }
@@ -365,7 +365,7 @@
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  font-size:10px;
+  font-size:12px;
   line-height:1.35;
 }
 
@@ -390,7 +390,7 @@
   color:var(--compact-text);
   text-align:center;
   font:inherit;
-  font-size:10px;
+  font-size:12px;
   font-weight:800;
 }
 
@@ -439,12 +439,12 @@
 .compact-pos-qty b{
   min-width:18px;
   text-align:center;
-  font-size:10px;
+  font-size:12px;
 }
 
 .compact-pos-cart-row>strong{
   text-align:right;
-  font-size:10px;
+  font-size:12px;
 }
 
 .compact-pos-cart-empty{
@@ -462,7 +462,7 @@
 }
 
 .compact-pos-cart-empty p{
-  font-size:10px;
+  font-size:12px;
 }
 
 .compact-pos-summary{
@@ -477,7 +477,7 @@
   gap:12px;
   margin-bottom:4px;
   color:var(--compact-muted);
-  font-size:10px;
+  font-size:12px;
 }
 
 .compact-pos-summary>div b{
@@ -553,7 +553,7 @@
   background:#fff;
   color:var(--compact-text);
   font:inherit;
-  font-size:10px;
+  font-size:12px;
 }
 
 .compact-pos-credit-fields{
@@ -600,7 +600,7 @@
   border-radius:999px;
   color:#fff;
   text-align:center;
-  font-size:10px;
+  font-size:12px;
   font-weight:900;
   box-shadow:0 10px 28px rgba(15,23,42,.16);
 }

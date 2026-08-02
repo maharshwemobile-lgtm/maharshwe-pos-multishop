@@ -5,7 +5,7 @@
   border-radius: 8px;
   background: #f0fdfa;
   color: #0f766e;
-  font-size: 11px;
+  font-size:12px;
   font-weight: 800;
 }
 
@@ -49,7 +49,7 @@
 .expense-category-modal p,
 .expense-category-list small {
   color: #64748b;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .expense-category-add {

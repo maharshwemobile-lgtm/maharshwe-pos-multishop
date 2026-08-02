@@ -43,3 +43,10 @@ body,
 body * {
   font-weight: 400 !important;
 }
+
+/* A bare <small> inherits 0.8em from the browser, so one nested inside a 13px
+   cell lands near 10px. Give every unstyled small a readable floor —
+   components that set their own size still win on specificity. */
+small {
+  font-size: var(--font-size-caption);
+}

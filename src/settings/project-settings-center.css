@@ -18,7 +18,7 @@
 .psc-header-eyebrow {
   display: block;
   color: #16a34a;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 900;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -123,7 +123,7 @@
   flex-shrink: 0;
 }
 .psc-panel-head-text h3 { margin: 0; font-size: 14px; color: #0f172a; }
-.psc-panel-head-text p  { margin: 2px 0 0; font-size: 10px; color: #64748b; line-height: 1.5; }
+.psc-panel-head-text p  { margin: 2px 0 0; font-size:12px; color: #64748b; line-height: 1.5; }
 .psc-icon-btn {
   display: grid;
   place-items: center;
@@ -146,7 +146,7 @@
 .psc-field { display: flex; flex-direction: column; gap: 5px; }
 .psc-field > span {
   color: #64748b;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -178,7 +178,7 @@
 .psc-field select:disabled,
 .psc-field textarea:disabled  { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
 .psc-field input[readonly]    { background: #f8fafc; color: #94a3b8; }
-.psc-field small { color: #94a3b8; font-size: 10px; line-height: 1.5; }
+.psc-field small { color: #94a3b8; font-size:12px; line-height: 1.5; }
 
 /* ── Sub-divider within form ────────────────────────────────── */
 .psc-divider {
@@ -187,7 +187,7 @@
   gap: 10px;
   grid-column: 1 / -1;
   color: #94a3b8;
-  font-size: 10px;
+  font-size:12px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: .08em;
@@ -210,7 +210,7 @@
 }
 .psc-toggle-text      { display: grid; gap: 2px; min-width: 0; }
 .psc-toggle-text b    { font-size: 13px; color: #334155; display: block; }
-.psc-toggle-text small{ font-size: 10px; color: #94a3b8; line-height: 1.4; display: block; }
+.psc-toggle-text small{ font-size:12px; color: #94a3b8; line-height: 1.4; display: block; }
 .psc-toggle input[type="checkbox"] {
   width: 40px; height: 22px; flex-shrink: 0;
   accent-color: #16a34a; cursor: pointer;
@@ -259,22 +259,22 @@
 .psc-lic-card.warning { background:#fffbeb; border-color:#fde68a; color:#92400e; }
 .psc-lic-card.danger  { background:#fff1f2; border-color:#fecdd3; color:#9f1239; }
 .psc-lic-status       { display:flex; align-items:center; gap:10px; }
-.psc-lic-status small { display:block; font-size:10px; text-transform:uppercase; font-weight:900; opacity:.75; }
+.psc-lic-status small { display:block; font-size:12px; text-transform:uppercase; font-weight:900; opacity:.75; }
 .psc-lic-status b     { display:block; margin-top:3px; font-size:14px; }
 .psc-lic-bar          { height:6px; margin:10px 0 6px; border-radius:999px; background:#e2e8f0; overflow:hidden; }
 .psc-lic-bar i        { display:block; height:100%; border-radius:999px; background:#16a34a; }
-.psc-lic-meta         { display:flex; justify-content:space-between; gap:8px; font-size:11px; }
-.psc-lic-meta small   { color:#64748b; font-size:10px; }
+.psc-lic-meta         { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
+.psc-lic-meta small   { color:#64748b; font-size:12px; }
 .psc-lic-renew small,
 .psc-lic-renew b,
 .psc-lic-renew span   { display:block; }
-.psc-lic-renew small  { font-size:10px; text-transform:uppercase; font-weight:900; opacity:.75; }
+.psc-lic-renew small  { font-size:12px; text-transform:uppercase; font-weight:900; opacity:.75; }
 .psc-lic-renew b      { margin:4px 0; font-size:14px; color:#0f172a; }
 .psc-lic-renew button {
   min-height:34px; border:0; border-radius:9px; padding:0 12px;
   background:#16a34a; color:#fff; font:inherit; font-size:12px; font-weight:800; cursor:pointer;
 }
-.psc-lic-renew span   { margin-top:5px; font-size:10px; color:#64748b; }
+.psc-lic-renew span   { margin-top:5px; font-size:12px; color:#64748b; }
 
 /* ── Slip two-column layout ─────────────────────────────────── */
 .psc-two-col     { display:grid; grid-template-columns:minmax(0,1.3fr) 280px; gap:12px; }
@@ -283,7 +283,7 @@
   width:100%; max-width:270px; margin:14px auto;
   padding:12px 12px; border:1px dashed #94a3b8;
   background:#fff; color:#111827;
-  font-family:ui-monospace,'Courier New',monospace; font-size:11px; text-align:center;
+  font-family:ui-monospace,'Courier New',monospace; font-size:12px; text-align:center;
 }
 .psc-paper.narrow  { max-width:200px; }
 .psc-paper img     { width:52px; height:52px; object-fit:contain; margin-bottom:6px; }
@@ -304,9 +304,9 @@
 }
 .psc-db-card { display:flex; align-items:center; gap:9px; padding:11px 12px; border:1px solid #e2ecf0; border-radius:10px; background:#f9fbfc; }
 .psc-db-card svg   { color:#16a34a; flex-shrink:0; }
-.psc-db-card small { display:block; font-size:10px; color:#64748b; }
+.psc-db-card small { display:block; font-size:12px; color:#64748b; }
 .psc-db-card b     { display:block; margin-top:2px; font-size:12px; }
-.psc-db-card code  { font-size:10px; word-break:break-all; color:#64748b; }
+.psc-db-card code  { font-size:12px; word-break:break-all; color:#64748b; }
 
 /* ── States ─────────────────────────────────────────────────── */
 .psc-loading,.psc-empty { display:flex; align-items:center; justify-content:center; gap:8px; min-height:180px; color:#64748b; font-size:13px; }

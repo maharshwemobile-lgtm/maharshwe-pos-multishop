@@ -1,7 +1,7 @@
 .branch-page{display:grid;gap:12px;min-width:0}
 .branch-heading,.branch-card,.branch-metrics article,.branch-denied{background:#fff;border:1px solid #e2e8f0;border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
 .branch-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:13px;padding:14px}
-.branch-heading span{font-size:11px;font-weight:950;letter-spacing:.12em;color:#16a34a}
+.branch-heading span{font-size:12px;font-weight:950;letter-spacing:.12em;color:#16a34a}
 .branch-heading h2{margin:6px 0 8px;font-size:28px}
 .branch-heading p{margin:0;max-width:900px;color:#64748b;line-height:1.6}
 .branch-heading button,.branch-card button,.branch-modal button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #dbe3ef;background:#fff;border-radius:11px;padding:9px 12px;font-weight:950;cursor:pointer;color:#334155}

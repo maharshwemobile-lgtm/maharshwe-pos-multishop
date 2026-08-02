@@ -48,7 +48,7 @@
 .push-list time,
 .push-notice {
   color: #64748b;
-  font-size: 11px;
+  font-size:12px;
 }
 
 .push-notification-menu button {
@@ -61,7 +61,7 @@
   background: #fff;
   color: #334155;
   padding: 7px 9px;
-  font-size: 11px;
+  font-size:12px;
   font-weight: 900;
   cursor: pointer;
 }
