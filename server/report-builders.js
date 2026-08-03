@@ -173,6 +173,7 @@ function buildSummary({ sales, previousSales, salePayments, repairPayments, repa
       receivable: round(receivable),
       inventoryCostValue: round(inventoryCostValue),
       inventoryRetailValue: round(inventoryRetailValue),
+      inventoryUnits: inventory.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
       lowStockCount: inventory.filter((row) => row.quantity <= row.minAlertQuantity).length,
       outOfStockCount: inventory.filter((row) => row.quantity <= 0).length,
       totalCustomers: customers.length,

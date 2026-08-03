@@ -134,7 +134,8 @@ export default function ReportsWorkspace({ onNavigate }) {
     { label: 'Sales Profit', value: money(summary.salesProfit), icon: TrendingUp, tone: 'blue', trend: summary.profitChange },
     { label: 'Payments Received', value: money(summary.totalReceived), icon: CircleDollarSign, tone: 'purple', note: miniMart.enabled ? `${summary.invoices || 0} invoices` : `${money(summary.repairReceived)} repairs` },
     { label: 'Customer Receivable', value: money(summary.receivable), icon: WalletCards, tone: 'orange', note: `${summary.owingCustomers || 0} customers` },
-    { label: 'Inventory Cost Value', value: money(summary.inventoryCostValue), icon: Boxes, tone: 'cyan', note: `${summary.lowStockCount || 0} low stock` },
+    // remaining stock: what it cost, what it is worth at retail, and how many units
+    { label: 'Stock Value', value: money(summary.inventoryCostValue), icon: Boxes, tone: 'cyan', note: `${money(summary.inventoryRetailValue)} retail · ${Number(summary.inventoryUnits || 0).toLocaleString()} units` },
     { label: 'Average Ticket', value: money(summary.averageTicket), icon: FileSpreadsheet, tone: 'red', note: `${summary.invoices || 0} invoices` },
   ], [summary, miniMart.enabled]);
 

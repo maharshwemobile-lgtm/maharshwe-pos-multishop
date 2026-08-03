@@ -494,6 +494,8 @@ Object.assign(MYANMAR, {
   Status: 'Status',
   Received: 'လက်ခံထား',
   'Payments Received': 'ရရှိငွေ',
+  'Stock Value': 'စတော့တန်ဖိုး',
+  'Inventory Cost Value': 'စတော့တန်ဖိုး',
   'Shop Slug': 'ဆိုင်ကုဒ်',
   'Logo URL': 'လိုဂို URL',
   'Payment & Numbering': 'ငွေပေးချေမှုနှင့် နံပါတ်စဉ်',
