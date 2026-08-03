@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const rateLimit = require("express-rate-limit");
 const { z } = require("zod");
 const { prisma } = require("./prisma");
-const { cleanupDemoData, seedDemoDataForShop } = require("./onboarding-demo-cleanup");
+const { cleanupDemoData } = require("./onboarding-demo-cleanup");
 
 const TOKEN_ISSUER = "maharshwe-pos";
 const DEFAULT_EXPIRES_IN = "12h";
@@ -671,16 +671,9 @@ async function maybeAutoCleanupDemoData(user) {
       return { ok: true, triggered: true, loginCount, showGuide: false, lifecycleCompleted: true, result };
     }
 
-    let seedResult = null;
-    if (loginCount === 1 && !onboarding.demoSeededAt && !lifecycleCompleted && !soldBefore) {
-      const realProductCount = await prisma.product.count({
-        where: {
-          shopId: user.shopId,
-          NOT: { OR: [{ name: { startsWith: "Demo " } }, { brand: "Demo" }] },
-        },
-      }).catch(() => 0);
-      if (realProductCount === 0) seedResult = await seedDemoDataForShop({ shopId: user.shopId, userId: user.id });
-    }
+    // Demo seeding is switched off: a new shop starts empty. cleanupDemoData
+    // still runs for any tenant that was seeded before this change.
+    const seedResult = null;
 
     await prisma.shopSettings.update({
       where: { shopId: user.shopId },

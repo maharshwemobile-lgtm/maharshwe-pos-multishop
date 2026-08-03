@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
-const { cleanupDemoData, seedDemoDataForShop } = require('./onboarding-demo-cleanup');
+const { cleanupDemoData } = require('./onboarding-demo-cleanup');
 
 const DEMO_CATEGORY_NAMES = ['Demo Phones', 'Demo Accessories'];
 const DEMO_CUSTOMER_PHONE = '09999999999';
@@ -149,15 +149,10 @@ async function seedDemoData(req) {
 function attachOnboardingDemoApi(app) {
   const guard = [requireAuth, requireShopUser, requireWritableSubscription, canManageDemo];
 
+  // Demo seeding is switched off project wide. The route stays so older clients
+  // get a clear answer instead of a 404, and cleanup below still works.
   app.post('/api/onboarding/demo-data', ...guard, async (req, res) => {
-    try {
-      await cleanupDemoData(req.auth.shopId);
-      const result = await seedDemoDataForShop({ shopId: req.auth.shopId, userId: req.auth.userId });
-      res.json({ ok: true, message: 'Demo data ထည့်ပြီးပါပြီ', result });
-    } catch (error) {
-      console.error('Demo seed failed:', error);
-      res.status(500).json({ ok: false, message: error.message || 'Demo data ထည့်မရပါ' });
-    }
+    res.status(410).json({ ok: false, message: 'Demo data ကို ရပ်ထားပါပြီ။ ဆိုင်အသစ်များ အလွတ်ကနေ စတင်ပါမည်။' });
   });
 
   app.delete('/api/onboarding/demo-data', ...guard, async (req, res) => {
