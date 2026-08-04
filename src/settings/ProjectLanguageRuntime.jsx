@@ -835,11 +835,26 @@ function normalizeMyanmarUiText(value) {
   );
 }
 
+// normalizeMyanmarUiText runs 64 regex replacements. Every matched string used
+// to pay that on every text node, every render — the same few hundred labels
+// recomputed thousands of times. The result only depends on the dictionary, so
+// compute it once per phrase.
+const myanmarPhraseCache = new Map();
+
+function myanmarPhrase(trimmed) {
+  let phrase = myanmarPhraseCache.get(trimmed);
+  if (phrase === undefined) {
+    phrase = normalizeMyanmarUiText(MYANMAR[trimmed]);
+    myanmarPhraseCache.set(trimmed, phrase);
+  }
+  return phrase;
+}
+
 function translatedText(value, language) {
   if (language === 'en') return value;
   const trimmed = value.trim();
   return MYANMAR[trimmed]
-    ? value.replace(trimmed, normalizeMyanmarUiText(MYANMAR[trimmed]))
+    ? value.replace(trimmed, myanmarPhrase(trimmed))
     : value;
 }
 
@@ -865,9 +880,34 @@ function translateAttribute(element, name, language) {
   if (current !== next) element.setAttribute(name, next);
 }
 
+// closest() walks to the root for every element and every text node, which is
+// the bulk of a language switch on a busy screen. Cache the answer per element
+// for the duration of one pass and derive children from their parent.
+let ignoreCache = new WeakMap();
+
+function resetIgnoreCache() {
+  ignoreCache = new WeakMap();
+}
+
+function isIgnored(element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+  const cached = ignoreCache.get(element);
+  if (cached !== undefined) return cached;
+  const own = element.getAttribute?.('data-i18n-ignore') === 'true';
+  const result = own || isIgnored(element.parentElement);
+  ignoreCache.set(element, result);
+  return result;
+}
+
 function translateElement(element, language) {
   if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
-  if (element.closest?.('[data-i18n-ignore="true"]')) return;
+  // cheap reject first: most elements carry none of the four attributes
+  let candidate = false;
+  for (const name of TRANSLATABLE_ATTRIBUTES) {
+    if (element.hasAttribute(name)) { candidate = true; break; }
+  }
+  if (!candidate) return;
+  if (isIgnored(element)) return;
   TRANSLATABLE_ATTRIBUTES.forEach((name) => translateAttribute(element, name, language));
  }
 
@@ -875,7 +915,7 @@ function translateNode(node, language) {
   if (!node || node.nodeType !== Node.TEXT_NODE) return;
   const parent = node.parentElement;
   if (!parent || ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'CODE', 'PRE'].includes(parent.tagName)) return;
-  if (parent.closest?.('[data-i18n-ignore="true"]')) return;
+  if (isIgnored(parent)) return;
   const current = node.nodeValue || '';
   if (/^\s*PHASE\s*\d+/i.test(current.trim())) {
     node.nodeValue = '';
@@ -900,13 +940,11 @@ function translateTree(root, language) {
   }
   if (root.nodeType !== Node.ELEMENT_NODE && root !== document.body) return;
   translateElement(root, language);
-  if (root.querySelectorAll) {
-    root.querySelectorAll('*').forEach((element) => translateElement(element, language));
-  }
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
   while (node) {
-    translateNode(node, language);
+    if (node.nodeType === Node.TEXT_NODE) translateNode(node, language);
+    else translateElement(node, language);
     node = walker.nextNode();
   }
 }
@@ -921,6 +959,7 @@ export function applyProjectLanguage(language) {
   } catch {
     // Storage can be unavailable in privacy mode.
   }
+  resetIgnoreCache();
   translateTree(document.body, selected);
   window.dispatchEvent(new CustomEvent('mahar-project-language', { detail: selected }));
 }
@@ -934,16 +973,41 @@ export default function ProjectLanguageRuntime({ children }) {
     );
     applyProjectLanguage(language);
 
+    // React commits fire many small mutations; translating each one separately
+    // re-walks the same subtrees. Collect them and run once per frame.
+    let pending = null;
+    let scheduled = false;
+    const flush = () => {
+      scheduled = false;
+      const batch = pending;
+      pending = null;
+      if (!batch) return;
+      resetIgnoreCache();
+      batch.forEach((node) => {
+        if (!node.isConnected) return;
+        if (node.nodeType === Node.TEXT_NODE) translateNode(node, language);
+        else translateTree(node, language);
+      });
+    };
+    const queue = (node) => {
+      if (!pending) pending = new Set();
+      pending.add(node);
+      if (!scheduled) {
+        scheduled = true;
+        window.requestAnimationFrame(flush);
+      }
+    };
     const observer = new MutationObserver((entries) => {
       entries.forEach((entry) => {
-        if (entry.type === 'characterData') translateNode(entry.target, language);
-        entry.addedNodes.forEach((node) => translateTree(node, language));
+        if (entry.type === 'characterData') queue(entry.target);
+        entry.addedNodes.forEach(queue);
       });
     });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
     const handleLanguage = (event) => {
       language = normalizedLanguage(event.detail);
+      resetIgnoreCache();
       translateTree(document.body, language);
     };
     window.addEventListener('mahar-project-language', handleLanguage);
