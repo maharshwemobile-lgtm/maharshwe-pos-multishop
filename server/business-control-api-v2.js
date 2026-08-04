@@ -554,12 +554,11 @@ const CATEGORY_TYPES = new Set(['income', 'expense']);
 
 async function customCategories(shopId, type) {
   await ensureBusinessControlSchema();
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT id, name FROM business_record_categories
-      WHERE shop_id=$1::uuid AND type=$2 AND active ORDER BY LOWER(name)`,
-    shopId, type,
-  ).catch(() => []);
-  return rows || [];
+  return prisma.businessRecordCategories.findMany({
+    where: { shopId, type, active: true },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  }).catch(() => []);
 }
 
 async function resolveRecordCategory(shopId, type, value) {
@@ -607,11 +606,19 @@ async function recordExpense(actor, input) {
   await prisma.$transaction(async (tx) => {
     const account = await resolveAccount(tx, actor.shopId, requestedAccountId, method);
     await applyAccountChange(tx, req, account, amount, -1, `[EXPENSE:${category}] ${note || ''}`.trim());
-    await tx.$executeRawUnsafe(
-      `INSERT INTO business_expenses (id,shop_id,expense_date,category,amount,method,money_account_id,note,created_by_id,created_at)
-       VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7::uuid,$8,$9::uuid,NOW())`,
-      id, actor.shopId, expenseDate, category, amount, method, account?.id || null, note, actor.userId,
-    );
+    await tx.businessExpenses.create({
+      data: {
+        id,
+        shopId: actor.shopId,
+        expenseDate: new Date(`${expenseDate}T00:00:00.000Z`),
+        category,
+        amount,
+        method,
+        moneyAccountId: account?.id || null,
+        note,
+        createdById: actor.userId,
+      },
+    });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
 
   await audit(req, 'BUSINESS_EXPENSE_CREATED', 'business_expense', id, { expenseDate, category, amount, method, note });
@@ -645,11 +652,20 @@ async function recordOtherIncome(actor, input) {
   await prisma.$transaction(async (tx) => {
     const account = await resolveAccount(tx, actor.shopId, requestedAccountId, method);
     await applyAccountChange(tx, req, account, amount, 1, `[OTHER_INCOME:${source}] ${note || ''}`.trim());
-    await tx.$executeRawUnsafe(
-      `INSERT INTO business_other_income (id,shop_id,income_date,category,source,amount,method,money_account_id,note,created_by_id,created_at)
-       VALUES ($1::uuid,$2::uuid,$3::date,$4,$5,$6,$7,$8::uuid,$9,$10::uuid,NOW())`,
-      id, actor.shopId, incomeDate, category, source, amount, method, account?.id || null, note, actor.userId,
-    );
+    await tx.businessOtherIncome.create({
+      data: {
+        id,
+        shopId: actor.shopId,
+        incomeDate: new Date(`${incomeDate}T00:00:00.000Z`),
+        category,
+        source,
+        amount,
+        method,
+        moneyAccountId: account?.id || null,
+        note,
+        createdById: actor.userId,
+      },
+    });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
 
   await audit(req, 'BUSINESS_OTHER_INCOME_CREATED', 'business_other_income', id, { incomeDate, category, source, amount, method, note });
@@ -697,22 +713,20 @@ function attachBusinessControlApiV2(app) {
     if (already) return res.status(200).json({ ok: true, category: already, existing: true });
 
     const id = crypto.randomUUID();
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO business_record_categories (id, shop_id, type, name, active, created_by_id, created_at)
-       VALUES ($1::uuid, $2::uuid, $3, $4, TRUE, $5::uuid, NOW())`,
-      id, req.auth.shopId, type, name, req.auth.userId,
-    );
+    await prisma.businessRecordCategories.create({
+      data: { id, shopId: req.auth.shopId, type, name, active: true, createdById: req.auth.userId },
+    });
     await audit(req, 'BUSINESS_RECORD_CATEGORY_CREATED', 'business_record_category', id, { type, name });
     res.status(201).json({ ok: true, category: { id, name } });
   }));
 
   app.delete('/api/business-control/record-categories/:id', ...write, wrap(async (req, res) => {
     const id = clean(req.params.id, 50);
-    const updated = await prisma.$executeRawUnsafe(
-      'UPDATE business_record_categories SET active=FALSE WHERE id=$1::uuid AND shop_id=$2::uuid',
-      id, req.auth.shopId,
-    );
-    if (!updated) throw new ApiError(404, 'Category not found');
+    const { count } = await prisma.businessRecordCategories.updateMany({
+      where: { id, shopId: req.auth.shopId },
+      data: { active: false },
+    });
+    if (!count) throw new ApiError(404, 'Category not found');
     await audit(req, 'BUSINESS_RECORD_CATEGORY_HIDDEN', 'business_record_category', id, {});
     res.json({ ok: true, id });
   }));
