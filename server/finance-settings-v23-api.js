@@ -35,18 +35,26 @@ const DEFAULT_INCOME_CATEGORIES = [
 ];
 
 async function ensureDefaultIncomeCategories(shopId, userId) {
-  for (let index = 0; index < DEFAULT_INCOME_CATEGORIES.length; index += 1) {
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO business_income_categories(id,shop_id,name,active,sort_order,created_by_id,created_at,updated_at)
-       VALUES($1::uuid,$2::uuid,$3,TRUE,$4,$5::uuid,NOW(),NOW())
-       ON CONFLICT DO NOTHING`,
-      crypto.randomUUID(),
+  const existing = await prisma.businessIncomeCategories.findMany({
+    where: { shopId },
+    select: { name: true },
+  });
+  const have = new Set(existing.map((row) => row.name.toLowerCase()));
+  const missing = DEFAULT_INCOME_CATEGORIES
+    .map((name, index) => ({ name, sortOrder: index + 1 }))
+    .filter((row) => !have.has(row.name.toLowerCase()));
+  if (!missing.length) return;
+  await prisma.businessIncomeCategories.createMany({
+    data: missing.map((row) => ({
+      id: crypto.randomUUID(),
       shopId,
-      DEFAULT_INCOME_CATEGORIES[index],
-      index + 1,
-      userId || null,
-    );
-  }
+      name: row.name,
+      active: true,
+      sortOrder: row.sortOrder,
+      createdById: userId || null,
+    })),
+    skipDuplicates: true,
+  });
 }
 
 function parse(schema, value) {
@@ -145,12 +153,34 @@ function attachFinanceSettingsV23Api(app) {
       await ensureExpenseCategoriesSchema();
       await ensureDefaultIncomeCategories(req.auth.shopId, req.auth.userId);
       await ensureDefaultExpenseCategories(req.auth.shopId, req.auth.userId);
-      const [methods, incomes, expenses] = await Promise.all([
-        prisma.$queryRawUnsafe(`SELECT m.id,m.name,m.code,m.kind,m.account_id AS "accountId",m.supports_money_service AS "supportsMoneyService",m.active,m.sort_order AS "sortOrder",a.balance,a.type AS "accountType"
-          FROM finance_payment_methods m LEFT JOIN money_accounts a ON a.id=m.account_id WHERE m.shop_id=$1::uuid ORDER BY m.active DESC,m.sort_order,LOWER(m.name)`, req.auth.shopId),
-        prisma.$queryRawUnsafe(`SELECT id,name,active,sort_order AS "sortOrder" FROM business_income_categories WHERE shop_id=$1::uuid ORDER BY active DESC,sort_order,LOWER(name)`, req.auth.shopId),
-        prisma.$queryRawUnsafe(`SELECT id,name,active,sort_order AS "sortOrder" FROM business_expense_categories WHERE shop_id=$1::uuid ORDER BY active DESC,sort_order,LOWER(name)`, req.auth.shopId).catch(() => []),
+      const categoryOrder = [{ active: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }];
+      const [methodRows, incomes, expenses] = await Promise.all([
+        prisma.financePaymentMethods.findMany({
+          where: { shopId: req.auth.shopId },
+          orderBy: [{ active: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
+        }),
+        prisma.businessIncomeCategories.findMany({
+          where: { shopId: req.auth.shopId },
+          select: { id: true, name: true, active: true, sortOrder: true },
+          orderBy: categoryOrder,
+        }),
+        prisma.businessExpenseCategories.findMany({
+          where: { shopId: req.auth.shopId },
+          select: { id: true, name: true, active: true, sortOrder: true },
+          orderBy: categoryOrder,
+        }).catch(() => []),
       ]);
+      // the account balance and type used to come from a LEFT JOIN
+      const accounts = await prisma.moneyAccount.findMany({
+        where: { id: { in: methodRows.map((row) => row.accountId).filter(Boolean) } },
+        select: { id: true, balance: true, type: true },
+      });
+      const accountById = new Map(accounts.map((account) => [account.id, account]));
+      const methods = methodRows.map((row) => ({
+        ...row,
+        balance: accountById.get(row.accountId)?.balance || 0,
+        accountType: accountById.get(row.accountId)?.type || null,
+      }));
       return res.json({ ok: true, paymentMethods: methods.map(paymentMethodJson), incomeCategories: incomes, expenseCategories: expenses });
     } catch (error) {
       return res.status(500).json({ ok: false, message: error.message || 'Finance settings load failed' });
@@ -164,11 +194,26 @@ function attachFinanceSettingsV23Api(app) {
       const result = await prisma.$transaction(async (tx) => {
         const account = await tx.moneyAccount.create({ data: { shopId: req.auth.shopId, name: input.name, type: accountTypeFor(input.kind, input.code), balance: input.openingBalance, active: true } });
         const id = crypto.randomUUID();
-        const rows = await tx.$queryRawUnsafe(`INSERT INTO finance_payment_methods(id,shop_id,name,code,kind,account_id,supports_money_service,active,sort_order,created_by_id,created_at,updated_at)
-          VALUES($1::uuid,$2::uuid,$3,$4,$5,$6::uuid,$7,TRUE,COALESCE((SELECT MAX(sort_order)+1 FROM finance_payment_methods WHERE shop_id=$2::uuid),1),$8::uuid,NOW(),NOW())
-          RETURNING id,name,code,kind,account_id AS "accountId",supports_money_service AS "supportsMoneyService",active,sort_order AS "sortOrder"`,
-          id, req.auth.shopId, input.name, input.code, input.kind, account.id, input.supportsMoneyService, req.auth.userId);
-        return paymentMethodJson({ ...rows[0], balance: Number(account.balance || 0), accountType: account.type });
+        const last = await tx.financePaymentMethods.findFirst({
+          where: { shopId: req.auth.shopId },
+          orderBy: { sortOrder: 'desc' },
+          select: { sortOrder: true },
+        });
+        const created = await tx.financePaymentMethods.create({
+          data: {
+            id,
+            shopId: req.auth.shopId,
+            name: input.name,
+            code: input.code,
+            kind: input.kind,
+            accountId: account.id,
+            supportsMoneyService: input.supportsMoneyService,
+            active: true,
+            sortOrder: (last?.sortOrder || 0) + 1,
+            createdById: req.auth.userId,
+          },
+        });
+        return paymentMethodJson({ ...created, balance: Number(account.balance || 0), accountType: account.type });
       });
       await audit(req, 'FINANCE_PAYMENT_METHOD_CREATED', 'finance_payment_method', result.id, { name: result.name, code: result.code, kind: result.kind });
       return res.status(201).json({ ok: true, paymentMethod: result, message: 'Payment method added' });
@@ -183,15 +228,22 @@ function attachFinanceSettingsV23Api(app) {
       await ensureSchema();
       const id = parse(uuid, req.params.id);
       const input = parse(paymentMethodUpdateSchema, req.body || {});
-      const existing = await prisma.$queryRawUnsafe('SELECT * FROM finance_payment_methods WHERE id=$1::uuid AND shop_id=$2::uuid LIMIT 1', id, req.auth.shopId);
-      if (!existing[0]) return res.status(404).json({ ok: false, message: 'Payment method not found' });
-      const rows = await prisma.$queryRawUnsafe(`UPDATE finance_payment_methods SET name=$3,active=$4,supports_money_service=$5,sort_order=$6,updated_at=NOW()
-        WHERE id=$1::uuid AND shop_id=$2::uuid RETURNING id,name,code,kind,account_id AS "accountId",supports_money_service AS "supportsMoneyService",active,sort_order AS "sortOrder"`,
-        id, req.auth.shopId, input.name ?? existing[0].name, input.active ?? existing[0].active, input.supportsMoneyService ?? existing[0].supports_money_service, input.sortOrder ?? existing[0].sort_order);
-      if (input.name && existing[0].account_id) await prisma.moneyAccount.update({ where: { id: existing[0].account_id }, data: { name: input.name } }).catch(() => {});
-      if (input.supportsMoneyService === true && existing[0].account_id) await prisma.moneyAccount.update({ where: { id: existing[0].account_id }, data: { active: true } }).catch(() => {});
-      await audit(req, 'FINANCE_PAYMENT_METHOD_UPDATED', 'finance_payment_method', id, { before: existing[0], after: rows[0] });
-      return res.json({ ok: true, paymentMethod: paymentMethodJson(rows[0]), message: 'Payment method updated' });
+      const existing = await prisma.financePaymentMethods.findFirst({ where: { id, shopId: req.auth.shopId } });
+      if (!existing) return res.status(404).json({ ok: false, message: 'Payment method not found' });
+      const updated = await prisma.financePaymentMethods.update({
+        where: { id },
+        data: {
+          name: input.name ?? existing.name,
+          active: input.active ?? existing.active,
+          supportsMoneyService: input.supportsMoneyService ?? existing.supportsMoneyService,
+          sortOrder: input.sortOrder ?? existing.sortOrder,
+          updatedAt: new Date(),
+        },
+      });
+      if (input.name && existing.accountId) await prisma.moneyAccount.update({ where: { id: existing.accountId }, data: { name: input.name } }).catch(() => {});
+      if (input.supportsMoneyService === true && existing.accountId) await prisma.moneyAccount.update({ where: { id: existing.accountId }, data: { active: true } }).catch(() => {});
+      await audit(req, 'FINANCE_PAYMENT_METHOD_UPDATED', 'finance_payment_method', id, { before: existing, after: updated });
+      return res.json({ ok: true, paymentMethod: paymentMethodJson(updated), message: 'Payment method updated' });
     } catch (error) {
       if (duplicate(error)) return res.status(409).json({ ok: false, message: 'Payment method name already exists' });
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Payment method update failed', details: error.details });
@@ -201,8 +253,13 @@ function attachFinanceSettingsV23Api(app) {
   app.delete('/api/finance/settings/payment-methods/:id', ...write, async (req, res) => {
     try {
       const id = parse(uuid, req.params.id);
-      const rows = await prisma.$queryRawUnsafe(`UPDATE finance_payment_methods SET active=FALSE,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid AND active=TRUE RETURNING id,name,account_id AS "accountId"`, id, req.auth.shopId);
-      if (!rows[0]) return res.status(404).json({ ok: false, message: 'Payment method not found or already hidden' });
+      const target = await prisma.financePaymentMethods.findFirst({
+        where: { id, shopId: req.auth.shopId, active: true },
+        select: { id: true, name: true, accountId: true },
+      });
+      if (!target) return res.status(404).json({ ok: false, message: 'Payment method not found or already hidden' });
+      await prisma.financePaymentMethods.update({ where: { id }, data: { active: false, updatedAt: new Date() } });
+      const rows = [target];
       await audit(req, 'FINANCE_PAYMENT_METHOD_ARCHIVED', 'finance_payment_method', id, { name: rows[0].name });
       return res.json({ ok: true, message: 'Payment method hidden from future selection' });
     } catch (error) {
@@ -215,11 +272,24 @@ function attachFinanceSettingsV23Api(app) {
       await ensureSchema();
       const input = parse(categorySchema, req.body || {});
       const id = crypto.randomUUID();
-      const rows = await prisma.$queryRawUnsafe(`INSERT INTO business_income_categories(id,shop_id,name,active,sort_order,created_by_id,created_at,updated_at)
-        VALUES($1::uuid,$2::uuid,$3,TRUE,COALESCE((SELECT MAX(sort_order)+1 FROM business_income_categories WHERE shop_id=$2::uuid),1),$4::uuid,NOW(),NOW())
-        RETURNING id,name,active,sort_order AS "sortOrder"`, id, req.auth.shopId, input.name, req.auth.userId);
+      const last = await prisma.businessIncomeCategories.findFirst({
+        where: { shopId: req.auth.shopId },
+        orderBy: { sortOrder: 'desc' },
+        select: { sortOrder: true },
+      });
+      const category = await prisma.businessIncomeCategories.create({
+        data: {
+          id,
+          shopId: req.auth.shopId,
+          name: input.name,
+          active: true,
+          sortOrder: (last?.sortOrder || 0) + 1,
+          createdById: req.auth.userId,
+        },
+        select: { id: true, name: true, active: true, sortOrder: true },
+      });
       await audit(req, 'INCOME_CATEGORY_CREATED', 'business_income_category', id, { name: input.name });
-      return res.status(201).json({ ok: true, category: rows[0], message: 'Income category added' });
+      return res.status(201).json({ ok: true, category, message: 'Income category added' });
     } catch (error) {
       if (duplicate(error)) return res.status(409).json({ ok: false, message: 'Income category already exists' });
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Income category add failed', details: error.details });
@@ -230,12 +300,20 @@ function attachFinanceSettingsV23Api(app) {
     try {
       const id = parse(uuid, req.params.id);
       const input = parse(categoryUpdateSchema, req.body || {});
-      const existing = await prisma.$queryRawUnsafe('SELECT * FROM business_income_categories WHERE id=$1::uuid AND shop_id=$2::uuid LIMIT 1', id, req.auth.shopId);
-      if (!existing[0]) return res.status(404).json({ ok: false, message: 'Income category not found' });
-      const rows = await prisma.$queryRawUnsafe(`UPDATE business_income_categories SET name=$3,active=$4,sort_order=$5,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid
-        RETURNING id,name,active,sort_order AS "sortOrder"`, id, req.auth.shopId, input.name ?? existing[0].name, input.active ?? existing[0].active, input.sortOrder ?? existing[0].sort_order);
-      await audit(req, 'INCOME_CATEGORY_UPDATED', 'business_income_category', id, { before: existing[0], after: rows[0] });
-      return res.json({ ok: true, category: rows[0], message: 'Income category updated' });
+      const existing = await prisma.businessIncomeCategories.findFirst({ where: { id, shopId: req.auth.shopId } });
+      if (!existing) return res.status(404).json({ ok: false, message: 'Income category not found' });
+      const category = await prisma.businessIncomeCategories.update({
+        where: { id },
+        data: {
+          name: input.name ?? existing.name,
+          active: input.active ?? existing.active,
+          sortOrder: input.sortOrder ?? existing.sortOrder,
+          updatedAt: new Date(),
+        },
+        select: { id: true, name: true, active: true, sortOrder: true },
+      });
+      await audit(req, 'INCOME_CATEGORY_UPDATED', 'business_income_category', id, { before: existing, after: category });
+      return res.json({ ok: true, category, message: 'Income category updated' });
     } catch (error) {
       if (duplicate(error)) return res.status(409).json({ ok: false, message: 'Income category already exists' });
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Income category update failed', details: error.details });
@@ -245,9 +323,13 @@ function attachFinanceSettingsV23Api(app) {
   app.delete('/api/business-control/income-categories/:id', ...write, async (req, res) => {
     try {
       const id = parse(uuid, req.params.id);
-      const rows = await prisma.$queryRawUnsafe(`UPDATE business_income_categories SET active=FALSE,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid AND active=TRUE RETURNING id,name`, id, req.auth.shopId);
-      if (!rows[0]) return res.status(404).json({ ok: false, message: 'Income category not found or already hidden' });
-      await audit(req, 'INCOME_CATEGORY_ARCHIVED', 'business_income_category', id, { name: rows[0].name });
+      const target = await prisma.businessIncomeCategories.findFirst({
+        where: { id, shopId: req.auth.shopId, active: true },
+        select: { id: true, name: true },
+      });
+      if (!target) return res.status(404).json({ ok: false, message: 'Income category not found or already hidden' });
+      await prisma.businessIncomeCategories.update({ where: { id }, data: { active: false, updatedAt: new Date() } });
+      await audit(req, 'INCOME_CATEGORY_ARCHIVED', 'business_income_category', id, { name: target.name });
       return res.json({ ok: true, message: 'Income category hidden from future selection' });
     } catch (error) {
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Income category remove failed' });
