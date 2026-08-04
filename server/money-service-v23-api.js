@@ -529,22 +529,32 @@ function attachMoneyServiceV23Api(app) {
       await seedBillers(req.auth.shopId);
       const [rates, methods, accounts, billers, staff] = await Promise.all([
         getRates(req.auth.shopId),
-        prisma.$queryRawUnsafe(`SELECT m.id,m.name,m.code,m.kind,m.account_id AS "accountId",m.supports_money_service AS "supportsMoneyService",m.active,a.type AS "accountType",a.balance
-          FROM finance_payment_methods m LEFT JOIN money_accounts a ON a.id=m.account_id WHERE m.shop_id=$1::uuid ORDER BY m.supports_money_service DESC,m.sort_order,LOWER(m.name)`, req.auth.shopId),
+        prisma.financePaymentMethods.findMany({
+          where: { shopId: req.auth.shopId },
+          orderBy: [{ supportsMoneyService: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }],
+        }),
         prisma.moneyAccount.findMany({ where: { shopId: req.auth.shopId, active: true }, select: { id: true, name: true, type: true, balance: true }, orderBy: [{ type: 'asc' }, { name: 'asc' }] }),
-        prisma.$queryRawUnsafe(`SELECT id,branch_id AS "branchId",name,type,opening_balance AS "openingBalance",current_balance AS "currentBalance",
-            sale_adjust_mode AS "saleAdjustMode",sale_adjust_percent AS "saleAdjustPercent",is_active AS "isActive",created_at AS "createdAt",updated_at AS "updatedAt"
-          FROM billers WHERE shop_id=$1::uuid ORDER BY is_active DESC,LOWER(name)`, req.auth.shopId),
+        prisma.biller.findMany({
+          where: { shopId: req.auth.shopId },
+          orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
+        }),
         prisma.user.findMany({ where: { shopId: req.auth.shopId, active: true }, select: { id: true, name: true, username: true, role: true }, orderBy: { name: 'asc' } }),
       ]);
+      // accountType and balance came from a LEFT JOIN on money_accounts
+      const accountById = new Map(accounts.map((account) => [account.id, account]));
+      const methodsWithAccount = methods.map((method) => ({
+        ...method,
+        accountType: accountById.get(method.accountId)?.type || null,
+        balance: accountById.get(method.accountId)?.balance ?? 0,
+      }));
       return res.json({
         ok: true,
         rates,
-        paymentMethods: methods.map((row) => ({
+        paymentMethods: methodsWithAccount.map((row) => ({
           ...row,
-          accountId: field(row, 'accountId', 'accountid') || null,
-          supportsMoneyService: field(row, 'supportsMoneyService', 'supportsmoneyservice') !== false,
-          accountType: field(row, 'accountType', 'accounttype') || 'OTHER',
+          accountId: row.accountId || null,
+          supportsMoneyService: row.supportsMoneyService !== false,
+          accountType: row.accountType || 'OTHER',
           balance: number(row.balance),
         })),
         accounts: accounts.map((row) => ({ ...row, balance: number(row.balance) })),
@@ -648,9 +658,17 @@ function attachMoneyServiceV23Api(app) {
             if (change) accountChanges.push(change);
           }
         }
-        await tx.$executeRawUnsafe(`UPDATE money_service_transactions_v2 SET payment_status='VOIDED',due_amount=0,
-          voided_at=NOW(),void_reason=$3,voided_by_id=$4::uuid,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid`,
-          id, req.auth.shopId, input.reason, req.auth.userId);
+        await tx.moneyServiceTransactionsV2.updateMany({
+          where: { id, shopId: req.auth.shopId },
+          data: {
+            paymentStatus: 'VOIDED',
+            dueAmount: 0,
+            voidedAt: new Date(),
+            voidReason: input.reason,
+            voidedById: req.auth.userId,
+            updatedAt: new Date(),
+          },
+        });
         return { id, transactionNumber: row.transactionNumber, mode: row.mode, amount: number(row.amount), reason: input.reason, accountChanges };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
       await audit(req, 'MONEY_SERVICE_TRANSACTION_VOIDED', id, result);
@@ -662,9 +680,10 @@ function attachMoneyServiceV23Api(app) {
   app.get('/api/billers', ...read, async (req, res) => {
     try {
       await seedBillers(req.auth.shopId);
-      const rows = await prisma.$queryRawUnsafe(`SELECT id,branch_id AS "branchId",name,type,opening_balance AS "openingBalance",current_balance AS "currentBalance",
-          sale_adjust_mode AS "saleAdjustMode",sale_adjust_percent AS "saleAdjustPercent",is_active AS "isActive",created_at AS "createdAt",updated_at AS "updatedAt"
-        FROM billers WHERE shop_id=$1::uuid ORDER BY is_active DESC,LOWER(name)`, req.auth.shopId);
+      const rows = await prisma.biller.findMany({
+        where: { shopId: req.auth.shopId },
+        orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
+      });
       return res.json({ ok: true, billers: rows.map(billerJson) });
     } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Billers load failed' }); }
   });
@@ -675,9 +694,20 @@ function attachMoneyServiceV23Api(app) {
       const input = parse(billerSchema, req.body || {});
       const id = crypto.randomUUID();
       const currentBalance = input.currentBalance ?? input.openingBalance;
-      await prisma.$executeRawUnsafe(`INSERT INTO billers(id,shop_id,branch_id,name,type,opening_balance,current_balance,is_active,sale_adjust_mode,sale_adjust_percent,created_at,updated_at)
-        VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5::"BillerType",$6,$7,$8,$9,$10,NOW(),NOW())`,
-        id, req.auth.shopId, maybeUuid(input.branchId), input.name, input.type, input.openingBalance, currentBalance, input.isActive !== false, input.saleAdjustMode || 'NONE', number(input.saleAdjustPercent));
+      await prisma.biller.create({
+        data: {
+          id,
+          shopId: req.auth.shopId,
+          branchId: maybeUuid(input.branchId),
+          name: input.name,
+          type: input.type,
+          openingBalance: input.openingBalance,
+          currentBalance,
+          isActive: input.isActive !== false,
+          saleAdjustMode: input.saleAdjustMode || 'NONE',
+          saleAdjustPercent: number(input.saleAdjustPercent),
+        },
+      });
       await audit(req, 'BILLER_CREATED', id, { name: input.name, type: input.type });
       return res.status(201).json({ ok: true, message: 'Biller created', biller: { id, ...input, currentBalance } });
     } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller create failed', details: error.details }); }
@@ -764,7 +794,10 @@ function attachMoneyServiceV23Api(app) {
         const accountId = row.paymentAccountId || row.paymentaccountid || null;
         const account = await applyPaymentAccountChange(tx, req.auth.shopId, accountId, -paidAmount);
 
-        await tx.$executeRawUnsafe('UPDATE billers SET current_balance=$3,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', row.billerId || row.billerid, req.auth.shopId, billerAfter);
+        await tx.biller.update({
+          where: { id: row.billerId || row.billerid },
+          data: { currentBalance: billerAfter, updatedAt: new Date() },
+        });
         await tx.$executeRawUnsafe(`UPDATE biller_transactions SET payment_status='VOIDED'::"PaymentStatus",voided_at=NOW(),void_reason=$3,voided_by_id=$4::uuid,updated_at=NOW()
           WHERE id=$1::uuid AND shop_id=$2::uuid`, id, req.auth.shopId, input.reason, req.auth.userId);
         return { id, billerId: row.billerId || row.billerid, billerName: row.billerName || row.billername, amount: number(row.amount), balanceRestore, billerBefore, billerAfter, paidAmount, account };
