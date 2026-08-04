@@ -157,53 +157,87 @@ function normalizeRow(type, row) {
 
 async function findRecords(shopId, options) {
   const { type, from, to, query, page, limit, exportAll = false } = options;
-  const { config, params, search } = filterSql(type, from, to, query);
-  const baseWhere = `${config.alias}.shop_id=$1::uuid AND ${config.alias}.${config.dateColumn}>=$2::date AND ${config.alias}.${config.dateColumn}<=$3::date${search}`;
-  const queryParams = [shopId, ...params];
-  const countRows = await prisma.$queryRawUnsafe(
-    `SELECT COUNT(*)::int AS count, COALESCE(SUM(${config.alias}.amount) FILTER (WHERE ${config.alias}.voided_at IS NULL),0) AS total
-       FROM ${config.table} ${config.alias}
-       LEFT JOIN money_accounts a ON a.id=${config.alias}.money_account_id AND a.shop_id=${config.alias}.shop_id
-       LEFT JOIN users u ON u.id=${config.alias}.created_by_id
-      WHERE ${baseWhere}`,
-    ...queryParams,
-  );
-  const rowLimit = exportAll ? 10000 : limit;
-  const offset = exportAll ? 0 : (page - 1) * limit;
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT ${config.alias}.id,
-            ${config.alias}.${config.dateColumn} AS "businessDate",
-            ${config.alias}.${config.titleColumn} AS title,
-            ${type === 'income' ? `${config.alias}.category,` : ''}
-            ${config.alias}.amount,
-            ${config.alias}.method,
-            ${config.alias}.money_account_id AS "moneyAccountId",
-            ${config.alias}.note,
-            ${config.alias}.voided_at AS "voidedAt",
-            ${config.alias}.void_reason AS "voidReason",
-            ${config.alias}.created_at AS "createdAt",
-            ${config.alias}.updated_at AS "updatedAt",
-            a.name AS "accountName",
-            u.name AS "createdByName",
-            u.username AS "createdByUsername",
-            v.name AS "voidedByName",
-            v.username AS "voidedByUsername"
-       FROM ${config.table} ${config.alias}
-       LEFT JOIN money_accounts a ON a.id=${config.alias}.money_account_id AND a.shop_id=${config.alias}.shop_id
-       LEFT JOIN users u ON u.id=${config.alias}.created_by_id
-       LEFT JOIN users v ON v.id=${config.alias}.voided_by_id
-      WHERE ${baseWhere}
-      ORDER BY ${config.alias}.${config.dateColumn} DESC, ${config.alias}.created_at DESC, ${config.alias}.id DESC
-      LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`,
-    ...queryParams,
-    rowLimit,
-    offset,
-  );
-  const total = Number(countRows[0]?.count || 0);
+  const income = type !== 'expense';
+  const model = income ? prisma.businessOtherIncome : prisma.businessExpenses;
+  const dateField = income ? 'incomeDate' : 'expenseDate';
+  const titleField = income ? 'source' : 'category';
+
+  const where = {
+    shopId,
+    [dateField]: { gte: new Date(`${from}T00:00:00.000Z`), lte: new Date(`${to}T00:00:00.000Z`) },
+  };
+
+  // the SQL matched the search against the joined account and user names too,
+  // so resolve those ids first and fold them into the filter
+  if (query) {
+    const term = query.toLowerCase();
+    const [accounts, users] = await Promise.all([
+      prisma.moneyAccount.findMany({ where: { shopId, name: { contains: term, mode: 'insensitive' } }, select: { id: true } }),
+      prisma.user.findMany({
+        where: { shopId, OR: [{ name: { contains: term, mode: 'insensitive' } }, { username: { contains: term, mode: 'insensitive' } }] },
+        select: { id: true },
+      }),
+    ]);
+    where.OR = [
+      { [titleField]: { contains: term, mode: 'insensitive' } },
+      { method: { contains: term, mode: 'insensitive' } },
+      { note: { contains: term, mode: 'insensitive' } },
+      ...(accounts.length ? [{ moneyAccountId: { in: accounts.map((row) => row.id) } }] : []),
+      ...(users.length ? [{ createdById: { in: users.map((row) => row.id) } }] : []),
+    ];
+  }
+
+  const [count, totals, rows] = await Promise.all([
+    model.count({ where }),
+    model.aggregate({ where: { ...where, voidedAt: null }, _sum: { amount: true } }),
+    model.findMany({
+      where,
+      orderBy: [{ [dateField]: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      take: exportAll ? 10000 : limit,
+      skip: exportAll ? 0 : (page - 1) * limit,
+    }),
+  ]);
+
+  // account and user names used to arrive through three LEFT JOINs
+  const accountIds = [...new Set(rows.map((row) => row.moneyAccountId).filter(Boolean))];
+  const userIds = [...new Set(rows.flatMap((row) => [row.createdById, row.voidedById]).filter(Boolean))];
+  const [accounts, users] = await Promise.all([
+    accountIds.length ? prisma.moneyAccount.findMany({ where: { id: { in: accountIds } }, select: { id: true, name: true } }) : [],
+    userIds.length ? prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, username: true } }) : [],
+  ]);
+  const accountById = new Map(accounts.map((row) => [row.id, row]));
+  const userById = new Map(users.map((row) => [row.id, row]));
+
+  // keep the exact shape the SQL produced so normalizeRow behaves as before
+  const shaped = rows.map((row) => {
+    const creator = userById.get(row.createdById);
+    const voider = userById.get(row.voidedById);
+    return {
+      id: row.id,
+      businessDate: row[dateField] instanceof Date ? row[dateField].toISOString() : row[dateField],
+      title: row[titleField],
+      category: row.category,
+      amount: row.amount,
+      method: row.method,
+      moneyAccountId: row.moneyAccountId,
+      note: row.note,
+      voidedAt: row.voidedAt,
+      voidReason: row.voidReason,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      accountName: accountById.get(row.moneyAccountId)?.name || null,
+      createdByName: creator?.name || null,
+      createdByUsername: creator?.username || null,
+      voidedByName: voider?.name || null,
+      voidedByUsername: voider?.username || null,
+    };
+  });
+
+  const total = Number(count || 0);
   return {
-    rows: rows.map((row) => normalizeRow(type, row)),
+    rows: shaped.map((row) => normalizeRow(type, row)),
     total,
-    totalAmount: Number(countRows[0]?.total || 0),
+    totalAmount: Number(totals._sum.amount || 0),
     totalPages: Math.max(1, Math.ceil(total / limit)),
   };
 }
