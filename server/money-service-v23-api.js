@@ -209,15 +209,27 @@ function roundFee(value, roundTo) { const step = Math.max(1, Number(roundTo || 1
 
 async function seedPaymentMethods(shopId, userId) {
   await ensureSchema();
-  const existing = await prisma.$queryRawUnsafe('SELECT COUNT(*)::int AS count FROM finance_payment_methods WHERE shop_id=$1::uuid', shopId);
-  if (Number(existing[0]?.count || 0) > 0) return;
+  const existing = await prisma.financePaymentMethods.count({ where: { shopId } });
+  if (existing > 0) return;
   const accounts = await prisma.moneyAccount.findMany({ where: { shopId, active: true }, orderBy: { createdAt: 'asc' } });
-  for (const account of accounts) {
-    const code = account.type === 'WAVE_PAY' ? 'WAVE_PAY' : account.type === 'KPAY' ? 'KPAY' : account.type === 'CASH' ? 'CASH' : account.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
-    await prisma.$executeRawUnsafe(`INSERT INTO finance_payment_methods(id,shop_id,name,code,kind,account_id,supports_money_service,active,sort_order,created_by_id,created_at,updated_at)
-      VALUES($1::uuid,$2::uuid,$3,$4,$5,$6::uuid,$7,TRUE,$8,$9::uuid,NOW(),NOW()) ON CONFLICT DO NOTHING`,
-      crypto.randomUUID(), shopId, account.name, code, account.type === 'CASH' ? 'CASH' : 'WALLET', account.id, account.type !== 'CASH', accounts.indexOf(account) + 1, userId);
-  }
+  await prisma.financePaymentMethods.createMany({
+    data: accounts.map((account, index) => ({
+      id: crypto.randomUUID(),
+      shopId,
+      name: account.name,
+      code: account.type === 'WAVE_PAY' ? 'WAVE_PAY'
+        : account.type === 'KPAY' ? 'KPAY'
+          : account.type === 'CASH' ? 'CASH'
+            : account.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_'),
+      kind: account.type === 'CASH' ? 'CASH' : 'WALLET',
+      accountId: account.id,
+      supportsMoneyService: account.type !== 'CASH',
+      active: true,
+      sortOrder: index + 1,
+      createdById: userId,
+    })),
+    skipDuplicates: true,
+  });
 }
 
 const DEFAULT_BILLERS = [
@@ -233,15 +245,22 @@ const DEFAULT_BILLERS = [
 
 async function seedBillers(shopId) {
   await ensureSchema();
-  const existing = await prisma.$queryRawUnsafe('SELECT COUNT(*)::int AS count FROM billers WHERE shop_id=$1::uuid', shopId);
-  if (Number(existing[0]?.count || 0) > 0) return;
-  for (const [name, type] of DEFAULT_BILLERS) {
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO billers(id,shop_id,name,type,opening_balance,current_balance,is_active,sale_adjust_mode,sale_adjust_percent,created_at,updated_at)
-       VALUES($1::uuid,$2::uuid,$3,$4::"BillerType",0,0,TRUE,'NONE',0,NOW(),NOW()) ON CONFLICT DO NOTHING`,
-      crypto.randomUUID(), shopId, name, type,
-    );
-  }
+  const existing = await prisma.biller.count({ where: { shopId } });
+  if (existing > 0) return;
+  await prisma.biller.createMany({
+    data: DEFAULT_BILLERS.map(([name, type]) => ({
+      id: crypto.randomUUID(),
+      shopId,
+      name,
+      type,
+      openingBalance: 0,
+      currentBalance: 0,
+      isActive: true,
+      saleAdjustMode: 'NONE',
+      saleAdjustPercent: 0,
+    })),
+    skipDuplicates: true,
+  });
 }
 
 function billerJson(row) {
@@ -335,17 +354,19 @@ async function getRates(shopId) {
 }
 
 async function getMethod(shopId, id) {
-  const rows = await prisma.$queryRawUnsafe(`SELECT m.id,m.name,m.code,m.kind,m.account_id AS "accountId",m.supports_money_service AS "supportsMoneyService",m.active,a.type AS "accountType",a.balance
-    FROM finance_payment_methods m LEFT JOIN money_accounts a ON a.id=m.account_id WHERE m.id=$1::uuid AND m.shop_id=$2::uuid LIMIT 1`, id, shopId);
-  const row = rows[0];
-  if (!row || field(row, 'supportsMoneyService', 'supportsmoneyservice') === false || !field(row, 'accountId', 'accountid')) {
+  const method = await prisma.financePaymentMethods.findFirst({ where: { id, shopId } });
+  if (!method || method.supportsMoneyService === false || !method.accountId) {
     throw new ApiError(404, 'Wallet is not enabled for Cash In / Cash Out');
   }
+  // the account type and balance used to come from a LEFT JOIN
+  const account = await prisma.moneyAccount.findUnique({
+    where: { id: method.accountId },
+    select: { type: true, balance: true },
+  });
   return {
-    ...row,
-    accountId: field(row, 'accountId', 'accountid'),
-    supportsMoneyService: field(row, 'supportsMoneyService', 'supportsmoneyservice'),
-    accountType: field(row, 'accountType', 'accounttype') || 'OTHER',
+    ...method,
+    accountType: account?.type || 'OTHER',
+    balance: account?.balance ?? 0,
   };
 }
 
@@ -484,9 +505,12 @@ async function recordBillerTransaction(actor, transactionType, body) {
       id, actor.shopId, maybeUuid(input.branchId) || biller.branchId || null, biller.id, transactionType, input.amount, balanceEffectAmount, adjustMode, adjustPercent, input.costAmount ?? null, profit,
       clean(input.customerPhone,80), clean(input.paymentMethod,80), maybeUuid(input.paymentAccountId), paymentStatus, paidAmount, dueAmount, input.dueDate || null, maybeUuid(input.staffId), clean(input.note), txDate(input.transactionDate), actor.userId);
     if (transactionType === 'OPENING') {
-      await tx.$executeRawUnsafe('UPDATE billers SET opening_balance=opening_balance+$3,current_balance=$4,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, actor.shopId, input.amount, closing);
+      await tx.biller.update({
+        where: { id: biller.id },
+        data: { openingBalance: { increment: input.amount }, currentBalance: closing, updatedAt: new Date() },
+      });
     } else {
-      await tx.$executeRawUnsafe('UPDATE billers SET current_balance=$3,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', biller.id, actor.shopId, closing);
+      await tx.biller.update({ where: { id: biller.id }, data: { currentBalance: closing, updatedAt: new Date() } });
     }
     return { id, billerId: biller.id, billerName: biller.name, transactionType, amount: input.amount, balanceEffectAmount, balanceAdjustMode: adjustMode, balanceAdjustPercent: adjustPercent, profitAmount: profit, paidAmount, dueAmount, paymentStatus, beforeBalance: current, closingBalance: closing, account };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 });
@@ -664,16 +688,24 @@ function attachMoneyServiceV23Api(app) {
       await ensureSchema();
       const id = parse(uuid, req.params.id);
       const input = parse(billerPatchSchema, req.body || {});
-      const existing = await prisma.$queryRawUnsafe('SELECT id FROM billers WHERE id=$1::uuid AND shop_id=$2::uuid LIMIT 1', id, req.auth.shopId);
-      if (!existing[0]) throw new ApiError(404, 'Biller not found');
-      await prisma.$executeRawUnsafe(`UPDATE billers SET
-        name=COALESCE($3,name),type=COALESCE($4::"BillerType",type),branch_id=$5::uuid,
-        opening_balance=COALESCE($6,opening_balance),current_balance=COALESCE($7,current_balance),
-        sale_adjust_mode=COALESCE($8,sale_adjust_mode),sale_adjust_percent=COALESCE($9,sale_adjust_percent),
-        is_active=COALESCE($10,is_active),updated_at=NOW()
-        WHERE id=$1::uuid AND shop_id=$2::uuid`,
-        id, req.auth.shopId, input.name ?? null, input.type ?? null, maybeUuid(input.branchId), input.openingBalance ?? null, input.currentBalance ?? null,
-        input.saleAdjustMode ?? null, input.saleAdjustPercent ?? null, input.isActive ?? null);
+      const existing = await prisma.biller.findFirst({ where: { id, shopId: req.auth.shopId }, select: { id: true } });
+      if (!existing) throw new ApiError(404, 'Biller not found');
+      // COALESCE kept the stored value when a field was absent; undefined does
+      // the same in Prisma, so only the supplied fields are written
+      await prisma.biller.update({
+        where: { id },
+        data: {
+          name: input.name ?? undefined,
+          type: input.type ?? undefined,
+          branchId: maybeUuid(input.branchId),
+          openingBalance: input.openingBalance ?? undefined,
+          currentBalance: input.currentBalance ?? undefined,
+          saleAdjustMode: input.saleAdjustMode ?? undefined,
+          saleAdjustPercent: input.saleAdjustPercent ?? undefined,
+          isActive: input.isActive ?? undefined,
+          updatedAt: new Date(),
+        },
+      });
       await audit(req, 'BILLER_UPDATED', id, input);
       return res.json({ ok: true, message: 'Biller updated' });
     } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller update failed', details: error.details }); }
@@ -682,8 +714,11 @@ function attachMoneyServiceV23Api(app) {
   app.delete('/api/billers/:id', ...write, async (req, res) => {
     try {
       const id = parse(uuid, req.params.id);
-      const result = await prisma.$executeRawUnsafe('UPDATE billers SET is_active=FALSE,updated_at=NOW() WHERE id=$1::uuid AND shop_id=$2::uuid', id, req.auth.shopId);
-      if (!result) throw new ApiError(404, 'Biller not found');
+      const { count } = await prisma.biller.updateMany({
+        where: { id, shopId: req.auth.shopId },
+        data: { isActive: false, updatedAt: new Date() },
+      });
+      if (!count) throw new ApiError(404, 'Biller not found');
       await audit(req, 'BILLER_DEACTIVATED', id, {});
       return res.json({ ok: true, message: 'Biller deactivated' });
     } catch (error) { return res.status(error.status || 500).json({ ok: false, message: error.message || 'Biller deactivate failed' }); }
