@@ -326,29 +326,27 @@ const SESSION_MAX_AGE_MINUTES = 30;
 
 async function getSession(shopId, chatId) {
   await ensureSessionSchema();
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT flow, step, data FROM telegram_chat_sessions
-      WHERE shop_id=$1::uuid AND chat_id=$2
-        AND updated_at > NOW() - INTERVAL '${SESSION_MAX_AGE_MINUTES} minutes'`,
-    shopId, chatId,
-  );
-  return rows?.[0] || null;
+  const freshAfter = new Date(Date.now() - SESSION_MAX_AGE_MINUTES * 60 * 1000);
+  const row = await prisma.telegramChatSessions.findFirst({
+    where: { shopId, chatId, updatedAt: { gt: freshAfter } },
+    select: { flow: true, step: true, data: true },
+  });
+  return row || null;
 }
 
 async function setSession(shopId, chatId, flow, step, data) {
   await ensureSessionSchema();
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO telegram_chat_sessions (shop_id, chat_id, flow, step, data, updated_at)
-     VALUES ($1::uuid, $2, $3, $4, $5::jsonb, NOW())
-     ON CONFLICT (shop_id, chat_id) DO UPDATE
-       SET flow=EXCLUDED.flow, step=EXCLUDED.step, data=EXCLUDED.data, updated_at=NOW()`,
-    shopId, chatId, flow, step, JSON.stringify(data || {}),
-  );
+  const payload = { flow, step, data: data || {}, updatedAt: new Date() };
+  await prisma.telegramChatSessions.upsert({
+    where: { shopId_chatId: { shopId, chatId } },
+    create: { shopId, chatId, ...payload },
+    update: payload,
+  });
 }
 
 async function clearSession(shopId, chatId) {
   await ensureSessionSchema();
-  await prisma.$executeRawUnsafe('DELETE FROM telegram_chat_sessions WHERE shop_id=$1::uuid AND chat_id=$2', shopId, chatId);
+  await prisma.telegramChatSessions.deleteMany({ where: { shopId, chatId } });
 }
 
 const EXPENSE_CATEGORIES = [
@@ -384,37 +382,48 @@ async function walletOptions(shopId) {
   // same defaults the Money Service page seeds when it opens
   const { seedMoneyServiceDefaults } = require('./money-service-v23-api');
   await seedMoneyServiceDefaults(shopId, await shopActorUserId(shopId)).catch(() => null);
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT m.id, m.name, COALESCE(a.balance,0) AS balance
-       FROM finance_payment_methods m
-       LEFT JOIN money_accounts a ON a.id = m.account_id
-      WHERE m.shop_id=$1::uuid AND m.active AND m.supports_money_service
-        AND m.account_id IS NOT NULL AND m.kind <> 'CASH'
-      ORDER BY m.sort_order, LOWER(m.name)`,
-    shopId,
-  );
-  return (rows || []).map((row) => ({ label: `${row.name} · ${mmk(row.balance)}`, value: row.id }));
+  const methods = await prisma.financePaymentMethods.findMany({
+    where: {
+      shopId,
+      active: true,
+      supportsMoneyService: true,
+      accountId: { not: null },
+      kind: { not: 'CASH' },
+    },
+    select: { id: true, name: true, accountId: true },
+    orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+  });
+  const accounts = await prisma.moneyAccount.findMany({
+    where: { id: { in: methods.map((method) => method.accountId).filter(Boolean) } },
+    select: { id: true, balance: true },
+  });
+  const balances = new Map(accounts.map((account) => [account.id, account.balance]));
+  return methods.map((method) => ({
+    label: `${method.name} · ${mmk(balances.get(method.accountId) || 0)}`,
+    value: method.id,
+  }));
 }
 
 async function accountOptions(shopId, onlyCash) {
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT id, name, type, balance FROM money_accounts
-      WHERE shop_id=$1::uuid AND active ${onlyCash ? "AND type='CASH'" : ''}
-      ORDER BY (type='CASH') DESC, LOWER(name)`,
-    shopId,
-  );
-  return (rows || []).map((row) => ({ label: `${row.name} · ${mmk(row.balance)}`, value: row.id }));
+  const rows = await prisma.moneyAccount.findMany({
+    where: { shopId, active: true, ...(onlyCash ? { type: 'CASH' } : {}) },
+    select: { id: true, name: true, type: true, balance: true },
+    orderBy: { name: 'asc' },
+  });
+  // cash first, then the rest by name
+  const ordered = [...rows.filter((row) => row.type === 'CASH'), ...rows.filter((row) => row.type !== 'CASH')];
+  return ordered.map((row) => ({ label: `${row.name} · ${mmk(row.balance)}`, value: row.id }));
 }
 
 async function billerOptions(shopId) {
   const { seedBillerDefaults } = require('./money-service-v23-api');
   await seedBillerDefaults(shopId).catch(() => null);
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT id, name, current_balance AS balance FROM billers
-      WHERE shop_id=$1::uuid AND is_active ORDER BY LOWER(name)`,
-    shopId,
-  );
-  return (rows || []).map((row) => ({ label: `${row.name} · ${mmk(row.balance)}`, value: row.id }));
+  const rows = await prisma.biller.findMany({
+    where: { shopId, isActive: true },
+    select: { id: true, name: true, currentBalance: true },
+    orderBy: { name: 'asc' },
+  });
+  return rows.map((row) => ({ label: `${row.name} · ${mmk(row.currentBalance)}`, value: row.id }));
 }
 
 function confirmKeyboard() {

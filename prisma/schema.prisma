@@ -1045,3 +1045,667 @@ model AdminUserRole {
   @@index([role, active])
   @@map("admin_user_roles")
 }
+
+
+// ---------------------------------------------------------------------------
+// Tables the server created at runtime with CREATE TABLE IF NOT EXISTS.
+// Introspected from the live database so they can be queried through the
+// Prisma client instead of $queryRawUnsafe. Relation fields are omitted so
+// the models above stay exactly as they were.
+// ---------------------------------------------------------------------------
+
+model BusinessExpenseCategories {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  name String
+  active Boolean @default(true)
+  sortOrder Int @default(0) @map("sort_order")
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@index([shopId, active, sortOrder, name], map: "business_expense_categories_shop_active_idx")
+
+  @@map("business_expense_categories")
+}
+
+model BusinessExpenses {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  expenseDate DateTime @db.Date @map("expense_date")
+  category String
+  amount Decimal @default(0) @db.Decimal(14, 2)
+  method String @default("CASH")
+  moneyAccountId String? @db.Uuid @map("money_account_id")
+  note String?
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedById String? @db.Uuid @map("updated_by_id")
+  updatedAt DateTime? @db.Timestamptz(6) @map("updated_at")
+  voidedAt DateTime? @db.Timestamptz(6) @map("voided_at")
+  voidReason String? @map("void_reason")
+  voidedById String? @db.Uuid @map("voided_by_id")
+  @@index([shopId, expenseDate(sort: Desc), createdAt(sort: Desc)], map: "business_expenses_shop_date_idx")
+
+  @@map("business_expenses")
+}
+
+model BusinessIncomeCategories {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  name String
+  active Boolean @default(true)
+  sortOrder Int @default(0) @map("sort_order")
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@index([shopId, active, sortOrder, name], map: "business_income_categories_shop_active_idx")
+
+  @@map("business_income_categories")
+}
+
+model BusinessOtherIncome {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  incomeDate DateTime @db.Date @map("income_date")
+  source String
+  amount Decimal @default(0) @db.Decimal(14, 2)
+  method String @default("CASH")
+  moneyAccountId String? @db.Uuid @map("money_account_id")
+  note String?
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedById String? @db.Uuid @map("updated_by_id")
+  updatedAt DateTime? @db.Timestamptz(6) @map("updated_at")
+  category String @default("OTHER_INCOME")
+  voidedAt DateTime? @db.Timestamptz(6) @map("voided_at")
+  voidReason String? @map("void_reason")
+  voidedById String? @db.Uuid @map("voided_by_id")
+  @@index([shopId, incomeDate(sort: Desc), createdAt(sort: Desc)], map: "business_other_income_shop_date_idx")
+
+  @@map("business_other_income")
+}
+
+model BusinessRecordCategories {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  type String
+  name String
+  active Boolean @default(true)
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  @@map("business_record_categories")
+}
+
+model FinancePaymentMethods {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  name String
+  code String
+  kind String @default("WALLET")
+  accountId String? @db.Uuid @map("account_id")
+  supportsMoneyService Boolean @default(true) @map("supports_money_service")
+  active Boolean @default(true)
+  sortOrder Int @default(0) @map("sort_order")
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@index([shopId, active, sortOrder, name], map: "finance_payment_methods_shop_active_idx")
+
+  @@map("finance_payment_methods")
+}
+
+model GoogleSheetSyncOutbox {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  dataset String
+  action String
+  entityId String? @map("entity_id")
+  payload Json @default("{}")
+  status String @default("PENDING")
+  attempts Int @default(0)
+  lastError String? @map("last_error")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  sentAt DateTime? @db.Timestamptz(6) @map("sent_at")
+  @@index([status, createdAt], map: "google_sheet_sync_outbox_pending_idx")
+  @@index([shopId, dataset, createdAt(sort: Desc)], map: "google_sheet_sync_outbox_shop_dataset_idx")
+
+  @@map("google_sheet_sync_outbox")
+}
+
+model MoneyServicePaymentsV2 {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  transactionId String @db.Uuid @map("transaction_id")
+  paymentMethodId String? @db.Uuid @map("payment_method_id")
+  accountId String? @db.Uuid @map("account_id")
+  amount Decimal @db.Decimal(14, 2)
+  note String?
+  collectedById String? @db.Uuid @map("collected_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@index([shopId, createdAt(sort: Desc)], map: "money_service_payments_v2_shop_created_idx")
+  @@index([transactionId, createdAt(sort: Desc)], map: "money_service_payments_v2_transaction_idx")
+
+  @@map("money_service_payments_v2")
+}
+
+model MoneyServiceTransactionsV2 {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  transactionNumber String @map("transaction_number")
+  mode String
+  paymentMethodId String? @db.Uuid @map("payment_method_id")
+  cashAccountId String? @db.Uuid @map("cash_account_id")
+  walletAccountId String? @db.Uuid @map("wallet_account_id")
+  senderName String? @map("sender_name")
+  senderPhone String? @map("sender_phone")
+  receiverName String? @map("receiver_name")
+  receiverPhone String? @map("receiver_phone")
+  withdrawerName String? @map("withdrawer_name")
+  withdrawerPhone String? @map("withdrawer_phone")
+  amount Decimal @db.Decimal(14, 2)
+  feeMode String @default("AUTO") @map("fee_mode")
+  feeRate Decimal @default(0) @db.Decimal(8, 4) @map("fee_rate")
+  feeAmount Decimal @default(0) @db.Decimal(14, 2) @map("fee_amount")
+  customerPays Decimal @default(0) @db.Decimal(14, 2) @map("customer_pays")
+  customerReceives Decimal @default(0) @db.Decimal(14, 2) @map("customer_receives")
+  paymentStatus String @default("PAID") @map("payment_status")
+  paidAmount Decimal @default(0) @db.Decimal(14, 2) @map("paid_amount")
+  dueAmount Decimal @default(0) @db.Decimal(14, 2) @map("due_amount")
+  dueDate DateTime? @db.Date @map("due_date")
+  reference String?
+  note String?
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  voidedAt DateTime? @db.Timestamptz(6) @map("voided_at")
+  voidReason String? @map("void_reason")
+  voidedById String? @db.Uuid @map("voided_by_id")
+  @@unique([shopId, transactionNumber], map: "money_service_v2_shop_number_unique")
+  @@index([shopId, createdAt(sort: Desc)], map: "money_service_v2_shop_created_idx")
+  @@index([shopId, paymentStatus, dueDate, createdAt(sort: Desc)], map: "money_service_v2_shop_status_idx")
+  @@index([shopId, voidedAt, createdAt(sort: Desc)], map: "money_service_v2_shop_voided_date_idx")
+
+  @@map("money_service_transactions_v2")
+}
+
+model PartnerRepairLedger {
+  id String @id @db.Uuid
+  providerShopId String @db.Uuid @map("provider_shop_id")
+  partnerShopId String @db.Uuid @map("partner_shop_id")
+  partnerLinkId String @db.Uuid @map("partner_link_id")
+  referralId String? @db.Uuid @map("referral_id")
+  partnerRepairId String? @db.Uuid @map("partner_repair_id")
+  providerRepairId String? @db.Uuid @map("provider_repair_id")
+  partnerRepairNumber String? @map("partner_repair_number")
+  providerRepairNumber String? @map("provider_repair_number")
+  customerCharge Decimal @default(0) @db.Decimal(14, 2) @map("customer_charge")
+  providerServiceFee Decimal @default(0) @db.Decimal(14, 2) @map("provider_service_fee")
+  partsCost Decimal @default(0) @db.Decimal(14, 2) @map("parts_cost")
+  otherCost Decimal @default(0) @db.Decimal(14, 2) @map("other_cost")
+  providerDue Decimal @default(0) @db.Decimal(14, 2) @map("provider_due")
+  partnerProfit Decimal @default(0) @db.Decimal(14, 2) @map("partner_profit")
+  customerPaid Boolean @default(false) @map("customer_paid")
+  customerPaidAt DateTime? @db.Timestamptz(6) @map("customer_paid_at")
+  settlementStatus String @default("UNSETTLED") @map("settlement_status")
+  settlementId String? @db.Uuid @map("settlement_id")
+  completedAt DateTime? @db.Timestamptz(6) @map("completed_at")
+  notes String?
+  createdById String? @db.Uuid @map("created_by_id")
+  updatedById String? @db.Uuid @map("updated_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([providerShopId, partnerShopId, partnerRepairId])
+  @@unique([providerShopId, partnerShopId, providerRepairId])
+  @@index([partnerShopId, settlementStatus, completedAt(sort: Desc)], map: "partner_repair_ledger_partner_idx")
+  @@index([providerShopId, settlementStatus, completedAt(sort: Desc)], map: "partner_repair_ledger_provider_idx")
+
+  @@map("partner_repair_ledger")
+}
+
+model PartnerSettlementPayments {
+  id String @id @db.Uuid
+  settlementId String @db.Uuid @map("settlement_id")
+  providerShopId String @db.Uuid @map("provider_shop_id")
+  partnerShopId String @db.Uuid @map("partner_shop_id")
+  amount Decimal @db.Decimal(14, 2)
+  paymentMethod String @default("CASH") @map("payment_method")
+  referenceNumber String? @map("reference_number")
+  note String?
+  receivedById String? @db.Uuid @map("received_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@index([settlementId, createdAt(sort: Desc)], map: "partner_settlement_payments_settlement_idx")
+
+  @@map("partner_settlement_payments")
+}
+
+model PartnerShopLinks {
+  id String @id @db.Uuid
+  providerShopId String @db.Uuid @map("provider_shop_id")
+  partnerShopId String @db.Uuid @map("partner_shop_id")
+  partnerCode String @map("partner_code")
+  displayName String @map("display_name")
+  settlementWeekday Int @default(1) @map("settlement_weekday")
+  defaultPartnerProfitPercent Decimal @default(0) @db.Decimal(6, 2) @map("default_partner_profit_percent")
+  defaultProviderFee Decimal @default(0) @db.Decimal(14, 2) @map("default_provider_fee")
+  customerPaysPartner Boolean @default(true) @map("customer_pays_partner")
+  active Boolean @default(true)
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([providerShopId, partnerCode])
+  @@unique([providerShopId, partnerShopId])
+  @@index([partnerShopId, active], map: "partner_shop_links_partner_idx")
+  @@index([providerShopId, active, displayName], map: "partner_shop_links_provider_idx")
+
+  @@map("partner_shop_links")
+}
+
+model PartnerWeeklySettlements {
+  id String @id @db.Uuid
+  providerShopId String @db.Uuid @map("provider_shop_id")
+  partnerShopId String @db.Uuid @map("partner_shop_id")
+  partnerLinkId String @db.Uuid @map("partner_link_id")
+  settlementNumber String @map("settlement_number")
+  periodStart DateTime @db.Date @map("period_start")
+  periodEnd DateTime @db.Date @map("period_end")
+  status String @default("DRAFT")
+  totalJobs Int @default(0) @map("total_jobs")
+  customerCollected Decimal @default(0) @db.Decimal(14, 2) @map("customer_collected")
+  providerDue Decimal @default(0) @db.Decimal(14, 2) @map("provider_due")
+  partnerProfit Decimal @default(0) @db.Decimal(14, 2) @map("partner_profit")
+  partsCost Decimal @default(0) @db.Decimal(14, 2) @map("parts_cost")
+  otherCost Decimal @default(0) @db.Decimal(14, 2) @map("other_cost")
+  paidAmount Decimal @default(0) @db.Decimal(14, 2) @map("paid_amount")
+  outstandingAmount Decimal @default(0) @db.Decimal(14, 2) @map("outstanding_amount")
+  confirmedById String? @db.Uuid @map("confirmed_by_id")
+  paidById String? @db.Uuid @map("paid_by_id")
+  lockedAt DateTime? @db.Timestamptz(6) @map("locked_at")
+  confirmedAt DateTime? @db.Timestamptz(6) @map("confirmed_at")
+  paidAt DateTime? @db.Timestamptz(6) @map("paid_at")
+  notes String?
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([providerShopId, partnerShopId, periodStart, periodEnd])
+  @@unique([providerShopId, settlementNumber])
+  @@index([partnerShopId, status, periodEnd(sort: Desc)], map: "partner_weekly_settlements_partner_idx")
+  @@index([providerShopId, status, periodEnd(sort: Desc)], map: "partner_weekly_settlements_provider_idx")
+
+  @@map("partner_weekly_settlements")
+}
+
+model PurchaseOrderItems {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  purchaseOrderId String @db.Uuid @map("purchase_order_id")
+  productVariantId String @db.Uuid @map("product_variant_id")
+  productNameSnapshot String @db.VarChar(180) @map("product_name_snapshot")
+  variantNameSnapshot String? @db.VarChar(180) @map("variant_name_snapshot")
+  skuSnapshot String? @db.VarChar(100) @map("sku_snapshot")
+  orderedQuantity Int @map("ordered_quantity")
+  receivedQuantity Int @default(0) @map("received_quantity")
+  unitCost Decimal @default(0) @db.Decimal(14, 2) @map("unit_cost")
+  lineTotal Decimal @default(0) @db.Decimal(14, 2) @map("line_total")
+  note String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  returnedQuantity Int @default(0) @map("returned_quantity")
+  @@index([shopId, productVariantId])
+  @@index([shopId, purchaseOrderId])
+
+  @@map("purchase_order_items")
+}
+
+model PurchaseOrders {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  supplierId String @db.Uuid @map("supplier_id")
+  orderNumber String @db.VarChar(60) @map("order_number")
+  orderDate DateTime @db.Date @map("order_date")
+  expectedDate DateTime? @db.Date @map("expected_date")
+  status String @default("DRAFT") @db.VarChar(30)
+  notes String?
+  approvedAt DateTime? @db.Timestamptz(6) @map("approved_at")
+  approvedById String? @db.Uuid @map("approved_by_id")
+  createdById String? @db.Uuid @map("created_by_id")
+  updatedById String? @db.Uuid @map("updated_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([shopId, orderNumber])
+  @@index([shopId, status, orderDate])
+  @@index([shopId, supplierId, orderDate])
+
+  @@map("purchase_orders")
+}
+
+model PurchaseReceiptItems {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  purchaseReceiptId String @db.Uuid @map("purchase_receipt_id")
+  purchaseOrderItemId String @db.Uuid @map("purchase_order_item_id")
+  productVariantId String @db.Uuid @map("product_variant_id")
+  quantity Int
+  unitCost Decimal @default(0) @db.Decimal(14, 2) @map("unit_cost")
+  lineTotal Decimal @default(0) @db.Decimal(14, 2) @map("line_total")
+  beforeQuantity Int @map("before_quantity")
+  afterQuantity Int @map("after_quantity")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@index([shopId, purchaseReceiptId], map: "purchase_receipt_items_shop_id_receipt_idx")
+  @@index([shopId, productVariantId], map: "purchase_receipt_items_shop_id_variant_idx")
+
+  @@map("purchase_receipt_items")
+}
+
+model PurchaseReceipts {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  purchaseOrderId String @db.Uuid @map("purchase_order_id")
+  receiptNumber String @db.VarChar(60) @map("receipt_number")
+  receivedDate DateTime @db.Date @map("received_date")
+  totalAmount Decimal @default(0) @db.Decimal(14, 2) @map("total_amount")
+  note String?
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@unique([shopId, receiptNumber])
+  @@index([shopId, purchaseOrderId])
+  @@index([shopId, receivedDate])
+
+  @@map("purchase_receipts")
+}
+
+model PurchaseReturnItems {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  purchaseReturnId String @db.Uuid @map("purchase_return_id")
+  purchaseOrderItemId String @db.Uuid @map("purchase_order_item_id")
+  productVariantId String @db.Uuid @map("product_variant_id")
+  productNameSnapshot String @db.VarChar(180) @map("product_name_snapshot")
+  variantNameSnapshot String? @db.VarChar(180) @map("variant_name_snapshot")
+  skuSnapshot String? @db.VarChar(100) @map("sku_snapshot")
+  quantity Int
+  unitCost Decimal @default(0) @db.Decimal(14, 2) @map("unit_cost")
+  lineTotal Decimal @default(0) @db.Decimal(14, 2) @map("line_total")
+  beforeQuantity Int @map("before_quantity")
+  afterQuantity Int @map("after_quantity")
+  note String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@index([shopId, purchaseReturnId], map: "purchase_return_items_shop_id_return_idx")
+  @@index([shopId, productVariantId], map: "purchase_return_items_shop_id_variant_idx")
+
+  @@map("purchase_return_items")
+}
+
+model PurchaseReturns {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  supplierId String @db.Uuid @map("supplier_id")
+  purchaseOrderId String @db.Uuid @map("purchase_order_id")
+  returnNumber String @db.VarChar(60) @map("return_number")
+  returnDate DateTime @db.Date @map("return_date")
+  reason String
+  totalAmount Decimal @default(0) @db.Decimal(14, 2) @map("total_amount")
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@unique([shopId, returnNumber])
+  @@index([shopId, purchaseOrderId], map: "purchase_returns_shop_id_order_idx")
+  @@index([shopId, returnDate])
+
+  @@map("purchase_returns")
+}
+
+model RepairDevices {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  identityType String @map("identity_type")
+  identityValue String @map("identity_value")
+  identityHash String @db.Char(64) @map("identity_hash")
+  identityLast4 String? @map("identity_last4")
+  brand String?
+  model String?
+  color String?
+  notes String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([shopId, identityHash])
+  @@index([shopId, brand, model], map: "repair_devices_shop_model_idx")
+
+  @@map("repair_devices")
+}
+
+model RepairEvents {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  repairId String @db.Uuid @map("repair_id")
+  eventType String @map("event_type")
+  status String?
+  changedById String? @db.Uuid @map("changed_by_id")
+  source String @default("LOCAL")
+  note String?
+  payload Json @default("{}")
+  occurredAt DateTime @default(now()) @db.Timestamptz(6) @map("occurred_at")
+  @@index([shopId, repairId, occurredAt(sort: Desc)], map: "repair_events_timeline_idx")
+
+  @@map("repair_events")
+}
+
+model RepairNotificationQueue {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  repairId String @db.Uuid @map("repair_id")
+  notificationKey String @unique @map("notification_key")
+  channel String
+  destination String
+  eventType String @map("event_type")
+  repairStatus String? @map("repair_status")
+  title String
+  body String
+  actionUrl String? @map("action_url")
+  payload Json @default("{}")
+  state String @default("PENDING")
+  attempts Int @default(0)
+  maxAttempts Int @default(5) @map("max_attempts")
+  nextAttemptAt DateTime @default(now()) @db.Timestamptz(6) @map("next_attempt_at")
+  sentAt DateTime? @db.Timestamptz(6) @map("sent_at")
+  lastError String? @map("last_error")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@index([shopId, repairId, createdAt(sort: Desc)], map: "repair_notification_queue_repair_idx")
+  @@index([state, nextAttemptAt, createdAt], map: "repair_notification_queue_worker_idx")
+
+  @@map("repair_notification_queue")
+}
+
+model RepairPartUsages {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  repairId String @db.Uuid @map("repair_id")
+  productVariantId String @db.Uuid @map("product_variant_id")
+  quantity Int
+  unitCost Decimal @default(0) @db.Decimal(14, 2) @map("unit_cost")
+  totalCost Decimal @default(0) @db.Decimal(14, 2) @map("total_cost")
+  beforeQuantity Int @map("before_quantity")
+  afterQuantity Int @map("after_quantity")
+  note String?
+  reversedAt DateTime? @db.Timestamptz(6) @map("reversed_at")
+  reversalReason String? @map("reversal_reason")
+  createdById String? @db.Uuid @map("created_by_id")
+  reversedById String? @db.Uuid @map("reversed_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@index([shopId, repairId, createdAt], map: "repair_part_usages_shop_id_repair_idx")
+  @@index([shopId, productVariantId], map: "repair_part_usages_shop_id_variant_idx")
+
+  @@map("repair_part_usages")
+}
+
+model RepairPublicAccess {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  repairId String @db.Uuid @map("repair_id")
+  accessTokenHash String @unique @db.Char(64) @map("access_token_hash")
+  accessTokenLast4 String @db.Char(4) @map("access_token_last4")
+  active Boolean @default(true)
+  expiresAt DateTime? @db.Timestamptz(6) @map("expires_at")
+  createdById String? @db.Uuid @map("created_by_id")
+  lastViewedAt DateTime? @db.Timestamptz(6) @map("last_viewed_at")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([shopId, repairId])
+  @@index([shopId, repairId, active, expiresAt], map: "repair_public_access_lookup_idx")
+
+  @@map("repair_public_access")
+}
+
+model RepairReferrals {
+  id String @id @db.Uuid
+  sourceShopId String @db.Uuid @map("source_shop_id")
+  sourceRepairId String @db.Uuid @map("source_repair_id")
+  providerShopId String? @db.Uuid @map("provider_shop_id")
+  providerRepairId String? @db.Uuid @map("provider_repair_id")
+  providerName String? @map("provider_name")
+  providerExternalRepairId String? @map("provider_external_repair_id")
+  referralCode String @unique @map("referral_code")
+  status String @default("OPEN")
+  sharedSnapshot Json @default("{}") @map("shared_snapshot")
+  createdById String? @db.Uuid @map("created_by_id")
+  claimedById String? @db.Uuid @map("claimed_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@index([providerShopId, status, createdAt(sort: Desc)], map: "repair_referrals_provider_idx")
+  @@index([sourceShopId, sourceRepairId, createdAt(sort: Desc)], map: "repair_referrals_source_idx")
+
+  @@map("repair_referrals")
+}
+
+model RepairSequences {
+  shopId String @db.Uuid @map("shop_id")
+  period String
+  lastValue Int @default(0) @map("last_value")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@id([shopId, period])
+
+  @@map("repair_sequences")
+}
+
+model RepairWarrantyClaims {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  repairId String @db.Uuid @map("repair_id")
+  claimNumber String @map("claim_number")
+  reason String
+  status String @default("OPEN")
+  createdById String? @db.Uuid @map("created_by_id")
+  resolvedById String? @db.Uuid @map("resolved_by_id")
+  resolution String?
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  resolvedAt DateTime? @db.Timestamptz(6) @map("resolved_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([shopId, claimNumber])
+  @@index([shopId, repairId, createdAt(sort: Desc)], map: "repair_warranty_claims_repair_idx")
+
+  @@map("repair_warranty_claims")
+}
+
+model SupplierManualPayables {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  supplierId String @db.Uuid @map("supplier_id")
+  payableDate DateTime @db.Date @map("payable_date")
+  amount Decimal @default(0) @db.Decimal(14, 2)
+  note String?
+  active Boolean @default(true)
+  createdById String? @db.Uuid @map("created_by_id")
+  updatedById String? @db.Uuid @map("updated_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@index([shopId, supplierId, active, payableDate(sort: Desc)], map: "supplier_manual_payables_shop_supplier_idx")
+
+  @@map("supplier_manual_payables")
+}
+
+model SupplierPayments {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  supplierId String @db.Uuid @map("supplier_id")
+  purchaseOrderId String? @db.Uuid @map("purchase_order_id")
+  paymentNumber String @db.VarChar(60) @map("payment_number")
+  paymentDate DateTime @db.Date @map("payment_date")
+  amount Decimal @db.Decimal(14, 2)
+  method String @db.VarChar(30)
+  moneyAccountId String? @db.Uuid @map("money_account_id")
+  reference String? @db.VarChar(180)
+  note String?
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  @@unique([shopId, paymentNumber])
+  @@index([shopId, purchaseOrderId], map: "supplier_payments_shop_id_order_idx")
+  @@index([shopId, supplierId, paymentDate], map: "supplier_payments_shop_id_supplier_date_idx")
+
+  @@map("supplier_payments")
+}
+
+model Suppliers {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  supplierCode String @db.VarChar(30) @map("supplier_code")
+  name String @db.VarChar(180)
+  active Boolean @default(true)
+  createdById String? @db.Uuid @map("created_by_id")
+  updatedById String? @db.Uuid @map("updated_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([shopId, supplierCode])
+  @@index([shopId, active, name])
+
+  @@map("suppliers")
+}
+
+model TelegramChatSessions {
+  shopId String @db.Uuid @map("shop_id")
+  chatId String @map("chat_id")
+  flow String
+  step Int @default(0)
+  data Json @default("{}")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@id([shopId, chatId])
+
+  @@map("telegram_chat_sessions")
+}
+
+model TenantGoogleSheetOutbox {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  dataset String
+  action String
+  entityId String? @map("entity_id")
+  payload Json @default("{}")
+  status String @default("PENDING")
+  attempts Int @default(0)
+  lastError String? @map("last_error")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  sentAt DateTime? @db.Timestamptz(6) @map("sent_at")
+  @@index([status, createdAt], map: "tenant_google_sheet_outbox_pending_idx")
+  @@index([shopId, dataset, createdAt(sort: Desc)], map: "tenant_google_sheet_outbox_shop_idx")
+
+  @@map("tenant_google_sheet_outbox")
+}
+
+model UserAccountLinks {
+  id String @id @db.Uuid
+  shopId String @db.Uuid @map("shop_id")
+  userId String @db.Uuid @map("user_id")
+  provider String @default("GOOGLE")
+  email String
+  normalizedEmail String @map("normalized_email")
+  providerKey String? @map("provider_key")
+  active Boolean @default(true)
+  linkedAt DateTime? @db.Timestamptz(6) @map("linked_at")
+  createdById String? @db.Uuid @map("created_by_id")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @default(now()) @db.Timestamptz(6) @map("updated_at")
+  @@unique([shopId, provider, normalizedEmail])
+  @@unique([userId, provider])
+  @@index([shopId, active, normalizedEmail], map: "user_account_links_shop_active_idx")
+
+  @@map("user_account_links")
+}
