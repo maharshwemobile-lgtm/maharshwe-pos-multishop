@@ -9,13 +9,13 @@
   "theme_color": "#13a36f",
   "icons": [
     {
-      "src": "./mahar-pos-logo-192.png?v=20260716-all-brand-surfaces",
+      "src": "./mahar-pos-logo-192.png?v=20260806-logo-refresh",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./mahar-pos-logo-512.png?v=20260716-all-brand-surfaces",
+      "src": "./mahar-pos-logo-512.png?v=20260806-logo-refresh",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
