@@ -1,6 +1,6 @@
-// Telegram Quick Function: say "Hi" to the shop bot and get a keyboard with the
-// four daily areas — Repair, Customers & Credit, Money Service, Other Records.
-// Every reply is read-only and scoped to the shop the bot is linked to.
+// Telegram Quick Function: say "Hi" to the shop bot and get a keyboard for
+// recording work from the phone — money service, top-up sale and refill,
+// repair intake, expense and income. Reporting lives in the app, not here.
 const { prisma } = require('./prisma');
 
 const YANGON = 'Asia/Yangon';
@@ -14,12 +14,6 @@ function yangonDate() {
     .format(new Date());
 }
 
-const ACTIONS = [
-  { key: 'REPAIR', button: '🔧 Repair', match: ['repair', 'ပြုပြင်', 'ရီပဲယာ'] },
-  { key: 'CUSTOMERS', button: '👥 Customers', match: ['customer', 'credit', 'အကြွေး', 'ကြွေး'] },
-  { key: 'MONEY', button: '💸 Money Service', match: ['money', 'transfer', 'cash out', 'ငွေလွှဲ', 'ငွေထုတ်'] },
-  { key: 'OTHER', button: '📋 Other Records', match: ['other record', 'other', 'income', 'ဝင်ငွေ'] },
-];
 
 // Write flows — these create real records, so each one confirms before saving.
 const FLOWS = [
@@ -57,12 +51,6 @@ function matches(list, text) {
   return list.find((item) => item.match.some((keyword) => value === keyword || value.startsWith(keyword))) || null;
 }
 
-function resolveQuickAction(text) {
-  // flows are checked first: "ထွက်ငွေ မှတ်မယ်" must not fall through to a report
-  if (matches(FLOWS, text)) return '';
-  return matches(ACTIONS, text)?.key || '';
-}
-
 function resolveQuickFlow(text) {
   return matches(FLOWS, text)?.key || '';
 }
@@ -81,8 +69,6 @@ function isSkipWord(text) {
 function quickKeyboard() {
   return {
     keyboard: [
-      [{ text: ACTIONS[0].button }, { text: ACTIONS[1].button }],
-      [{ text: ACTIONS[2].button }, { text: ACTIONS[3].button }],
       [{ text: FLOWS[0].button }, { text: FLOWS[1].button }],
       [{ text: FLOWS[2].button }, { text: FLOWS[3].button }],
       [{ text: FLOWS[4].button }, { text: FLOWS[5].button }],
@@ -106,13 +92,7 @@ function menuText(shopName, statusLine) {
   return [
     `👋 ${shopName || 'Mahar POS'}`,
     '',
-    'ဘာကြည့်ချင်လဲ အောက်က ခလုတ်ကို နှိပ်ပါ:',
-    '',
-    '<b>ကြည့်ရန်</b>',
-    '🔧 Repair — ယနေ့ ပြုပြင်ရေး အခြေအနေ',
-    '👥 Customers — အကြွေးကျန် စာရင်း',
-    '💸 Money Service — ယနေ့ ငွေလွှဲ / ငွေထုတ်',
-    '📋 Other Records — ဝင်ငွေ / ထွက်ငွေ / Top-up',
+    'ဘာမှတ်ချင်လဲ အောက်က ခလုတ်ကို နှိပ်ပါ:',
     '',
     '<b>မှတ်တမ်းတင်ရန်</b>',
     '➕ ငွေလွှဲ/ငွေထုတ် — Money Service',
@@ -122,179 +102,6 @@ function menuText(shopName, statusLine) {
     '➕ အထွက် မှတ်မယ် — ထွက်ငွေ စာရင်း',
     '➕ ဝင်ငွေ မှတ်မယ် — ဝင်ငွေ စာရင်း',
     ...(statusLine ? ['', statusLine] : []),
-  ].join('\n');
-}
-
-async function repairSummary(shopId, date) {
-  const [today, open, unpaid] = await Promise.all([
-    prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS count, COALESCE(SUM(final_cost),0) AS amount
-         FROM repairs
-        WHERE shop_id=$1::uuid AND (received_at AT TIME ZONE '${YANGON}')::date=$2::date`,
-      shopId, date,
-    ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT status, COUNT(*)::int AS count
-         FROM repairs
-        WHERE shop_id=$1::uuid AND status NOT IN ('DELIVERED','CANNOT_REPAIR')
-        GROUP BY status ORDER BY status`,
-      shopId,
-    ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS count, COALESCE(SUM(GREATEST(final_cost - deposit, 0)),0) AS due
-         FROM repairs
-        WHERE shop_id=$1::uuid AND payment_status <> 'PAID' AND status <> 'CANNOT_REPAIR'`,
-      shopId,
-    ).catch(() => []),
-  ]);
-
-  const intake = today?.[0] || {};
-  const owing = unpaid?.[0] || {};
-  const statusLines = (open || []).map((row) => `• ${String(row.status).replaceAll('_', ' ')}: ${row.count}`);
-
-  return [
-    '🔧 <b>Repair — ယနေ့</b>',
-    `📅 ${date}`,
-    '',
-    `📥 ယနေ့ လက်ခံ: ${intake.count || 0} ခု (${mmk(intake.amount)})`,
-    '',
-    '🛠 လက်ရှိ ဆောင်ရွက်ဆဲ:',
-    ...(statusLines.length ? statusLines : ['• မရှိပါ']),
-    '',
-    `💰 ငွေမရသေးသည့် repair: ${owing.count || 0} ခု`,
-    `❗️ ကျန်ငွေ: ${mmk(owing.due)}`,
-  ].join('\n');
-}
-
-async function customerSummary(shopId) {
-  const [totals, top] = await Promise.all([
-    prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS count, COALESCE(SUM(balance),0) AS total
-         FROM customers WHERE shop_id=$1::uuid AND balance > 0`,
-      shopId,
-    ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT name, phone, balance FROM customers
-        WHERE shop_id=$1::uuid AND balance > 0
-        ORDER BY balance DESC LIMIT 5`,
-      shopId,
-    ).catch(() => []),
-  ]);
-
-  const row = totals?.[0] || {};
-  const lines = (top || []).map((customer, index) =>
-    `${index + 1}. ${customer.name}${customer.phone ? ` (${customer.phone})` : ''} — ${mmk(customer.balance)}`);
-
-  return [
-    '👥 <b>Customers & Credit</b>',
-    '',
-    `🧾 အကြွေးရှိသူ: ${row.count || 0} ဦး`,
-    `❗️ စုစုပေါင်း ရရန်ကျန်: ${mmk(row.total)}`,
-    '',
-    '🔝 အများဆုံး ၅ ဦး:',
-    ...(lines.length ? lines : ['• မရှိပါ']),
-  ].join('\n');
-}
-
-async function moneyServiceSummary(shopId, date) {
-  const [today, pending] = await Promise.all([
-    prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS count,
-              COALESCE(SUM(CASE WHEN mode='TRANSFER' THEN amount ELSE 0 END),0) AS transfer_amount,
-              COALESCE(SUM(CASE WHEN mode='CASH_OUT' THEN amount ELSE 0 END),0) AS cashout_amount,
-              COALESCE(SUM(fee_amount),0) AS fee
-         FROM money_service_transactions_v2
-        WHERE shop_id=$1::uuid AND voided_at IS NULL
-          AND (created_at AT TIME ZONE '${YANGON}')::date=$2::date`,
-      shopId, date,
-    ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS count, COALESCE(SUM(due_amount),0) AS due
-         FROM money_service_transactions_v2
-        WHERE shop_id=$1::uuid AND voided_at IS NULL AND due_amount > 0`,
-      shopId,
-    ).catch(() => []),
-  ]);
-
-  const row = today?.[0] || {};
-  const due = pending?.[0] || {};
-
-  return [
-    '💸 <b>Money Service — ယနေ့</b>',
-    `📅 ${date}`,
-    '',
-    `🔁 ငွေလွှဲ Transfer: ${mmk(row.transfer_amount)}`,
-    `🏧 ငွေထုတ် Cash Out: ${mmk(row.cashout_amount)}`,
-    `🧮 အရေအတွက်: ${row.count || 0} ကြိမ်`,
-    '',
-    `✅ ယနေ့ Fee ဝင်ငွေ: ${mmk(row.fee)}`,
-    `❗️ ကြွေးကျန်: ${mmk(due.due)} (${due.count || 0} ခု)`,
-  ].join('\n');
-}
-
-async function otherRecordsSummary(shopId, date) {
-  const [income, expense, sales, biller] = await Promise.all([
-    prisma.$queryRawUnsafe(
-      `SELECT category, COALESCE(SUM(amount),0) AS amount
-         FROM business_other_income
-        WHERE shop_id=$1::uuid AND income_date=$2::date
-        GROUP BY category ORDER BY category`,
-      shopId, date,
-    ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT category, COALESCE(SUM(amount),0) AS amount
-         FROM business_expenses
-        WHERE shop_id=$1::uuid AND expense_date=$2::date
-        GROUP BY category ORDER BY category`,
-      shopId, date,
-    ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS count, COALESCE(SUM(total),0) AS total, COALESCE(SUM(profit_total),0) AS profit
-         FROM sales
-        WHERE shop_id=$1::uuid AND status IN ('COMPLETED','PARTIAL_RETURN')
-          AND (sold_at AT TIME ZONE '${YANGON}')::date=$2::date`,
-      shopId, date,
-    ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT COALESCE(SUM(CASE WHEN transaction_type='SOLD' THEN amount ELSE 0 END),0) AS sold,
-              COALESCE(SUM(CASE WHEN transaction_type='SOLD' THEN profit_amount ELSE 0 END),0) AS profit,
-              COALESCE(SUM(CASE WHEN transaction_type='REFILL' THEN amount ELSE 0 END),0) AS refill
-         FROM biller_transactions
-        WHERE shop_id=$1::uuid AND voided_at IS NULL AND transaction_date::date=$2::date`,
-      shopId, date,
-    ).catch(() => []),
-  ]);
-
-  const sum = (rows) => (rows || []).reduce((total, row) => total + Number(row.amount || 0), 0);
-  const list = (rows) => (rows || []).map((row) => `• ${String(row.category).replaceAll('_', ' ')}: ${mmk(row.amount)}`);
-  const incomeTotal = sum(income);
-  const expenseTotal = sum(expense);
-  const sale = sales?.[0] || {};
-  const topup = biller?.[0] || {};
-  const topupProfit = Number(topup.profit || 0);
-
-  return [
-    '📋 <b>ယနေ့ ဝင်ငွေ / ထွက်ငွေ</b>',
-    `📅 ${date}`,
-    '',
-    '🧾 အရောင်း (Sale POS):',
-    `• ရောင်းရငွေ: ${mmk(sale.total)} (${sale.count || 0} ကြိမ်)`,
-    `• အမြတ်: ${mmk(sale.profit)}`,
-    '',
-    '📱 Top-up / Bill Eload:',
-    `• ရောင်းငွေ: ${mmk(topup.sold)}`,
-    `• အမြတ်: ${mmk(topupProfit)}`,
-    `• ဖြည့်ငွေ: ${mmk(topup.refill)}`,
-    '',
-    '📥 အခြား ဝင်ငွေ:',
-    ...(list(income).length ? list(income) : ['• မရှိပါ']),
-    `✅ အခြား ဝင်ငွေ စုစုပေါင်း: ${mmk(incomeTotal)}`,
-    '',
-    '📤 ထွက်ငွေ:',
-    ...(list(expense).length ? list(expense) : ['• မရှိပါ']),
-    `❗️ ထွက်ငွေ စုစုပေါင်း: ${mmk(expenseTotal)}`,
-    '',
-    `📊 Net (အခြားဝင်ငွေ + Top-up အမြတ် − ထွက်ငွေ): ${mmk(incomeTotal + topupProfit - expenseTotal)}`,
   ].join('\n');
 }
 
@@ -809,23 +616,12 @@ async function continueFlow(shopId, chatId, text) {
   return ask;
 }
 
-async function buildQuickReply(shopId, actionKey) {
-  const date = yangonDate();
-  if (actionKey === 'REPAIR') return repairSummary(shopId, date);
-  if (actionKey === 'CUSTOMERS') return customerSummary(shopId);
-  if (actionKey === 'MONEY') return moneyServiceSummary(shopId, date);
-  if (actionKey === 'OTHER') return otherRecordsSummary(shopId, date);
-  return '';
-}
-
 module.exports = {
   isQuickGreeting,
-  resolveQuickAction,
   resolveQuickFlow,
   isCancelWord,
   quickKeyboard,
   menuText,
-  buildQuickReply,
   startFlow,
   continueFlow,
   clearSession,

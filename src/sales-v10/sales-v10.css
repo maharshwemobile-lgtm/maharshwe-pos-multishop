@@ -137,3 +137,23 @@
   .dark .sale10-history-table tr{background:#0b1b33;border-color:#1e3555}
   .dark .sale10-history-table td:first-child,.dark .sale10-history-table td:last-child{border-color:#1e3555}
 }
+
+/* Product picker rows: the meta line used to stack up to five <small> elements,
+   so a row with a variant, unit and expiry stood twice as tall as a plain one.
+   One clipped line keeps every row the same height. */
+.sale10-product-table tbody tr { height: 56px; }
+.sale10-product-table tbody td { vertical-align: middle; }
+.sale10-product-table .stock-product-cell { align-items: center; }
+.sale10-product-meta {
+  display: block;
+  margin-top: 3px;
+  max-width: 46ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #64748b;
+  font-size: 12px;
+}
+.sale10-product-meta:empty { display: none; }
+.sale10-product-meta .sale10-expiry-warning { color: #b45309; }
+.dark .sale10-product-meta { color: #9fb0c7; }

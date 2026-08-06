@@ -54,3 +54,45 @@
 .sale10-cart-pulse { animation:sale10-cart-arrived .4s ease; }
 @keyframes sale10-cart-arrived { 0%,100%{box-shadow:0 8px 24px rgba(15,23,42,.05)} 45%{border-color:#22c55e;box-shadow:0 0 0 5px rgba(34,197,94,.16),0 12px 28px rgba(22,163,74,.18)} }
 @media(prefers-reduced-motion:reduce){.sale10-fly-to-cart{display:none}.sale10-cart-pulse{animation:none}}
+
+/* Even product cards.
+   A card with a photo used a 4/3 box while one without used a fixed 52px, and
+   the variant line only existed for some items — so cards in the same row ended
+   up wildly different heights. Same photo box for both, reserved space for the
+   name and variant, and the stock/add row pinned to the bottom. */
+.sale10-product-grid { grid-auto-rows: 1fr; align-items: stretch; }
+
+.sale10-product-grid-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sale10-grid-photo.has-image,
+.sale10-grid-photo.has-icon {
+  aspect-ratio: 4 / 3;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 0;
+}
+
+.sale10-product-grid-card > b {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.5em;
+  line-height: 1.25;
+}
+
+.sale10-product-grid-card > small {
+  display: block;
+  min-height: 1.15em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sale10-grid-card-foot { margin-top: auto; }

@@ -777,7 +777,8 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                   return <button type="button" key={item.id} className={`sale10-product-grid-card ${pickedQuantity > 0 ? 'in-cart' : ''}`} onClick={(event) => addProduct(item, event.currentTarget)}>
                     <div className={`sale10-grid-photo ${item.imageUrl ? 'has-image' : 'has-icon'}`}><ProductGridVisual item={item}/>{pickedQuantity > 0 ? <span>Cart {pickedQuantity}</span> : null}</div>
                     <b>{item.productName || 'Unnamed Product'}</b>
-                    {variantLabel(item) ? <small>{variantLabel(item)}</small> : null}
+                    {/* always render the line so cards without a variant keep the same height */}
+                    <small>{variantLabel(item)}</small>
                     <strong>{money(item.standardSellingPrice)}</strong>
                     <div className="sale10-grid-card-foot"><em className={item.available <= Number(item.minAlertQuantity || 0) ? 'low' : ''}>Stock {item.available}</em><i>+ Add</i></div>
                   </button>;
@@ -809,11 +810,16 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                         <div className="stock-product-cell">
                           <span>
                             <b>{item.productName || 'Unnamed Product'}</b>
-                            {variantLabel(item) ? <small>{variantLabel(item)}</small> : null}
-                            {pickedQuantity > 0 ? <small className="sale10-in-cart-badge">In cart · {pickedQuantity}</small> : null}
-                            {query.trim() ? <small className="sale10-search-code">SKU: {item.sku || '-'} · Barcode: {item.barcode || '-'}</small> : null}
-                            {item.unit ? <small className="sale10-unit-badge">Unit: {item.unit}</small> : null}
-                            {expiryText ? <small className="sale10-expiry-warning">{expiryText}{item.expiryDate ? ` - Exp: ${item.expiryDate}` : ''}</small> : null}
+                            {/* every detail on one line so each row is the same height */}
+                            <small className="sale10-product-meta">
+                              {[
+                                variantLabel(item),
+                                pickedQuantity > 0 ? `In cart · ${pickedQuantity}` : '',
+                                query.trim() ? `SKU: ${item.sku || '-'} · Barcode: ${item.barcode || '-'}` : '',
+                                item.unit ? `Unit: ${item.unit}` : '',
+                              ].filter(Boolean).join(' · ')}
+                              {expiryText ? <span className="sale10-expiry-warning">{`${variantLabel(item) || pickedQuantity > 0 || item.unit ? ' · ' : ''}${expiryText}${item.expiryDate ? ` - Exp: ${item.expiryDate}` : ''}`}</span> : null}
+                            </small>
                           </span>
                         </div>
                       </td>

@@ -10,12 +10,10 @@ const {
 const { buildDailyCloseReport } = require('./reports-postgres-api');
 const {
   isQuickGreeting,
-  resolveQuickAction,
   resolveQuickFlow,
   isCancelWord,
   quickKeyboard,
   menuText,
-  buildQuickReply,
   startFlow,
   continueFlow,
 } = require('./telegram-quick-menu');
@@ -379,20 +377,6 @@ async function handleBotWebhookUpdate(shopId, update) {
 
     if (isCancelWord(text)) {
       await sendBotMessage(settings.botToken, chatId, 'ℹ️ လုပ်နေတာ မရှိပါ။', quickKeyboard());
-      return;
-    }
-
-    const action = resolveQuickAction(text);
-
-    if (action) {
-      // Quick Function: answer with the live PostgreSQL summary for that area
-      let reply = '';
-      try {
-        reply = await buildQuickReply(shopId, action);
-      } catch (error) {
-        reply = `⚠️ Data ဖတ်မရပါ: ${error.message || 'unknown error'}`;
-      }
-      await sendBotMessage(settings.botToken, chatId, reply || 'No data', quickKeyboard());
       return;
     }
 
