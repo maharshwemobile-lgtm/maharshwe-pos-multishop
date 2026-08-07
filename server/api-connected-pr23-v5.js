@@ -37,4 +37,16 @@ require.cache[grandAdminStep2Path].exports = function attachGrandAdminStep2WithG
   tenantGoogleSheet.attachTenantGoogleSheetIntegrationApi(app);
 };
 
+// Same require.cache pattern the layers above use: wrap an attach function that
+// the base registry already calls, so the IMEI lookup route gets mounted too.
+const attachImeiLookupApi = require('./imei-lookup-api');
+const repairPlatformPath = require.resolve('./repair-platform-api');
+const originalRepairPlatform = require('./repair-platform-api');
+const wrappedRepairPlatform = function attachRepairPlatformWithImeiLookup(app) {
+  originalRepairPlatform(app);
+  attachImeiLookupApi(app);
+};
+Object.assign(wrappedRepairPlatform, originalRepairPlatform);
+require.cache[repairPlatformPath].exports = wrappedRepairPlatform;
+
 require('./api-connected-pr23-v4');

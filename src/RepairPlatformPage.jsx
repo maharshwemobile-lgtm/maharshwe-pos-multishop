@@ -96,6 +96,29 @@ function IntakeModal({ onClose, onSaved, notify }) {
   const [suggestions, setSuggestions] = useState({ brands: [], models: [], pairs: [] });
   const field = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const imeiHint = imeiStatus(form.imeiSerial);
+  const [imeiLookup, setImeiLookup] = useState(null);
+
+  // A full, valid IMEI identifies a model. Fill brand and model only when they
+  // are still blank — never overwrite what the technician typed.
+  useEffect(() => {
+    if (imeiHint.state !== 'valid') { setImeiLookup(null); return undefined; }
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const data = await apiFetch(`/api/imei/lookup?imei=${encodeURIComponent(form.imeiSerial)}`);
+        if (!active || !data?.found) { if (active) setImeiLookup(data?.found === false ? { found: false } : null); return; }
+        setImeiLookup(data);
+        setForm((current) => ({
+          ...current,
+          deviceBrand: current.deviceBrand?.trim() ? current.deviceBrand : (data.brand || ''),
+          deviceModel: current.deviceModel?.trim() ? current.deviceModel : (data.model || ''),
+        }));
+      } catch {
+        if (active) setImeiLookup(null);
+      }
+    }, 350);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [form.imeiSerial, imeiHint.state]);
 
   useEffect(() => {
     let mounted = true;
@@ -214,6 +237,8 @@ function IntakeModal({ onClose, onSaved, notify }) {
                 <button type="button" className="repair-imei-scan" onClick={() => setScanImei(true)} aria-label="Scan IMEI"><Camera size={16} /></button>
               </span>
               {imeiHint.message ? <small className={`repair-imei-hint ${imeiHint.state}`}>{imeiHint.message}</small> : null}
+              {imeiLookup?.found ? <small className="repair-imei-hint valid">📱 {[imeiLookup.brand, imeiLookup.model].filter(Boolean).join(' ')}{imeiLookup.source === 'history' ? ' — ဒီဆိုင်မှာ အရင်က တွေ့ဖူး' : ''}</small> : null}
+              {imeiLookup && imeiLookup.found === false ? <small className="repair-imei-hint typing">ဒီ model ကို အရင်က မမှတ်ရသေးပါ — brand/model ရိုက်ထည့်ပါ</small> : null}
             </label>
             <label>Priority<select value={form.priority} onChange={(event) => field('priority', event.target.value)}><option>NORMAL</option><option>LOW</option><option>HIGH</option><option>URGENT</option></select></label>
             <label className="span-2">Intake Condition<textarea value={form.intakeCondition} onChange={(event) => field('intakeCondition', event.target.value)} placeholder="Screen crack, water mark, body condition..." /></label>
