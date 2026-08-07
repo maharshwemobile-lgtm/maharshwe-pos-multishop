@@ -76,22 +76,50 @@ async function fromCache(tac) {
   return { brand: row.brand || '', model: row.model || '', source: 'cache' };
 }
 
-// Provider shape is configurable so the shop can point at whichever service it
-// buys: {imei} is substituted into the URL.
+// Providers disagree on everything, so the whole call is described by env:
+//
+//   IMEI_LOOKUP_URL   template with {imei}, {tac} and optionally {key}
+//   IMEI_LOOKUP_TOKEN the key; sent as a Bearer header unless {key} is in the URL
+//
+// imeicheck.com, for example:
+//   IMEI_LOOKUP_URL=https://alpha.imeicheck.com/api/modelBrandName?imei={imei}&format=json&key={key}
+function pickField(data, names) {
+  for (const name of names) {
+    const value = data?.[name] ?? data?.object?.[name] ?? data?.result?.[name];
+    if (value) return String(value).trim();
+  }
+  return '';
+}
+
 async function fromProvider(imei, tac) {
-  const url = String(process.env.IMEI_LOOKUP_URL || '').trim();
+  const template = String(process.env.IMEI_LOOKUP_URL || '').trim();
   const token = String(process.env.IMEI_LOOKUP_TOKEN || '').trim();
-  if (!url || !token) return null;
+  if (!template || !token) return null;
+
+  const usesKeyInUrl = template.includes('{key}');
+  const url = template
+    .replace('{imei}', encodeURIComponent(imei))
+    .replace('{tac}', encodeURIComponent(tac))
+    .replace('{key}', encodeURIComponent(token));
 
   try {
-    const response = await fetch(url.replace('{imei}', imei).replace('{tac}', tac), {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        ...(usesKeyInUrl ? {} : { Authorization: `Bearer ${token}` }),
+      },
       signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) return null;
     const data = await response.json();
-    const brand = String(data.brand || data.Brand || data.manufacturer || '').trim();
-    const model = String(data.model || data.Model || data.deviceName || '').trim();
+    let brand = pickField(data, ['brand', 'Brand', 'manufacturer', 'Manufacturer']);
+    let model = pickField(data, ['model', 'Model', 'deviceName', 'name', 'Name']);
+    // some services answer with a single "Brand Model" string
+    if (!brand && model.includes(' ')) {
+      const [first, ...rest] = model.split(' ');
+      brand = first;
+      model = rest.join(' ');
+    }
     if (!brand && !model) return null;
 
     await prisma.$executeRawUnsafe(
