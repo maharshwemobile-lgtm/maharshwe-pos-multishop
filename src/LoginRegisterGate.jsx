@@ -411,16 +411,16 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
           <form className="ms-login-form" onSubmit={submitLogin}>
             <label>
               <span>Email / Username</span>
-              <input value={loginForm.username} onChange={(event) => { setLoginForm({ ...loginForm, username: event.target.value }); setError(''); }} placeholder="Email address or username" autoComplete="username" autoFocus={!prefill} readOnly={!!prefill} />
+              <input id="login-username" name="username" type="text" value={loginForm.username} onChange={(event) => { setLoginForm({ ...loginForm, username: event.target.value }); setError(''); }} placeholder="Email address or username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoFocus={!prefill} />
             </label>
             <label>
               <span>Password</span>
-              <input type="password" value={loginForm.password} onChange={(event) => { setLoginForm({ ...loginForm, password: event.target.value }); setError(''); }} placeholder="••••••••" autoComplete="current-password" autoFocus={!!prefill} />
+              <input id="login-password" name="password" type="password" value={loginForm.password} onChange={(event) => { setLoginForm({ ...loginForm, password: event.target.value }); setError(''); }} placeholder="••••••••" autoComplete="current-password" autoFocus={!!prefill} />
             </label>
             {(needSlug || loginForm.shopSlug) ? (
               <label>
               <span>Shop Code / Tenant ID {needSlug ? <b>*</b> : null}</span>
-                <input value={loginForm.shopSlug} onChange={(event) => { setLoginForm({ ...loginForm, shopSlug: event.target.value }); setError(''); }} placeholder="ဥပမာ MS123456" readOnly={!!prefill && !needSlug} />
+                <input id="login-shop-slug" name="shopSlug" value={loginForm.shopSlug} onChange={(event) => { setLoginForm({ ...loginForm, shopSlug: event.target.value }); setError(''); }} placeholder="ဥပမာ MS123456" autoComplete="organization" autoCapitalize="characters" />
                 <small>Ask your shop admin or owner if you do not know it. A single-shop user can leave this blank.</small>
               </label>
             ) : null}
@@ -437,12 +437,12 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
             <label>
               <span>Email / Username <b>*</b></span>
-              <input name="username" value={registerForm.username} onChange={(event) => { setRegisterForm({ ...registerForm, username: event.target.value }); setError(''); }} placeholder="Email address or username" autoComplete="username" />
+              <input id="register-username" name="username" type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={registerForm.username} onChange={(event) => { setRegisterForm({ ...registerForm, username: event.target.value }); setError(''); }} placeholder="Email address or username" autoComplete="username" />
               <small>Use an email address or username. Sign in if the account already exists.</small>
             </label>
             <label>
               <span>Password <b>*</b></span>
-              <input type="password" name="password" value={registerForm.password} onChange={(event) => { setRegisterForm({ ...registerForm, password: event.target.value }); setError(''); }} placeholder="At least 6 characters" autoComplete="new-password" />
+              <input id="register-password" type="password" name="password" value={registerForm.password} onChange={(event) => { setRegisterForm({ ...registerForm, password: event.target.value }); setError(''); }} placeholder="At least 6 characters" autoComplete="new-password" />
             </label>
             <label>
               <span>Phone Number <em>(Optional)</em></span>

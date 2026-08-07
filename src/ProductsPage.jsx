@@ -159,13 +159,13 @@ function LoginPanel({ onLoggedIn }) {
       <p>JWT session မရှိသေးပါ။ ဆိုင်အကောင့်ဖြင့် Login ဝင်ပြီး Products API ကို ချိတ်ပါ။</p>
       <form onSubmit={submit}>
         <Field label="Shop Slug">
-          <input value={form.shopSlug} onChange={(event) => setForm({ ...form, shopSlug: event.target.value })} required />
+          <input id="products-shop-slug" name="shopSlug" autoComplete="organization" value={form.shopSlug} onChange={(event) => setForm({ ...form, shopSlug: event.target.value })} required />
         </Field>
         <Field label="Username">
-          <input value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} required />
+          <input id="products-username" name="username" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} required />
         </Field>
         <Field label="Password">
-          <input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required autoFocus />
+          <input id="products-password" name="password" type="password" autoComplete="current-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required autoFocus />
         </Field>
         {error ? <div className="p2-alert p2-alert-error">{error}</div> : null}
         <button className="primary p2-full-button" disabled={busy}>
