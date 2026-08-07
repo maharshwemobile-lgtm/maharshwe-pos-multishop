@@ -78,7 +78,7 @@
     try{
       const [shopData,productData,meData]=await Promise.all([request(API),request(`${API}/products?page=1`),request(`${API}/customer/me`).catch(()=>({customer:null}))]);
       state.store=shopData.store;hydrateProducts(productData);state.customer=meData.customer||null;
-      document.title=`${state.store.name} · Online Shop`;const manifestLink=document.getElementById('storeManifest');if(manifestLink)manifestLink.href=`${API}/manifest.webmanifest?v=shop-icon-v2`;const appleIcon=document.getElementById('storeAppleIcon');if(appleIcon)appleIcon.href=state.store.logoUrl||'/mahar-pos-logo-192.png';document.getElementById('storeAppleTitle').content=state.store.name;
+      document.title=`${state.store.name} · Online Shop`;const manifestLink=document.getElementById('storeManifest');if(manifestLink)manifestLink.href=`/shop/${encodeURIComponent(slug)}/manifest.webmanifest?v=shop-icon-v2`;const appleIcon=document.getElementById('storeAppleIcon');if(appleIcon)appleIcon.href=state.store.logoUrl||'/mahar-pos-logo-192.png';document.getElementById('storeAppleTitle').content=state.store.name;
       state.selected=new Set(state.cart.map(x=>x.variantId));await mergeServerCart();state.loading=false;startHeroCarousel();
       history.replaceState({storefront:true,tab:state.tab,detailId:null,checkout:false},'');state.historyReady=true;render();
     }catch(error){state.loading=false;state.error=error.message;render()}
