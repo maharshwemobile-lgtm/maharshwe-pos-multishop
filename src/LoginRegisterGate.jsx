@@ -61,7 +61,7 @@ function LifetimeFreePlan() {
 export default function LoginRegisterGate({ onSession, forcePasswordChange = false }) {
   const [mode, setMode] = useState('login');
   const [loginForm, setLoginForm] = useState({ username: '', password: '', shopSlug: '' });
-  const [registerForm, setRegisterForm] = useState({ shopName: '', businessType: 'PHONE_SHOP', username: '', password: '', phone: '' });
+  const [registerForm, setRegisterForm] = useState({ shopName: '', businessType: '', username: '', password: '', phone: '' });
   const [googleBusinessType, setGoogleBusinessType] = useState('PHONE_SHOP');
   const [pendingGoogleCredential, setPendingGoogleCredential] = useState('');
   const [prefill, setPrefill] = useState(null);
@@ -223,6 +223,14 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     }
   };
 
+  // Business Type is the last question: it only appears once the shop has told
+  // us who it is, so the choice is made deliberately rather than skipped past.
+  const registerBasicsComplete = Boolean(
+    registerForm.shopName.trim()
+    && registerForm.username.trim().length >= 2
+    && registerForm.password.length >= 6,
+  );
+
   const submitRegister = async (event) => {
     event.preventDefault();
     setError('');
@@ -237,6 +245,10 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     }
     if (!registerForm.password || registerForm.password.length < 6) {
       setError('Password အနည်းဆုံး ၆ လုံး ရှိရမည်။');
+      return;
+    }
+    if (!registerForm.businessType) {
+      setError('Business Type ရွေးပါ။');
       return;
     }
     setLoading(true);
@@ -257,7 +269,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       sessionStorage.setItem('pos_prefill_login', JSON.stringify(nextPrefill));
       setPrefill(nextPrefill);
       setLoginForm({ username: nextPrefill.username, password: '', shopSlug: nextPrefill.shopSlug });
-      setRegisterForm({ shopName: '', businessType: 'PHONE_SHOP', username: '', password: '', phone: '' });
+      setRegisterForm({ shopName: '', businessType: '', username: '', password: '', phone: '' });
       setSuccess(`${nextPrefill.shopName} အကောင့် ဖွင့်ပြီးပါပြီ။ Password ရိုက်ပြီး Login ဝင်ပါ။`);
       setMode('login');
     } catch (requestError) {
@@ -434,7 +446,6 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <span>Shop Name <b>*</b></span>
               <input name="shopName" value={registerForm.shopName} onChange={(event) => { setRegisterForm({ ...registerForm, shopName: event.target.value }); setError(''); }} placeholder="My Shop" autoFocus />
             </label>
-            <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
             <label>
               <span>Email / Username <b>*</b></span>
               <input id="register-username" name="username" type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={registerForm.username} onChange={(event) => { setRegisterForm({ ...registerForm, username: event.target.value }); setError(''); }} placeholder="Email address or username" autoComplete="username" />
@@ -448,7 +459,12 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <span>Phone Number <em>(Optional)</em></span>
               <input type="tel" name="phone" value={registerForm.phone} onChange={(event) => { setRegisterForm({ ...registerForm, phone: event.target.value }); setError(''); }} placeholder="09xxxxxxxxx" />
             </label>
-            <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Creating account...' : 'Create Account'}</button>
+            {registerBasicsComplete ? (
+              <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
+            ) : (
+              <p className="ms-business-type-pending">အပေါ်က အချက်အလက်များ ဖြည့်ပြီးရင် <b>Business Type</b> ရွေးရပါမယ်။</p>
+            )}
+            <button type="submit" className="ms-login-primary" disabled={loading || !registerBasicsComplete || !registerForm.businessType}>{loading ? 'Creating account...' : 'Create Account'}</button>
             <p className="ms-login-footer">Already have an account? <button type="button" onClick={() => switchMode('login')}>Sign In</button></p>
             {GOOGLE_CLIENT_ID ? (
               <>

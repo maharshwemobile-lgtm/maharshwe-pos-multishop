@@ -326,3 +326,18 @@
 .dark .ms-business-type-card small{color:#9fb0c7}
 .dark .ms-business-type-card.active{background:#102d25;border-color:#22c55e}
 @media(max-width:640px){.ms-business-type-options{grid-template-columns:1fr}}
+
+/* Shown in place of the Business Type cards until the fields above are filled */
+.ms-business-type-pending {
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ms-business-type-pending b { color: #334155; }
+.dark .ms-business-type-pending { background: #10223d; border-color: #1e3555; color: #9fb0c7; }
+.dark .ms-business-type-pending b { color: #e5eef8; }
