@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import WebBarcodeScanner from './pos/WebBarcodeScanner.jsx';
+import { cleanImei, imeiStatus } from './imeiUtils.js';
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Camera,
   Clock3,
   Fingerprint,
   History,
@@ -89,8 +92,10 @@ function IntakeModal({ onClose, onSaved, notify }) {
   const [form, setForm] = useState(blankIntake);
   const [saving, setSaving] = useState(false);
   const [showOptional, setShowOptional] = useState(false);
+  const [scanImei, setScanImei] = useState(false);
   const [suggestions, setSuggestions] = useState({ brands: [], models: [], pairs: [] });
   const field = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const imeiHint = imeiStatus(form.imeiSerial);
 
   useEffect(() => {
     let mounted = true;
@@ -197,7 +202,19 @@ function IntakeModal({ onClose, onSaved, notify }) {
           <label className="span-2">Problem<textarea value={form.problem} onChange={(event) => field('problem', event.target.value)} required /></label>
           <button className="span-2" type="button" onClick={() => setShowOptional((value) => !value)}>{showOptional ? 'Optional Details ဖျောက်မည်' : 'Optional Details ဖြည့်မည်'}</button>
           {showOptional ? <>
-            <label>IMEI / Serial<input value={form.imeiSerial} onChange={(event) => field('imeiSerial', event.target.value)} placeholder="Device history key" /></label>
+            <label>IMEI / Serial
+              <span className="repair-imei-row">
+                <input
+                  value={form.imeiSerial}
+                  onChange={(event) => field('imeiSerial', cleanImei(event.target.value))}
+                  placeholder="15 ဂဏန်း — ရိုက်ပါ သို့မဟုတ် စကန်ဖတ်ပါ"
+                  inputMode="numeric"
+                  autoComplete="off"
+                />
+                <button type="button" className="repair-imei-scan" onClick={() => setScanImei(true)} aria-label="Scan IMEI"><Camera size={16} /></button>
+              </span>
+              {imeiHint.message ? <small className={`repair-imei-hint ${imeiHint.state}`}>{imeiHint.message}</small> : null}
+            </label>
             <label>Priority<select value={form.priority} onChange={(event) => field('priority', event.target.value)}><option>NORMAL</option><option>LOW</option><option>HIGH</option><option>URGENT</option></select></label>
             <label className="span-2">Intake Condition<textarea value={form.intakeCondition} onChange={(event) => field('intakeCondition', event.target.value)} placeholder="Screen crack, water mark, body condition..." /></label>
             <label className="span-2">Included Accessories<input value={form.accessoriesText} onChange={(event) => field('accessoriesText', event.target.value)} placeholder="SIM tray, charger, case (comma separated)" /></label>
@@ -206,6 +223,7 @@ function IntakeModal({ onClose, onSaved, notify }) {
         </div>
         <footer><button type="button" onClick={onClose}>Cancel</button><button className="primary" type="submit" disabled={saving}>{saving ? <Loader2 className="repair-spin" size={18} /> : <Wrench size={18} />} Create Repair</button></footer>
       </form>
+      {scanImei ? <WebBarcodeScanner onClose={() => setScanImei(false)} onDetected={(code) => { field('imeiSerial', cleanImei(code)); setScanImei(false); }} /> : null}
     </Modal>
   );
 }
