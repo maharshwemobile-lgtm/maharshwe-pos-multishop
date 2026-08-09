@@ -94,9 +94,11 @@ function pickField(data, names) {
 async function fromProvider(imei, tac) {
   const template = String(process.env.IMEI_LOOKUP_URL || '').trim();
   const token = String(process.env.IMEI_LOOKUP_TOKEN || '').trim();
-  if (!template || !token) return null;
+  // the key is optional: some endpoints are open, most are not
+  if (!template) return null;
 
   const usesKeyInUrl = template.includes('{key}');
+  if (usesKeyInUrl && !token) return null;
   const url = template
     .replace('{imei}', encodeURIComponent(imei))
     .replace('{tac}', encodeURIComponent(tac))
@@ -106,14 +108,32 @@ async function fromProvider(imei, tac) {
     const response = await fetch(url, {
       headers: {
         Accept: 'application/json',
-        ...(usesKeyInUrl ? {} : { Authorization: `Bearer ${token}` }),
+        // a browser-ish agent: some TAC services block default fetch agents
+        'User-Agent': 'MaharPOS/1.0 (+https://app.maharshwe.shop)',
+        ...(!usesKeyInUrl && token ? { Authorization: `Bearer ${token}` } : {}),
       },
       signal: AbortSignal.timeout(8000),
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      // 403 from these services almost always means the key is missing or the
+      // caller IP is not whitelisted — say so instead of failing silently
+      console.warn(`IMEI provider returned ${response.status} for TAC ${tac}`);
+      return null;
+    }
     const data = await response.json();
+    // imeicheck answers {"status":"succes"} — their spelling, so match both
+    const status = String(data.status || data.Status || '').toLowerCase();
+    if (status && !status.startsWith('succe')) return null;
+
     let brand = pickField(data, ['brand', 'Brand', 'manufacturer', 'Manufacturer']);
-    let model = pickField(data, ['model', 'Model', 'deviceName', 'name', 'Name']);
+    // Prefer the name a customer would recognise. imeicheck returns
+    // model "XT2231-5" and name "Moto G22" — the shop wants the latter, and
+    // the part code is kept behind it for anyone who needs to be precise.
+    const friendly = pickField(data, ['name', 'Name', 'deviceName', 'modelName']);
+    const partCode = pickField(data, ['model', 'Model']);
+    let model = friendly || partCode;
+    const modelCode = friendly && partCode && friendly !== partCode ? partCode : '';
+
     // some services answer with a single "Brand Model" string
     if (!brand && model.includes(' ')) {
       const [first, ...rest] = model.split(' ');
@@ -128,7 +148,7 @@ async function fromProvider(imei, tac) {
        ON CONFLICT (tac) DO UPDATE SET brand = EXCLUDED.brand, model = EXCLUDED.model`,
       tac, brand, model,
     ).catch(() => null);
-    return { brand, model, source: 'provider' };
+    return { brand, model, modelCode, source: 'provider' };
   } catch (error) {
     console.warn('IMEI provider lookup failed:', error.message);
     return null;
@@ -150,7 +170,7 @@ function attachImeiLookupApi(app) {
         || await fromProvider(imei, tac);
 
       if (!found) {
-        return res.json({ ok: true, tac, found: false, providerConfigured: Boolean(process.env.IMEI_LOOKUP_URL && process.env.IMEI_LOOKUP_TOKEN) });
+        return res.json({ ok: true, tac, found: false, providerConfigured: Boolean(process.env.IMEI_LOOKUP_URL) });
       }
       return res.json({ ok: true, tac, found: true, ...found });
     } catch (error) {
