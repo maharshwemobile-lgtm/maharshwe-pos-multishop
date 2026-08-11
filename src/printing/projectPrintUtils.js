@@ -12,6 +12,21 @@ const REPAIR_VOUCHER_NOTICE = [
   'ဖုန်းလာရောက်ရွေးယူသူမှာ ကိုယ်တိုင်မဟုတ်ပါက လက်ခံ Voucher ပါမှသာ ဖုန်းထုတ်ပေးပါသည်။',
 ];
 
+const REPAIR_STATUS_MY = {
+  RECEIVED: 'လက်ခံပြီး',
+  CHECKING: 'စစ်ဆေးနေ',
+  IN_PROGRESS: 'ပြင်ဆင်နေ',
+  WAITING_PART: 'ပစ္စည်းစောင့်',
+  COMPLETED: 'ပြင်ပြီး',
+  CANNOT_REPAIR: 'ပြင်၍မရ',
+  DELIVERED: 'ယူသွားပြီး',
+};
+
+function repairStatusMyanmar(status) {
+  const key = String(status || '').toUpperCase();
+  return REPAIR_STATUS_MY[key] || key.replaceAll('_', ' ');
+}
+
 // Thermal printers render a dithered photo badly, so keep the QR pure black
 // and give it a wide quiet zone — that is what makes it scan off 80mm paper.
 async function qrDataUrl(text) {
@@ -63,6 +78,7 @@ function baseStyles(paperSize) {
     table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px dashed #999;vertical-align:top}th{text-align:left;font-size:10px}td small{display:block;color:#555;margin-top:2px}
     .summary{margin-top:10px}.grand{font-size:15px;font-weight:bold;border-top:2px solid #111;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #b91c1c;color:#b91c1c;font-weight:bold;text-align:center;letter-spacing:2px}
     .notice{margin-top:11px;padding:7px 8px;border:1px solid #111;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;line-height:1.5;margin-bottom:3px}
+    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #111;padding-top:4px;font-size:9px}
     .qr-block{margin-top:11px;text-align:center}.qr-block img{width:34mm;height:34mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
     .footer{margin-top:15px;padding-top:10px;border-top:1px dashed #777;text-align:center;white-space:normal}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:9px;color:#444;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#333}
     @media print{body{padding:0}.no-print{display:none!important}}
@@ -124,16 +140,29 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
   const qrBlock = qr
     ? `<div class="qr-block"><img src="${qr}" alt="Repair status QR"/><b>QR ဖတ်ပြီး ပြင်ဆင်မှု အခြေအနေ ကြည့်နိုင်ပါသည်</b></div>`
     : '';
+  // Same order as the shop's pre-printed pad, so staff read the two the same way
+  const fieldRows = [
+    ['နာမည်', repair.customerName],
+    ['ဖုန်းနံပါတ်', repair.customerPhone],
+    ['ဖုန်းအမျိုးအစား', repair.deviceBrand],
+    ['မော်ဒယ်', repair.deviceModel],
+    ['IMEI / Serial', repair.imeiSerial || repair.identityValue || repair.identityMasked],
+    ['ပြင်ရန်', repair.problem],
+    ['ဖုန်းအခြေအနေ', repair.intakeCondition],
+    ['ပါလာသောပစ္စည်း', Array.isArray(repair.accessories) ? repair.accessories.join(', ') : repair.accessories],
+    ['အခြေအနေ', repairStatusMyanmar(repair.status)],
+  ].map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value || '-')}</td></tr>`).join('');
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(repairNumber)}</title><style>${baseStyles(slip.repairPaperSize)}</style></head><body>
-    ${brandBlock(settings, 'Repair Voucher')}
+    ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
     ${slip.repairVoucherHeader ? `<p>${nl2br(slip.repairVoucherHeader)}</p>` : ''}
-    <div class="meta"><div><span>Repair ID</span><b>${escapeHtml(repairNumber)}</b></div><div><span>Received</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div><div><span>Customer</span><b>${escapeHtml(repair.customerName || '-')}</b></div>${repair.customerPhone ? `<div><span>Phone</span><b>${escapeHtml(repair.customerPhone)}</b></div>` : ''}</div>
-    <table><tbody><tr><th>Device</th><td>${escapeHtml([repair.deviceBrand, repair.deviceModel].filter(Boolean).join(' ') || '-')}</td></tr><tr><th>IMEI / Serial</th><td>${escapeHtml(repair.identityMasked || repair.imeiSerial || '-')}</td></tr><tr><th>Problem</th><td>${escapeHtml(repair.problem || '-')}</td></tr><tr><th>Condition</th><td>${escapeHtml(repair.intakeCondition || '-')}</td></tr><tr><th>Accessories</th><td>${escapeHtml(Array.isArray(repair.accessories) ? repair.accessories.join(', ') : repair.accessories || '-')}</td></tr><tr><th>Status</th><td>${escapeHtml(String(repair.status || '-').replaceAll('_', ' '))}</td></tr></tbody></table>
-    <div class="summary"><div><span>Estimated</span><b>${Number(repair.estimatedCost || 0).toLocaleString()} MMK</b></div><div><span>Deposit</span><b>${Number(repair.deposit || 0).toLocaleString()} MMK</b></div><div class="grand"><span>Balance</span><b>${Number(repair.balanceDue || Math.max(0, Number(repair.finalCost || 0) - Number(repair.deposit || 0))).toLocaleString()} MMK</b></div></div>
+    <div class="meta"><div><span>ပြင်ဆင်မှု ID</span><b>${escapeHtml(repairNumber)}</b></div><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
+    <table><tbody>${fieldRows}</tbody></table>
+    <div class="summary"><div><span>ခန့်မှန်းကျသင့်ငွေ</span><b>${Number(repair.estimatedCost || 0).toLocaleString()} ကျပ်</b></div><div><span>စရံ</span><b>${Number(repair.deposit || 0).toLocaleString()} ကျပ်</b></div><div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${Number(repair.balanceDue || Math.max(0, Number(repair.finalCost || 0) - Number(repair.deposit || 0))).toLocaleString()} ကျပ်</b></div></div>
     ${notice}
     ${qrBlock}
+    <div class="sign-row"><div><span>လက်ခံသူလက်မှတ်</span></div><div><span>ရွေးယူသူလက်မှတ်</span></div></div>
     ${business.website ? `<p class="qr-link">${escapeHtml(business.website)}</p>` : ''}
-    <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : 'Please keep this voucher.'}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
+    <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : 'ဤဘောင်ချာကို သိမ်းဆည်းထားပါ။'}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
     <script>window.onload=()=>window.print();</script></body></html>`;
   return printWindow(targetWindow, html);
 }

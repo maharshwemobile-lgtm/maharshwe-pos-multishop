@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from './phase2Api';
 import FinanceCatalogSettingsV23 from './FinanceCatalogSettingsV23.jsx';
+import MoneyServiceFeeSettingsV23 from './MoneyServiceFeeSettingsV23.jsx';
 import './money-service-center-v23.css';
 
 const EMPTY = {
@@ -967,12 +968,17 @@ export default function MoneyServiceCenterV23({ module = 'money' }) {
   };
 
   return <section className="money-service-center">
-    {billModule ? <nav className="msc-nav clean">
-      <button className={view === 'bill' ? 'active' : ''} onClick={() => setView('bill')}><Banknote size={18}/><span>Bill / Eload Sale</span></button>
-      <button className={view === 'refill' ? 'active' : ''} onClick={() => setView('refill')}><ArrowDownToLine size={18}/><span>Refill</span></button>
-      <button className={view === 'balance' ? 'active' : ''} onClick={() => setView('balance')}><Wallet size={18}/><span>Balance & Setup</span></button>
-      <button className={view === 'billerHistory' ? 'active' : ''} onClick={() => setView('billerHistory')}><History size={18}/><span>Bill / Eload History</span></button>
-    </nav> : null}
+    <nav className="msc-nav clean">
+      {billModule ? <>
+        <button className={view === 'bill' ? 'active' : ''} onClick={() => setView('bill')}><Banknote size={18}/><span>Bill / Eload Sale</span></button>
+        <button className={view === 'refill' ? 'active' : ''} onClick={() => setView('refill')}><ArrowDownToLine size={18}/><span>Refill</span></button>
+        <button className={view === 'balance' ? 'active' : ''} onClick={() => setView('balance')}><Wallet size={18}/><span>Balance & Setup</span></button>
+        <button className={view === 'billerHistory' ? 'active' : ''} onClick={() => setView('billerHistory')}><History size={18}/><span>Bill / Eload History</span></button>
+      </> : <>
+        <button className={view === 'transfer' ? 'active' : ''} onClick={() => setView('transfer')}><CircleDollarSign size={18}/><span>ငွေလွှဲ / ငွေထုတ်</span></button>
+        <button className={view === 'walletSetup' ? 'active' : ''} onClick={() => setView('walletSetup')}><Wallet size={18}/><span>Wallet Setup</span></button>
+      </>}
+    </nav>
 
     {message ? <div className="msc-message">{message}</div> : null}
 
@@ -983,7 +989,7 @@ export default function MoneyServiceCenterV23({ module = 'money' }) {
       <article className={Number(summary.totalDue || 0) > 0 ? 'warn' : ''}><span>ကြွေးကျန်</span><b>{money(summary.totalDue)}</b><small>{summary.pendingCount || 0} ခု</small></article>
     </section> : null}
 
-    {view !== 'transfer' && view !== 'billerHistory' ? <section className="msc-postgres-summary biller-only">
+    {billModule && view !== 'billerHistory' ? <section className="msc-postgres-summary biller-only">
       <article><Banknote/><span>Bill / Eload Sold Today</span><b>{money(billerTotals.sold)}</b><small>Separate from Product Sales</small></article>
       <article><ArrowDownToLine/><span>Bill / Eload Refill Today</span><b>{money(billerTotals.refill)}</b><small>Balance top-up only</small></article>
       <article><Wallet/><span>Total Biller Balance</span><b>{money(billerBalanceTotal)}</b><small>{billerRows.length} active billers</small></article>
@@ -1011,6 +1017,7 @@ export default function MoneyServiceCenterV23({ module = 'money' }) {
       <div className="msc-pagination"><button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft/></button><span>{history.total || 0} records · Page {page} / {history.totalPages || 1}</span><button disabled={page >= (history.totalPages || 1)} onClick={() => setPage(page + 1)}><ChevronRight/></button></div>
     </section> : null}
 
+    {view === 'walletSetup' ? <MoneyServiceFeeSettingsV23/> : null}
     {view === 'bill' ? <BillerSaleForm settings={settings} onSaved={refresh}/> : null}
     {view === 'refill' ? <BillerRefillForm settings={settings} onSaved={refresh}/> : null}
     {view === 'balance' ? <BillerBalanceReport settings={settings} onSaved={refresh}/> : null}

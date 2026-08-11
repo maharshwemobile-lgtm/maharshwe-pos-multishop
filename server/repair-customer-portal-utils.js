@@ -14,10 +14,11 @@ function hmac(value, purpose) {
   return crypto.createHmac('sha256', secret).update(`${purpose}:${value}`).digest('hex');
 }
 
-function maskName(value) {
-  const words = String(value || '').trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return 'Customer';
-  return words.map((word) => `${word.slice(0, 1)}${'*'.repeat(Math.max(2, Math.min(5, word.length - 1)))}`).join(' ');
+// The status page is reached from a key printed on the customer own voucher,
+// so it shows their name in full: a masked name only made them doubt the page
+// was theirs.
+function customerDisplayName(value) {
+  return String(value || '').trim() || 'Customer';
 }
 
 function publicBaseUrl() {
@@ -109,7 +110,7 @@ async function publicRepairPayload(repair) {
     shop: { slug: repair.shopSlug, name: repair.shopName },
     repair: {
       repairNumber: repair.repairNumber,
-      customerName: maskName(repair.customerName),
+      customerName: customerDisplayName(repair.customerName),
       deviceBrand: repair.deviceBrand,
       deviceModel: repair.deviceModel,
       problem: repair.problem,
@@ -138,7 +139,7 @@ module.exports = {
   normalizeRepairNumber,
   digits,
   hmac,
-  maskName,
+  customerDisplayName,
   publicBaseUrl,
   findTenantRepair,
   findPublicRepair,
