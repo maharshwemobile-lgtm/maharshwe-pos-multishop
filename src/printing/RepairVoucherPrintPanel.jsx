@@ -24,8 +24,13 @@ export default function RepairVoucherPrintPanel({ notify }) {
     setLoading(true);
     try {
       const response = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(value)}`);
-      await printRepairVoucher(response.repair, popup);
+      // The share key is stored hashed, so the only way to get a printable URL
+      // is to mint one. That rotates the key: an older voucher's QR stops working.
+      const access = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(value)}/public-access`, { method: 'POST' })
+        .catch(() => null);
+      await printRepairVoucher(response.repair, popup, access?.access?.url || '');
       setRepairId(response.repair.repairNumber || value);
+      if (!access) notify?.('error', 'Status QR link မထုတ်နိုင်ပါ — voucher ကို QR မပါဘဲ print လုပ်ပါမယ်။');
     } catch (error) {
       popup.close();
       notify?.('error', error.message || 'Repair voucher failed');

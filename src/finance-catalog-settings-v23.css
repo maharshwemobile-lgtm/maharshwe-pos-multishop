@@ -24,3 +24,6 @@
 .finance-catalog-actions .money-service-on{border-color:#86efac!important;background:#f0fdf4!important;color:#166534!important}
 .finance-catalog-actions .money-service-off{border-color:#fed7aa!important;background:#fff7ed!important;color:#9a3412!important}
 @media(max-width:620px){.finance-catalog-actions.text-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;width:100%}.finance-catalog-actions.text-actions button{width:100%!important;min-width:0!important}.finance-catalog-list article{display:grid!important}}
+
+.finance-delete-action { border-color: #fecaca !important; color: #b91c1c !important; }
+.finance-delete-action:hover { background: #fef2f2 !important; }

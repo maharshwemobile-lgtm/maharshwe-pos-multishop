@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Camera,
   Clock3,
+  Copy,
   Fingerprint,
   History,
   Link2,
@@ -64,6 +65,44 @@ function formatDate(value) {
 
 function statusLabel(status) {
   return STATUS_OPTIONS.find(([value]) => value === status)?.[1] || String(status || '-').replaceAll('_', ' ');
+}
+
+// The repair number is what a shop reads out over the phone and pastes into
+// the voucher printer, so tapping it copies instead of only selecting.
+function RepairIdCopy({ value, as: Tag = 'b', className = '' }) {
+  const [copied, setCopied] = useState(false);
+  if (!value) return <Tag className={className}>-</Tag>;
+  const copy = async (event) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      // http origins and old browsers have no clipboard API
+      const field = document.createElement('textarea');
+      field.value = value;
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.appendChild(field);
+      field.select();
+      document.execCommand('copy');
+      field.remove();
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+  return (
+    <Tag
+      className={`repair-id-copy ${copied ? 'copied' : ''} ${className}`.trim()}
+      role="button"
+      tabIndex={0}
+      title="နှိပ်ပြီး Repair ID ကူးယူပါ"
+      onClick={copy}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') copy(event); }}
+    >
+      {value}
+      {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+    </Tag>
+  );
 }
 
 function StatusBadge({ status }) {
@@ -301,7 +340,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
   return (
     <Modal onClose={onClose} wide>
       <header className="repair-modal-header">
-        <div><Smartphone size={22} /><span><h3>{repair.repairNumber}</h3><p>{repair.customerName} · {repair.deviceBrand || ''} {repair.deviceModel}</p></span></div>
+        <div><Smartphone size={22} /><span><RepairIdCopy value={repair.repairNumber} as="h3"/><p>{repair.customerName} · {repair.deviceBrand || ''} {repair.deviceModel}</p></span></div>
         <button type="button" onClick={onClose}><X size={20} /></button>
       </header>
       <div className="repair-detail-body">
@@ -318,7 +357,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
           <section className="repair-detail-card">
             <h4>Repair Information</h4>
             <dl>
-              <div><dt>Repair ID</dt><dd>{repair.repairNumber}</dd></div>
+              <div><dt>Repair ID</dt><dd><RepairIdCopy value={repair.repairNumber} as="span"/></dd></div>
               <div><dt>Customer</dt><dd>{repair.customerName}</dd></div>
               <div><dt>Phone</dt><dd>{repair.customerPhone || '-'}</dd></div>
               <div><dt>Device</dt><dd>{repair.deviceBrand || ''} {repair.deviceModel}</dd></div>
@@ -543,7 +582,7 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
           <table>
             <thead><tr><th>Repair ID</th><th>Customer</th><th>Device</th><th>Problem</th><th>Source</th><th>Status</th><th>Received</th><th>Amount</th></tr></thead>
             <tbody>
-              {(data.jobs || []).map((job) => <tr key={job.id} className="repair-click-row" onClick={() => setSelectedId(job.id)}><td><b className="repair-id">{job.repairNumber}</b></td><td><b>{job.customerName}</b><small>{job.customerPhone || '-'}</small></td><td><b>{job.deviceBrand || ''} {job.deviceModel}</b><small>{job.identityMasked || 'No IMEI/Serial'}</small></td><td><span className="repair-problem">{job.problem}</span></td><td><SourceBadge job={job} /></td><td onClick={(event) => event.stopPropagation()}>{quickStatusJobId === job.id ? <select className="repair-status-inline-select" value={job.status} autoFocus disabled={quickStatusSavingId === job.id} onBlur={() => setQuickStatusJobId(null)} onChange={(event) => quickStatusUpdate(job, event.target.value)}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select> : <button type="button" className="repair-status-click" onClick={() => setQuickStatusJobId(job.id)} disabled={quickStatusSavingId === job.id}>{quickStatusSavingId === job.id ? <Loader2 className="repair-spin" size={15} /> : <StatusBadge status={job.status} />}</button>}</td><td>{formatDate(job.receivedAt)}</td><td><b>{money(job.finalCost || job.estimatedCost)}</b><small>Due {money(job.balanceDue)}</small></td></tr>)}
+              {(data.jobs || []).map((job) => <tr key={job.id} className="repair-click-row" onClick={() => setSelectedId(job.id)}><td onClick={(event) => event.stopPropagation()}><RepairIdCopy value={job.repairNumber} className="repair-id"/></td><td><b>{job.customerName}</b><small>{job.customerPhone || '-'}</small></td><td><b>{job.deviceBrand || ''} {job.deviceModel}</b><small>{job.identityMasked || 'No IMEI/Serial'}</small></td><td><span className="repair-problem">{job.problem}</span></td><td><SourceBadge job={job} /></td><td onClick={(event) => event.stopPropagation()}>{quickStatusJobId === job.id ? <select className="repair-status-inline-select" value={job.status} autoFocus disabled={quickStatusSavingId === job.id} onBlur={() => setQuickStatusJobId(null)} onChange={(event) => quickStatusUpdate(job, event.target.value)}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select> : <button type="button" className="repair-status-click" onClick={() => setQuickStatusJobId(job.id)} disabled={quickStatusSavingId === job.id}>{quickStatusSavingId === job.id ? <Loader2 className="repair-spin" size={15} /> : <StatusBadge status={job.status} />}</button>}</td><td>{formatDate(job.receivedAt)}</td><td><b>{money(job.finalCost || job.estimatedCost)}</b><small>Due {money(job.balanceDue)}</small></td></tr>)}
               {!data.jobs?.length && !loading ? <tr><td colSpan="8"><div className="repair-empty"><Unplug size={28} /><span>No repair jobs found.</span></div></td></tr> : null}
             </tbody>
           </table>

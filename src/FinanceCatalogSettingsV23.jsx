@@ -135,6 +135,18 @@ export default function FinanceCatalogSettingsV23({ embedded = false, mode = 'al
     catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
   };
+  // Only offered at zero balance; the server re-checks and refuses if the
+  // wallet has any history behind it.
+  const deleteMethod = async (row) => {
+    if (!window.confirm(`${row.name} ကို အပြီးဖျက်မှာ သေချာပါသလား?`)) return;
+    setBusy(true); setMessage('');
+    try {
+      const response = await apiFetch(`/api/finance/settings/payment-methods/${row.id}/permanent`, { method: 'DELETE' });
+      setMessage(response.message || 'Deleted');
+      await load();
+    } catch (error) { setMessage(error.message || 'Delete failed'); }
+    finally { setBusy(false); }
+  };
   const renameMethod = async (row) => {
     const name = window.prompt('Payment method / wallet name', row.name);
     if (!name?.trim() || name.trim() === row.name) return;
@@ -184,6 +196,7 @@ export default function FinanceCatalogSettingsV23({ embedded = false, mode = 'al
             <div className="finance-catalog-actions text-actions">
               <button type="button" onClick={() => renameMethod(row)} title="နာမည်ပြင်ရန်"><Edit3 size={16}/><span>နာမည်ပြင်</span></button>
               <button type="button" className={`finance-pos-toggle ${hidden ? 'show-pos-action' : 'hide-pos-action'}`} onClick={() => toggleMethod(row)} title={hidden ? 'Sale POS မှာပြန်ပြရန်' : 'Sale POS မှာမပြရန်'}>{hidden ? <Eye size={16}/> : <EyeOff size={16}/>}<span>{hidden ? 'POS ပြရန်' : 'POS မပြရန်'}</span></button>
+              {Number(row.balance || 0) === 0 ? <button type="button" className="finance-delete-action" onClick={() => deleteMethod(row)} title="Balance 0 ဖြစ်လို့ အပြီးဖျက်နိုင်ပါတယ်"><Trash2 size={16}/><span>ဖျက်မည်</span></button> : null}
             </div>
           </article>;
         })}

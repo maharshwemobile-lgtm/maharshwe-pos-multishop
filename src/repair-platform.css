@@ -163,3 +163,18 @@
 .repair-imei-hint.valid { color: #15803d; }
 .repair-imei-hint.invalid { color: #dc2626; }
 .dark .repair-imei-scan { background: #0b1b33; color: #e5eef8; border-color: #1e3555; }
+
+/* Repair ID is tap-to-copy wherever it appears */
+.repair-id-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color .15s ease, background .15s ease;
+}
+.repair-id-copy svg { opacity: .45; flex-shrink: 0; }
+.repair-id-copy:hover { color: var(--primary, #2563eb); }
+.repair-id-copy:hover svg { opacity: 1; }
+.repair-id-copy.copied,
+.repair-id-copy.copied svg { color: #16a34a; opacity: 1; }

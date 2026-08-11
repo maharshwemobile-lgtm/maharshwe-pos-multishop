@@ -267,6 +267,56 @@ function attachFinanceSettingsV23Api(app) {
     }
   });
 
+  // Hiding a wallet leaves it in every picker's history. A wallet that never
+  // held money and never moved any can simply go, so the list stays honest.
+  app.delete('/api/finance/settings/payment-methods/:id/permanent', ...write, async (req, res) => {
+    try {
+      const id = parse(uuid, req.params.id);
+      const target = await prisma.financePaymentMethods.findFirst({
+        where: { id, shopId: req.auth.shopId },
+        select: { id: true, name: true, accountId: true },
+      });
+      if (!target) return res.status(404).json({ ok: false, message: 'Payment method not found' });
+
+      const account = target.accountId
+        ? await prisma.moneyAccount.findFirst({ where: { id: target.accountId, shopId: req.auth.shopId } })
+        : null;
+      if (account && Number(account.balance || 0) !== 0) {
+        return res.status(409).json({
+          ok: false,
+          message: `Balance ${Number(account.balance).toLocaleString()} MMK ကျန်နေပါသေးတယ်။ 0 ဖြစ်မှ ဖျက်လို့ရပါမယ်။`,
+        });
+      }
+
+      if (account) {
+        const [serviceCount, billerCount, billerPaymentCount] = await Promise.all([
+          prisma.moneyServiceTransaction.count({ where: { accountId: account.id } }),
+          prisma.billerTransaction.count({ where: { paymentAccountId: account.id } }),
+          prisma.biller.count({ where: { shopId: req.auth.shopId, name: target.name } }),
+        ]);
+        const used = serviceCount + billerCount;
+        if (used > 0) {
+          return res.status(409).json({
+            ok: false,
+            message: `မှတ်တမ်း ${used} ခု ချိတ်ဆက်ထားလို့ အပြီးဖျက်လို့ မရပါ။ ဖျောက်ထားရုံသာ ရပါမယ်။`,
+          });
+        }
+        if (billerPaymentCount > 0) {
+          return res.status(409).json({ ok: false, message: 'Biller တစ်ခုက ဒီအမည်ကို သုံးနေပါတယ်။' });
+        }
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.financePaymentMethods.delete({ where: { id } });
+        if (account) await tx.moneyAccount.delete({ where: { id: account.id } });
+      });
+      await audit(req, 'FINANCE_PAYMENT_METHOD_DELETED', 'finance_payment_method', id, { name: target.name });
+      return res.json({ ok: true, message: `${target.name} ကို အပြီးဖျက်ပြီးပါပြီ` });
+    } catch (error) {
+      return res.status(error.status || 500).json({ ok: false, message: error.message || 'Payment method delete failed' });
+    }
+  });
+
   app.post('/api/business-control/income-categories', ...write, async (req, res) => {
     try {
       await ensureSchema();
