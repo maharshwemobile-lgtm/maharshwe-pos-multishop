@@ -117,7 +117,6 @@ export default function ReportsWorkspace({ onNavigate }) {
   }, [fromDate, toDate, closePeriod]);
 
   const summary = data?.summary || {};
-  const miniMart = data?.miniMart || {};
   const dailyCloseReport = data?.dailyCloseReport || { rows: [], totals: {} };
   const topProductRows = useMemo(() => (data?.topProducts || []).slice(0, 10), [data?.topProducts]);
   const closeRows = dailyCloseReport.rows || [];
@@ -132,12 +131,12 @@ export default function ReportsWorkspace({ onNavigate }) {
   const cards = useMemo(() => [
     { label: 'Sales Revenue', value: money(summary.revenue), icon: ReceiptText, tone: 'green', trend: summary.revenueChange },
     { label: 'Sales Profit', value: money(summary.salesProfit), icon: TrendingUp, tone: 'blue', trend: summary.profitChange },
-    { label: 'Payments Received', value: money(summary.totalReceived), icon: CircleDollarSign, tone: 'purple', note: miniMart.enabled ? `${summary.invoices || 0} invoices` : `${money(summary.repairReceived)} repairs` },
+    { label: 'Payments Received', value: money(summary.totalReceived), icon: CircleDollarSign, tone: 'purple', note: `${money(summary.repairReceived)} repairs` },
     { label: 'Customer Receivable', value: money(summary.receivable), icon: WalletCards, tone: 'orange', note: `${summary.owingCustomers || 0} customers` },
     // remaining stock: what it cost, what it is worth at retail, and how many units
     { label: 'Stock Value', value: money(summary.inventoryCostValue), icon: Boxes, tone: 'cyan', note: `${money(summary.inventoryRetailValue)} retail · ${Number(summary.inventoryUnits || 0).toLocaleString()} units` },
     { label: 'Average Ticket', value: money(summary.averageTicket), icon: FileSpreadsheet, tone: 'red', note: `${summary.invoices || 0} invoices` },
-  ], [summary, miniMart.enabled]);
+  ], [summary]);
 
   const maxTrend = Math.max(1, ...(data?.trend || []).map((row) => Math.max(row.revenue, row.received)));
   const paymentTotal = (data?.paymentMix || []).reduce((sum, row) => sum + Number(row.amount || 0), 0) || 1;
@@ -147,13 +146,12 @@ export default function ReportsWorkspace({ onNavigate }) {
     { id: 'overview', label: 'Overview', icon: LayoutGrid },
     { id: 'close', label: `${closePeriodMeta.name} Close`, icon: CalendarDays },
     { id: 'performance', label: 'Products & Staff', icon: PackageSearch },
-    ...(miniMart.enabled ? [{ id: 'inventory', label: 'Inventory', icon: Boxes }] : []),
     { id: 'operations', label: 'Operations', icon: CheckCircle2 },
   ];
 
   useEffect(() => {
     if (!tabs.some((item) => item.id === tab)) setTab('overview');
-  }, [miniMart.enabled]);
+  }, []);
 
   useEffect(() => {
     setClosePage(1);
@@ -407,58 +405,11 @@ export default function ReportsWorkspace({ onNavigate }) {
       </section>
     </div> : null}
 
-    {tab === 'inventory' && miniMart.enabled ? <>
-      <div className="rw-inventory-kpis">
-        <article><span>Revenue</span><b>{money(miniMart.profitReport?.revenue)}</b></article>
-        <article><span>Cost</span><b>{money(miniMart.profitReport?.cost)}</b></article>
-        <article><span>Profit</span><b className="positive">{money(miniMart.profitReport?.profit)}</b></article>
-        <article><span>Margin</span><b>{Number(miniMart.profitReport?.margin || 0).toFixed(1)}%</b></article>
-        <article><span>Expired</span><b className="negative">{miniMart.expirySummary?.expired || 0}</b></article>
-        <article><span>Near Expiry</span><b>{miniMart.expirySummary?.nearExpiry || 0}</b></article>
-        <article><span>Low Stock</span><b>{miniMart.lowStockReport?.length || 0}</b></article>
-        <article><span>Purchased</span><b>{shortMoney((miniMart.supplierPurchaseReport || []).reduce((sum, row) => sum + Number(row.amount || 0), 0))} MMK</b></article>
-      </div>
-
-      <div className="reports-secondary-grid">
-        <section className="reports-card">
-          <header><div><b>Daily Sales</b><small>Latest sale days</small></div><ReceiptText size={21} /></header>
-          <div className="reports-table-wrap"><table className="reports-table"><thead><tr><th>Date</th><th>Invoices</th><th>Units</th><th>Revenue</th><th>Profit</th></tr></thead><tbody>
-            {(miniMart.dailySales || []).map((row) => <tr key={row.date}><td>{row.date}</td><td>{row.invoices}</td><td>{row.units}</td><td>{money(row.revenue)}</td><td className="positive">{money(row.profit)}</td></tr>)}
-            {!miniMart.dailySales?.length ? <tr><td colSpan="5"><div className="reports-empty">No daily sales.</div></td></tr> : null}
-          </tbody></table></div>
-        </section>
-
-        <section className="reports-card">
-          <header><div><b>Expiry Report</b><small>Nearest expiry first</small></div><CalendarDays size={21} /></header>
-          <div className="reports-table-wrap"><table className="reports-table"><thead><tr><th>Product</th><th>Expiry</th><th>Stock</th><th>Unit</th></tr></thead><tbody>
-            {(miniMart.expiryReport || []).map((row) => <tr key={row.id}><td><b>{row.name}</b><small>{row.variant}</small></td><td>{row.expiryDate || '-'}<small>{row.daysUntilExpiry < 0 ? 'Expired' : `${row.daysUntilExpiry} day(s)`}</small></td><td>{row.quantity}</td><td>{row.unit || '-'}</td></tr>)}
-            {!miniMart.expiryReport?.length ? <tr><td colSpan="4"><div className="reports-empty">No expiry tracked items.</div></td></tr> : null}
-          </tbody></table></div>
-        </section>
-
-        <section className="reports-card">
-          <header><div><b>Low Stock Report</b><small>Stock reached alert quantity</small></div><PackageSearch size={21} /></header>
-          <div className="reports-table-wrap"><table className="reports-table"><thead><tr><th>Product</th><th>Current</th><th>Alert</th><th>Unit</th></tr></thead><tbody>
-            {(miniMart.lowStockReport || []).map((row) => <tr key={row.id}><td><b>{row.name}</b><small>{row.variant}</small></td><td>{row.quantity}</td><td>{row.minAlertQuantity}</td><td>{row.unit || '-'}</td></tr>)}
-            {!miniMart.lowStockReport?.length ? <tr><td colSpan="4"><div className="reports-empty">No low stock items.</div></td></tr> : null}
-          </tbody></table></div>
-        </section>
-
-        <section className="reports-card">
-          <header><div><b>Supplier Purchase Report</b><small>Goods received by supplier</small></div><Users size={21} /></header>
-          <div className="reports-table-wrap"><table className="reports-table"><thead><tr><th>Supplier</th><th>Receipts</th><th>Amount</th></tr></thead><tbody>
-            {(miniMart.supplierPurchaseReport || []).map((row) => <tr key={row.supplierId}><td><b>{row.supplierName}</b><small>{row.supplierCode || '-'}</small></td><td>{row.receiptCount}</td><td>{money(row.amount)}</td></tr>)}
-            {!miniMart.supplierPurchaseReport?.length ? <tr><td colSpan="3"><div className="reports-empty">No supplier purchases.</div></td></tr> : null}
-          </tbody></table></div>
-        </section>
-      </div>
-    </> : null}
-
     {tab === 'operations' ? <>
       <div className="reports-operations-grid">
         <article><div className="reports-tone-cyan"><Boxes size={22} /></div><span><b>Inventory Health</b><small>{summary.lowStockCount || 0} low stock · {summary.outOfStockCount || 0} out of stock</small></span><button type="button" onClick={() => onNavigate?.('Stock')}>Open Stock</button></article>
         <article><div className="reports-tone-orange"><WalletCards size={22} /></div><span><b>Customer Credit</b><small>{money(summary.receivable)} · {summary.owingCustomers || 0} owing</small></span><button type="button" onClick={() => onNavigate?.('Customers')}>Open Credit</button></article>
-        {miniMart.enabled ? null : <article><div className="reports-tone-blue"><Wrench size={22} /></div><span><b>Repair Operations</b><small>{summary.completedRepairs || 0}/{summary.repairs || 0} completed</small></span><button type="button" onClick={() => onNavigate?.('Repairs')}>Open Repairs</button></article>}
+        <article><div className="reports-tone-blue"><Wrench size={22} /></div><span><b>Repair Operations</b><small>{summary.completedRepairs || 0}/{summary.repairs || 0} completed</small></span><button type="button" onClick={() => onNavigate?.('Repairs')}>Open Repairs</button></article>
         <article><div className="reports-tone-purple"><CircleDollarSign size={22} /></div><span><b>Payments</b><small>{money(summary.totalReceived)} received</small></span><button type="button" onClick={() => onNavigate?.('Accounting')}>Open Accounts</button></article>
       </div>
 
@@ -466,7 +417,7 @@ export default function ReportsWorkspace({ onNavigate }) {
         <header><div><b>Operational Snapshot</b><small>Accounts, repair status and business exceptions</small></div><CheckCircle2 size={21} /></header>
         <div className="reports-snapshot-grid">
           <div><h3>Account Balances</h3>{(data?.accounts || []).map((row) => <p key={row.id}><span>{row.name}</span><b>{money(row.balance)}</b></p>)}</div>
-          {miniMart.enabled ? null : <div><h3>Repair Status</h3>{(data?.repairStatuses || []).map((row) => <p key={row.status}><span>{row.status.replaceAll('_', ' ')}</span><b>{row.count}</b></p>)}</div>}
+          <div><h3>Repair Status</h3>{(data?.repairStatuses || []).map((row) => <p key={row.status}><span>{row.status.replaceAll('_', ' ')}</span><b>{row.count}</b></p>)}</div>
           <div><h3>Exceptions</h3><p><span>Voided Sales</span><b>{summary.voidedSales || 0}</b></p><p><span>Returned Sales</span><b>{summary.returnedSales || 0}</b></p><p><span>Discount Given</span><b>{money(summary.discount)}</b></p></div>
         </div>
       </section>

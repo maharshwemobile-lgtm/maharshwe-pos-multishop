@@ -57,7 +57,7 @@ function methodLabel(value) {
   return value || '-';
 }
 
-function categoryLabel(record, isMiniMart = false) {
+function categoryLabel(record) {
   const rows = record.type === 'expense' ? businessRecordCategories.expense : businessRecordCategories.income;
   const category = String(record.category || '').trim().toLowerCase();
   const exact = rows.find((item) => item.value.toLowerCase() === category
@@ -67,7 +67,7 @@ function categoryLabel(record, isMiniMart = false) {
     (item.aliases || []).some((alias) => String(alias).toLowerCase() === category)
   ));
   if (match) return t(match.en, match.my);
-  const fallback = record.type === 'expense' ? rows[0] : (isMiniMart ? rows[3] : rows[0]);
+  const fallback = rows[0];
   return t(fallback.en, fallback.my);
 }
 
@@ -83,27 +83,15 @@ function normalizedCategory(type, value) {
   ))?.value || (type === 'expense' ? rows[0].value : rows[3].value);
 }
 
-// A Mini Mart has no repair bench, so the service income/expense pair only
-// clutters its category picker. Existing records keep their label either way.
-const SERVICE_ALIASES = new Set(['OTHER_SERVICE_INCOME', 'OTHER_SERVICE_EXPENSE']);
-
-function serviceCategory(item) {
-  return (item.aliases || []).some((alias) => SERVICE_ALIASES.has(String(alias)));
+function buildIncomeOptions() {
+  return businessRecordCategories.income.map((item) => ({ name: t(item.en, item.my), value: item.value }));
 }
 
-function buildIncomeOptions(isMiniMart = false) {
-  return businessRecordCategories.income
-    .filter((item) => !isMiniMart || !serviceCategory(item))
-    .map((item) => ({ name: t(item.en, item.my), value: item.value }));
+function buildExpenseOptions() {
+  return businessRecordCategories.expense.map((item) => ({ name: t(item.en, item.my), value: item.value }));
 }
 
-function buildExpenseOptions(isMiniMart = false) {
-  return businessRecordCategories.expense
-    .filter((item) => !isMiniMart || !serviceCategory(item))
-    .map((item) => ({ name: t(item.en, item.my), value: item.value }));
-}
-
-function DetailModal({ record, onClose, isMiniMart = false }) {
+function DetailModal({ record, onClose }) {
   if (!record) return null;
   return (
     <div className="br-modal-backdrop" onMouseDown={(event) => {
@@ -116,7 +104,7 @@ function DetailModal({ record, onClose, isMiniMart = false }) {
         </header>
         <div className="br-detail-grid">
           <article><span>{t('Record Type', 'စာရင်းအမျိုးအစား')}</span><b>{record.type === 'income' ? t('Other Income', 'အခြားဝင်ငွေ') : t('Quick Expense', 'အခြားထွက်ငွေ')}</b></article>
-          <article><span>{t('Category', 'အမျိုးအစား')}</span><b>{categoryLabel(record, isMiniMart)}</b></article>
+          <article><span>{t('Category', 'အမျိုးအစား')}</span><b>{categoryLabel(record)}</b></article>
           <article><span>{record.type === 'income' ? t('Source', 'ဝင်ငွေအကြောင်းအရာ') : t('Expense Name', 'ထွက်ငွေအကြောင်းအရာ')}</span><b>{record.title || '-'}</b></article>
           <article><span>{t('Amount', 'ငွေပမာဏ')}</span><b>{money(record.amount)}</b></article>
           <article><span>{t('Payment Method', 'ငွေပေးချေမှုနည်းလမ်း')}</span><b>{methodLabel(record.method)}</b></article>
@@ -233,8 +221,6 @@ export default function BusinessRecordsPanel() {
   const session = getSession();
   const role = session?.user?.role || '';
   const permissions = session?.user?.permissions || {};
-  const rawBusinessType = session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
-  const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
   const canWriteAccounting = role === 'SUPER_ADMIN' || role === 'SHOP_ADMIN' || permissions.accounting === true;
   const [businessDate, setBusinessDate] = useState(today);
   const [type, setType] = useState('income');
@@ -263,12 +249,12 @@ export default function BusinessRecordsPanel() {
   // shop-defined categories loaded from the server, merged after the built-ins
   const [customCategories, setCustomCategories] = useState({ income: [], expense: [] });
   const incomeOptions = useMemo(
-    () => [...buildIncomeOptions(isMiniMart), ...customCategories.income.map((row) => ({ name: row.name, value: row.name, custom: true }))],
-    [languageVersion, isMiniMart, customCategories.income],
+    () => [...buildIncomeOptions(), ...customCategories.income.map((row) => ({ name: row.name, value: row.name, custom: true }))],
+    [languageVersion, customCategories.income],
   );
   const expenseOptions = useMemo(
-    () => [...buildExpenseOptions(isMiniMart), ...customCategories.expense.map((row) => ({ name: row.name, value: row.name, custom: true }))],
-    [languageVersion, isMiniMart, customCategories.expense],
+    () => [...buildExpenseOptions(), ...customCategories.expense.map((row) => ({ name: row.name, value: row.name, custom: true }))],
+    [languageVersion, customCategories.expense],
   );
 
   const loadCustomCategories = async () => {
@@ -537,9 +523,7 @@ export default function BusinessRecordsPanel() {
                 if (event.target.value === '__new__') { addCategory('income', (name) => setIncome((current) => ({ ...current, category: name }))); return; }
                 setIncome({ ...income, category: event.target.value });
               }}>{incomeOptions.map((option) => <option key={option.value} value={option.value}>{option.name}</option>)}<option value="__new__">{t('+ Add new category', '+ အမျိုးအစား အသစ်ထည့်မည်')}</option></select></label>
-              <label>{t('Source', 'ဝင်ငွေအကြောင်းအရာ')}<input required value={income.source} onChange={(event) => setIncome({ ...income, source: event.target.value })} placeholder={isMiniMart
-                ? t('Example: top-up sale or commission', 'ဥပမာ - ငွေဖြည့်ကဒ်ရောင်းချမှု သို့မဟုတ် ကော်မရှင်')
-                : t('Example: repair service or commission', 'ဥပမာ - ဖုန်းပြင်ခ သို့မဟုတ် ကော်မရှင်')} maxLength={80} /></label>
+              <label>{t('Source', 'ဝင်ငွေအကြောင်းအရာ')}<input required value={income.source} onChange={(event) => setIncome({ ...income, source: event.target.value })} placeholder={t('Example: repair service or commission', 'ဥပမာ - ဖုန်းပြင်ခ သို့မဟုတ် ကော်မရှင်')} maxLength={80} /></label>
               <label>{t('Amount', 'ငွေပမာဏ')}<input required type="number" min="1" step="1" value={income.amount} onChange={(event) => setIncome({ ...income, amount: event.target.value })} placeholder="0" /></label>
               <label>{t('Method', 'ငွေပေးချေမှုနည်းလမ်း')}<select value={income.method} onChange={(event) => setIncome({ ...income, method: event.target.value, moneyAccountId: '' })}><option value="CASH">{t('Cash', 'ငွေသား')}</option><option value="KPAY">KBZPay</option><option value="WAVE_PAY">WavePay</option><option value="OTHER">{t('Other', 'အခြား')}</option></select></label>
               <label>{t('Account', 'ငွေစာရင်း')}<select value={income.moneyAccountId} onChange={(event) => setIncome({ ...income, moneyAccountId: event.target.value })}><option value="">{t('Auto-select account', 'ငွေစာရင်း အလိုအလျောက်ရွေးမည်')}</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {money(account.balance)}</option>)}</select></label>
@@ -594,7 +578,7 @@ export default function BusinessRecordsPanel() {
             {(data.rows || []).map((record) => (
               <tr key={record.id} className={record.voidedAt ? 'br-voided-row' : ''}>
                 <td><b>{record.businessDate}</b><small>{formatDateTime(record.createdAt)}</small></td>
-                <td><span className={`br-category ${record.type === 'income' && normalizedCategory('income', record.category) === businessRecordCategories.income[0].value ? 'service' : ''}`}>{categoryLabel(record, isMiniMart)}</span></td>
+                <td><span className={`br-category ${record.type === 'income' && normalizedCategory('income', record.category) === businessRecordCategories.income[0].value ? 'service' : ''}`}>{categoryLabel(record)}</span></td>
                 <td><b>{record.title || '-'}</b></td>
                 <td><strong className={type === 'expense' ? 'expense' : 'income'}>{money(record.amount)}</strong>{record.voidedAt ? <small className="br-void-text">{t('VOIDED', 'ပယ်ဖျက်ပြီး')}</small> : null}</td>
                 <td><b>{methodLabel(record.method)}</b><small>{record.accountName || t('No account', 'ငွေစာရင်းမရှိ')}</small></td>
@@ -624,7 +608,7 @@ export default function BusinessRecordsPanel() {
         </div>
       </div>
 
-      <DetailModal record={selected} isMiniMart={isMiniMart} onClose={() => setSelected(null)} />
+      <DetailModal record={selected} onClose={() => setSelected(null)} />
       <EditModal record={editing} accounts={accounts} incomeOptions={incomeOptions} expenseOptions={expenseOptions} saving={savingEdit} onSave={saveEdit} onClose={() => setEditing(null)} />
       <VoidModal record={voiding} saving={savingVoid} reason={voidReason} setReason={setVoidReason} onConfirm={confirmVoid} onClose={() => setVoiding(null)}/>
     </section>

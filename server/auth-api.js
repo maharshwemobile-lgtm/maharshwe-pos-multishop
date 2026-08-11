@@ -9,8 +9,9 @@ const { cleanupDemoData } = require("./onboarding-demo-cleanup");
 const TOKEN_ISSUER = "maharshwe-pos";
 const DEFAULT_EXPIRES_IN = "12h";
 
-function normalizeBusinessType(value) {
-  return value === "MINI_MART" ? "MINI_MART" : "PHONE_SHOP";
+// Mahar POS serves phone shops only; retail runs as Wallet Note Mini Mart.
+function normalizeBusinessType() {
+  return "PHONE_SHOP";
 }
 
 const loginSchema = z.object({
@@ -28,7 +29,7 @@ const registerSchema = z.object({
   username: z.string().trim().min(2).max(80),
   password: z.string().min(6).max(200),
   phone: z.string().trim().max(60).optional(),
-  businessType: z.enum(["PHONE_SHOP", "MINI_MART"]).default("PHONE_SHOP"),
+  businessType: z.literal("PHONE_SHOP").default("PHONE_SHOP"),
   address: z.string().trim().max(300).optional(),
   turnstileToken: z.string().trim().max(2048).optional(),
 });

@@ -106,25 +106,7 @@ function paymentLabel(method, fallback = 'Cash') {
   return method.accountName || method.name || method.code || fallback;
 }
 
-function daysUntilExpiry(value) {
-  if (!value) return null;
-  const expiry = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(expiry.getTime())) return null;
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.ceil((expiry - today) / 86400000);
-}
-
-function expiryWarning(item) {
-  const days = daysUntilExpiry(item?.expiryDate);
-  if (days === null) return '';
-  if (days < 0) return `သက်တမ်းကုန်ပြီး ${Math.abs(days)} ရက်`;
-  if (days === 0) return 'ဒီနေ့ သက်တမ်းကုန်';
-  if (days <= 30) return `သက်တမ်းကုန်ခါနီး · ${days} ရက်`;
-  return '';
-}
-
-function ReviewModal({ cart, customer, payment, paymentLegacyMethod, paymentMethodLabel, subtotal, discount, total, cashReceived, change, splitPayments = [], busy, error, isMiniMart = false, onClose, onConfirm }) {
+function ReviewModal({ cart, customer, payment, paymentLegacyMethod, paymentMethodLabel, subtotal, discount, total, cashReceived, change, splitPayments = [], busy, error, onClose, onConfirm }) {
   return (
     <div className="stock-modal-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget && !busy) onClose();
@@ -148,12 +130,12 @@ function ReviewModal({ cart, customer, payment, paymentLegacyMethod, paymentMeth
 
           <div className="stock-history-table-wrap sale10-review-table-wrap">
             <table className="stock-history-table sale10-review-table">
-              <thead><tr><th>{isMiniMart ? 'Product' : 'Product / Variant'}</th>{isMiniMart ? null : <th>IMEI / Serial</th>}<th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead>
+              <thead><tr><th>Product / Variant</th><th>IMEI / Serial</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead>
               <tbody>
                 {cart.map((line) => (
                   <tr key={line.key}>
                     <td><b>{productName(line)}</b></td>
-                    {isMiniMart ? null : <td>{line.imeiSerial || '-'}</td>}
+                    <td>{line.imeiSerial || '-'}</td>
                     <td>{line.quantity}</td>
                     <td>{money(line.unitPrice)}</td>
                     <td><b>{money(Number(line.unitPrice || 0) * Number(line.quantity || 0))}</b></td>
@@ -227,12 +209,6 @@ function CompletedModal({ sale, onNewSale, onHistory }) {
 
 export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const session = getSession();
-  const isMiniMart = String(
-    session?.shop?.businessType
-    || session?.user?.shop?.businessType
-    || session?.businessType
-    || 'PHONE_SHOP',
-  ).toUpperCase() === 'MINI_MART';
   const restored = useMemo(() => loadDraft(session), []);
   const canDiscount = session?.user?.role === 'SUPER_ADMIN'
     || session?.user?.role === 'SHOP_ADMIN'
@@ -787,11 +763,10 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
             ) : (
             <div className="stock-table-wrap">
               <table className="stock-table sale10-product-table sale10-quick-product-table">
-                <thead><tr><th>{isMiniMart ? 'Product' : 'Product / Variant'}</th><th>Stock</th><th>Selling Price</th><th>Add</th></tr></thead>
+                <thead><tr><th>Product / Variant</th><th>Stock</th><th>Selling Price</th><th>Add</th></tr></thead>
                 <tbody>
                   {availableCatalog.map((item) => {
                     const pickedQuantity = Number(reserved.get(item.id) || 0);
-                    const expiryText = isMiniMart ? expiryWarning(item) : '';
                     return (
                     <tr
                       key={item.id}
@@ -818,7 +793,6 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
                                 query.trim() ? `SKU: ${item.sku || '-'} · Barcode: ${item.barcode || '-'}` : '',
                                 item.unit ? `Unit: ${item.unit}` : '',
                               ].filter(Boolean).join(' · ')}
-                              {expiryText ? <span className="sale10-expiry-warning">{`${variantLabel(item) || pickedQuantity > 0 || item.unit ? ' · ' : ''}${expiryText}${item.expiryDate ? ` - Exp: ${item.expiryDate}` : ''}`}</span> : null}
                             </small>
                           </span>
                         </div>
@@ -871,13 +845,11 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
               <div className="sale10-cart-slip-list">
                 {cart.map((line, lineIndex) => {
                   const lineTotal = Number(line.unitPrice || 0) * Number(line.quantity || 0);
-                  const expiryText = isMiniMart ? expiryWarning(line) : '';
                   return (
                     <article key={line.key} className="sale10-cart-slip-row">
                       <div className="sale10-cart-slip-main">
                         <div className="sale10-cart-item-title"><span>{lineIndex + 1}</span><b>{productName(line)}</b></div>
                         {line.requiresSerial ? <input className="sale10-serial-input" value={line.imeiSerial || ''} onChange={(event) => patchLine(line.key, { imeiSerial: event.target.value })} placeholder="IMEI / Serial" /> : null}
-                        {expiryText ? <small className="sale10-expiry-warning">{expiryText}{line.expiryDate ? ` - Exp: ${line.expiryDate}` : ''}</small> : null}
                       </div>
                       <div className="sale10-cart-quantity-field"><div className="sale10-quantity-control"><button type="button" onClick={() => changeQuantity(line, -1)}><Minus size={14} /></button><b>{line.quantity}</b><button type="button" onClick={() => changeQuantity(line, 1)} disabled={line.requiresSerial}><Plus size={14} /></button></div></div>
                       <label className="sale10-cart-price-field">
@@ -994,7 +966,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
         </div>
       ) : null}
 
-      {reviewOpen ? <ReviewModal cart={cart} customer={customer} payment={payment} paymentLegacyMethod={splitPaymentActive ? 'MIXED' : paymentLegacyMethod} paymentMethodLabel={splitPaymentActive ? 'Split Payment' : paymentMethodLabel} subtotal={subtotal} discount={safeDiscount} total={total} cashReceived={splitPaymentActive ? splitPaymentTotal : cashReceived} change={splitPaymentActive ? splitPaymentChange : change} splitPayments={splitPayments} isMiniMart={isMiniMart} busy={checkoutBusy} error={checkoutError} onClose={() => setReviewOpen(false)} onConfirm={completeSale} /> : null}
+      {reviewOpen ? <ReviewModal cart={cart} customer={customer} payment={payment} paymentLegacyMethod={splitPaymentActive ? 'MIXED' : paymentLegacyMethod} paymentMethodLabel={splitPaymentActive ? 'Split Payment' : paymentMethodLabel} subtotal={subtotal} discount={safeDiscount} total={total} cashReceived={splitPaymentActive ? splitPaymentTotal : cashReceived} change={splitPaymentActive ? splitPaymentChange : change} splitPayments={splitPayments} busy={checkoutBusy} error={checkoutError} onClose={() => setReviewOpen(false)} onConfirm={completeSale} /> : null}
       {scannerOpen ? <WebBarcodeScanner onClose={() => setScannerOpen(false)} onDetected={addScannedProduct} /> : null}
       {completedSale ? <CompletedModal sale={completedSale} onNewSale={() => { setCompletedSale(null); searchRef.current?.focus(); }} onHistory={onOpenHistory} /> : null}
     </div>

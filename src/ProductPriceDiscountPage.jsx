@@ -59,8 +59,6 @@ export default function ProductPriceDiscountPage() {
   const session = getSession();
   const user = session?.user || {};
   const canManage = user.role === 'SUPER_ADMIN' || user.role === 'SHOP_ADMIN' || user.permissions?.inventory === true || user.permissions?.productEdit === true;
-  // Mini Mart items carry no brand or model, so grouping by them lists nothing
-  const isMiniMart = String(session?.shop?.businessType || user?.shop?.businessType || session?.businessType || 'PHONE_SHOP').toUpperCase() === 'MINI_MART';
   const showCost = user.role === 'SUPER_ADMIN' || user.permissions?.viewCost === true;
 
   const [query, setQuery] = useState('');
@@ -368,8 +366,8 @@ export default function ProductPriceDiscountPage() {
             <select value={groupType} onChange={(event) => setGroupType(event.target.value)}>
               <option value="all">All</option>
               <option value="category">Category Group</option>
-              {isMiniMart ? null : <option value="brand">Brand Group</option>}
-              {isMiniMart ? null : <option value="model">Model Group</option>}
+              <option value="brand">Brand Group</option>
+              <option value="model">Model Group</option>
             </select>
           </label>
 
@@ -459,7 +457,7 @@ export default function ProductPriceDiscountPage() {
                     </td>
                     <td>
                       <span>{row.categoryName}</span>
-                      {isMiniMart ? null : <small>{[row.productBrand, row.productModel].filter(Boolean).join(' / ') || '-'}</small>}
+                      <small>{[row.productBrand, row.productModel].filter(Boolean).join(' / ') || '-'}</small>
                     </td>
                     <td><b className={low ? 'price-low' : ''}>Stock {stock}</b></td>
                     {showCost ? <td>{money(row.costPrice)}</td> : null}

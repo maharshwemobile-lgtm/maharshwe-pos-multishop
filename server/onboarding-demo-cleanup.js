@@ -23,24 +23,6 @@ const PHONE_SHOP_DEMO_PRODUCTS = [
   ['Demo Tempered Glass', 'Demo', 'Screen Protector', 'Accessories', 'Demo Accessories', 'Full Glue', 'DEMO-PHONE-GLASS-FULL', 'DEMO-PHONE-0010', '', '', 'Transparent', 'pcs', null, 4500, 1800, 5000, 3500, 30, 5],
 ];
 
-const MINI_MART_DEMO_PRODUCTS = [
-  ['Demo Rice Bag', 'Demo', 'Paw San 5kg', 'Grocery', 'Demo Groceries', '5kg Bag', 'DEMO-MART-RICE-5KG', 'DEMO-MART-0001', '', '', '', 'bag', null, 28500, 25000, 32000, 30000, 8, 2],
-  ['Demo Cooking Oil', 'Demo', '1L Bottle', 'Grocery', 'Demo Groceries', '1L Bottle', 'DEMO-MART-OIL-1L', 'DEMO-MART-0002', '', '', '', 'bottle', '2027-01-31', 6500, 5200, 7800, 7200, 18, 4],
-  ['Demo Instant Noodle', 'Demo', 'Chicken Pack', 'Grocery', 'Demo Groceries', 'Pack', 'DEMO-MART-NOODLE-PACK', 'DEMO-MART-0003', '', '', '', 'pack', '2026-11-30', 950, 650, 1200, 1000, 60, 15],
-  ['Demo Milk Powder', 'Demo', '400g Tin', 'Grocery', 'Demo Groceries', '400g Tin', 'DEMO-MART-MILK-400G', 'DEMO-MART-0004', '', '', '', 'tin', '2027-04-30', 12500, 9800, 14500, 13500, 12, 3],
-  ['Demo Biscuit', 'Demo', 'Family Pack', 'Grocery', 'Demo Groceries', 'Family Pack', 'DEMO-MART-BISCUIT-FAM', 'DEMO-MART-0005', '', '', '', 'pack', '2026-10-31', 1800, 1250, 2200, 2000, 35, 8],
-  ['Demo Drinking Water', 'Demo', '1L Bottle', 'Drink', 'Demo Drinks', '1L Bottle', 'DEMO-MART-WATER-1L', 'DEMO-MART-0006', '', '', '', 'bottle', '2027-06-30', 500, 300, 700, 600, 48, 12],
-  ['Demo Energy Drink', 'Demo', 'Can', 'Drink', 'Demo Drinks', 'Can', 'DEMO-MART-ENERGY-CAN', 'DEMO-MART-0007', '', '', '', 'can', '2027-03-31', 1300, 900, 1600, 1450, 24, 6],
-  ['Demo Soft Drink', 'Demo', '500ml Bottle', 'Drink', 'Demo Drinks', '500ml Bottle', 'DEMO-MART-SOFTDRINK-500', 'DEMO-MART-0008', '', '', '', 'bottle', '2027-02-28', 900, 650, 1200, 1050, 36, 10],
-  ['Demo Laundry Powder', 'Demo', '500g Pack', 'Household', 'Demo Household', '500g Pack', 'DEMO-MART-LAUNDRY-500G', 'DEMO-MART-0009', '', '', '', 'pack', '2027-05-31', 3500, 2600, 4200, 3800, 16, 4],
-  ['Demo Dish Soap', 'Demo', '500ml Bottle', 'Household', 'Demo Household', '500ml Bottle', 'DEMO-MART-DISHSOAP-500', 'DEMO-MART-0010', '', '', '', 'bottle', '2027-05-31', 2200, 1600, 2800, 2500, 20, 5],
-];
-
-function demoProductsForBusinessType(value) {
-  return String(value || '').toUpperCase() === 'MINI_MART' ? MINI_MART_DEMO_PRODUCTS : PHONE_SHOP_DEMO_PRODUCTS;
-}
-
-
 function uniq(items) {
   return [...new Set((items || []).filter(Boolean).map(String))];
 }
@@ -377,7 +359,7 @@ async function seedDemoDataForShop({ shopId, userId }) {
   return prisma.$transaction(async (tx) => {
     const shop = await tx.shop.findUnique({ where: { id: shopId }, select: { businessType: true } });
     const businessType = String(shop?.businessType || 'PHONE_SHOP').toUpperCase();
-    const demoProducts = demoProductsForBusinessType(businessType);
+    const demoProducts = PHONE_SHOP_DEMO_PRODUCTS;
     const categorySeeds = uniq(demoProducts.map((row) => row[4])).map((name) => ({
       name,
       kind: name.replace(/^Demo\s+/, ''),

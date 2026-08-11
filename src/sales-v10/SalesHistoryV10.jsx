@@ -16,7 +16,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
-import { apiFetch, clearSession, getSession } from '../phase2Api';
+import { apiFetch, clearSession } from '../phase2Api';
 import '../stock-management.css';
 import './sales-v10.css';
 import { money, reprintReceipt } from './salesV10Utils';
@@ -65,15 +65,14 @@ function csvCell(value) {
   return `"${text.replaceAll('"', '""')}"`;
 }
 
-function itemMeta(item, showExpiry = false) {
+function itemMeta(item) {
   return [
     item?.imeiSerial ? `Serial: ${item.imeiSerial}` : '',
     item?.unit ? `Unit: ${item.unit}` : '',
-    showExpiry && item?.expiryDate ? `Exp: ${item.expiryDate}` : '',
   ].filter(Boolean).join(' · ');
 }
 
-function DetailModal({ sale, loading, printing, showExpiry, onClose, onReprint, onVoid }) {
+function DetailModal({ sale, loading, printing, onClose, onReprint, onVoid }) {
   return (
     <div className="stock-modal-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget && !loading) onClose();
@@ -100,12 +99,12 @@ function DetailModal({ sale, loading, printing, showExpiry, onClose, onReprint, 
 
             <div className="stock-history-table-wrap sale10-detail-table-wrap">
               <table className="stock-history-table sale10-detail-table">
-                <thead><tr><th>{showExpiry ? 'Product' : 'Product / Variant'}</th>{showExpiry ? null : <th>IMEI / Serial</th>}<th>Qty</th><th>Unit Price</th><th>Discount</th><th>Line Total</th></tr></thead>
+                <thead><tr><th>Product / Variant</th><th>IMEI / Serial</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Line Total</th></tr></thead>
                 <tbody>
                   {(sale.itemRows || []).map((item) => (
                     <tr key={item.id}>
-                      <td><b>{[item.productName, item.variantName].filter(Boolean).join(' · ')}</b>{itemMeta(item, showExpiry) ? <small>{itemMeta(item, showExpiry)}</small> : null}</td>
-                      {showExpiry ? null : <td>{item.imeiSerial || '-'}</td>}
+                      <td><b>{[item.productName, item.variantName].filter(Boolean).join(' · ')}</b>{itemMeta(item) ? <small>{itemMeta(item)}</small> : null}</td>
+                      <td>{item.imeiSerial || '-'}</td>
                       <td>{item.quantity}{item.unit ? ` ${item.unit}` : ''}</td>
                       <td>{money(item.unitPrice)}</td>
                       <td>{money(item.discount)}</td>
@@ -161,8 +160,6 @@ function VoidModal({ sale, reason, error, busy, onReasonChange, onClose, onConfi
 }
 
 export default function SalesHistoryV10() {
-  const session = getSession();
-  const showExpiry = String(session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP').toUpperCase() === 'MINI_MART';
   const [query, setQuery] = useState('');
   const [cashier, setCashier] = useState('');
   const [from, setFrom] = useState('');
@@ -389,7 +386,7 @@ export default function SalesHistoryV10() {
         <div className="stock-toolbar sale10-history-toolbar">
           <div className="stock-search-box">
             <Search size={18} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={showExpiry ? 'Invoice, customer, phone or product' : 'Invoice, customer, phone, product or IMEI'} />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Invoice, customer, phone, product or IMEI" />
           </div>
           <input className="sale10-filter-input" value={cashier} onChange={(event) => setCashier(event.target.value)} placeholder="Cashier" />
           <label className="sale10-date-filter"><CalendarDays size={16} /><input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
@@ -442,7 +439,7 @@ export default function SalesHistoryV10() {
         </footer>
       </section>
 
-      {(detailLoading || selected) ? <DetailModal sale={selected} loading={detailLoading} printing={Boolean(printingId)} showExpiry={showExpiry} onClose={() => { setSelected(null); setDetailLoading(false); }} onReprint={reprint} onVoid={openVoid} /> : null}
+      {(detailLoading || selected) ? <DetailModal sale={selected} loading={detailLoading} printing={Boolean(printingId)} onClose={() => { setSelected(null); setDetailLoading(false); }} onReprint={reprint} onVoid={openVoid} /> : null}
       {voidTarget ? <VoidModal sale={voidTarget} reason={voidReason} error={voidError} busy={voidBusy} onReasonChange={setVoidReason} onClose={() => { setVoidTarget(null); setVoidError(''); }} onConfirm={confirmVoid} /> : null}
     </div>
   );

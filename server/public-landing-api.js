@@ -106,7 +106,7 @@ const PUBLIC_GUIDES = [
     steps: ['Admin/Settings ထဲမှ Staff section ကိုဝင်ပါ', 'Create User ဖြင့် user ထည့်ပါ', 'Role နှင့် permission ရွေးပါ', 'လိုအပ်လျှင် Password Reset လုပ်ပါ'],
   },
   {
-    slug: 'mini-mart-purchasing',
+    slug: 'purchasing-flow',
     category: 'manage',
     categoryLabel: 'စီမံခန့်ခွဲမှု',
     title: 'Retail Purchasing Flow',

@@ -13,7 +13,7 @@ import {
   UserCog,
   WalletCards,
 } from 'lucide-react';
-import { apiFetch, clearSession, getSession } from '../phase2Api';
+import { apiFetch, clearSession } from '../phase2Api';
 import ProjectUserAccessSettings from './ProjectUserAccessSettings.jsx';
 import GoogleSheetIntegrationSettingsV23 from './GoogleSheetIntegrationSettingsV23.jsx';
 import TelegramAutomationSettings from './TelegramAutomationSettings.jsx';
@@ -117,11 +117,6 @@ export default function ProjectSettingsCenter() {
   };
 
   const sync = (payload) => {
-    try {
-      if (payload?.preferences?.showMoneyService !== undefined) {
-        window.localStorage.setItem('miniMartShowMoneyService', payload.preferences.showMoneyService ? 'true' : 'false');
-      }
-    } catch {}
     setData(payload);
     setForms({
       preferences: clone(payload.preferences),
@@ -164,16 +159,9 @@ export default function ProjectSettingsCenter() {
   };
 
   const license = data?.license || {};
-  const session = getSession();
   const canManage = data?.canManage === true;
   const isPremium = license.status === 'ACTIVE' && (Number(license.totalDays || 0) > 7 || Boolean(license.renewedAt));
-  const rawBusinessType = data?.business?.businessType || session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
-  const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
-  const showMoneyService = forms.preferences?.showMoneyService === true || forms.preferences?.showMoneyService === 'true';
-
-  const openingPages = ['Sale POS','Dashboard','Sales History','Repairs','Products','Stock','Purchases','Customers','Money Service','Accounting','Reports','Settings']
-    .filter((item) => !isMiniMart || !['Repairs', 'Partner Settlement'].includes(item))
-    .filter((item) => item !== 'Money Service' || showMoneyService);
+  const openingPages = ['Sale POS','Dashboard','Sales History','Repairs','Products','Stock','Purchases','Customers','Money Service','Accounting','Reports','Settings'];
 
   const licenseColor = useMemo(() => {
     if (license.status === 'ACTIVE' || license.status === 'TRIAL') return 'good';
@@ -253,9 +241,9 @@ export default function ProjectSettingsCenter() {
             <Divider>Payment & Numbering</Divider>
             <Field label="KBZ Pay Number"><input value={forms.business.kbzPayNumber || ''} onChange={(e) => updateForm('business', { kbzPayNumber: e.target.value })} disabled={!canManage}/></Field>
             <Field label="Wave Pay Number"><input value={forms.business.wavePayNumber || ''} onChange={(e) => updateForm('business', { wavePayNumber: e.target.value })} disabled={!canManage}/></Field>
-            {!isMiniMart ? <Field label="Repair Prefix" hint="Optional. Blank = auto-generate from shop code.">
+            <Field label="Repair Prefix" hint="Optional. Blank = auto-generate from shop code.">
               <input value={forms.business.repairPrefix || ''} onChange={(e) => updateForm('business', { repairPrefix: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8) })} placeholder="Auto" disabled={!canManage}/>
-            </Field> : null}
+            </Field>
           </div>
 
           <SaveBar name="business" saving={saving} onSave={() => save('business')} disabled={!canManage} label="Save Shop Info"/>
@@ -264,7 +252,7 @@ export default function ProjectSettingsCenter() {
         {/* ── Slip & Print ──────────────────────────────────── */}
         {data && section === 'slip' ? <div className="psc-two-col">
           <section className="psc-panel">
-            <PanelHead icon={FileText} title="Slip & Print" description={isMiniMart ? 'Sale Slip logo၊ header၊ footer' : 'Sale Slip နဲ့ Repair Voucher အတွက် logo၊ header၊ footer'}/>
+            <PanelHead icon={FileText} title="Slip & Print" description="Sale Slip နဲ့ Repair Voucher အတွက် logo၊ header၊ footer"/>
             <div className="psc-form">
               <Toggle label="Show Business Logo" checked={forms.slip.showLogo} onChange={(v) => updateForm('slip', { showLogo: v })} disabled={!canManage}/>
 
@@ -276,12 +264,10 @@ export default function ProjectSettingsCenter() {
                 <Field label="Warranty Text"><textarea rows="2" value={forms.slip.warrantyText || ''} onChange={(e) => updateForm('slip', { warrantyText: e.target.value })} disabled={!canManage}/></Field>
                 <Field label="Sale Paper Size"><select value={forms.slip.salePaperSize} onChange={(e) => updateForm('slip', { salePaperSize: e.target.value })} disabled={!canManage}><option>58mm</option><option>80mm</option></select></Field>
 
-                {!isMiniMart ? <>
-                  <Divider>Repair Voucher</Divider>
+                <Divider>Repair Voucher</Divider>
                   <Field label="Repair Paper Size"><select value={forms.slip.repairPaperSize} onChange={(e) => updateForm('slip', { repairPaperSize: e.target.value })} disabled={!canManage}><option>58mm</option><option>80mm</option></select></Field>
                   <Field label="Voucher Header"><textarea rows="2" value={forms.slip.repairVoucherHeader || ''} onChange={(e) => updateForm('slip', { repairVoucherHeader: e.target.value })} disabled={!canManage}/></Field>
                   <Field label="Voucher Footer"><textarea rows="2" value={forms.slip.repairVoucherFooter || ''} onChange={(e) => updateForm('slip', { repairVoucherFooter: e.target.value })} disabled={!canManage}/></Field>
-                </> : null}
               </div>
 
               <Divider>Show on Slip</Divider>
@@ -325,9 +311,6 @@ export default function ProjectSettingsCenter() {
               <Field label="Page Size"><select value={forms.preferences.pageSize} onChange={(e) => updateForm('preferences', { pageSize: Number(e.target.value) })}>{[10,20,50,100].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
               <Field label="Date Format"><select value={forms.preferences.dateFormat} onChange={(e) => updateForm('preferences', { dateFormat: e.target.value })}><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option><option>MM/DD/YYYY</option></select></Field>
               <Field label="Time Format"><select value={forms.preferences.timeFormat} onChange={(e) => updateForm('preferences', { timeFormat: e.target.value })}><option value="12h">12 Hour</option><option value="24h">24 Hour</option></select></Field>
-              {isMiniMart ? <div style={{ gridColumn: '1 / -1' }}>
-                <Toggle label="Money Service Menu ပြမည်" hint="ပုံမှန်အားဖြင့် မပြပါ။ Cash In / Cash Out သုံးလိုမှ ဖွင့်ပါ။" checked={showMoneyService} onChange={(v) => { try { window.localStorage.setItem('miniMartShowMoneyService', v ? 'true' : 'false'); } catch {} updateForm('preferences', { showMoneyService: v, openingPage: v ? forms.preferences.openingPage : (forms.preferences.openingPage === 'Money Service' ? 'Sale POS' : forms.preferences.openingPage) }); }} disabled={!canManage}/>
-              </div> : null}
             </div>
             <SaveBar name="preferences" saving={saving} onSave={() => save('preferences')} label="Save My Preference"/>
           </section>

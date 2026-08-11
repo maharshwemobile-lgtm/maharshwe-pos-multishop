@@ -27,42 +27,8 @@ const PHONE_SHOP_CONTENT = {
   },
 };
 
-const MINI_MART_CONTENT = {
-  'Sale POS': {
-    badge: 'FIRST LOGIN',
-    title: 'ပစ္စည်းတွေ အရင်ထည့်ပါ',
-    text: 'ရောင်းဖို့အတွက် Items / Products မှာ ပစ္စည်းနာမည်၊ ဈေးနှုန်းနဲ့ လက်ကျန် အရင်ထည့်ပါ။',
-    actions: [{ key: 'go-products', label: 'Items / Products ဖွင့်မယ်', page: 'Products', icon: Box }],
-  },
-  Products: {
-    badge: 'PRODUCT SETUP',
-    title: 'Add Product တစ်ခါတည်းနဲ့ ပြီးပါပြီ',
-    text: 'ပစ္စည်းနာမည်၊ ဈေးနှုန်း၊ လက်ကျန်ကို Add Product form တစ်ခုတည်းမှာ ထည့်လိုက်ပါ။ Category မထည့်လည်း ရပါတယ်။',
-    actions: [
-      { key: 'add-product', label: 'Add Product form ဖွင့်မယ်', action: 'add-product', icon: Box },
-      { key: 'go-sale', label: 'Sale POS မှာရောင်းမယ်', page: 'Sale POS', icon: ShoppingCart },
-    ],
-  },
-  Stock: {
-    badge: 'STOCK GUIDE',
-    title: 'လက်ကျန်နဲ့ သက်တမ်း စစ်ပါ',
-    text: 'ပစ္စည်းတစ်ခုချင်းစီရဲ့ လက်ကျန်၊ Low Stock သတိပေးချက်နဲ့ သက်တမ်းကုန်ရက်ကို ဒီမှာ ပြင်နိုင်ပါတယ်။',
-    actions: [{ key: 'go-sale', label: 'Sale POS သွားမယ်', page: 'Sale POS', icon: ShoppingCart }],
-  },
-};
-
-const CONTENT_BY_TYPE = {
-  PHONE_SHOP: PHONE_SHOP_CONTENT,
-  MINI_MART: MINI_MART_CONTENT,
-};
-
-function normalizeBusinessType(value) {
-  return String(value || '').toUpperCase() === 'MINI_MART' ? 'MINI_MART' : 'PHONE_SHOP';
-}
-
-export default function FirstLoginGuide({ currentPage, businessType = 'PHONE_SHOP', onNavigate, onAction, onDismiss }) {
-  const type = normalizeBusinessType(businessType);
-  const content = CONTENT_BY_TYPE[type]?.[currentPage] || CONTENT_BY_TYPE[type]?.['Sale POS'] || PHONE_SHOP_CONTENT['Sale POS'];
+export default function FirstLoginGuide({ currentPage, onNavigate, onAction, onDismiss }) {
+  const content = PHONE_SHOP_CONTENT[currentPage] || PHONE_SHOP_CONTENT['Sale POS'];
 
   return (
     <section className="first-login-guide">

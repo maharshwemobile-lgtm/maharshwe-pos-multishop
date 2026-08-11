@@ -133,7 +133,7 @@ const updateShopSchema = z.object({
   phone: z.string().trim().max(80).nullable().optional(),
   address: z.string().trim().max(300).nullable().optional(),
   tenantId: z.string().trim().min(2).max(80).optional(),
-  businessType: z.enum(["PHONE_SHOP", "MINI_MART"]).optional(),
+  businessType: z.literal("PHONE_SHOP").optional(),
   active: z.boolean().optional(),
   adminPortalEnabled: z.boolean().optional(),
   featurePermissions: z.record(z.boolean()).optional(),

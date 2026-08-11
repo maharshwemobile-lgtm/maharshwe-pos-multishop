@@ -55,17 +55,6 @@ const menu = [
 ];
 
 const LIMITED_SUBSCRIPTION_PAGES = new Set(['Sale POS', 'Sales History']);
-const MINI_MART_HIDDEN_PAGES = new Set(['Repairs', 'Partner Settlement', ...((typeof window !== 'undefined' && window.localStorage?.getItem('miniMartShowMoneyService') === 'true') ? [] : ['Money Service'])]);
-const MINI_MART_MENU_LABELS = {
-  Dashboard: 'Mini Mart Dashboard',
-  'Sale POS': 'Mini Mart POS',
-  'Sales History': 'Sales History',
-  Products: 'Items / Products',
-  Stock: 'Inventory Stock',
-  Purchases: 'Purchases',
-  Reports: 'Mini Mart Reports',
-  Settings: 'Project Settings',
-};
 const TELEGRAM_COMMUNITY_URL = 'https://t.me/+2gc9ml7iMgk1ZThl';
 
 const pageTitles = {
@@ -131,18 +120,7 @@ function businessTypeOf(user) {
   return safeText(user?.shop?.businessType || user?.shop?.business_type || user?.businessType, 'PHONE_SHOP');
 }
 
-function isMiniMartBusiness(user) {
-  return businessTypeOf(user) === 'MINI_MART';
-}
-
-function miniMartMenuItem(item, user) {
-  if (!isMiniMartBusiness(user)) return item;
-  const label = MINI_MART_MENU_LABELS[item.name];
-  return label ? { ...item, label } : item;
-}
-
-function pageTitleFor(page, user) {
-  if (isMiniMartBusiness(user) && MINI_MART_MENU_LABELS[page]) return MINI_MART_MENU_LABELS[page];
+function pageTitleFor(page) {
   return safeText(pageTitles[page], page);
 }
 
@@ -173,7 +151,6 @@ function pageVisible(page, user) {
   if (!user) return true;
   if (user.role === 'SUPER_ADMIN') return true;
   if (safePage === 'Audit Trail') return false;
-  if (isMiniMartBusiness(user) && MINI_MART_HIDDEN_PAGES.has(safePage)) return false;
   if (isSaleHistoryOnly(user) && !LIMITED_SUBSCRIPTION_PAGES.has(safePage)) return false;
   const permissions = user.permissions || {};
   const explicitKey = `tab.${safePage}`;
@@ -228,7 +205,7 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
     .map((part) => part.charAt(0))
     .join('')
     .toUpperCase() || 'BS';
-  const businessSubtitle = isMiniMartBusiness(user) ? 'Mini Mart POS & Inventory' : safeText(settings?.business?.subtitle, 'Mobile Shop Management');
+  const businessSubtitle = safeText(settings?.business?.subtitle, 'Mobile Shop Management');
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
       clearSession();
@@ -264,19 +241,14 @@ function Sidebar({ page, onSelect, onClose, visibleMenu, settings, user, open = 
 }
 
 
-function AppMenuTour({ open, isMobile, onOpenMenu, onDismiss, user }) {
+function AppMenuTour({ open, isMobile, onOpenMenu, onDismiss }) {
   if (!open) return null;
-  const miniMart = isMiniMartBusiness(user);
   return (
     <div className="app-menu-tour" role="dialog" aria-label="Menu tour guide">
       <div className="app-menu-tour-card">
         <span className="app-menu-tour-badge">QUICK TOUR</span>
-        <h3>{miniMart ? 'Mini Mart Menu လမ်းညွှန်' : 'Menu / Sidebar လမ်းညွှန်'}</h3>
-        <p>
-          {miniMart
-            ? 'Sidebar ထဲကနေ Mini Mart POS, Sales History, Items / Products, Inventory Stock, Purchases, Mini Mart Reports နဲ့ Settings တွေကိုဝင်သုံးနိုင်ပါတယ်။ Repair နဲ့ Partner Settlement menu တွေကို Mini Mart မှာဖျောက်ထားပါတယ်။ Money Service ကို Settings ထဲကနေ ဖွင့်မှသာပြပါမယ်။ Mobile မှာဆိုရင် အပေါ်ဘယ်ဘက် Menu ခလုတ်ကိုနှိပ်ပြီး Sidebar ကိုဖွင့်ပါ။'
-            : 'ဘယ်ဘက် Sidebar ထဲကနေ Sale POS, Products, Stock, Money Service, Reports နဲ့ Settings တွေကိုဝင်သုံးနိုင်ပါတယ်။ Mobile မှာဆိုရင် အပေါ်ဘယ်ဘက် Menu ခလုတ်ကိုနှိပ်ပြီး Sidebar ကိုဖွင့်ပါ။'}
-        </p>
+        <h3>Menu / Sidebar လမ်းညွှန်</h3>
+        <p>ဘယ်ဘက် Sidebar ထဲကနေ Sale POS, Products, Stock, Money Service, Reports နဲ့ Settings တွေကိုဝင်သုံးနိုင်ပါတယ်။ Mobile မှာဆိုရင် အပေါ်ဘယ်ဘက် Menu ခလုတ်ကိုနှိပ်ပြီး Sidebar ကိုဖွင့်ပါ။</p>
         <div className="app-menu-tour-actions">
           {isMobile ? (
             <button type="button" className="primary" onClick={onOpenMenu}>Menu ဖွင့်ကြည့်မယ်</button>
@@ -290,15 +262,12 @@ function AppMenuTour({ open, isMobile, onOpenMenu, onDismiss, user }) {
 
 function Topbar({ page, toggle, settings, user, menuOpen }) {
   const safePage = validPageName(page);
-  const title = pageTitleFor(safePage, user);
+  const title = pageTitleFor(safePage);
   const logo = effectiveLogo();
   const isDashboard = safePage === 'Dashboard';
   const isRepair = safePage === 'Repairs';
-  const miniMart = isMiniMartBusiness(user);
   const phaseLabel = '';
-  const subtitle = isDashboard
-    ? (miniMart ? 'Mini Mart Daily Sales & Stock Overview' : 'Live Business Overview')
-    : safeText(settings?.business?.name, '');
+  const subtitle = isDashboard ? 'Live Business Overview' : safeText(settings?.business?.name, '');
   return <header className="topbar">
     <button
       className={`icon phase9-mobile-menu-button ${menuOpen ? 'is-active' : ''}`}
@@ -383,7 +352,7 @@ export default function AppFull() {
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [menuTourDismissed, setMenuTourDismissed] = useState(false);
 
-  const visibleMenu = useMemo(() => menu.filter((item) => pageVisible(item.name, user)).map((item) => miniMartMenuItem(item, user)), [user]);
+  const visibleMenu = useMemo(() => menu.filter((item) => pageVisible(item.name, user)), [user]);
   const fallbackPage = visibleMenu[0]?.name || (isSaleHistoryOnly(user) ? 'Sale POS' : 'Dashboard');
 
   useEffect(() => subscribeSession(setSession), []);

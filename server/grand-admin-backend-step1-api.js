@@ -131,7 +131,7 @@ const createShopSchema = z.object({
   address: z.string().trim().max(300).optional(),
   city: z.string().trim().max(120).optional(),
   tenantId: z.string().trim().min(2).max(80).optional(),
-  businessType: z.enum(["PHONE_SHOP", "MINI_MART"]).default("PHONE_SHOP"),
+  businessType: z.literal("PHONE_SHOP").default("PHONE_SHOP"),
 });
 
 const tenantIdSchema = z.object({ tenantId: z.string().trim().min(2).max(80) });

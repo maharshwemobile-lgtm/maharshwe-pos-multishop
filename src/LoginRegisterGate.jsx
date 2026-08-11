@@ -9,38 +9,17 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE
 let googleIdentityInitialized = false;
 let googleCredentialHandler = null;
 
-const BUSINESS_TYPES = [
-  {
-    value: 'PHONE_SHOP',
-    title: '📱 Phone Shop',
-    subtitle: 'Phone sales, repairs, IMEI and money services',
-  },
-  {
-    value: 'MINI_MART',
-    title: '🛒 Retail Shop',
-    subtitle: 'Barcode, expiry dates and retail POS',
-  },
-];
+// Mahar POS is a phone shop system only. Retail / Mini Mart runs as its own
+// product on Wallet Note, so shops that need barcodes and expiry dates are sent
+// there instead of being registered here with half the features hidden.
+const RETAIL_SIGNUP_URL = 'https://walletnote.online/register?type=MINI_MART';
 
-function BusinessTypePicker({ value, onChange }) {
+function RetailShopNotice() {
   return (
-    <div className="ms-business-type-field">
-      <span>Business Type <b>*</b></span>
-      <div className="ms-business-type-options">
-        {BUSINESS_TYPES.map((item) => (
-          <label key={item.value} className={`ms-business-type-card ${value === item.value ? 'active' : ''}`}>
-            <input
-              type="radio"
-              name="businessType"
-              value={item.value}
-              checked={value === item.value}
-              onChange={() => onChange(item.value)}
-            />
-            <strong>{item.title}</strong>
-            <small>{item.subtitle}</small>
-          </label>
-        ))}
-      </div>
+    <div className="ms-retail-notice">
+      <strong>🛒 Mini Mart / Retail Shop လား?</strong>
+      <small>Mahar POS က ဖုန်းဆိုင်သီးသန့်ပါ။ Barcode, ကုန်ဆုံးရက်နဲ့ retail POS အတွက် Wallet Note Mini Mart ကို သုံးပါ။</small>
+      <a href={RETAIL_SIGNUP_URL} target="_blank" rel="noreferrer noopener">Wallet Note Mini Mart မှာ အကောင့်ဖွင့်မည် →</a>
     </div>
   );
 }
@@ -61,9 +40,7 @@ function LifetimeFreePlan() {
 export default function LoginRegisterGate({ onSession, forcePasswordChange = false }) {
   const [mode, setMode] = useState('login');
   const [loginForm, setLoginForm] = useState({ username: '', password: '', shopSlug: '' });
-  const [registerForm, setRegisterForm] = useState({ shopName: '', businessType: '', username: '', password: '', phone: '' });
-  const [googleBusinessType, setGoogleBusinessType] = useState('PHONE_SHOP');
-  const [pendingGoogleCredential, setPendingGoogleCredential] = useState('');
+  const [registerForm, setRegisterForm] = useState({ shopName: '', username: '', password: '', phone: '' });
   const [prefill, setPrefill] = useState(null);
   const [needSlug, setNeedSlug] = useState(false);
   const [error, setError] = useState('');
@@ -109,17 +86,10 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       const session = await googleLogin({
         credential,
         shopSlug: loginForm.shopSlug.trim() || undefined,
-        businessType: mode === 'register' ? registerForm.businessType || 'PHONE_SHOP' : undefined,
+        businessType: mode === 'register' ? 'PHONE_SHOP' : undefined,
       });
       onSession?.(session);
     } catch (requestError) {
-      if (requestError?.data?.requiresBusinessType) {
-        setPendingGoogleCredential(credential);
-        setGoogleBusinessType('PHONE_SHOP');
-        setMode('googleBusinessType');
-        setError('Google Register ဆက်လုပ်ရန် ဆိုင်အမျိုးအစားကို အရင်ရွေးပါ။');
-        return;
-      }
       const message = requestError?.message || 'Google Login မအောင်မြင်ပါ။';
       if (/(multiple|shop slug|shop code|tenant|ဆိုင်ကုဒ်)/i.test(message)) setNeedSlug(true);
       setError(/multiple/i.test(message)
@@ -177,14 +147,13 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     };
     document.body.appendChild(script);
     return () => { cancelled = true; };
-  }, [mode, loginForm.shopSlug, registerForm.businessType, onSession]);
+  }, [mode, loginForm.shopSlug, onSession]);
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
     setError('');
     setSuccess('');
     setNeedSlug(false);
-    if (nextMode !== 'googleBusinessType') setPendingGoogleCredential('');
   };
 
   const submitLogin = async (event) => {
@@ -223,8 +192,6 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     }
   };
 
-  // Business Type is the last question: it only appears once the shop has told
-  // us who it is, so the choice is made deliberately rather than skipped past.
   const registerBasicsComplete = Boolean(
     registerForm.shopName.trim()
     && registerForm.username.trim().length >= 2
@@ -247,15 +214,11 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       setError('Password အနည်းဆုံး ၆ လုံး ရှိရမည်။');
       return;
     }
-    if (!registerForm.businessType) {
-      setError('Business Type ရွေးပါ။');
-      return;
-    }
     setLoading(true);
     try {
       const data = await registerTenant({
         shopName: registerForm.shopName.trim(),
-        businessType: registerForm.businessType || 'PHONE_SHOP',
+        businessType: 'PHONE_SHOP',
         username: registerForm.username.trim(),
         password: registerForm.password,
         phone: registerForm.phone.trim() || undefined,
@@ -269,7 +232,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       sessionStorage.setItem('pos_prefill_login', JSON.stringify(nextPrefill));
       setPrefill(nextPrefill);
       setLoginForm({ username: nextPrefill.username, password: '', shopSlug: nextPrefill.shopSlug });
-      setRegisterForm({ shopName: '', businessType: '', username: '', password: '', phone: '' });
+      setRegisterForm({ shopName: '', username: '', password: '', phone: '' });
       setSuccess(`${nextPrefill.shopName} အကောင့် ဖွင့်ပြီးပါပြီ။ Password ရိုက်ပြီး Login ဝင်ပါ။`);
       setMode('login');
     } catch (requestError) {
@@ -277,31 +240,6 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         ? 'ဤ Email/Username နဲ့ account ရှိပြီးသားပါ။ Login ဝင်ပါ။'
         : requestError?.message || 'အကောင့်ဖွင့်ခြင်း မအောင်မြင်ပါ။';
       setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const submitGoogleBusinessType = async (event) => {
-    event.preventDefault();
-    setError('');
-    setSuccess('');
-    if (!pendingGoogleCredential) {
-      setError('Google Login session မရှိတော့ပါ။ Google Login ကို ပြန်နှိပ်ပါ။');
-      setMode('login');
-      return;
-    }
-    setLoading(true);
-    try {
-      const session = await googleLogin({
-        credential: pendingGoogleCredential,
-        shopSlug: loginForm.shopSlug.trim() || undefined,
-        businessType: googleBusinessType,
-      });
-      setPendingGoogleCredential('');
-      onSession?.(session);
-    } catch (requestError) {
-      setError(requestError?.message || 'Google Register မအောင်မြင်ပါ။');
     } finally {
       setLoading(false);
     }
@@ -381,27 +319,6 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     );
   }
 
-  if (mode === 'googleBusinessType') {
-    return (
-      <main className="ms-login-page">
-        <section className="ms-login-card">
-          <div className="ms-login-brand">
-            <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
-            <h1>Mahar POS</h1>
-            <p>Google Register ဆက်လုပ်ရန် ဆိုင်အမျိုးအစား ရွေးပါ</p>
-          </div>
-          <LifetimeFreePlan />
-          {error ? <div className="ms-login-alert error">{error}</div> : null}
-          <form className="ms-login-form" onSubmit={submitGoogleBusinessType}>
-            <BusinessTypePicker value={googleBusinessType} onChange={(value) => { setGoogleBusinessType(value); setError(''); }} />
-            <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Register လုပ်နေသည်...' : 'ရွေးပြီး Register ပြီး Dashboard ဝင်မည်'}</button>
-            <button type="button" className="ms-login-secondary" disabled={loading} onClick={() => { setPendingGoogleCredential(''); switchMode('login'); }}>Google Login ပြန်လုပ်မည်</button>
-          </form>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className="ms-login-page">
       <section className="ms-login-card">
@@ -459,12 +376,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
               <span>Phone Number <em>(Optional)</em></span>
               <input type="tel" name="phone" value={registerForm.phone} onChange={(event) => { setRegisterForm({ ...registerForm, phone: event.target.value }); setError(''); }} placeholder="09xxxxxxxxx" />
             </label>
-            {registerBasicsComplete ? (
-              <BusinessTypePicker value={registerForm.businessType} onChange={(value) => { setRegisterForm({ ...registerForm, businessType: value }); setError(''); }} />
-            ) : (
-              <p className="ms-business-type-pending">အပေါ်က အချက်အလက်များ ဖြည့်ပြီးရင် <b>Business Type</b> ရွေးရပါမယ်။</p>
-            )}
-            <button type="submit" className="ms-login-primary" disabled={loading || !registerBasicsComplete || !registerForm.businessType}>{loading ? 'Creating account...' : 'Create Account'}</button>
+            <RetailShopNotice />
+            <button type="submit" className="ms-login-primary" disabled={loading || !registerBasicsComplete}>{loading ? 'Creating account...' : 'Create Account'}</button>
             <p className="ms-login-footer">Already have an account? <button type="button" onClick={() => switchMode('login')}>Sign In</button></p>
             {GOOGLE_CLIENT_ID ? (
               <>

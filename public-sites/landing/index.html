@@ -735,8 +735,8 @@ footer{background:var(--ink);color:#93A2B8;padding:64px 0 30px;margin-top:0}
         <div class="faq-a"><p>ရပါသည်။ Project Settings မှ Apps Script code ကို copy လုပ်ပြီး Google Sheet Web App URL ချိတ်ထားပါက Daily Close, Transaction record နှင့် သတ်မှတ်ထားသော report data များကို Sheet ဖက်မှ pull ယူနိုင်ပါသည်။</p></div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" aria-expanded="false">Mini Mart အတွက် Purchasing flow ပါပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-        <div class="faq-a"><p>ပါပါသည်။ Supplier, Purchase Order, Receive Stock, Supplier Payment, Purchase Return နှင့် Purchasing Report ကို Purchases တစ်ခုတည်းအောက်တွင် စီမံနိုင်ပါသည်။ Mobile Shop repair purchasing flow နှင့် သီးသန့်ဖြစ်ပါသည်။</p></div>
+        <button class="faq-q" aria-expanded="false">Mini Mart / ကုန်စုံဆိုင် အတွက်ကော ရပါသလား။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="faq-a"><p>Mahar POS ကို ဖုန်းဆိုင်အတွက် သီးသန့် ပြုလုပ်ထားပါသည်။ Barcode, ကုန်ဆုံးရက်နှင့် retail POS လိုအပ်ပါက <a href="https://walletnote.online/register?type=MINI_MART" target="_blank" rel="noopener">Wallet Note Mini Mart</a> ကို အသုံးပြုပါ။</p></div>
       </div>
       <div class="faq-item">
         <button class="faq-q" aria-expanded="false">Backup / Data လုံခြုံမှု ဘယ်လိုရှိပါသလဲ။<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -949,7 +949,7 @@ const GUIDE_FALLBACK = [
   { slug:"daily-close-report", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Daily Close / Reports အသုံးပြုနည်း", desc:"Daily, Monthly, Yearly report များတွင် Product Sales, Service, Money Service, Bill/Eload, Expense ခွဲကြည့်နည်း။", steps:["Reports & Performance ကိုဝင်ပါ","Daily / Monthly / Yearly ရွေးပါ","Excel/CSV export ထုတ်ပါ"] },
   { slug:"google-sheet-sync", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Google Sheet Sync ချိတ်နည်း", desc:"Project Settings မှ Apps Script code copy လုပ်ပြီး Sheet Web App URL ချိတ်၍ report/data pull လုပ်နည်း။", steps:["Settings > Google Sheet ကိုဝင်ပါ","Apps Script Code ကို Copy လုပ်ပါ","Google Sheet မှာ paste/deploy ပြီး URL ကို Save/Test လုပ်ပါ"] },
   { slug:"staff-permission", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Staff Role & Permission", desc:"ဝန်ထမ်း account ဖန်တီး၊ password reset၊ Role/Permission ခွဲခြားသတ်မှတ်နည်း။", steps:["Staff section ကိုဝင်ပါ","Create User ဖြင့် user ထည့်ပါ","Role နှင့် permission ရွေးပါ"] },
-  { slug:"mini-mart-purchasing", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Mini Mart Purchasing Flow", desc:"Supplier, Purchase Order, Receive Stock, Supplier Payment/Return နှင့် purchasing report ကို တစ်နေရာတည်းမှာ အသုံးပြုနည်း။", steps:["Purchases ကိုဝင်ပါ","Supplier ထည့်ပြီး Purchase Order ဖန်တီးပါ","Receive Stock / Pay / Return / Reports ကိုသုံးပါ"] },
+  { slug:"purchasing-flow", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Purchasing Flow", desc:"Supplier, Purchase Order, Receive Stock, Supplier Payment/Return နှင့် purchasing report ကို တစ်နေရာတည်းမှာ အသုံးပြုနည်း။", steps:["Purchases ကိုဝင်ပါ","Supplier ထည့်ပြီး Purchase Order ဖန်တီးပါ","Receive Stock / Pay / Return / Reports ကိုသုံးပါ"] },
   { slug:"backup-restore", cat:"start", catLabel:"စတင်ခြင်း", title:"Backup / Restore သိထားရန်", desc:"Cloud backup status စစ်ခြင်း၊ backup download နှင့် restore မလုပ်မီ သတိထားရမည့်အချက်များ။", steps:["Backup page မှ latest backup status စစ်ပါ","Download ရလျှင် file သိမ်းထားပါ","Restore မလုပ်မီ current DB backup ယူပါ"] },
 ];
 const guideIcon = '<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h7l7 7v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z"/><path d="M13 3v7h7"/><path d="M8 14h8M8 17h5"/></svg>';

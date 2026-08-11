@@ -6,7 +6,6 @@ import {
   CalendarDays,
   CheckCircle2,
   CircleDollarSign,
-  Clock3,
   CreditCard,
   Loader2,
   PackageSearch,
@@ -19,7 +18,7 @@ import {
   Wallet,
   Wrench,
 } from 'lucide-react';
-import { apiFetch, getSession } from './phase2Api';
+import { apiFetch } from './phase2Api';
 import './business-control-dashboard.css';
 import './business-control-income.css';
 
@@ -83,9 +82,6 @@ function AccountCard({ label, value, icon: Icon }) {
 }
 
 export default function DashboardBusinessV3({ onNavigate }) {
-  const session = getSession();
-  const rawBusinessType = session?.shop?.businessType || session?.user?.shop?.businessType || session?.businessType || 'PHONE_SHOP';
-  const isMiniMart = String(rawBusinessType).toUpperCase() === 'MINI_MART';
   const today = yangonToday();
 
   const [businessDate, setBusinessDate] = useState(today);
@@ -131,10 +127,10 @@ export default function DashboardBusinessV3({ onNavigate }) {
   }, [trend]);
 
   const metrics = [
-    { icon: Wallet, label: "Today's Total Income", value: dashboard.todayTotalIncome, detail: isMiniMart ? `Sales + Other + TopUp (${money(dashboard.billEloadSoldVolume)})` : `Sales + Repair + Service + Other + TopUp (${money(dashboard.billEloadSoldVolume)})`, tone: 'green' },
+    { icon: Wallet, label: "Today's Total Income", value: dashboard.todayTotalIncome, detail: `Sales + Repair + Service + Other + TopUp (${money(dashboard.billEloadSoldVolume)})`, tone: 'green' },
     { icon: ShoppingCart, label: 'Product Sales Income', value: dashboard.todaySaleIncome, detail: `${Number(dashboard.todayOrders || 0)} sale orders`, tone: 'blue' },
     { icon: TrendingUp, label: 'Product Sales Profit', value: dashboard.productProfit, detail: 'Product gross profit', tone: 'green' },
-    !isMiniMart ? { icon: Wrench, label: 'Repair Income', value: dashboard.repairIncome, detail: `${Number(dashboard.repairPayments || 0)} repair payments + Service Income`, tone: 'gold' } : null,
+    { icon: Wrench, label: 'Repair Income', value: dashboard.repairIncome, detail: `${Number(dashboard.repairPayments || 0)} repair payments + Service Income`, tone: 'gold' },
     { icon: PlusCircle, label: 'Other Income', value: dashboard.otherIncome, detail: `${Number(dashboard.otherIncomeCount || 0)} income records`, tone: 'blue', breakdown: dashboard.otherIncomeBreakdown || [] },
     { icon: CreditCard, label: "Today's Expense", value: dashboard.todayExpense, detail: `${Number(dashboard.expenseCount || 0)} expense records`, tone: 'red', breakdown: dashboard.expenseBreakdown || [] },
     { icon: Users, label: 'Customer Receivable', value: dashboard.receivable, detail: `${Number(dashboard.receivableCustomers || 0)} customers owe`, tone: 'orange' },
@@ -197,7 +193,7 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
           <article className="bc-panel bc-alert-panel">
             <header><div><span>BUSINESS ALERTS</span><h3>Action Required</h3></div><AlertTriangle size={23} /></header>
-            {!isMiniMart ? <button type="button" onClick={() => onNavigate('Repairs')} className="bc-action-alert"><Wrench size={21} /><div><b>{Number(dashboard.pendingRepairs || 0)} Pending Repairs</b><span>Received, checking, in progress or waiting part</span></div></button> : null}
+            <button type="button" onClick={() => onNavigate('Repairs')} className="bc-action-alert"><Wrench size={21} /><div><b>{Number(dashboard.pendingRepairs || 0)} Pending Repairs</b><span>Received, checking, in progress or waiting part</span></div></button>
             <button type="button" onClick={() => onNavigate('Stock')} className="bc-action-alert"><PackageSearch size={21} /><div><b>{Number(dashboard.lowStockCount || 0)} Low Stock Items</b><span>Stock quantity reached minimum alert level</span></div></button>
             <div className="bc-low-stock-list">
               {(data.lowStock || []).slice(0, 5).map((item) => <div key={item.id}><span>{item.name || item.sku || 'Product'}</span><b className={item.quantity <= 0 ? 'danger' : ''}>{item.quantity}</b></div>)}
@@ -210,17 +206,14 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
 
 
-        {/* Mini Mart gets the same shortcuts minus the pages its menu hides */}
         <section className="bc-quick-links">
           {[
             ['New Sale', ShoppingCart, 'Sale POS'],
-            !isMiniMart ? ['Repair Platform', Wrench, 'Repairs'] : null,
-            isMiniMart ? ['Sales History', Clock3, 'Sales History'] : null,
-            isMiniMart ? ['Items / Products', PackageSearch, 'Products'] : null,
+            ['Repair Platform', Wrench, 'Repairs'],
             ['Finance', Wallet, 'Accounting'],
             ['Purchasing', Truck, 'Purchases'],
             ['Reports', BarChart3, 'Reports'],
-          ].filter(Boolean).map(([label, Icon, page]) => <button type="button" key={label} onClick={() => onNavigate(page)}><Icon size={21} /><span><b>{label}</b><small>Open workspace</small></span></button>)}
+          ].map(([label, Icon, page]) => <button type="button" key={label} onClick={() => onNavigate(page)}><Icon size={21} /><span><b>{label}</b><small>Open workspace</small></span></button>)}
         </section>
       </> : null}
     </div>
