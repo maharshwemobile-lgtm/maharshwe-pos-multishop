@@ -4,6 +4,7 @@ import { apiFetch, getSession } from '../phase2Api';
 import GOOGLE_APPS_SCRIPT from '../../integrations/google-apps-script/MaharShwePosSync.gs?raw';
 import PULL_SYNC_SCRIPT from '../../integrations/google-apps-script/MaharPosGSheetPullSync.gs?raw';
 import './project-operations-v23.css';
+import { APP_URL } from '../projectBrand';
 
 const EMPTY = {
   enabled: false,
@@ -57,7 +58,7 @@ export default function GoogleSheetIntegrationSettingsV23() {
   const session = getSession();
   const canManage = ['SUPER_ADMIN', 'SHOP_ADMIN'].includes(session?.user?.role || '') || session?.user?.permissions?.settings === true;
   const fallbackShopSlug = session?.user?.shopSlug || session?.user?.tenantId || '';
-  const appBaseUrl = typeof window === 'undefined' ? 'https://app.maharshwe.shop' : window.location.origin;
+  const appBaseUrl = APP_URL;
   const [form, setForm] = useState(EMPTY);
   const [counts, setCounts] = useState({});
   const [tabs, setTabs] = useState([]);

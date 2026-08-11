@@ -3,6 +3,7 @@ const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser } = require('./auth-api');
 const { isFirebaseAdminConfigured, sendFcmMessages } = require('./firebase-admin');
+const { appUrl } = require('./public-urls');
 
 const tokenSchema = z.object({
   token: z.string().trim().min(20).max(4096),
@@ -75,7 +76,7 @@ function publicAppBaseUrl() {
   const base = process.env.APP_PUBLIC_URL
     || process.env.PUBLIC_APP_URL
     || process.env.NEXTAUTH_URL
-    || 'https://app.maharshwe.shop';
+    || appUrl();
   return String(base).replace(/\/+$/, '');
 }
 

@@ -1,10 +1,10 @@
-const DEFAULT_APP_URL = "https://app.maharshwe.shop";
+const { appUrl: publicAppUrl, primaryDomain } = require("./public-urls");
 const DEFAULT_COMMUNITY_URL = "https://t.me/+2gc9ml7iMgk1ZThl";
 const DEFAULT_SUPPORT_TELEGRAM = "https://t.me/Mylifemychoice68";
 const DEFAULT_SUBJECT = "Mahar Mobile Shop POS Account Activated / အကောင့်ဖွင့်ပြီးပါပြီ";
 
 function appUrl() {
-  return String(process.env.APP_PUBLIC_URL || process.env.PUBLIC_APP_URL || DEFAULT_APP_URL).replace(/\/+$/, "");
+  return String(process.env.APP_PUBLIC_URL || publicAppUrl()).replace(/\/+$/, "");
 }
 
 function resendConfig() {
@@ -13,7 +13,7 @@ function resendConfig() {
     process.env.RESEND_FROM
       || process.env.EMAIL_FROM
       || process.env.SMTP_FROM
-      || "Mahar Mobile Shop POS <no-reply@maharshwe.shop>"
+      || `Mahar POS <no-reply@${primaryDomain()}>`
   ).trim();
   const replyTo = String(process.env.RESEND_REPLY_TO || process.env.EMAIL_REPLY_TO || "maharshwemobile@gmail.com").trim();
   return { ready: Boolean(apiKey && from), apiKey, from, replyTo };

@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Copy, Loader2, Save, ShieldCheck, Wand2 } from 'lucide-react';
 import { apiFetch } from '../phase2Api';
+import { API_URL } from '../projectBrand';
+
+const AGENT_RECORDS_ENDPOINT = `${API_URL}/api/agent/records`;
+const AGENT_PARSE_ENDPOINT = `${API_URL}/api/project-settings/api/agent/parse`;
 
 const EMPTY = {
   enabled: false,
@@ -226,12 +230,12 @@ export default function AgentApiSettings() {
       </div>
 
       <div className="gs-code-card">
-        <div><b>Agent Import Endpoint</b><button type="button" onClick={() => copy(meta.incomingEndpoint || 'https://api.maharshwe.shop/api/agent/records')}><Copy size={15}/> Copy</button></div>
-        <code>{meta.incomingEndpoint || 'https://api.maharshwe.shop/api/agent/records'}</code>
+        <div><b>Agent Import Endpoint</b><button type="button" onClick={() => copy(meta.incomingEndpoint || AGENT_RECORDS_ENDPOINT)}><Copy size={15}/> Copy</button></div>
+        <code>{meta.incomingEndpoint || AGENT_RECORDS_ENDPOINT}</code>
       </div>
       <div className="gs-code-card">
-        <div><b>AI Parse Endpoint</b><button type="button" onClick={() => copy(meta.parseEndpoint || 'https://api.maharshwe.shop/api/project-settings/api/agent/parse')}><Copy size={15}/> Copy</button></div>
-        <code>{meta.parseEndpoint || 'https://api.maharshwe.shop/api/project-settings/api/agent/parse'}</code>
+        <div><b>AI Parse Endpoint</b><button type="button" onClick={() => copy(meta.parseEndpoint || AGENT_PARSE_ENDPOINT)}><Copy size={15}/> Copy</button></div>
+        <code>{meta.parseEndpoint || AGENT_PARSE_ENDPOINT}</code>
       </div>
       <div className="gs-code-card">
         <div><b>Parse Sample JSON</b><button type="button" onClick={() => copy(parseSampleJson)}><Copy size={15}/> Copy</button></div>

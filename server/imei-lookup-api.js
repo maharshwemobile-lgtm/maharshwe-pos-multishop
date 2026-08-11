@@ -14,6 +14,7 @@
 // lookup, so a result is cached by TAC and never bought twice.
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser } = require('./auth-api');
+const { appUrl } = require('./public-urls');
 
 let schemaPromise;
 
@@ -109,7 +110,7 @@ async function fromProvider(imei, tac) {
       headers: {
         Accept: 'application/json',
         // a browser-ish agent: some TAC services block default fetch agents
-        'User-Agent': 'MaharPOS/1.0 (+https://app.maharshwe.shop)',
+        'User-Agent': `MaharPOS/1.0 (+${appUrl()})`,
         ...(!usesKeyInUrl && token ? { Authorization: `Bearer ${token}` } : {}),
       },
       signal: AbortSignal.timeout(8000),

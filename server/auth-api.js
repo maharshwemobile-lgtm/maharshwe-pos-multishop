@@ -1,3 +1,4 @@
+const { isAppHost, isSuperAdminHost } = require('./public-urls');
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -112,13 +113,11 @@ function appTurnstileConfig() {
 }
 
 function isSuperLoginRequest(req) {
-  const host = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase();
-  return host === 'super.maharshwe.shop';
+  return isSuperAdminHost(req.hostname || req.headers.host);
 }
 
 function isAppLoginRequest(req) {
-  const host = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase();
-  return host === 'app.maharshwe.shop';
+  return isAppHost(req.hostname || req.headers.host);
 }
 
 function currentAppFailures(req) {
@@ -1122,7 +1121,7 @@ function attachAuthApi(app) {
   });
   app.get('/api/auth/super-security-config', (req, res) => {
     const config = superTurnstileConfig();
-    const hostAllowed = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase() === 'super.maharshwe.shop';
+    const hostAllowed = isSuperAdminHost(req.hostname || req.headers.host);
     res.set('Cache-Control', 'no-store').json({
       ok: true,
       turnstile: {
@@ -1134,7 +1133,7 @@ function attachAuthApi(app) {
   });
   app.get('/api/auth/login-security-config', (req, res) => {
     const config = appTurnstileConfig();
-    const hostAllowed = String(req.hostname || req.headers.host || '').split(':')[0].toLowerCase() === 'app.maharshwe.shop';
+    const hostAllowed = isAppHost(req.hostname || req.headers.host);
     res.set('Cache-Control', 'no-store').json({
       ok: true,
       turnstile: {

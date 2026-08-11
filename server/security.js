@@ -6,14 +6,7 @@ const DEFAULT_LOCAL_ORIGINS = [
   'http://127.0.0.1:5173',
 ];
 
-const DEFAULT_PUBLIC_ORIGINS = [
-  'https://maharshwe.shop',
-  'https://www.maharshwe.shop',
-  'https://app.maharshwe.shop',
-  'https://admin.maharshwe.shop',
-  'https://super.maharshwe.shop',
-  'https://api.maharshwe.shop',
-];
+const { allowedOrigins } = require('./public-urls');
 
 function normalizeOrigin(value) {
   return String(value || '').trim().replace(/\/+$/, '');
@@ -25,7 +18,7 @@ function configuredOrigins() {
     .map(normalizeOrigin)
     .filter(Boolean);
 
-  return [...new Set([...configured, ...DEFAULT_PUBLIC_ORIGINS, ...DEFAULT_LOCAL_ORIGINS])];
+  return [...new Set([...configured, ...allowedOrigins(), ...DEFAULT_LOCAL_ORIGINS])];
 }
 
 function corsOptions() {

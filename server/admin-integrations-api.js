@@ -10,6 +10,7 @@ const {
 } = require('./push-notifications-api');
 const { sendFcmMessages, isFirebaseAdminConfigured } = require('./firebase-admin');
 const { recordTelegramSheetSafe } = require('./telegram-sheet-recorder');
+const { appUrl } = require('./public-urls');
 
 const VPN_TOPIC = String(process.env.FCM_TOPIC || 'maharshwe-vpn').trim() || 'maharshwe-vpn';
 const VPN_FIREBASE_PROJECT = 'maharshweonlinevpn';
@@ -42,7 +43,7 @@ const PRODUCT_SEEDS = [
     name: 'Mahar POS Web App',
     slug: 'mahar_pos_web',
     type: 'web',
-    domain: 'https://app.maharshwe.shop',
+    domain: appUrl(),
     firebaseProject: VPN_FIREBASE_PROJECT,
     pushType: 'web_fcm',
     adsApiEnabled: false,

@@ -7,6 +7,7 @@ const { z } = require('zod');
 const { OAuth2Client } = require('google-auth-library');
 const { prisma } = require('./prisma');
 const { requireAuth } = require('./auth-api');
+const { landingUrl } = require('./public-urls');
 
 const optionalOrderText = (maximum) => z.preprocess((value) => value == null ? '' : String(value), z.string().trim().max(maximum));
 const orderInput = z.object({
@@ -53,7 +54,7 @@ function uploadRoot() {
     : path.join(__dirname, '..', 'public', 'uploads', 'storefront'));
 }
 function publicImageUrl(shopId, filename) {
-  const base = String(process.env.PUBLIC_LANDING_URL || 'https://maharshwe.shop').replace(/\/+$/, '');
+  const base = landingUrl();
   return `${base}/uploads/storefront/${cleanFilePart(shopId)}/${filename}`;
 }
 
@@ -292,7 +293,7 @@ function attachEcommerceStorefrontApi(app) {
       prisma.shop.findFirst({ where: { id: req.auth.shopId }, select: { slug: true, name: true, logoUrl: true } }),
       prisma.ecommerceStoreSettings.findUnique({ where: { shopId: req.auth.shopId } }),
     ]);
-    res.json({ ok: true, shop, settings: settings || { enabled: false, deliveryEnabled: true, pickupEnabled: true, deliveryFee: 0 }, storeUrl: `${process.env.PUBLIC_LANDING_URL || 'https://maharshwe.shop'}/shop/${shop.slug}` });
+    res.json({ ok: true, shop, settings: settings || { enabled: false, deliveryEnabled: true, pickupEnabled: true, deliveryFee: 0 }, storeUrl: `${landingUrl()}/shop/${shop.slug}` });
   }));
 
   app.put('/api/ecommerce/settings', requireAuth, handle(async (req, res) => {

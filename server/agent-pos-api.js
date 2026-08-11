@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
+const { apiUrl } = require('./public-urls');
 const {
   requireAuth,
   requireShopUser,
@@ -434,8 +435,8 @@ module.exports = function attachAgentPosApi(app) {
     res.json({
       ok: true,
       agent: safeAgent(agent),
-      incomingEndpoint: 'https://api.maharshwe.shop/api/agent/records',
-      parseEndpoint: 'https://api.maharshwe.shop/api/project-settings/api/agent/parse',
+      incomingEndpoint: `${apiUrl()}/api/agent/records`,
+      parseEndpoint: `${apiUrl()}/api/project-settings/api/agent/parse`,
       sample: {
         headers: { 'x-agent-api-key': 'YOUR_AGENT_KEY' },
         body: { shopSlug: req.auth.shopSlug || 'your-shop-slug', records: [{ type: 'income', source: 'Daily sales note', amount: 10000 }] },

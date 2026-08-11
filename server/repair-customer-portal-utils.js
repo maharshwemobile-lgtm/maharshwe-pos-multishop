@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { prisma } = require('./prisma');
+const { appUrl } = require('./public-urls');
 
 function normalizeRepairNumber(value) {
   return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
@@ -22,9 +23,8 @@ function customerDisplayName(value) {
 }
 
 function publicBaseUrl() {
-  // The /repair portal is part of the app bundle. maharshwe.shop serves the
-  // marketing site, so a link there lands the customer on the wrong page.
-  return String(process.env.PUBLIC_APP_URL || 'https://app.maharshwe.shop').replace(/\/+$/, '');
+  // The /repair portal is part of the app bundle, not the marketing site.
+  return appUrl();
 }
 
 async function findTenantRepair(shopId, identifier) {

@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { appUrl: publicAppUrl } = require('./public-urls');
 const { z } = require('zod');
 const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
@@ -622,7 +623,7 @@ function attachTelegramAutomationApi(app) {
       next.botUsername = getMeData.result?.username || next.botUsername;
 
       // Register the webhook so users can link by sending /start (no chatId needed)
-      const appUrl = process.env.APP_URL || 'https://app.maharshwe.shop';
+      const appUrl = publicAppUrl();
       try {
         const secret = await registerBotWebhook(req.auth.shopId, input.botToken, appUrl);
         next.webhookSecret = secret;

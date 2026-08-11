@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { KeyRound, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import { getSession, googleLogin, login, registerTenant, subscribeSession } from './phase2Api';
 import LoginFooterActions from './LoginFooterActions.jsx';
+import { ADMIN_URL, API_URL, APP_HOST, LANDING_URL, PROJECT_LOGO_URL } from './projectBrand';
 import './auth-gate.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
 const DEFAULT_SHOP_SLUG = import.meta.env.VITE_SHOP_SLUG || '';
-const LOGO_URL = 'https://app.maharshwe.shop/mahar-pos-logo.png?v=20260806-logo-refresh';
 
 let googleScriptPromise;
 
@@ -216,11 +216,11 @@ export default function GoogleAuthGate({ children }) {
       <section className="ms-auth-shell">
         <aside className="ms-auth-brand-panel">
           <div className="ms-auth-brand-top">
-            <a className="ms-auth-logo-link" href="https://maharshwe.shop/">
-              <img src={LOGO_URL} alt="Mahar POS Logo" />
+            <a className="ms-auth-logo-link" href={LANDING_URL}>
+              <img src={PROJECT_LOGO_URL} alt="Mahar POS Logo" />
               <span>
                 <b>Mahar POS</b>
-                <small>app.maharshwe.shop</small>
+                <small>{APP_HOST}</small>
               </span>
             </a>
             <div className="ms-auth-status"><i /> PostgreSQL Cloud POS Ready</div>
@@ -245,16 +245,16 @@ export default function GoogleAuthGate({ children }) {
           </div>
 
           <div className="ms-auth-link-row">
-            <a href="https://maharshwe.shop/">Landing</a>
-            <a href="https://admin.maharshwe.shop/">Admin Portal</a>
-            <a href="https://api.maharshwe.shop/health">API Health</a>
+            <a href={LANDING_URL}>Landing</a>
+            <a href={ADMIN_URL}>Admin Portal</a>
+            <a href={`${API_URL}/health`}>API Health</a>
           </div>
         </aside>
 
         <section className="ms-auth-panel">
           <header className="ms-auth-header">
-            <a className="ms-auth-mobile-logo" href="https://maharshwe.shop/">
-              <img src={LOGO_URL} alt="Mahar POS" />
+            <a className="ms-auth-mobile-logo" href={LANDING_URL}>
+              <img src={PROJECT_LOGO_URL} alt="Mahar POS" />
               <span>Mahar POS</span>
             </a>
             <div className="ms-auth-tabs" role="tablist" aria-label="Login mode">
