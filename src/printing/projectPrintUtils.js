@@ -140,7 +140,8 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
   const qrBlock = qr
     ? `<div class="qr-block"><img src="${qr}" alt="Repair status QR"/><b>QR ဖတ်ပြီး ပြင်ဆင်မှု အခြေအနေ ကြည့်နိုင်ပါသည်</b></div>`
     : '';
-  // Same order as the shop's pre-printed pad, so staff read the two the same way
+  // Same order as the shop's pre-printed pad, so staff read the two the same way.
+  // A field nobody filled in is left off the paper rather than printed as a dash.
   const fieldRows = [
     ['နာမည်', repair.customerName],
     ['ဖုန်းနံပါတ်', repair.customerPhone],
@@ -151,7 +152,10 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     ['ဖုန်းအခြေအနေ', repair.intakeCondition],
     ['ပါလာသောပစ္စည်း', Array.isArray(repair.accessories) ? repair.accessories.join(', ') : repair.accessories],
     ['အခြေအနေ', repairStatusMyanmar(repair.status)],
-  ].map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value || '-')}</td></tr>`).join('');
+  ]
+    .filter(([, value]) => String(value ?? '').trim())
+    .map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(String(value).trim())}</td></tr>`)
+    .join('');
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(repairNumber)}</title><style>${baseStyles(slip.repairPaperSize)}</style></head><body>
     ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
     ${slip.repairVoucherHeader ? `<p>${nl2br(slip.repairVoucherHeader)}</p>` : ''}
