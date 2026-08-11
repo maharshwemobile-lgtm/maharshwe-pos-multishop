@@ -332,8 +332,11 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (safePage === 'Stock') return <StockWorkspace/>;
   if (safePage === 'Purchases') return <PurchasingWorkspace/>;
   if (safePage === 'Customers') return <Connected page={safePage} setPage={setPage}><CustomersCreditPage onNavigate={setPage}/></Connected>;
-  if (safePage === 'Money Service') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23/></Connected>;
-  if (safePage === 'Bill / Eload') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23 module="bill"/></Connected>;
+  // Both pages are the same component, so without distinct keys React keeps the
+  // instance and its tab state when you move between them — the new page lands
+  // on a tab it does not have and shows nothing.
+  if (safePage === 'Money Service') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23 key="money-service"/></Connected>;
+  if (safePage === 'Bill / Eload') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23 key="bill-eload" module="bill"/></Connected>;
   if (safePage === 'Accounting') return <Connected page={safePage} setPage={setPage}><FinanceWorkspace onNavigate={setPage}/></Connected>;
   if (safePage === 'Other Records') return <Connected page={safePage} setPage={setPage}><BusinessRecordsPanel/></Connected>;
   if (safePage === 'About Us') return <Connected page={safePage} setPage={setPage}><AboutUsPage/></Connected>;

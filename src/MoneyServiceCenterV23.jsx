@@ -857,12 +857,19 @@ function BillerBalanceReport({ settings, onSaved }) {
   </div>;
 }
 
+const MONEY_VIEWS = ['transfer', 'walletSetup'];
+const BILL_VIEWS = ['bill', 'refill', 'balance', 'billerHistory'];
+
 // Two sidebar pages share this screen: Money Service keeps the transfer /
 // cash out ledger, Bill / Eload owns the biller sale, refill, balance and
 // history. The data they need is the same, only the tabs differ.
 export default function MoneyServiceCenterV23({ module = 'money' }) {
   const billModule = module === 'bill';
-  const [view, setView] = useState(billModule ? 'bill' : 'transfer');
+  const [selectedView, setView] = useState(billModule ? 'bill' : 'transfer');
+  // Each module owns its own tabs; a view belonging to the other one would
+  // render an empty page, so fall back to this module's first tab.
+  const moduleViews = billModule ? BILL_VIEWS : MONEY_VIEWS;
+  const view = moduleViews.includes(selectedView) ? selectedView : moduleViews[0];
   const [transferTab, setTransferTab] = useState('new');
   const [settings, setSettings] = useState({ rates: {}, paymentMethods: [], accounts: [] });
   const [dashboard, setDashboard] = useState({ summary: {}, recent: [] });
