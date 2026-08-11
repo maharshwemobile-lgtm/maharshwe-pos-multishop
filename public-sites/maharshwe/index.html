@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>မဟာရွှေ — Mahar Shwe</title>
+<meta name="description" content="မဟာရွှေ၏ ဝန်ဆောင်မှုများ — Mahar Shwe Mobile ဖုန်းဆိုင်၊ Mahar POS၊ Wallet Note နှင့် Mahar Shwe VPN။">
+<link rel="canonical" href="https://maharshwe.shop/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="မဟာရွှေ — Mahar Shwe">
+<meta property="og:description" content="ဖုန်းရောင်းဝယ်ရေး၊ ဖုန်းပြုပြင်ခြင်းနှင့် software ဝန်ဆောင်မှုများ။">
+<meta property="og:url" content="https://maharshwe.shop/">
+<link rel="icon" type="image/png" href="https://app.maharpos.shop/mahar-pos-logo-192.png?v=20260806-logo-refresh">
+<style>
+:root{
+  --ink:#0E1B2C;
+  --ink-soft:#31435C;
+  --paper:#F7F8FB;
+  --card:#FFFFFF;
+  --line:#E3E8F0;
+  --gold:#C9950B;
+  --gold-soft:#F6E8C3;
+  --jade:#0E8A5F;
+  --jade-soft:#DDF3EA;
+  --radius:16px;
+  --shadow:0 8px 28px rgba(14,27,44,.08);
+  --shadow-lg:0 18px 50px rgba(14,27,44,.14);
+  --font-body:"Noto Sans Myanmar","Sora",system-ui,sans-serif;
+  --nav-h:66px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-h) + 12px)}
+body{font-family:var(--font-body);background:var(--paper);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1120px,92vw);margin:0 auto}
+
+/* ---------- nav ---------- */
+header.nav{position:sticky;top:0;z-index:20;height:var(--nav-h);display:flex;align-items:center;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.brand .mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--jade),var(--gold));color:#fff;font-weight:900;font-size:17px}
+.brand b{color:var(--gold)}
+.nav-links{display:flex;gap:22px;font-size:14.5px;color:var(--ink-soft)}
+.nav-links a:hover{color:var(--jade)}
+@media(max-width:760px){.nav-links{display:none}}
+
+/* ---------- hero ---------- */
+.hero{padding:64px 0 48px;text-align:center}
+.eyebrow{display:inline-block;padding:5px 13px;border-radius:999px;background:var(--jade-soft);color:#0a6b4a;font-size:13px;font-weight:700;margin-bottom:16px}
+.hero h1{font-size:clamp(28px,5vw,44px);line-height:1.35;letter-spacing:-.3px}
+.hero h1 span{color:var(--gold)}
+.hero p{margin:16px auto 0;max-width:640px;color:var(--ink-soft);font-size:16px}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:11px;font-weight:700;font-size:14.5px;border:1px solid transparent;transition:.18s ease}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-gold:hover{background:#b0820a}
+.btn-ghost{border-color:var(--line);background:var(--card);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--jade);color:var(--jade)}
+
+/* ---------- products ---------- */
+section{padding:48px 0}
+.sec-head{text-align:center;margin-bottom:34px}
+.sec-head h2{font-size:clamp(22px,3.4vw,30px)}
+.sec-head p{color:var(--ink-soft);margin-top:8px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;transition:.2s ease}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:#d3dced}
+.card-top{display:flex;align-items:center;gap:13px}
+.icon{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;flex-shrink:0}
+.icon svg{width:25px;height:25px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.i-shop{background:var(--gold-soft);color:#8F6A05}
+.i-pos{background:var(--jade-soft);color:#0a6b4a}
+.i-wallet{background:#E4ECFB;color:#2B5BB8}
+.i-vpn{background:#EDE6FA;color:#5B3FA8}
+.card h3{font-size:18px;line-height:1.4}
+.card .tag{font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+.card p{color:var(--ink-soft);font-size:14.5px;flex:1}
+.card .links{display:flex;gap:10px;flex-wrap:wrap;padding-top:4px}
+.card .links a{font-size:13.5px;font-weight:700;color:var(--jade);border-bottom:1px solid transparent}
+.card .links a:hover{border-color:var(--jade)}
+.pending{background:#FFF8E6;border:1px dashed var(--gold);border-radius:9px;padding:9px 11px;font-size:13px;color:#7a5c04}
+
+/* ---------- shop / contact ---------- */
+.shop{background:var(--ink);color:#fff;border-radius:var(--radius);padding:34px;display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:center}
+@media(max-width:820px){.shop{grid-template-columns:1fr;padding:26px}}
+.shop h2{font-size:clamp(21px,3vw,27px);margin-bottom:10px}
+.shop p{color:#B9C6D8;font-size:15px}
+.shop-facts{display:grid;gap:12px}
+.fact{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 15px}
+.fact svg{width:20px;height:20px;stroke:var(--gold);stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;margin-top:2px}
+.fact span{display:block;font-size:12.5px;color:#9FB0C6}
+.fact b{font-size:15px;font-weight:700}
+.fact a{color:#fff}
+
+footer{padding:32px 0 40px;text-align:center;color:var(--ink-soft);font-size:13.5px;border-top:1px solid var(--line);margin-top:40px}
+footer .foot-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;font-weight:600}
+footer .foot-links a:hover{color:var(--jade)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="mark">မ</span><span>မဟာ<b>ရွှေ</b></span></a>
+    <nav class="nav-links">
+      <a href="#products">ဝန်ဆောင်မှုများ</a>
+      <a href="#shop">ဖုန်းဆိုင်</a>
+      <a href="#contact">ဆက်သွယ်ရန်</a>
+    </nav>
+    <a class="btn btn-gold" href="https://maharpos.shop">Mahar POS</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">ရှမ်းပြည်နယ်တောင်ပိုင်း · ဆီဆိုင်မြို့</span>
+      <h1>မဟာရွှေ<span>၏</span> ဝန်ဆောင်မှုများ</h1>
+      <p>ဖုန်းရောင်းဝယ်ရေးနှင့် ပြုပြင်ရေးမှ စတင်ပြီး၊ ဆိုင်များအတွက် software အထိ တည်ဆောက်ပေးနေပါသည်။</p>
+      <div class="hero-actions">
+        <a class="btn btn-gold" href="#products">ဝန်ဆောင်မှုများ ကြည့်ရန်</a>
+        <a class="btn btn-ghost" href="#contact">ဆက်သွယ်ရန်</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="products">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>ကျွန်ုပ်တို့၏ ဝန်ဆောင်မှု ၄ ခု</h2>
+        <p>ဖုန်းဆိုင်တစ်ဆိုင်မှ စတင်ခဲ့ပြီး၊ ယခု software ဝန်ဆောင်မှုများပါ ပေးလျက်ရှိပါသည်။</p>
+      </div>
+
+      <div class="grid">
+
+        <article class="card">
+          <div class="card-top">
+            <div class="icon i-shop">
+              <svg viewBox="0 0 24 24"><path d="M7 2h10l1 5H6l1-5Z"/><path d="M5 7h14v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7Z"/><path d="M10 21v-6h4v6"/></svg>
+            </div>
+            <div>
+              <h3>Mahar Shwe Mobile</h3>
+              <div class="tag">ဖုန်းဆိုင်</div>
+            </div>
+          </div>
+          <p>ဖုန်းအမျိုးမျိုး ရောင်းဝယ်ခြင်း၊ ပြုပြင်ခြင်းနှင့် ဆက်စပ်ပစ္စည်းများ။ ပြင်ဆင်ထားသော ဖုန်းများကို ဘောင်ချာပါ QR ဖြင့် အခြေအနေ စစ်ကြည့်နိုင်ပါသည်။</p>
+          <div class="links">
+            <a href="#shop">ဆိုင်အကြောင်း</a>
+            <a href="https://maharpos.shop/shop/maharshwemobile">Online Shop →</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-top">
+            <div class="icon i-pos">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 14h3"/><path d="M8 17h6"/></svg>
+            </div>
+            <div>
+              <h3>Mahar POS</h3>
+              <div class="tag">ဆိုင်စီမံခန့်ခွဲမှု Software</div>
+            </div>
+          </div>
+          <p>ဖုန်းဆိုင်များအတွက် Cloud POS။ အရောင်း၊ စတော့၊ IMEI မှတ်တမ်း၊ ဖုန်းပြင်စနစ်၊ ငွေလွှဲဝန်ဆောင်မှုနှင့် အစီရင်ခံစာများ တစ်နေရာတည်း။ အခြေခံလုပ်ဆောင်ချက်များ အမြဲတမ်း အခမဲ့။</p>
+          <div class="links">
+            <a href="https://maharpos.shop">maharpos.shop →</a>
+            <a href="https://app.maharpos.shop">အကောင့်ဖွင့်ရန်</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-top">
+            <div class="icon i-wallet">
+              <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M20 10h-4a2 2 0 0 0 0 4h4Z"/></svg>
+            </div>
+            <div>
+              <h3>Wallet Note</h3>
+              <div class="tag">ငွေစာရင်း &amp; Mini Mart</div>
+            </div>
+          </div>
+          <p class="pending">ဤနေရာတွင် Wallet Note အကြောင်း ဖော်ပြချက် ထည့်ရန် ကျန်ပါသေးသည်။</p>
+          <div class="links">
+            <a href="https://walletnote.online">walletnote.online →</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-top">
+            <div class="icon i-vpn">
+              <svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.3-2.9 7.6-7 9-4.1-1.4-7-4.7-7-9V6l7-3Z"/><path d="M9.5 12.5l1.8 1.8 3.4-3.6"/></svg>
+            </div>
+            <div>
+              <h3>Mahar Shwe VPN</h3>
+              <div class="tag">VPN ဝန်ဆောင်မှု</div>
+            </div>
+          </div>
+          <p class="pending">ဤနေရာတွင် VPN အစီအစဉ်နှင့် ဈေးနှုန်း ဖော်ပြချက် ထည့်ရန် ကျန်ပါသေးသည်။</p>
+          <div class="links">
+            <a href="https://t.me/maharshwebot">Telegram Bot →</a>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="shop">
+    <div class="wrap">
+      <div class="shop">
+        <div>
+          <h2>မဟာရွှေ ဖုန်းပြင်ဆိုင်</h2>
+          <p>ဖုန်းအမျိုးမျိုး ပြုပြင်ရောင်းဝယ်ရေး။ ပြင်ဆင်ရန် အပ်နှံပါက ဘောင်ချာ ထုတ်ပေးပြီး၊ ဘောင်ချာပေါ်ရှိ QR ကို ဖတ်၍ ပြင်ဆင်မှု အခြေအနေကို အချိန်မရွေး ကြည့်ရှုနိုင်ပါသည်။</p>
+        </div>
+        <div class="shop-facts" id="contact">
+          <div class="fact">
+            <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>
+            <div><span>ဖုန်း</span><b><a href="tel:09778394052">09 778 394 052</a> · <a href="tel:09799519545">09 799 519 545</a></b></div>
+          </div>
+          <div class="fact">
+            <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div><span>လိပ်စာ</span><b>ဆီဆိုင်မြို့မဈေး တောင်ဖက်၊ တောင်ကြီး–လွိုင်ကော် လမ်းမကြီးဘေး အရှေ့ဖက်ခြမ်း</b></div>
+          </div>
+          <div class="fact">
+            <svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l6 2.5 2.5 6L21 3Z"/><path d="M9 13.5 21 3"/></svg>
+            <div><span>Telegram</span><b><a href="https://t.me/maharshwebot">@maharshwebot</a></b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-links">
+      <a href="https://maharpos.shop">Mahar POS</a>
+      <a href="https://walletnote.online">Wallet Note</a>
+      <a href="https://maharpos.shop/shop/maharshwemobile">Online Shop</a>
+      <a href="https://t.me/maharshwebot">Telegram</a>
+    </div>
+    <div>© <span id="y">2026</span> မဟာရွှေ · Mahar Shwe</div>
+  </div>
+</footer>
+
+<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>
