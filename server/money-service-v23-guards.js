@@ -79,14 +79,32 @@ async function ensurePaymentMethod(req, item, account, sortOrder) {
   );
 }
 
+// Seeding is a first-visit concern, but this guard sits on every
+// /api/money-service call — a dozen sequential round trips before each of the
+// three requests the page opens with. A shop only needs it once per process.
+const seededShops = new Map();
+
+async function seedShopDefaults(req) {
+  await ensureSchema();
+  await Promise.all(DEFAULTS.map(async (item, index) => {
+    const account = await findOrCreateAccount(req.auth.shopId, item);
+    await ensurePaymentMethod(req, item, account, index + 1);
+  }));
+}
+
 async function seedDefaults(req, _res, next) {
   try {
-    await ensureSchema();
-    for (let index = 0; index < DEFAULTS.length; index += 1) {
-      const item = DEFAULTS[index];
-      const account = await findOrCreateAccount(req.auth.shopId, item);
-      await ensurePaymentMethod(req, item, account, index + 1);
+    const shopId = req.auth.shopId;
+    let pending = seededShops.get(shopId);
+    if (!pending) {
+      // hold the promise, not a flag, so concurrent first requests wait on one pass
+      pending = seedShopDefaults(req).catch((error) => {
+        seededShops.delete(shopId);
+        throw error;
+      });
+      seededShops.set(shopId, pending);
     }
+    await pending;
     next();
   } catch (error) {
     next(error);

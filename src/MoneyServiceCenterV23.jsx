@@ -900,7 +900,12 @@ export default function MoneyServiceCenterV23({ module = 'money' }) {
     setLoading(true);
     setMessage('');
     try {
-      await Promise.all([loadSettings(), loadDashboard(), loadBillerSummary(), loadHistory()]);
+      // Each page loads only what it shows. History is left to the debounced
+      // effect below, which runs on mount anyway — asking twice just made the
+      // first paint wait longer.
+      await Promise.all(billModule
+        ? [loadSettings(), loadBillerSummary()]
+        : [loadSettings(), loadDashboard()]);
     } catch (error) {
       setMessage(error.message || 'Load failed');
     } finally {
@@ -909,7 +914,11 @@ export default function MoneyServiceCenterV23({ module = 'money' }) {
   };
 
   useEffect(() => { refresh(); }, []);
-  useEffect(() => { const timer = setTimeout(() => loadHistory().catch((error) => setMessage(error.message)), 180); return () => clearTimeout(timer); }, [query, status, from, to, page]);
+  useEffect(() => {
+    if (billModule) return undefined;
+    const timer = setTimeout(() => loadHistory().catch((error) => setMessage(error.message)), 180);
+    return () => clearTimeout(timer);
+  }, [billModule, query, status, from, to, page]);
   useEffect(() => setPage(1), [query, status, from, to]);
 
   const rows = history.transactions || [];
