@@ -161,7 +161,7 @@ export default function ProjectSettingsCenter() {
   const license = data?.license || {};
   const canManage = data?.canManage === true;
   const isPremium = license.status === 'ACTIVE' && (Number(license.totalDays || 0) > 7 || Boolean(license.renewedAt));
-  const openingPages = ['Sale POS','Dashboard','Sales History','Repairs','Products','Stock','Purchases','Customers','Money Service','Accounting','Reports','Settings'];
+  const openingPages = ['Sale POS','Dashboard','Sales History','Repairs','Products','Stock','Purchases','Customers','Money Service','Bill / Eload','Accounting','Reports','Settings'];
 
   const licenseColor = useMemo(() => {
     if (license.status === 'ACTIVE' || license.status === 'TRIAL') return 'good';

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
+import { BarChart3, Banknote, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
   BadgePercent, Wrench, X } from 'lucide-react';
 import DashboardLive from './DashboardLive.jsx';
 import NewSaleV10 from './sales-v10/NewSaleV10.jsx';
@@ -46,6 +46,7 @@ const menu = [
   { name: 'Purchases', icon: Truck, color: '#06b6d4' },
   { name: 'Customers', label: 'Customers & Credit', icon: Users, color: '#10b981' },
   { name: 'Money Service', label: 'Money Service', icon: CircleDollarSign, color: '#16a34a' },
+  { name: 'Bill / Eload', label: 'Bill / Eload', icon: Banknote, color: '#0284c7' },
   { name: 'Accounting', label: 'Finance & Accounts', icon: Wallet, color: '#f97316' },
   { name: 'Other Records', label: 'Other Records', icon: FileSpreadsheet, color: '#0f766e' },
   { name: 'Reports', label: 'Reports & Performance', icon: BarChart3, color: '#84cc16' },
@@ -66,6 +67,7 @@ const pageTitles = {
   Customers: 'Customers & Credit',
   'Online Shop': 'E-commerce Website',
   'Money Service': 'Money Service',
+  'Bill / Eload': 'Bill / Eload Sale & Refill',
   Accounting: 'Finance & Accounts',
   'Other Records': 'Other Records',
   Reports: 'Reports & Performance',
@@ -137,6 +139,7 @@ const legacyVisibility = {
   Purchases: (permissions, role) => role !== 'CASHIER' || permissions.inventory === true,
   Customers: (permissions) => permissions.sale !== false || permissions.history !== false,
   'Money Service': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
+  'Bill / Eload': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   Accounting: (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   'Other Records': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   Reports: (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
@@ -330,6 +333,7 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (safePage === 'Purchases') return <PurchasingWorkspace/>;
   if (safePage === 'Customers') return <Connected page={safePage} setPage={setPage}><CustomersCreditPage onNavigate={setPage}/></Connected>;
   if (safePage === 'Money Service') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23/></Connected>;
+  if (safePage === 'Bill / Eload') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23 module="bill"/></Connected>;
   if (safePage === 'Accounting') return <Connected page={safePage} setPage={setPage}><FinanceWorkspace onNavigate={setPage}/></Connected>;
   if (safePage === 'Other Records') return <Connected page={safePage} setPage={setPage}><BusinessRecordsPanel/></Connected>;
   if (safePage === 'About Us') return <Connected page={safePage} setPage={setPage}><AboutUsPage/></Connected>;

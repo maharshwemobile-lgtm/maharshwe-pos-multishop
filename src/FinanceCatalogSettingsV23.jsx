@@ -3,7 +3,9 @@ import { Banknote, Edit3, ExternalLink, Eye, EyeOff, Loader2, Plus, RefreshCw, S
 import { apiFetch, getSession } from './phase2Api';
 import './finance-catalog-settings-v23.css';
 
-const EMPTY_METHOD = { name: '', code: '', kind: 'WALLET', openingBalance: '', supportsMoneyService: false };
+// A wallet added here is invisible to Money Transfer unless supportsMoneyService
+// is set, so anything that is not plain cash starts opted in.
+const EMPTY_METHOD = { name: '', code: '', kind: 'WALLET', openingBalance: '', supportsMoneyService: true };
 const PAYMENT_EVENT = 'mahar:payment-methods-changed';
 
 function Section({ icon: Icon, title, hint, count, children, open, onToggle }) {
@@ -163,8 +165,9 @@ export default function FinanceCatalogSettingsV23({ embedded = false, mode = 'al
       {showWalletForm ? <form className="finance-wallet-form" onSubmit={addMethod}>
         <label><span>Payment Type Name</span><input required value={method.name} onChange={(e) => setMethod({ ...method, name: e.target.value })} placeholder="KBZ Pay / AYA Pay" autoFocus/></label>
         <label><span>Code</span><input required value={method.code} onChange={(e) => setMethod({ ...method, code: e.target.value })} placeholder="KBZ_PAY"/></label>
-        <label><span>Account Type</span><select value={method.kind} onChange={(e) => setMethod({ ...method, kind: e.target.value })}><option value="WALLET">Wallet</option><option value="CASH">Cash</option><option value="BANK">Bank</option><option value="OTHER">Other</option></select></label>
+        <label><span>Account Type</span><select value={method.kind} onChange={(e) => setMethod({ ...method, kind: e.target.value, supportsMoneyService: e.target.value !== 'CASH' })}><option value="WALLET">Wallet</option><option value="CASH">Cash</option><option value="BANK">Bank</option><option value="OTHER">Other</option></select></label>
         <label><span>Opening Balance</span><input type="number" min="0" value={method.openingBalance} onChange={(e) => setMethod({ ...method, openingBalance: e.target.value })} placeholder="0"/></label>
+        <label className="finance-wallet-check"><input type="checkbox" checked={method.supportsMoneyService} onChange={(e) => setMethod({ ...method, supportsMoneyService: e.target.checked })}/><span>ငွေလွှဲ / ငွေထုတ် (Money Service) မှာ သုံးမည်</span></label>
         <button disabled={busy}>{busy ? <Loader2 className="finance-catalog-spin" size={17}/> : <Plus size={17}/>} Add Payment Type</button>
       </form> : null}
       <div className="finance-catalog-list">

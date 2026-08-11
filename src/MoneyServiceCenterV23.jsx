@@ -269,7 +269,8 @@ function MoneyServiceForm({ settings, onSaved }) {
       <div className="msc-form-row">
         <label>
           <span>{form.mode === 'CASH_OUT' ? 'ငွေဝင်မည့် Wallet' : 'ငွေထွက်မည့် Wallet'} *</span>
-          <select value={form.paymentMethodId} onChange={(event) => setForm({ ...form, paymentMethodId: event.target.value })}>
+          <select required value={form.paymentMethodId} onChange={(event) => setForm({ ...form, paymentMethodId: event.target.value })}>
+            <option value="">{methods.length ? 'Wallet ရွေးပါ' : 'Wallet မရှိသေးပါ — Project Settings မှာ ထည့်ပါ'}</option>
             {methods.map((item) => <option key={item.id} value={item.id}>{item.name} · {money(item.balance)}</option>)}
           </select>
         </label>
@@ -855,8 +856,12 @@ function BillerBalanceReport({ settings, onSaved }) {
   </div>;
 }
 
-export default function MoneyServiceCenterV23() {
-  const [view, setView] = useState('transfer');
+// Two sidebar pages share this screen: Money Service keeps the transfer /
+// cash out ledger, Bill / Eload owns the biller sale, refill, balance and
+// history. The data they need is the same, only the tabs differ.
+export default function MoneyServiceCenterV23({ module = 'money' }) {
+  const billModule = module === 'bill';
+  const [view, setView] = useState(billModule ? 'bill' : 'transfer');
   const [transferTab, setTransferTab] = useState('new');
   const [settings, setSettings] = useState({ rates: {}, paymentMethods: [], accounts: [] });
   const [dashboard, setDashboard] = useState({ summary: {}, recent: [] });
@@ -962,13 +967,12 @@ export default function MoneyServiceCenterV23() {
   };
 
   return <section className="money-service-center">
-    <nav className="msc-nav clean">
-      <button className={view === 'transfer' ? 'active' : ''} onClick={() => setView('transfer')}><CircleDollarSign size={18}/><span>Money Transfer</span></button>
+    {billModule ? <nav className="msc-nav clean">
       <button className={view === 'bill' ? 'active' : ''} onClick={() => setView('bill')}><Banknote size={18}/><span>Bill / Eload Sale</span></button>
       <button className={view === 'refill' ? 'active' : ''} onClick={() => setView('refill')}><ArrowDownToLine size={18}/><span>Refill</span></button>
       <button className={view === 'balance' ? 'active' : ''} onClick={() => setView('balance')}><Wallet size={18}/><span>Balance & Setup</span></button>
       <button className={view === 'billerHistory' ? 'active' : ''} onClick={() => setView('billerHistory')}><History size={18}/><span>Bill / Eload History</span></button>
-    </nav>
+    </nav> : null}
 
     {message ? <div className="msc-message">{message}</div> : null}
 

@@ -5,6 +5,8 @@ const MYANMAR = {
   Dashboard: 'ဒက်ရှ်ဘုတ်',
   'Sale POS': 'အရောင်း POS',
   'Sales History': 'အရောင်းမှတ်တမ်း',
+  'Bill / Eload': 'ဘေလ် / Eload',
+  'Bill / Eload Sale & Refill': 'ဘေလ် / Eload ရောင်းချမှုနှင့် ဖြည့်သွင်းမှု',
   'Repair Platform': 'ဖုန်းပြင်စနစ်',
   'Advanced Repair Platform': 'အဆင့်မြင့်ဖုန်းပြင်စနစ်',
   'Partner & Settlement': 'မိတ်ဖက်နှင့် စာရင်းရှင်း',
