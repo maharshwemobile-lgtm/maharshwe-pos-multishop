@@ -1,4 +1,5 @@
 const { prisma } = require('./prisma');
+const { appUrl } = require('./public-urls');
 
 const PUBLIC_GUIDES = [
   {
@@ -7,7 +8,7 @@ const PUBLIC_GUIDES = [
     categoryLabel: 'စတင်ခြင်း',
     title: 'Account ဖွင့်ပြီး Login ဝင်နည်း',
     description: 'Email/Password သို့မဟုတ် Google ဖြင့် Account ဖွင့်ပြီး ၁ လ Trial စတင်အသုံးပြုနည်း။',
-    steps: ['app.maharshwe.shop ကိုဖွင့်ပါ', 'Register ကိုနှိပ်ပြီး Email သို့မဟုတ် Google ဖြင့်ဝင်ပါ', 'Shop name နှင့် Business type ဖြည့်ပါ', 'Dashboard ပေါ်လာလျှင် Trial စတင်အသုံးပြုနိုင်ပါပြီ'],
+    steps: [`${appUrl().replace(/^https?:\/\//, '')} ကိုဖွင့်ပါ`, 'Register ကိုနှိပ်ပြီး Email သို့မဟုတ် Google ဖြင့်ဝင်ပါ', 'Shop name နှင့် Business type ဖြည့်ပါ', 'Dashboard ပေါ်လာလျှင် Trial စတင်အသုံးပြုနိုင်ပါပြီ'],
   },
   {
     slug: 'business-profile-setup',
