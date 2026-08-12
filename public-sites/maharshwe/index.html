@@ -108,6 +108,12 @@ section{padding:46px 0}
 .chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--jade-soft);color:#0a6b4a;font-size:13px;font-weight:700}
 .chip.neutral{background:#EDF1F7;color:var(--ink-soft)}
 
+.callout{display:flex;gap:16px;align-items:flex-start;margin-top:20px;padding:20px 22px;border:1px solid #BFE3D2;border-radius:var(--radius);background:#F3FBF7}
+.callout-icon{font-size:26px;line-height:1.2;flex-shrink:0}
+.callout b{display:block;font-size:15.5px;margin-bottom:4px}
+.callout p{color:var(--ink-soft);font-size:14.5px;margin-bottom:12px}
+@media(max-width:600px){.callout{flex-direction:column;gap:10px}}
+
 /* ---------- vpn ---------- */
 .vpn{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow)}
 @media(max-width:700px){.vpn{grid-template-columns:1fr;text-align:center;justify-items:center}}
@@ -236,7 +242,7 @@ footer .foot-links a:hover{color:var(--jade)}
               <div class="tag">စာရင်းကိုင် &amp; ရောင်းဝယ်ရေး App</div>
             </div>
           </div>
-          <p>မြန်မာဆိုင်ငယ်များအတွက် ဖုန်းပေါ်မှာပဲ သုံးလို့ရတဲ့ စာရင်းကိုင်နဲ့ ရောင်းဝယ်ရေး app။ စာအုပ်နဲ့ မှတ်နေရတာကို အစားထိုးဖို့ ရည်ရွယ်ပါတယ်။</p>
+          <p>မြန်မာဆိုင်ငယ်များအတွက် ဖုန်းပေါ်မှာပဲ သုံးလို့ရတဲ့ စာရင်းကိုင်နဲ့ ရောင်းဝယ်ရေး app။ <b>မိနီမတ် / ကုန်စုံဆိုင် POS</b> လည်း ပါဝင်ပါတယ်။ စာအုပ်နဲ့ မှတ်နေရတာကို အစားထိုးဖို့ ရည်ရွယ်ပါတယ်။</p>
           <div class="links">
             <a href="#walletnote">အသေးစိတ်</a>
             <a href="https://walletnote.online">walletnote.online →</a>
@@ -266,7 +272,7 @@ footer .foot-links a:hover{color:var(--jade)}
     <div class="wrap">
       <div class="sec-head">
         <h2>Wallet Note</h2>
-        <p>မြန်မာဆိုင်ငယ်တွေအတွက် စာရင်းကိုင်နဲ့ ရောင်းဝယ်ရေး app။ ဖုန်းပေါ်မှာပဲ သုံးလို့ရပြီး စာအုပ်နဲ့ မှတ်နေရတာကို အစားထိုးဖို့ ရည်ရွယ်တာပါ။</p>
+        <p>မြန်မာဆိုင်ငယ်တွေအတွက် စာရင်းကိုင်နဲ့ ရောင်းဝယ်ရေး app။ ဖုန်းပေါ်မှာပဲ သုံးလို့ရပြီး စာအုပ်နဲ့ မှတ်နေရတာကို အစားထိုးဖို့ ရည်ရွယ်တာပါ။ မိနီမတ်၊ ကုန်စုံဆိုင်၊ ဖုန်းဆိုင်နဲ့ ငွေလဲဆိုင် — ဆိုင်အမျိုးအစားအလိုက် သုံးနိုင်ပါတယ်။</p>
       </div>
 
       <div class="feature-panel">
@@ -281,7 +287,7 @@ footer .foot-links a:hover{color:var(--jade)}
             <tr><th>ငွေလွှဲ / ငွေထုတ်</th><td>Wallet အချင်းချင်း ရွှေ့တာ၊ အကြောင်းပြချက်နဲ့အတူ</td></tr>
             <tr><th>ဝင်ငွေ / ထွက်ငွေ</th><td>နေ့စဉ် ဝင်ငွေထွက်ငွေကို ကိုယ်ပိုင် category နဲ့</td></tr>
             <tr><th>အကြွေး / ပေးရန်ရှိ</th><td>ဘယ်သူက ပေးရန်ရှိလဲ၊ ကိုယ်က ဘယ်သူ့ကို ပေးရမလဲ</td></tr>
-            <tr><th>ရောင်းအား (POS)</th><td>ရောင်းတိုင်း ဖြတ်ပိုင်း print၊ အမြတ် အလိုအလျောက် တွက်</td></tr>
+            <tr><th>ရောင်းအား (POS)</th><td>ရောင်းတိုင်း ဖြတ်ပိုင်း print၊ အမြတ် အလိုအလျောက် တွက်။ မိနီမတ်အတွက် Barcode scan နဲ့ ကုန်ဆုံးရက် ပါဝင်</td></tr>
             <tr><th>ကုန်ပစ္စည်း / လက်ကျန်</th><td>စတော့လက်ကျန်၊ လက်ကျန်နည်းရင် သတိပေး၊ လက်ကျန်တန်ဖိုး</td></tr>
             <tr><th>အဝယ် / ကုန်သွင်းသူ</th><td>ဝယ်ယူမှုနဲ့ ပေးရန်ကျန်</td></tr>
             <tr><th>ငွေလဲ</th><td>THB/MMK — ဈေးကွက်နှုန်း အလိုအလျောက် ဆွဲပြီး ကိုယ့်အမြတ်နဲ့ ချိန်လို့ရ</td></tr>
@@ -304,6 +310,15 @@ footer .foot-links a:hover{color:var(--jade)}
         </div>
       </div>
 
+
+      <div class="callout">
+        <div class="callout-icon">🛒</div>
+        <div>
+          <b>မိနီမတ် / ကုန်စုံဆိုင် ဖွင့်ထားသူများအတွက်</b>
+          <p>Barcode scan၊ ကုန်ဆုံးရက် စစ်ဆေးခြင်းနှင့် retail POS ကို Wallet Note မှာ အပြည့်အစုံ ရပါတယ်။ Register လုပ်တဲ့အခါ ဆိုင်အမျိုးအစားကို <b>Mini Mart / Retail</b> ရွေးလိုက်ရုံပါပဲ။</p>
+          <a class="btn btn-jade btn-sm" href="https://walletnote.online/register?type=MINI_MART">Mini Mart အကောင့် ဖွင့်မည်</a>
+        </div>
+      </div>
       <div class="hero-actions" style="margin-top:22px">
         <a class="btn btn-jade" href="https://walletnote.online">walletnote.online မှာ အခမဲ့ စတင်မည်</a>
       </div>
