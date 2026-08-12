@@ -125,6 +125,21 @@ section{padding:46px 0}
 .vpn-note{margin-top:14px;font-size:13px;color:var(--ink-soft)}
 .vpn-note a{color:var(--jade);font-weight:700}
 
+/* ---------- vpn plans ---------- */
+.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
+@media(max-width:760px){.plans{grid-template-columns:1fr}}
+.plan{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;box-shadow:var(--shadow)}
+.plan.featured{border-color:var(--jade);box-shadow:0 12px 34px rgba(14,138,95,.16)}
+.ribbon{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--jade);color:#fff;font-size:11.5px;font-weight:700;padding:4px 12px;border-radius:999px;white-space:nowrap}
+.plan b{font-size:16px}
+.plan .price{font-size:26px;font-weight:800;color:var(--ink);line-height:1.25}
+.plan .price em{font-style:normal;font-size:14px;font-weight:700;color:var(--ink-soft)}
+.plan span{font-size:13.5px;color:var(--ink-soft)}
+.plan .btn{margin-top:10px}
+.steps{margin:22px auto 0;max-width:620px;display:grid;gap:9px;padding-left:22px;color:var(--ink-soft);font-size:14.5px}
+.steps li{padding-left:4px}
+.steps b{color:var(--ink)}
+
 /* ---------- shop ---------- */
 .shop-split{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch}
 @media(max-width:880px){.shop-split{grid-template-columns:1fr}}
@@ -319,9 +334,38 @@ footer .foot-links a:hover{color:var(--jade)}
               <b>Universal</b><span>49.4 MB</span><em>အားလုံးနဲ့ ရ</em>
             </a>
           </div>
-          <p class="vpn-note">Plan နဲ့ ဈေးနှုန်းများကို <a href="https://t.me/maharshwebot">Telegram bot</a> မှာ ကြည့်ပါ။ APK install လုပ်ရန် ဖုန်းရဲ့ Settings မှာ "Unknown sources" ကို ဖွင့်ပေးရပါမယ်။</p>
+          <p class="vpn-note">APK install လုပ်ရန် ဖုန်းရဲ့ Settings မှာ "Unknown sources" ကို ဖွင့်ပေးရပါမယ်။</p>
         </div>
       </div>
+
+      <div class="plans">
+        <article class="plan">
+          <b>Free Trial</b>
+          <div class="price">အခမဲ့</div>
+          <span>၂ ရက်</span>
+          <a class="btn btn-ghost btn-sm" href="https://t.me/maharshwebot">Bot မှာ ယူမည်</a>
+        </article>
+        <article class="plan featured">
+          <div class="ribbon">လူသုံးအများဆုံး</div>
+          <b>1 Month</b>
+          <div class="price">3,000 <em>ကျပ်</em></div>
+          <span>၁ လ</span>
+          <a class="btn btn-jade btn-sm" href="https://t.me/maharshwebot">Bot မှာ ဝယ်မည်</a>
+        </article>
+        <article class="plan">
+          <b>2 Months</b>
+          <div class="price">5,000 <em>ကျပ်</em></div>
+          <span>၂ လ</span>
+          <a class="btn btn-ghost btn-sm" href="https://t.me/maharshwebot">Bot မှာ ဝယ်မည်</a>
+        </article>
+      </div>
+
+      <ol class="steps">
+        <li><b>Telegram bot</b> မှာ Plan ရွေးပါ</li>
+        <li><b>KBZ Pay</b> ဖြင့် ငွေလွှဲပါ (ငွေလက်ခံမည့် အချက်အလက်ကို bot က ပြပါမယ်)</li>
+        <li>ငွေလွှဲပြီး <b>Screenshot</b> ကို bot ထဲ ပို့ပါ</li>
+        <li>အတည်ပြုပြီးလျှင် <b>VPN Key</b> ကို bot ကနေ ချက်ချင်း ရပါမယ်</li>
+      </ol>
     </div>
   </section>
 
