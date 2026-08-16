@@ -64,6 +64,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
   // One toggle for both password boxes: they have to match, so seeing one
   // without the other is no help.
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false);
   const [prefill, setPrefill] = useState(null);
   const [needSlug, setNeedSlug] = useState(false);
   const [error, setError] = useState('');
@@ -174,6 +175,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
+    setJustRegistered(false);
     setError('');
     setSuccess('');
     setNeedSlug(false);
@@ -261,11 +263,15 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       };
       sessionStorage.setItem('pos_prefill_login', JSON.stringify(nextPrefill));
       setPrefill(nextPrefill);
-      setLoginForm({ username: nextPrefill.username, password: '', shopSlug: nextPrefill.shopSlug });
+      // Carry the password they just chose into the login form so signing in is
+      // one tap. It stays in memory only — sessionStorage keeps the shop details
+      // and never the password.
+      setLoginForm({ username: nextPrefill.username, password: registerForm.password, shopSlug: nextPrefill.shopSlug });
       setRegisterForm({ shopName: '', username: '', password: '', confirmPassword: '', phone: '' });
       setShowRegisterPassword(false);
-      setSuccess(`${nextPrefill.shopName} အကောင့် ဖွင့်ပြီးပါပြီ။ Password ရိုက်ပြီး Login ဝင်ပါ။`);
+      setSuccess(`${nextPrefill.shopName} အကောင့် ဖွင့်ပြီးပါပြီ။ Sign In နှိပ်ပြီး ဝင်လိုက်ပါ။`);
       setMode('login');
+      setJustRegistered(true);
     } catch (requestError) {
       const message = requestError?.status === 409
         ? 'ဤ Email/Username နဲ့ account ရှိပြီးသားပါ။ Login ဝင်ပါ။'
@@ -375,7 +381,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             </label>
             <label>
               <span>Password</span>
-              <input id="login-password" name="password" type="password" value={loginForm.password} onChange={(event) => { setLoginForm({ ...loginForm, password: event.target.value }); setError(''); }} placeholder="••••••••" autoComplete="current-password" autoFocus={!!prefill} />
+              <input id="login-password" name="password" type="password" value={loginForm.password} onChange={(event) => { setLoginForm({ ...loginForm, password: event.target.value }); setError(''); }} placeholder="••••••••" autoComplete="current-password" autoFocus={!!prefill && !justRegistered} />
             </label>
             {(needSlug || loginForm.shopSlug) ? (
               <label>
@@ -384,7 +390,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
                 <small>Ask your shop admin or owner if you do not know it. A single-shop user can leave this blank.</small>
               </label>
             ) : null}
-            <button type="submit" className="ms-login-primary" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
+            <button type="submit" className="ms-login-primary" disabled={loading} autoFocus={justRegistered}>{loading ? 'Signing in...' : 'Sign In'}</button>
             {GOOGLE_CLIENT_ID ? <><div className="ms-login-divider"><span>Or continue with</span></div><div className="ms-login-google" ref={googleButtonRef} /></> : null}
             <p className="ms-login-footer">No account yet? <button type="button" onClick={() => switchMode('register')}>Create Account</button></p>
           </form>
