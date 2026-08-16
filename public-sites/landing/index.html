@@ -441,6 +441,9 @@ footer{background:var(--ink);color:#93A2B8;padding:64px 0 30px;margin-top:0}
 .modal h3{font-size:1.15rem;font-weight:700;margin-bottom:10px}
 .modal p{font-size:.88rem;color:var(--ink-soft);margin-bottom:24px}
 .modal .actions{display:flex;flex-direction:column;gap:10px}
+.guide-card.has-manual{border-color:#bcd4f2}
+.manual-link{display:inline-block;color:#1769d2;font-weight:700;text-decoration:none}
+.manual-link:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -936,10 +939,10 @@ setInterval(loadActiveUsers, 30_000);
 setInterval(renderActiveUsers, 15_000);
 /* ---------- User guides (fetch /api/public/guides, fallback to static list) ---------- */
 const GUIDE_FALLBACK = [
-  { slug:"register-google-login", cat:"start", catLabel:"စတင်ခြင်း", title:"Account ဖွင့်ပြီး Login ဝင်နည်း", desc:"Email/Password သို့မဟုတ် Google ဖြင့် Account ဖွင့်ပြီး ၁ လ Trial စတင်အသုံးပြုနည်း။", steps:["app.maharpos.shop ကိုဖွင့်ပါ","Register ကိုနှိပ်ပြီး Email သို့မဟုတ် Google ဖြင့်ဝင်ပါ","Shop name နှင့် Business type ဖြည့်ပါ"] },
+  { slug:"register-google-login", cat:"start", catLabel:"စတင်ခြင်း", title:"Account ဖွင့်ပြီး Login ဝင်နည်း", desc:"Email/Password သို့မဟုတ် Google ဖြင့် Account ဖွင့်ပြီး ၁ လ Trial စတင်အသုံးပြုနည်း။", steps:["app.maharpos.shop ကိုဖွင့်ပါ","Register ကိုနှိပ်ပြီး Email သို့မဟုတ် Google ဖြင့်ဝင်ပါ","Shop name နှင့် Business type ဖြည့်ပါ"], manualUrl:"https://maharpos.shop/manual/registration/" },
   { slug:"business-profile-setup", cat:"start", catLabel:"စတင်ခြင်း", title:"Business Profile / Logo ပြင်နည်း", desc:"ဆိုင်အမည်၊ Logo၊ Receipt header/footer၊ Currency နှင့် Language ကို Project Settings မှ ပြင်နည်း။", steps:["Settings > Business Profile ကိုဝင်ပါ","ဆိုင်အမည်၊ ဖုန်း၊ လိပ်စာ၊ Logo ဖြည့်ပါ","Save နှိပ်ပြီး Sale POS slip မှာ ပြန်စစ်ပါ"] },
-  { slug:"products-stock-setup", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Product, Barcode, Stock ထည့်နည်း", desc:"Product, Variant, Category, Barcode, Cost/Selling price, Opening stock နှင့် Low stock alert သတ်မှတ်နည်း။", steps:["Products ကိုဝင်ပါ","Add Product နှိပ်ပြီး Category/Name/Barcode ဖြည့်ပါ","Cost price, Selling price, Opening stock ထည့်ပါ"] },
-  { slug:"sale-pos-checkout", cat:"pos", catLabel:"POS", title:"Sale POS ရောင်းချနည်း", desc:"ပစ္စည်းရှာ၊ Cart ထည့်၊ Qty/Discount ပြင်၊ Wallet payment ရွေးပြီး Voucher ထုတ်နည်း။", steps:["Sale POS ကိုဝင်ပါ","Product / Barcode ဖြင့်ရှာပြီး Cart ထည့်ပါ","Payment method ရွေးပြီး Complete Sale နှိပ်ပါ"] },
+  { slug:"products-stock-setup", cat:"manage", catLabel:"စီမံခန့်ခွဲမှု", title:"Product, Barcode, Stock ထည့်နည်း", desc:"Product, Variant, Category, Barcode, Cost/Selling price, Opening stock နှင့် Low stock alert သတ်မှတ်နည်း။", steps:["Products ကိုဝင်ပါ","Add Product နှိပ်ပြီး Category/Name/Barcode ဖြည့်ပါ","Cost price, Selling price, Opening stock ထည့်ပါ"], manualUrl:"https://maharpos.shop/manual/products-sale/" },
+  { slug:"sale-pos-checkout", cat:"pos", catLabel:"POS", title:"Sale POS ရောင်းချနည်း", desc:"ပစ္စည်းရှာ၊ Cart ထည့်၊ Qty/Discount ပြင်၊ Wallet payment ရွေးပြီး Voucher ထုတ်နည်း။", steps:["Sale POS ကိုဝင်ပါ","Product / Barcode ဖြင့်ရှာပြီး Cart ထည့်ပါ","Payment method ရွေးပြီး Complete Sale နှိပ်ပါ"], manualUrl:"https://maharpos.shop/manual/products-sale/" },
   { slug:"sales-history-void-reprint", cat:"pos", catLabel:"POS", title:"Sales History, Reprint, Void", desc:"အရောင်းမှတ်တမ်း ရှာဖွေခြင်း၊ Voucher ပြန်ထုတ်ခြင်း၊ မှားရောင်းထားသည့် Sale ကို Void လုပ်နည်း။", steps:["Sales History ကိုဝင်ပါ","Invoice, customer, date ဖြင့်ရှာပါ","View / Reprint / Void ကိုလိုသလိုသုံးပါ"] },
   { slug:"repair-service-flow", cat:"pos", catLabel:"POS", title:"Phone Repair Service အသုံးပြုနည်း", desc:"Repair job အသစ်လက်ခံ၊ Status ပြောင်း၊ Payment မှတ်၊ Voucher ထုတ်၊ device history စစ်နည်း။", steps:["Repairs > Add Repair ကိုနှိပ်ပါ","Customer, device, problem ဖြည့်ပါ","Status ပြောင်းပြီး Voucher ထုတ်ပါ"] },
   { slug:"money-service-transfer", cat:"pos", catLabel:"POS", title:"Money Service / ငွေလွှဲဝန်ဆောင်မှု", desc:"KPay/Wave/Cash In/Cash Out စာရင်း၊ Fee၊ Wallet balance နှင့် transfer history မှတ်နည်း။", steps:["Money Service ကိုဝင်ပါ","Transfer / Cash Out အမျိုးအစားရွေးပါ","Wallet, amount, fee, status ဖြည့်ပြီး Save ပါ"] },
@@ -964,14 +967,16 @@ function renderGuides() {
                  (!q || g.title.toLowerCase().includes(q) || g.desc.toLowerCase().includes(q)))
     .slice(0, 12);
   guideGrid.innerHTML = list.map(g => `
-    <article class="guide-card" id="guide-${encodeURIComponent(g.slug)}">
+    <article class="guide-card${g.manualUrl ? " has-manual" : ""}" id="guide-${encodeURIComponent(g.slug)}">
       <div class="guide-cover" aria-hidden="true">${guideIcon}</div>
       <div class="guide-body">
         <span class="cat">${g.catLabel}</span>
         <h3>${g.title}</h3>
         <p>${g.desc}</p>
         ${Array.isArray(g.steps) && g.steps.length ? `<ol class="guide-steps">${g.steps.slice(0, 4).map(step => `<li>${esc(step)}</li>`).join("")}</ol>` : ""}
-        <span class="more">အဆင့်လိုက် လမ်းညွှန်</span>
+        ${g.manualUrl
+          ? `<a class="more manual-link" href="${esc(g.manualUrl)}">ပုံနှင့်တကွ အသေးစိတ် လမ်းညွှန် →</a>`
+          : `<span class="more">အဆင့်လိုက် လမ်းညွှန်</span>`}
       </div>
     </article>`).join("");
   guideEmpty.classList.toggle("hidden", list.length > 0);
@@ -985,7 +990,8 @@ function renderGuides() {
       if (Array.isArray(arr) && arr.length) {
         guides = arr.map(g => ({
           slug: g.slug, cat: g.category || "all", catLabel: g.categoryLabel || g.category || "Guide",
-          title: g.title, desc: g.description || "", steps: Array.isArray(g.steps) ? g.steps : []
+          title: g.title, desc: g.description || "", steps: Array.isArray(g.steps) ? g.steps : [],
+          manualUrl: g.manualUrl || ""
         }));
       }
     }

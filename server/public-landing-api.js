@@ -9,6 +9,7 @@ const PUBLIC_GUIDES = [
     title: 'Account ဖွင့်ပြီး Login ဝင်နည်း',
     description: 'Email/Password သို့မဟုတ် Google ဖြင့် Account ဖွင့်ပြီး ၁ လ Trial စတင်အသုံးပြုနည်း။',
     steps: [`${appUrl().replace(/^https?:\/\//, '')} ကိုဖွင့်ပါ`, 'Register ကိုနှိပ်ပြီး Email သို့မဟုတ် Google ဖြင့်ဝင်ပါ', 'Shop name နှင့် Business type ဖြည့်ပါ', 'Dashboard ပေါ်လာလျှင် Trial စတင်အသုံးပြုနိုင်ပါပြီ'],
+    manualUrl: 'https://maharpos.shop/manual/registration/',
   },
   {
     slug: 'business-profile-setup',
@@ -25,6 +26,7 @@ const PUBLIC_GUIDES = [
     title: 'Product, Barcode, Stock ထည့်နည်း',
     description: 'Product, Variant, Category, Barcode, Cost/Selling price, Opening stock နှင့် Low stock alert သတ်မှတ်နည်း။',
     steps: ['Products ကိုဝင်ပါ', 'Add Product နှိပ်ပြီး Category/Name/Barcode ဖြည့်ပါ', 'Cost price, Selling price, Opening stock ထည့်ပါ', 'Low stock alert ထားပြီး Save ပါ'],
+    manualUrl: 'https://maharpos.shop/manual/products-sale/',
   },
   {
     slug: 'sale-pos-checkout',
@@ -33,6 +35,7 @@ const PUBLIC_GUIDES = [
     title: 'Sale POS ရောင်းချနည်း',
     description: 'ပစ္စည်းရှာ၊ Cart ထည့်၊ Qty/Discount ပြင်၊ Wallet payment ရွေးပြီး Voucher ထုတ်နည်း။',
     steps: ['Sale POS ကိုဝင်ပါ', 'Product / Barcode ဖြင့်ရှာပြီး Cart ထည့်ပါ', 'Qty, discount, customer name လိုသလိုပြင်ပါ', 'Payment method ရွေးပြီး Complete Sale နှိပ်ပါ'],
+    manualUrl: 'https://maharpos.shop/manual/products-sale/',
   },
   {
     slug: 'sales-history-void-reprint',
