@@ -14,6 +14,26 @@ let googleCredentialHandler = null;
 // there instead of being registered here with half the features hidden.
 const RETAIL_SIGNUP_URL = 'https://walletnote.online/register?type=MINI_MART';
 
+function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1.8 12S5.4 5.4 12 5.4 22.2 12 22.2 12 18.6 18.6 12 18.6 1.8 12 1.8 12Z" />
+      <circle cx="12" cy="12" r="3.1" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9.9 5.6A9.5 9.5 0 0 1 12 5.4c6.6 0 10.2 6.6 10.2 6.6a17.8 17.8 0 0 1-3 4" />
+      <path d="M6.4 6.5A17.4 17.4 0 0 0 1.8 12S5.4 18.6 12 18.6a9.7 9.7 0 0 0 4.1-.9" />
+      <path d="M9.9 9.9a3.1 3.1 0 0 0 4.3 4.3" />
+      <path d="m3 3 18 18" />
+    </svg>
+  );
+}
+
 function RetailShopNotice() {
   return (
     <div className="ms-retail-notice">
@@ -40,7 +60,10 @@ function LifetimeFreePlan() {
 export default function LoginRegisterGate({ onSession, forcePasswordChange = false }) {
   const [mode, setMode] = useState('login');
   const [loginForm, setLoginForm] = useState({ username: '', password: '', shopSlug: '' });
-  const [registerForm, setRegisterForm] = useState({ shopName: '', username: '', password: '', phone: '' });
+  const [registerForm, setRegisterForm] = useState({ shopName: '', username: '', password: '', confirmPassword: '', phone: '' });
+  // One toggle for both password boxes: they have to match, so seeing one
+  // without the other is no help.
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [prefill, setPrefill] = useState(null);
   const [needSlug, setNeedSlug] = useState(false);
   const [error, setError] = useState('');
@@ -192,10 +215,13 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     }
   };
 
+  const passwordsMatch = registerForm.password === registerForm.confirmPassword;
   const registerBasicsComplete = Boolean(
     registerForm.shopName.trim()
     && registerForm.username.trim().length >= 2
-    && registerForm.password.length >= 6,
+    && registerForm.password.length >= 6
+    && registerForm.confirmPassword.length >= 6
+    && passwordsMatch,
   );
 
   const submitRegister = async (event) => {
@@ -212,6 +238,10 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     }
     if (!registerForm.password || registerForm.password.length < 6) {
       setError('Password အနည်းဆုံး ၆ လုံး ရှိရမည်။');
+      return;
+    }
+    if (registerForm.password !== registerForm.confirmPassword) {
+      setError('Password နှစ်ခု မတူပါ။ ပြန်စစ်ပါ။');
       return;
     }
     setLoading(true);
@@ -232,7 +262,8 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
       sessionStorage.setItem('pos_prefill_login', JSON.stringify(nextPrefill));
       setPrefill(nextPrefill);
       setLoginForm({ username: nextPrefill.username, password: '', shopSlug: nextPrefill.shopSlug });
-      setRegisterForm({ shopName: '', username: '', password: '', phone: '' });
+      setRegisterForm({ shopName: '', username: '', password: '', confirmPassword: '', phone: '' });
+      setShowRegisterPassword(false);
       setSuccess(`${nextPrefill.shopName} အကောင့် ဖွင့်ပြီးပါပြီ။ Password ရိုက်ပြီး Login ဝင်ပါ။`);
       setMode('login');
     } catch (requestError) {
@@ -370,7 +401,24 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
             </label>
             <label>
               <span>Password <b>*</b></span>
-              <input id="register-password" type="password" name="password" value={registerForm.password} onChange={(event) => { setRegisterForm({ ...registerForm, password: event.target.value }); setError(''); }} placeholder="At least 6 characters" autoComplete="new-password" />
+              <div className="ms-password-field">
+                <input id="register-password" type={showRegisterPassword ? 'text' : 'password'} name="password" value={registerForm.password} onChange={(event) => { setRegisterForm({ ...registerForm, password: event.target.value }); setError(''); }} placeholder="အနည်းဆုံး ၆ လုံး" autoComplete="new-password" />
+                <button type="button" className="ms-password-toggle" onClick={() => setShowRegisterPassword((value) => !value)} aria-pressed={showRegisterPassword} aria-label={showRegisterPassword ? 'Password ဖျောက်မည်' : 'Password ပြမည်'} title={showRegisterPassword ? 'ဖျောက်မည်' : 'ပြမည်'}>
+                  {showRegisterPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+            </label>
+            <label>
+              <span>Password ထပ်ရိုက်ပါ <b>*</b></span>
+              <div className="ms-password-field">
+                <input id="register-password-confirm" type={showRegisterPassword ? 'text' : 'password'} name="confirmPassword" value={registerForm.confirmPassword} onChange={(event) => { setRegisterForm({ ...registerForm, confirmPassword: event.target.value }); setError(''); }} placeholder="အပေါ်က Password အတိုင်း" autoComplete="new-password" />
+                <button type="button" className="ms-password-toggle" onClick={() => setShowRegisterPassword((value) => !value)} aria-pressed={showRegisterPassword} aria-label={showRegisterPassword ? 'Password ဖျောက်မည်' : 'Password ပြမည်'} title={showRegisterPassword ? 'ဖျောက်မည်' : 'ပြမည်'}>
+                  {showRegisterPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              {registerForm.confirmPassword && !passwordsMatch
+                ? <small className="ms-password-mismatch">Password နှစ်ခု မတူသေးပါ။</small>
+                : null}
             </label>
             <label>
               <span>Phone Number <em>(Optional)</em></span>

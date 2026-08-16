@@ -329,3 +329,28 @@
 .dark .ms-retail-notice strong { color: #e5eef8; }
 .dark .ms-retail-notice small { color: #9fb0c7; }
 .dark .ms-retail-notice a { color: #4ade80; }
+
+/* Password with a show/hide toggle sitting inside the field */
+.ms-password-field { position: relative; display: block; }
+.ms-password-field input { padding-right: 44px; }
+.ms-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+.ms-password-toggle:hover { background: #f3f4f6; color: #111827; }
+.ms-password-toggle:focus-visible { outline: 2px solid #10b981; outline-offset: 1px; }
+.ms-password-mismatch { color: #dc2626 !important; font-weight: 600; }
+.dark .ms-password-toggle { color: #9fb0c7; }
+.dark .ms-password-toggle:hover { background: #16304f; color: #e5eef8; }
