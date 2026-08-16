@@ -19,5 +19,8 @@ export const API_URL = `https://api.${DOMAIN}`;
 export const APP_URL = typeof window === 'undefined' ? `https://app.${DOMAIN}` : window.location.origin;
 export const APP_HOST = `app.${DOMAIN}`;
 
-export const PROJECT_LOGO_URL = `https://app.${DOMAIN}/mahar-pos-logo.png?v=20260806-logo-refresh`;
+// Same-origin on purpose. The app is served from both app.maharpos.shop and
+// app.maharshwe.shop, and a shop that can only reach one of them would lose the
+// logo if it were pinned to the other.
+export const PROJECT_LOGO_URL = '/mahar-pos-logo.png?v=20260806-logo-refresh';
 export const PROJECT_NAME = 'Mahar POS';
