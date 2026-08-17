@@ -474,8 +474,9 @@ export default function AppFull() {
     setMenuTourDismissed(typeof window !== 'undefined' && window.localStorage.getItem(menuTourDismissKey) === '1');
   }, [menuTourDismissKey]);
 
-  const firstLoginOnly = Number(onboardingDemo?.loginCount || 1) <= 1;
-  const showFirstLoginGuide = Boolean(onboardingDemo?.showGuide && firstLoginOnly && !onboardingDemo?.triggered && !onboardingDismissed);
+  // The server decides when the guide is still needed — it keeps it up until the
+  // shop has added its first product, not just on login #1.
+  const showFirstLoginGuide = Boolean(onboardingDemo?.showGuide && !onboardingDemo?.triggered && !onboardingDismissed);
   const showMenuTour = Boolean(!menuTourDismissed && session?.token && !session?.user?.passwordMustChange);
 
   useEffect(() => {

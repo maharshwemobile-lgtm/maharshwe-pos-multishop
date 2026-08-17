@@ -690,11 +690,17 @@ async function maybeAutoCleanupDemoData(user) {
         },
       },
     });
+    // 142 of the 156 shops that never sold had not added a single product, and
+    // the guide only ever appeared on login #1 — come back the next day and the
+    // empty app explains nothing. Keep it up until the first product exists;
+    // dismissing it is still remembered per shop.
+    const hasProducts = (await prisma.product.count({ where: { shopId: user.shopId } }).catch(() => 1)) > 0;
+
     return {
       ok: true,
       triggered: false,
       loginCount,
-      showGuide: loginCount === 1 && !lifecycleCompleted,
+      showGuide: !lifecycleCompleted && !hasProducts,
       lifecycleCompleted,
       seeded: Boolean(seedResult),
       seedResult,
