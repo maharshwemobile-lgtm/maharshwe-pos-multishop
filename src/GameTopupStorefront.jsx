@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronLeft, Copy, Gamepad2, Loader2, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, Copy, Download, Gamepad2, Loader2, ShieldCheck } from 'lucide-react';
 import { PROJECT_LOGO_URL } from './projectBrand';
+import { downloadOrderSlip } from './gameTopupSlip';
 import './game-topup-storefront.css';
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
@@ -251,8 +252,27 @@ export default function GameTopupStorefront() {
           <CheckCircle2 size={44} />
           <h2>အော်ဒါ တင်ပြီးပါပြီ</h2>
           <p>အော်ဒါနံပါတ် <b>{placed.orderNumber}</b></p>
-          <p className="gts-muted">ငွေစစ်ဆေးပြီးပါက ချက်ချင်း ဖြည့်ပေးပါမယ်။ အောက်က link ကို သိမ်းထားပြီး အခြေအနေ စစ်နိုင်ပါတယ်။</p>
-          <a className="gts-primary as-link" href={placed.statusUrl}>အခြေအနေ ကြည့်မည်</a>
+          <p className="gts-muted">ငွေစစ်ဆေးပြီးပါက ချက်ချင်း ဖြည့်ပေးပါမယ်။ ဖြတ်ပိုင်းကို Download ဆွဲထားပြီး အခြေအနေ စစ်နိုင်ပါတယ်။</p>
+          <button
+            type="button"
+            className="gts-primary"
+            onClick={() => downloadOrderSlip({
+              orderNumber: placed.orderNumber,
+              productName: selection?.product?.name,
+              variationName: selection?.variation?.name,
+              quantity: Math.max(1, Number(form.quantity || 1)),
+              playerId: form.playerId.trim(),
+              serverId: form.server.trim(),
+              customerName: form.customerName.trim(),
+              customerPhone: form.customerPhone.trim(),
+              total,
+              paymentTransactionId: form.paymentTransactionId.trim(),
+              statusUrl: placed.statusUrl,
+            })}
+          >
+            <Download size={17} /> ဖြတ်ပိုင်း Download ဆွဲမည်
+          </button>
+          <a className="gts-secondary as-link" href={placed.statusUrl}>အခြေအနေ ကြည့်မည်</a>
           <button type="button" className="gts-secondary" onClick={restart}>နောက်တစ်ခု ဝယ်မည်</button>
         </div>
       ) : null}

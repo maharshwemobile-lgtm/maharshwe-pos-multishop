@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Clock3, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, Download, Loader2, XCircle } from 'lucide-react';
 import { PROJECT_LOGO_URL } from './projectBrand';
+import { downloadOrderSlip } from './gameTopupSlip';
 import './game-topup-storefront.css';
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
@@ -87,9 +88,28 @@ export default function GameTopupOrderStatus() {
             {order.failureReason ? <div><dt>အမှား</dt><dd>{order.failureReason}</dd></div> : null}
           </dl>
 
-          <button type="button" className="gts-secondary" onClick={load} disabled={loading}>
-            {loading ? <Loader2 className="gts-spin" size={16} /> : null} ပြန်စစ်မည်
-          </button>
+          <div className="gts-status-actions">
+            <button type="button" className="gts-secondary" onClick={load} disabled={loading}>
+              {loading ? <Loader2 className="gts-spin" size={16} /> : null} ပြန်စစ်မည်
+            </button>
+            <button
+              type="button"
+              className="gts-secondary"
+              onClick={() => downloadOrderSlip({
+                orderNumber: order.orderNumber,
+                productName: order.productName,
+                variationName: order.variationName,
+                quantity: order.quantity,
+                playerId: order.playerId,
+                serverId: order.serverId,
+                total: order.retailPrice,
+                statusUrl: window.location.href,
+                createdAt: order.createdAt,
+              })}
+            >
+              <Download size={16} /> ဖြတ်ပိုင်း Download
+            </button>
+          </div>
         </div>
       ) : null}
 

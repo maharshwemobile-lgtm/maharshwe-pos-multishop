@@ -92,3 +92,7 @@
   .gts-status-hero.done{background:#0f2a1c;color:#86efac}
   .gts-status-hero.failed{background:#2a1215;color:#fca5a5}
 }
+
+.gts-secondary.as-link{text-decoration:none}
+.gts-status-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@media(max-width:400px){.gts-status-actions{grid-template-columns:1fr}}
