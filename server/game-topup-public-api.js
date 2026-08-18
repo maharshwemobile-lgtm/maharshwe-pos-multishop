@@ -11,7 +11,7 @@ const { prisma } = require('./prisma');
 const { ensureGameTopupSchema } = require('./game-topup-schema');
 const { notifyAdminsForApproval, isConfigured: telegramConfigured } = require('./game-topup-telegram');
 const moogold = require('./moogold-client');
-const { appUrl } = require('./public-urls');
+const { landingUrl } = require('./public-urls');
 
 class ApiError extends Error {
   constructor(status, message, details) { super(message); this.status = status; this.details = details; }
@@ -169,7 +169,10 @@ function attachGameTopupPublicApi(app) {
         duplicateWarning,
       }).catch(() => {});
 
-      const statusUrl = `${appUrl()}/topup-status?order=${encodeURIComponent(orderNumber)}&key=${encodeURIComponent(shareKey)}`;
+      // The customer bought this on the Digital Products storefront, which
+      // lives on the landing domain — send them back there to check on it
+      // rather than across to the shop-facing app subdomain.
+      const statusUrl = `${landingUrl()}/digital/?view=status&order=${encodeURIComponent(orderNumber)}&key=${encodeURIComponent(shareKey)}`;
       res.status(201).json({
         ok: true,
         message: 'အော်ဒါ တင်ပြီးပါပြီ — အတည်ပြုပြီးရင် ချက်ချင်း ရောက်ပါမယ်',
