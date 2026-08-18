@@ -147,7 +147,11 @@ const legacyVisibility = {
   Customers: (permissions) => permissions.sale !== false || permissions.history !== false,
   'Money Service': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   'Bill / Eload': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
-  'Game Top-up': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
+  // Closed while the MooGold supply side is still being set up. There is no
+  // shop-side way to switch this on: 'tab.Game Top-up' is deliberately absent
+  // from the tab grid in ProjectUserAccessSettingsV2, so only a super admin can
+  // grant it, one shop at a time, when that shop asks for it.
+  'Game Top-up': (permissions) => permissions['tab.Game Top-up'] === true,
   Accounting: (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   'Other Records': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   Reports: (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,

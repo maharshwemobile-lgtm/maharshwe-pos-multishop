@@ -33,10 +33,18 @@ const number = (value) => Number(value || 0);
 const round = (value) => Math.round((number(value) + Number.EPSILON) * 100) / 100;
 const clean = (value, max = 200) => String(value ?? '').trim().slice(0, max) || null;
 
-// It moves a prepaid wallet balance, not shop stock, so it is gated like
-// Bill/Eload rather than plain Sale POS: any non-cashier role, or a cashier
+// Closed to shops while the MooGold supply side is still being set up. A super
+// admin opens it one shop at a time by granting 'tab.Game Top-up', which is the
+// same key the sidebar reads and is not offered in the shop's own tab grid — so
+// hiding the menu is not merely cosmetic, the routes are shut too.
+//
+// Once a shop is opened it moves a prepaid wallet balance, not shop stock, so
+// it is then gated like Bill/Eload: any non-cashier role, or a cashier
 // specifically granted the accounting permission.
 function requireGameTopup(req, res, next) {
+  if (req.auth?.role !== 'SUPER_ADMIN' && req.auth?.permissions?.['tab.Game Top-up'] !== true) {
+    return res.status(403).json({ ok: false, message: 'Game Top-up ဝန်ဆောင်မှု မဖွင့်ရသေးပါ' });
+  }
   if (req.auth?.role !== 'CASHIER' || req.auth?.permissions?.accounting === true) return next();
   return res.status(403).json({ ok: false, message: 'Game Top-up permission is required' });
 }
