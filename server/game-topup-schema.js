@@ -79,6 +79,40 @@ const statements = [
   )`,
   `CREATE INDEX IF NOT EXISTS game_topup_orders_shop_idx ON game_topup_orders (shop_id, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS game_topup_wallet_ledger_shop_idx ON game_topup_wallet_ledger (shop_id, created_at DESC)`,
+
+  // A second, separate order table for the public consumer storefront — no
+  // shop, no wallet. The platform sells directly and is paid directly (a P2P
+  // KBZ Pay transfer with a self-reported transaction id), which is a
+  // fundamentally different trust model from the shop-cashier flow above:
+  // every row here starts PENDING_APPROVAL and only moves once a human admin
+  // has eyeballed the real KBZ Pay transaction history and approved it.
+  `CREATE TABLE IF NOT EXISTS game_topup_public_orders (
+    id UUID PRIMARY KEY,
+    order_number TEXT NOT NULL UNIQUE,
+    variation_id UUID NOT NULL REFERENCES game_topup_variations(id),
+    quantity INTEGER NOT NULL DEFAULT 1,
+    player_id TEXT,
+    server_id TEXT,
+    customer_name TEXT,
+    customer_phone TEXT NOT NULL,
+    retail_price NUMERIC(14,2) NOT NULL,
+    payment_method TEXT NOT NULL DEFAULT 'KBZ_PAY',
+    payment_transaction_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING_APPROVAL',
+    reject_reason TEXT,
+    moogold_order_id TEXT,
+    moogold_response JSONB,
+    failure_reason TEXT,
+    share_key_hash TEXT NOT NULL,
+    telegram_chat_id TEXT,
+    telegram_message_id TEXT,
+    reviewed_by_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS game_topup_public_orders_status_idx ON game_topup_public_orders (status, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS game_topup_public_orders_txn_idx ON game_topup_public_orders (payment_transaction_id)`,
 ];
 
 async function ensureGameTopupSchema() {

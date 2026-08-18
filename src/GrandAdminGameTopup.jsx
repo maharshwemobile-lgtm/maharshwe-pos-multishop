@@ -264,6 +264,126 @@ function WalletsPanel({ notify }) {
   );
 }
 
+function PublicOrdersPanel({ notify }) {
+  const [orders, setOrders] = useState([]);
+  const [telegramConfigured, setTelegramConfigured] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [onlyPending, setOnlyPending] = useState(true);
+  const [acting, setActing] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetch(`/api/grand-admin/game-topup/public-orders${onlyPending ? '?status=PENDING_APPROVAL' : ''}`);
+      setOrders(data.orders || []);
+      setTelegramConfigured(Boolean(data.telegramConfigured));
+    } catch (error) {
+      notify(error.message || 'Order list failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [onlyPending]);
+
+  const approve = async (order) => {
+    if (!window.confirm(`${order.orderNumber} — ငွေရောက်ကြောင်း KBZ Pay မှာ စစ်ပြီးပြီလား? Approve လုပ်ရင် ချက်ချင်း ဖြည့်ပေးပါမယ်။`)) return;
+    setActing(order.id);
+    try {
+      const result = await apiFetch(`/api/grand-admin/game-topup/public-orders/${order.id}/approve`, { method: 'POST' });
+      notify(result.message || 'Approved', 'success');
+      await load();
+    } catch (error) {
+      notify(error.message || 'Approve failed', 'error');
+    } finally {
+      setActing('');
+    }
+  };
+
+  const reject = async (order) => {
+    const reason = window.prompt('ငြင်းပယ်ရသည့် အကြောင်းပြချက်', 'ငွေလက်ခံရရှိမှု အတည်မပြုနိုင်ပါ');
+    if (reason === null) return;
+    setActing(order.id);
+    try {
+      const result = await apiFetch(`/api/grand-admin/game-topup/public-orders/${order.id}/reject`, { method: 'POST', body: { reason } });
+      notify(result.message || 'Rejected', 'success');
+      await load();
+    } catch (error) {
+      notify(error.message || 'Reject failed', 'error');
+    } finally {
+      setActing('');
+    }
+  };
+
+  const registerWebhook = async () => {
+    try {
+      const result = await apiFetch('/api/grand-admin/game-topup/telegram/set-webhook', { method: 'POST' });
+      notify(`Webhook registered: ${result.url}`, 'success');
+    } catch (error) {
+      notify(error.message || 'setWebhook failed', 'error');
+    }
+  };
+
+  return (
+    <div className="grand-card">
+      <div className="grand-section-title">
+        <b>Game Top-up — Public Orders</b>
+        <span>ဖောက်သည်တွေ တိုက်ရိုက် တင်တဲ့ အော်ဒါများ။ KBZ Pay မှာ ငွေရောက်မရောက် စစ်ပြီးမှ Approve နှိပ်ပါ။</span>
+      </div>
+
+      {!telegramConfigured ? (
+        <div className="gt-admin-notice">Telegram bot မထည့်ရသေးပါ (GAME_TOPUP_BOT_TOKEN / GAME_TOPUP_ADMIN_CHAT_IDS) — အော်ဒါတွေကို ဒီစာမျက်နှာကနေပဲ approve လုပ်ရပါမယ်။</div>
+      ) : null}
+
+      <div className="grand-toolbar">
+        <label className="gt-admin-checkbox">
+          <input type="checkbox" checked={onlyPending} onChange={(event) => setOnlyPending(event.target.checked)} />
+          <span>စောင့်ဆိုင်းဆဲသာ ပြမည်</span>
+        </label>
+        <button type="button" onClick={load}>{loading ? <Loader2 className="grand-spin" size={15} /> : <RefreshCw size={15} />} Refresh</button>
+        {telegramConfigured ? <button type="button" onClick={registerWebhook}>Telegram Webhook ချိတ်မည်</button> : null}
+      </div>
+
+      <div className="grand-table-wrap">
+        <table className="grand-table">
+          <thead><tr><th>Order</th><th>ပစ္စည်း</th><th>Player ID</th><th>ဖောက်သည်</th><th>ပမာဏ</th><th>Txn ID</th><th>Status</th><th /></tr></thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr key={order.id}>
+                <td><b>{order.orderNumber}</b><span>{new Date(order.createdAt).toLocaleString()}</span></td>
+                <td>{order.productName}<span>{order.variationName} × {order.quantity}</span></td>
+                <td>{order.playerId || '-'}{order.serverId ? <span>Server {order.serverId}</span> : null}</td>
+                <td>{order.customerName || '-'}<span>{order.customerPhone}</span></td>
+                <td><b>{money(order.retailPrice)}</b></td>
+                <td>
+                  <code className="gt-admin-txn">{order.paymentTransactionId}</code>
+                  {order.sameTxnCount > 1 ? <span className="gt-admin-dup">⚠️ {order.sameTxnCount} ကြိမ် သုံးထား</span> : null}
+                </td>
+                <td>
+                  <i className={order.status === 'COMPLETED' ? 'green' : order.status === 'PENDING_APPROVAL' ? 'blue' : 'red'}>{order.status}</i>
+                  {order.rejectReason ? <span>{order.rejectReason}</span> : null}
+                  {order.failureReason ? <span>{order.failureReason}</span> : null}
+                </td>
+                <td>
+                  {order.status === 'PENDING_APPROVAL' ? (
+                    <>
+                      <button type="button" disabled={acting === order.id} onClick={() => approve(order)}>
+                        {acting === order.id ? <Loader2 className="grand-spin" size={14} /> : 'Approve'}
+                      </button>
+                      <button type="button" disabled={acting === order.id} onClick={() => reject(order)}>Reject</button>
+                    </>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+            {!orders.length && !loading ? <tr><td colSpan={8} className="grand-empty">{onlyPending ? 'စောင့်ဆိုင်းနေတဲ့ အော်ဒါ မရှိပါ' : 'အော်ဒါ မရှိသေးပါ'}</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function GrandAdminGameTopup() {
   const [message, setMessage] = useState(null);
   const notify = (text, type = 'success') => setMessage({ text, type });
@@ -277,6 +397,7 @@ export default function GrandAdminGameTopup() {
   return (
     <>
       {message ? <div className={`grand-toast ${message.type}`}>{message.text}</div> : null}
+      <PublicOrdersPanel notify={notify} />
       <CatalogPanel notify={notify} />
       <WalletsPanel notify={notify} />
     </>

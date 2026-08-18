@@ -18,6 +18,8 @@ const attachGrandAdminBackendStep1Api = require('./grand-admin-backend-step1-api
 const attachGrandAdminBackendStep2Api = require('./grand-admin-backend-step2-api');
 const { attachGameTopupAdminApi } = require('./game-topup-admin-api');
 const { attachGameTopupApi } = require('./game-topup-api');
+const { attachGameTopupPublicApi } = require('./game-topup-public-api');
+const { attachGameTopupTelegramWebhook } = require('./game-topup-telegram');
 const attachPublicLandingApi = require('./public-landing-api');
 const attachEcommerceStorefrontApi = require('./ecommerce-storefront-api');
 const attachShopAdminBranchControlApi = require('./shop-admin-branch-control-api');
@@ -122,6 +124,8 @@ if (isPostgreSql) {
   attachMoneyServiceRatesV23Api(app);
   attachMoneyServiceV23Api(app);
   attachGameTopupApi(app);
+  attachGameTopupPublicApi(app);
+  attachGameTopupTelegramWebhook(app);
   attachExpenseCategoriesApi(app);
   attachDashboardPostgresApi(app);
   attachOnboardingDemoApi(app);

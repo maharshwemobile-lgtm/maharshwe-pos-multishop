@@ -37,3 +37,10 @@
 @media(max-width:760px){
   .gt-admin-sync-row{grid-template-columns:1fr}
 }
+
+.gt-admin-checkbox{display:flex!important;align-items:center;gap:8px;flex:0 0 auto!important;height:auto!important;background:transparent!important;border:0!important;padding:0 4px!important;font-size:13px;font-weight:800;color:#475569;cursor:pointer}
+.gt-admin-checkbox input{width:17px;height:17px;flex:0 0 auto}
+.gt-admin-txn{font-size:12px;background:#f1f5f9;padding:3px 6px;border-radius:6px;word-break:break-all}
+.gt-admin-dup{display:block;margin-top:3px;color:#b45309!important;font-weight:800}
+.dark .gt-admin-checkbox{color:#9fb0c7}
+.dark .gt-admin-txn{background:#10223d}

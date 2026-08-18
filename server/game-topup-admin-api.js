@@ -15,6 +15,7 @@ const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
 const { ensureGameTopupSchema } = require('./game-topup-schema');
 const moogold = require('./moogold-client');
+const gtTelegram = require('./game-topup-telegram');
 
 class ApiError extends Error {
   constructor(status, message, details) { super(message); this.status = status; this.details = details; }
@@ -326,6 +327,74 @@ function attachGameTopupAdminApi(app) {
       res.json({ ok: true, orders: rows.map((row) => ({ ...row, shopCost: round(row.shopCost), retailPrice: round(row.retailPrice), profit: round(row.profit) })) });
     } catch (error) {
       res.status(error.status || 500).json({ ok: false, message: error.message || 'Order feed failed' });
+    }
+  });
+
+  // Public storefront orders. Telegram is the fast path for approving these,
+  // but it needs a bot token and a chat id that may not be set up — so the
+  // same approve/reject calls are exposed here, on the portal the admin is
+  // already logged into.
+  app.get('/api/grand-admin/game-topup/public-orders', async (req, res) => {
+    try {
+      await ensureGameTopupSchema();
+      const status = clean(req.query.status, 40);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit || 40)));
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT o.id, o.order_number AS "orderNumber", o.status, o.quantity, o.player_id AS "playerId",
+                o.server_id AS "serverId", o.customer_name AS "customerName", o.customer_phone AS "customerPhone",
+                o.retail_price AS "retailPrice", o.payment_transaction_id AS "paymentTransactionId",
+                o.reject_reason AS "rejectReason", o.failure_reason AS "failureReason",
+                o.moogold_order_id AS "moogoldOrderId", o.created_at AS "createdAt", o.reviewed_at AS "reviewedAt",
+                p.name AS "productName", v.name AS "variationName",
+                (SELECT COUNT(*)::int FROM game_topup_public_orders d WHERE d.payment_transaction_id = o.payment_transaction_id) AS "sameTxnCount"
+           FROM game_topup_public_orders o
+           JOIN game_topup_variations v ON v.id = o.variation_id
+           JOIN game_topup_products p ON p.id = v.product_id
+          ${status ? 'WHERE o.status = $2' : ''}
+          ORDER BY o.created_at DESC LIMIT $1`,
+        ...(status ? [limit, status] : [limit]),
+      );
+      res.json({
+        ok: true,
+        telegramConfigured: gtTelegram.isConfigured(),
+        orders: rows.map((row) => ({ ...row, retailPrice: round(row.retailPrice) })),
+      });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Public order feed failed' });
+    }
+  });
+
+  app.post('/api/grand-admin/game-topup/public-orders/:id/approve', async (req, res) => {
+    try {
+      const order = await gtTelegram.approvePublicOrder(req.params.id, req.auth.userId);
+      await prisma.auditLog.create({
+        data: { shopId: null, userId: req.auth.userId, action: 'GAME_TOPUP_PUBLIC_ORDER_APPROVED', entityType: 'game_topup_public_order', entityId: req.params.id, details: { orderNumber: order.orderNumber, retailPrice: number(order.retailPrice) }, ipAddress: req.ip || null, userAgent: req.headers['user-agent'] || null },
+      }).catch(() => {});
+      res.json({ ok: true, message: `${order.orderNumber} approved and delivered`, order });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Approve failed' });
+    }
+  });
+
+  app.post('/api/grand-admin/game-topup/public-orders/:id/reject', async (req, res) => {
+    try {
+      const reason = clean(req.body?.reason, 300) || 'Payment not verified';
+      const order = await gtTelegram.rejectPublicOrder(req.params.id, req.auth.userId, reason);
+      await prisma.auditLog.create({
+        data: { shopId: null, userId: req.auth.userId, action: 'GAME_TOPUP_PUBLIC_ORDER_REJECTED', entityType: 'game_topup_public_order', entityId: req.params.id, details: { orderNumber: order.orderNumber, reason }, ipAddress: req.ip || null, userAgent: req.headers['user-agent'] || null },
+      }).catch(() => {});
+      res.json({ ok: true, message: `${order.orderNumber} rejected`, order });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Reject failed' });
+    }
+  });
+
+  app.post('/api/grand-admin/game-topup/telegram/set-webhook', async (_req, res) => {
+    try {
+      const result = await gtTelegram.setGameTopupWebhook();
+      res.json({ ok: true, message: 'Telegram webhook registered', ...result });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'setWebhook failed' });
     }
   });
 }
