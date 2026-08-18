@@ -57,8 +57,9 @@ export default function GameTopupStorefront() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
+  const [chosenGame, setChosenGame] = useState(null);
   const [selection, setSelection] = useState(null);
-  const [step, setStep] = useState('browse');
+  const [step, setStep] = useState('games');
   const [form, setForm] = useState({ quantity: 1, playerId: '', server: '', customerName: '', customerPhone: '', paymentTransactionId: '' });
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
@@ -122,11 +123,15 @@ export default function GameTopupStorefront() {
   };
 
   const restart = () => {
+    setChosenGame(null);
     setSelection(null);
     setPlaced(null);
-    setStep('browse');
+    setStep('games');
     setForm({ quantity: 1, playerId: '', server: '', customerName: '', customerPhone: '', paymentTransactionId: '' });
   };
+
+  const backToGames = () => { setChosenGame(null); setStep('games'); setFormError(''); };
+  const backToPackages = () => { setSelection(null); setStep('packages'); setFormError(''); };
 
   return (
     <main className="gts-page">
@@ -141,37 +146,52 @@ export default function GameTopupStorefront() {
       {loading ? <div className="gts-loading"><Loader2 className="gts-spin" size={22} /> ဖွင့်နေပါသည်…</div> : null}
       {loadError ? <div className="gts-alert error">{loadError}</div> : null}
 
-      {!loading && !loadError && step === 'browse' ? (
+      {!loading && !loadError && step === 'games' ? (
         <>
           {!products.length ? (
             <div className="gts-alert">ရောင်းချရန် ပစ္စည်း မရှိသေးပါ။ နောက်မှ ပြန်ကြည့်ပါ။</div>
           ) : null}
-          {products.map((product) => (
-            <section className="gts-product" key={product.id}>
-              <header>
-                {product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <div className="gts-product-icon"><Gamepad2 size={20} /></div>}
-                <b>{product.name}</b>
-              </header>
-              <div className="gts-package-grid">
-                {product.variations.map((variation) => (
-                  <button
-                    type="button"
-                    key={variation.id}
-                    onClick={() => { setSelection({ product, variation }); setStep('details'); setFormError(''); }}
-                  >
-                    <span>{variation.name}</span>
-                    <b>{money(variation.retailPrice)}</b>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
+          <div className="gts-game-grid">
+            {products.map((product) => (
+              <button
+                type="button"
+                className="gts-game-tile"
+                key={product.id}
+                onClick={() => { setChosenGame(product); setStep('packages'); setFormError(''); }}
+              >
+                {product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <div className="gts-product-icon"><Gamepad2 size={22} /></div>}
+                <span>{product.name}</span>
+              </button>
+            ))}
+          </div>
         </>
+      ) : null}
+
+      {!loading && !loadError && step === 'packages' && chosenGame ? (
+        <section className="gts-product">
+          <button type="button" className="gts-back" onClick={backToGames}><ChevronLeft size={16} /> ဂိမ်းများသို့ ပြန်သွားမည်</button>
+          <header>
+            {chosenGame.imageUrl ? <img src={chosenGame.imageUrl} alt={chosenGame.name} /> : <div className="gts-product-icon"><Gamepad2 size={20} /></div>}
+            <b>{chosenGame.name}</b>
+          </header>
+          <div className="gts-package-grid">
+            {chosenGame.variations.map((variation) => (
+              <button
+                type="button"
+                key={variation.id}
+                onClick={() => { setSelection({ product: chosenGame, variation }); setStep('details'); setFormError(''); }}
+              >
+                <span>{variation.name}</span>
+                <b>{money(variation.retailPrice)}</b>
+              </button>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       {step === 'details' && selection ? (
         <form className="gts-card" onSubmit={goToPayment}>
-          <button type="button" className="gts-back" onClick={restart}><ChevronLeft size={16} /> ပြန်ရွေးမည်</button>
+          <button type="button" className="gts-back" onClick={backToPackages}><ChevronLeft size={16} /> Package ပြန်ရွေးမည်</button>
           <h2>{selection.product.name}</h2>
           <p className="gts-chosen">{selection.variation.name} · {money(selection.variation.retailPrice)}</p>
 
