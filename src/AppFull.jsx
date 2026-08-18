@@ -20,6 +20,7 @@ import EcommerceCenter from './EcommerceCenter.jsx';
 import AboutUsPage from './AboutUsPage.jsx';
 import MoneyServiceCenterV23 from './MoneyServiceCenterV23.jsx';
 import GameTopupWorkspace from './GameTopupWorkspace.jsx';
+import GrandAdminGameTopup from './GrandAdminGameTopup.jsx';
 import ReportsWorkspace from './ReportsWorkspace.jsx';
 import AuditTrailPage from './AuditTrailPage.jsx';
 import GrandAdminPortal from './GrandAdminPortal.jsx';
@@ -37,6 +38,7 @@ import { apiFetch, clearSession, getSession, saveSession, subscribeSession } fro
 const menu = [
   { name: 'Dashboard', icon: Home, color: '#3b82f6' },
   { name: 'Grand Admin', label: 'Grand Admin Control', icon: ShieldCheck, color: '#2563eb' },
+  { name: 'Game Top-up Admin', label: 'Game Top-up Admin', icon: Gamepad2, color: '#7c3aed' },
   { name: 'Sale POS', icon: ShoppingCart, color: '#22c55e' },
   { name: 'Sales History', icon: History, color: '#6366f1' },
   { name: 'Repairs', label: 'Repair Platform', icon: Wrench, color: '#f59e0b' },
@@ -63,6 +65,7 @@ const TELEGRAM_COMMUNITY_URL = 'https://t.me/+2gc9ml7iMgk1ZThl';
 const pageTitles = {
   Dashboard: 'Dashboard & Daily Closing',
   'Grand Admin': 'Grand Super Admin Control',
+  'Game Top-up Admin': 'Game Top-up — Catalog, Wallets & Approvals',
   Repairs: 'Repair Platform',
   'Partner Settlement': 'Partner Shop & Weekly Settlement',
   Purchases: 'Suppliers & Purchase Orders',
@@ -132,6 +135,7 @@ function pageTitleFor(page) {
 const legacyVisibility = {
   Dashboard: () => true,
   'Grand Admin': (_permissions, role, user) => role === 'SUPER_ADMIN' && !user?.shopId,
+  'Game Top-up Admin': (_permissions, role, user) => role === 'SUPER_ADMIN' && !user?.shopId,
   'Sale POS': (permissions) => permissions.sale !== false,
   'Sales History': (permissions) => permissions.history !== false,
   Repairs: () => true,
@@ -326,6 +330,9 @@ function Page({ page, setPage, user, onboardingGuide }) {
   if (!pageVisible(safePage, user)) return <AccessDenied onBack={() => setPage(fallbackPage)} backLabel={`Back to ${fallbackPage}`}/>;
   if (safePage === 'Dashboard') return <DashboardLive onNavigate={setPage}/>;
   if (safePage === 'Grand Admin') return <GrandAdminPortal/>;
+  // Game Top-up admin also lives inside the Grand Admin page, but that page is
+  // long enough that it was easy to miss down there — this is the direct route.
+  if (safePage === 'Game Top-up Admin') return <GrandAdminGameTopup/>;
   if (safePage === 'Sale POS') return <NewSaleV10 onOpenHistory={() => setPage('Sales History')} onboardingGuide={onboardingGuide} />;
   if (safePage === 'Sales History') return <SalesHistoryV10 />;
   if (safePage === 'Repairs') return <Phase8RepairWorkspace/>;
