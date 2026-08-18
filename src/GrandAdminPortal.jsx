@@ -15,6 +15,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { apiFetch, clearSession, getSession } from './phase2Api';
+import GrandAdminGameTopup from './GrandAdminGameTopup.jsx';
 import './grand-admin-portal.css';
 
 const FEATURE_KEYS = [
@@ -320,6 +321,8 @@ export default function GrandAdminPortal() {
           </div>
         </section>
       ) : null}
+
+      <GrandAdminGameTopup />
 
       <section className="grand-card">
         <div className="grand-section-title">

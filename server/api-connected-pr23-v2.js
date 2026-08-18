@@ -16,6 +16,8 @@ const attachAdminIntegrationsApi = require('./admin-integrations-api');
 const attachGrandAdminCentralControlApi = require('./grand-admin-central-control-api');
 const attachGrandAdminBackendStep1Api = require('./grand-admin-backend-step1-api');
 const attachGrandAdminBackendStep2Api = require('./grand-admin-backend-step2-api');
+const { attachGameTopupAdminApi } = require('./game-topup-admin-api');
+const { attachGameTopupApi } = require('./game-topup-api');
 const attachPublicLandingApi = require('./public-landing-api');
 const attachEcommerceStorefrontApi = require('./ecommerce-storefront-api');
 const attachShopAdminBranchControlApi = require('./shop-admin-branch-control-api');
@@ -90,6 +92,7 @@ app.use('/api/grand-admin', requireAuth, requireGrandAdmin);
 attachGrandAdminCentralControlApi(app);
 attachGrandAdminBackendStep1Api(app);
 attachGrandAdminBackendStep2Api(app);
+attachGameTopupAdminApi(app);
 attachShopAdminBranchControlApi(app);
 
 const protect = process.env.AUTH_REQUIRED === 'true' ? requireAuth : (_req, _res, next) => next();
@@ -118,6 +121,7 @@ if (isPostgreSql) {
   attachMoneyServiceV23Guards(app);
   attachMoneyServiceRatesV23Api(app);
   attachMoneyServiceV23Api(app);
+  attachGameTopupApi(app);
   attachExpenseCategoriesApi(app);
   attachDashboardPostgresApi(app);
   attachOnboardingDemoApi(app);

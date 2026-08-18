@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Banknote, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
+import { BarChart3, Banknote, Box, CircleDollarSign, DatabaseBackup, FileSpreadsheet, Gamepad2, Handshake, Headphones, History, Home, Info, LockKeyhole, LogOut, Menu, PackagePlus, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Truck, Users, Wallet,
   BadgePercent, Wrench, X } from 'lucide-react';
 import DashboardLive from './DashboardLive.jsx';
 import NewSaleV10 from './sales-v10/NewSaleV10.jsx';
@@ -19,6 +19,7 @@ import BusinessRecordsPanel from './BusinessRecordsPanel.jsx';
 import EcommerceCenter from './EcommerceCenter.jsx';
 import AboutUsPage from './AboutUsPage.jsx';
 import MoneyServiceCenterV23 from './MoneyServiceCenterV23.jsx';
+import GameTopupWorkspace from './GameTopupWorkspace.jsx';
 import ReportsWorkspace from './ReportsWorkspace.jsx';
 import AuditTrailPage from './AuditTrailPage.jsx';
 import GrandAdminPortal from './GrandAdminPortal.jsx';
@@ -47,6 +48,7 @@ const menu = [
   { name: 'Customers', label: 'Customers & Credit', icon: Users, color: '#10b981' },
   { name: 'Money Service', label: 'Money Service', icon: CircleDollarSign, color: '#16a34a' },
   { name: 'Bill / Eload', label: 'Bill / Eload', icon: Banknote, color: '#0284c7' },
+  { name: 'Game Top-up', label: 'Game Top-up', icon: Gamepad2, color: '#7c3aed' },
   { name: 'Accounting', label: 'Finance & Accounts', icon: Wallet, color: '#f97316' },
   { name: 'Other Records', label: 'Other Records', icon: FileSpreadsheet, color: '#0f766e' },
   { name: 'Reports', label: 'Reports & Performance', icon: BarChart3, color: '#84cc16' },
@@ -68,6 +70,7 @@ const pageTitles = {
   'Online Shop': 'E-commerce Website',
   'Money Service': 'Money Service',
   'Bill / Eload': 'Bill / Eload Sale & Refill',
+  'Game Top-up': 'Game Top-up Sale',
   Accounting: 'Finance & Accounts',
   'Other Records': 'Other Records',
   Reports: 'Reports & Performance',
@@ -140,6 +143,7 @@ const legacyVisibility = {
   Customers: (permissions) => permissions.sale !== false || permissions.history !== false,
   'Money Service': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   'Bill / Eload': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
+  'Game Top-up': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   Accounting: (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   'Other Records': (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
   Reports: (permissions, role) => role !== 'CASHIER' || permissions.accounting === true,
@@ -337,6 +341,7 @@ function Page({ page, setPage, user, onboardingGuide }) {
   // on a tab it does not have and shows nothing.
   if (safePage === 'Money Service') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23 key="money-service"/></Connected>;
   if (safePage === 'Bill / Eload') return <Connected page={safePage} setPage={setPage}><MoneyServiceCenterV23 key="bill-eload" module="bill"/></Connected>;
+  if (safePage === 'Game Top-up') return <Connected page={safePage} setPage={setPage}><GameTopupWorkspace/></Connected>;
   if (safePage === 'Accounting') return <Connected page={safePage} setPage={setPage}><FinanceWorkspace onNavigate={setPage}/></Connected>;
   if (safePage === 'Other Records') return <Connected page={safePage} setPage={setPage}><BusinessRecordsPanel/></Connected>;
   if (safePage === 'About Us') return <Connected page={safePage} setPage={setPage}><AboutUsPage/></Connected>;
