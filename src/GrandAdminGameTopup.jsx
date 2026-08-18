@@ -346,7 +346,7 @@ function PublicOrdersPanel({ notify }) {
 
       <div className="grand-table-wrap">
         <table className="grand-table">
-          <thead><tr><th>Order</th><th>ပစ္စည်း</th><th>Player ID</th><th>ဖောက်သည်</th><th>ပမာဏ</th><th>Txn ID</th><th>Status</th><th /></tr></thead>
+          <thead><tr><th>Order</th><th>ပစ္စည်း</th><th>Player ID</th><th>ဖောက်သည်</th><th>ပမာဏ</th><th>Txn ၄ လုံး</th><th>Status</th><th /></tr></thead>
           <tbody>
             {orders.map((order) => (
               <tr key={order.id}>
@@ -357,7 +357,7 @@ function PublicOrdersPanel({ notify }) {
                 <td><b>{money(order.retailPrice)}</b></td>
                 <td>
                   <code className="gt-admin-txn">{order.paymentTransactionId}</code>
-                  {order.sameTxnCount > 1 ? <span className="gt-admin-dup">⚠️ {order.sameTxnCount} ကြိမ် သုံးထား</span> : null}
+                  {order.sameTxnCount > 1 ? <span className="gt-admin-dup">⚠️ {order.sameTxnCount} ကြိမ် — ပမာဏ/အချိန် တိုက်စစ်ပါ</span> : null}
                 </td>
                 <td>
                   <i className={order.status === 'COMPLETED' ? 'green' : order.status === 'PENDING_APPROVAL' ? 'blue' : 'red'}>{order.status}</i>

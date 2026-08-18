@@ -79,7 +79,10 @@ const orderSchema = z.object({
   server: z.string().trim().max(80).optional().nullable(),
   customerName: z.string().trim().max(120).optional().nullable(),
   customerPhone: z.string().trim().min(7).max(20),
-  paymentTransactionId: z.string().trim().min(4).max(100),
+  // KBZ Pay users quote the last 4 digits of the transaction, not the full
+  // reference. That is only a lookup hint for the admin checking the real KBZ
+  // Pay history — it is never treated as proof on its own.
+  paymentTransactionId: z.string().trim().regex(/^\d{4,20}$/, 'Transaction ID must be 4-20 digits'),
 });
 
 function orderRow(row) {

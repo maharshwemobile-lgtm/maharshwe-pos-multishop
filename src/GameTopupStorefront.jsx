@@ -94,8 +94,8 @@ export default function GameTopupStorefront() {
   const submitOrder = async (event) => {
     event.preventDefault();
     setFormError('');
-    if (!form.paymentTransactionId.trim() || form.paymentTransactionId.trim().length < 4) {
-      return setFormError('KBZ Pay Transaction ID ထည့်ပါ');
+    if (!/^\d{4,}$/.test(form.paymentTransactionId.trim())) {
+      return setFormError('Transaction ID နောက်ဆုံး ၄ လုံး (ဂဏန်း) ထည့်ပါ');
     }
     setBusy(true);
     try {
@@ -219,14 +219,20 @@ export default function GameTopupStorefront() {
 
           <ol className="gts-steps">
             <li>အထက်ပါ KBZ Pay နံပါတ်သို့ <b>{money(total)}</b> အတိအကျ လွှဲပါ</li>
-            <li>လွှဲပြီးရင် KBZ Pay app ထဲက <b>Transaction ID</b> ကို ကူးယူပါ</li>
+            <li>လွှဲပြီးရင် KBZ Pay app ထဲက <b>Transaction ID နောက်ဆုံး ၄ လုံး</b> ကို ကြည့်ပါ</li>
             <li>အောက်မှာ ထည့်ပြီး အော်ဒါ တင်ပါ</li>
           </ol>
 
           {formError ? <div className="gts-alert error">{formError}</div> : null}
 
-          <label><span>KBZ Pay Transaction ID *</span>
-            <input value={form.paymentTransactionId} onChange={(event) => setForm({ ...form, paymentTransactionId: event.target.value })} placeholder="ဥပမာ - 012345678901" />
+          <label><span>KBZ Pay Transaction ID — နောက်ဆုံး ၄ လုံး *</span>
+            <input
+              value={form.paymentTransactionId}
+              onChange={(event) => setForm({ ...form, paymentTransactionId: event.target.value })}
+              placeholder="ဥပမာ - 4821"
+              inputMode="numeric"
+              maxLength={20}
+            />
           </label>
 
           <div className="gts-notice">

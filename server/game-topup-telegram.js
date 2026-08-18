@@ -60,9 +60,12 @@ function orderMessageText(order, extra) {
     `Price: <b>${money(order.retailPrice)}</b>`,
     `Player ID: ${escapeHtml(order.playerId || '-')}${order.serverId ? ' · Server ' + escapeHtml(order.serverId) : ''}`,
     `Customer: ${escapeHtml(order.customerName || '-')} · ${escapeHtml(order.customerPhone)}`,
-    `Payment: ${escapeHtml(order.paymentMethod)} · Txn ID: <code>${escapeHtml(order.paymentTransactionId)}</code>`,
+    `Payment: ${escapeHtml(order.paymentMethod)} · Txn နောက်ဆုံး ၄ လုံး: <code>${escapeHtml(order.paymentTransactionId)}</code>`,
   ];
-  if (order.duplicateWarning) lines.push('⚠️ ဒီ Transaction ID ကို အရင်တစ်ခါ တင်ဖူးပါတယ် — အထူးသတိထားပြီး စစ်ပါ');
+  // Four digits repeat by coincidence often enough that this is a "look
+  // twice", not an accusation — the admin is checking the real KBZ Pay
+  // history anyway, where the amount and time disambiguate.
+  if (order.duplicateWarning) lines.push('⚠️ ဒီ ၄ လုံးကို အရင်လည်း တင်ဖူးပါတယ် — ပမာဏနဲ့ အချိန် တိုက်စစ်ပါ');
   if (extra) lines.push('', extra);
   return lines.join('\n');
 }
