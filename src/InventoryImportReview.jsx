@@ -57,15 +57,15 @@ function parseCsv(text) {
   return cleanRows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])));
 }
 
-const TEMPLATE_HEADERS = [
-  'productName', 'category', 'brand', 'model', 'productType', 'variantName',
-  'sku', 'barcode', 'ram', 'storage', 'color', 'costPrice',
-  'standardSellingPrice', 'minimumSellingPrice', 'stockQuantity', 'minAlertQuantity',
-];
+// Everything except productName is optional server-side, so the template only
+// carries what a shop cannot sell without. Wider files still import fine — the
+// importer reads whatever columns are present, so an existing 16-column CSV, or
+// one with ram/storage/color/sku/barcode added back, needs no conversion.
+const TEMPLATE_HEADERS = ['productName', 'category', 'costPrice', 'standardSellingPrice', 'stockQuantity'];
 
 const TEMPLATE_ROWS = [
-  ['Type-C Charger', 'Charger', 'Example Brand', 'C20', 'NORMAL_PRODUCT', 'Default', 'CHG-C20', '885000000001', '', '', 'White', 5000, 7000, 6500, 10, 2],
-  ['Redmi Note Example', 'Phones', 'Redmi', 'Note Example', 'NORMAL_PRODUCT', '8GB / 256GB / Black', 'RNE-8-256-BLK', '', '8GB', '256GB', 'Black', 500000, 550000, 530000, 1, 1],
+  ['Type-C Charger', 'Charger', 5000, 7000, 10],
+  ['Redmi Note 13 (8GB / 256GB / Black)', 'Phones', 500000, 550000, 1],
 ];
 
 function csvCell(value) {
@@ -169,7 +169,7 @@ function ReviewModal({ onClose, onImported }) {
         {!overview ? (
           <div className="import-review-body">
             <div className="import-template-guide">
-              <div><b>Excel / Google Sheet Template</b><span>Template ကို download ဆွဲ → Google Sheet မှာ import/ဖြည့် → CSV အဖြစ် download ဆွဲပြီး အောက်မှာတင်ပါ။ Header အမည်များကို မပြောင်းပါနှင့်။</span></div>
+              <div><b>Excel / Google Sheet Template</b><span>ကော်လံ ၅ ခုပဲ ဖြည့်ရပါမယ် — ပစ္စည်းအမည်၊ အမျိုးအစား၊ အရင်းစျေး၊ ရောင်းစျေး၊ အရေအတွက်။ ပစ္စည်းအမည် တစ်ခုတည်းသာ မဖြစ်မနေလိုအပ်ပြီး ကျန်တာ ချန်ထားလို့ရပါတယ်။ SKU / Barcode / RAM / Storage / Color / အနည်းဆုံးရောင်းစျေး / Alert အရေအတွက် လိုချင်ရင် ကော်လံ ထပ်ဖြည့်လို့ ရပါတယ်။ Header အမည်များကို မပြောင်းပါနှင့်။</span></div>
               <button type="button" onClick={downloadProductTemplate}><Download size={17}/> Download Template</button>
             </div>
             <label className="import-file-picker">
