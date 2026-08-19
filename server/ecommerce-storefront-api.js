@@ -304,14 +304,28 @@ function attachEcommerceStorefrontApi(app) {
 
   app.get('/api/ecommerce/products', requireAuth, handle(async (req, res) => {
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const pageSize = 10;
+    // A shop with a few hundred products had to page through them ten at a
+    // time with no way to search, so: a name search, and a page size that
+    // shows a screenful.
+    const pageSize = Math.min(96, Math.max(10, Number.parseInt(req.query.pageSize, 10) || 24));
+    const search = String(req.query.search || '').trim();
     const brand = String(req.query.brand || '').trim();
     const categoryId = String(req.query.categoryId || '').trim();
     const stockLevel = String(req.query.stockLevel || '').trim().toUpperCase();
     const publicationStatus = String(req.query.publicationStatus || '').trim().toUpperCase();
     const [rows, optionRows, onlineTotal] = await Promise.all([
       prisma.product.findMany({
-        where: { shopId: req.auth.shopId, active: true, ...(brand ? { brand } : {}), ...(categoryId ? { categoryId } : {}) },
+        where: {
+          shopId: req.auth.shopId,
+          active: true,
+          ...(brand ? { brand } : {}),
+          ...(categoryId ? { categoryId } : {}),
+          ...(search ? { OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { brand: { contains: search, mode: 'insensitive' } },
+            { model: { contains: search, mode: 'insensitive' } },
+          ] } : {}),
+        },
         include: { category: true, ecommerceDetail: true, ecommerceImages: { orderBy: { sortOrder: 'asc' } }, variants: { where: { active: true }, include: { inventoryBalance: true } } },
         orderBy: { name: 'asc' },
       }),
