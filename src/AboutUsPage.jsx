@@ -15,7 +15,7 @@ import './about-us.css';
 const supportLinks = [
   { label: 'TikTok', value: '@maharshwemobile', href: 'https://www.tiktok.com/@maharshwemobile' },
   { label: 'Telegram', value: '@Mylifemychoice68', href: 'https://t.me/Mylifemychoice68' },
-  { label: 'Website', value: 'maharshwe.online', href: 'https://maharshwe.online/' },
+  { label: 'Website', value: 'maharshwe.shop', href: 'https://maharshwe.shop/' },
 ];
 
 const donationMethods = [
@@ -116,7 +116,7 @@ export default function AboutUsPage() {
             <Smartphone size={24} />
           </header>
           <p>Latest updates, customer service, product information and support channels are available from Mahar Shwe Mobile online community.</p>
-          <a className="about-primary-link" href="https://maharshwe.online/" target="_blank" rel="noreferrer">
+          <a className="about-primary-link" href="https://maharshwe.shop/" target="_blank" rel="noreferrer">
             <Globe2 size={18} /> Open Website
           </a>
         </article>
