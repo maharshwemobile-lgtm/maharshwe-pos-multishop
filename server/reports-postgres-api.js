@@ -278,7 +278,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     prisma.$queryRawUnsafe(
       `SELECT ${closeBucket} AS bucket,
               COUNT(*)::int AS "closedDays",
-              MAX(closed_at) AS "lastClosedAt",
+              MAX(closed_at) AS "lastClosedAt"
          FROM daily_closings
         WHERE shop_id=$1::uuid
           AND closing_date >= $2::date
