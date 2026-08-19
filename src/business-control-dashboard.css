@@ -592,3 +592,5 @@ html.dark .bc-permission-note { background: #332b16; color: #f5cc62; }
 /* Day close panel restored into the live dashboard. */
 .bc-close-section{display:grid;gap:12px;margin-top:12px}
 .bc-close-notice{margin:0;padding:9px 11px;border-radius:9px;background:#ecfdf5;color:#047857;font-size:13px;font-weight:700}
+.bc-close-section .bc-panel{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.09)}
+.bc-close-section .bc-panel header span{color:#047857}
