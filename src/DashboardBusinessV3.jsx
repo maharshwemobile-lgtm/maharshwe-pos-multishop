@@ -89,9 +89,6 @@ export default function DashboardBusinessV3({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [closingNote, setClosingNote] = useState('');
-  // Cash the owner is already holding, what the cashier spent, and what the
-  // cashier still owes back. Recorded with the close, never added to totals.
-  const [cash, setCash] = useState({ ownerCashIn: '', cashierCashOut: '', cashReturnToOwner: '' });
   const [closing, setClosing] = useState(false);
   const [notice, setNotice] = useState('');
   const role = getSession()?.user?.role || '';
@@ -119,14 +116,10 @@ export default function DashboardBusinessV3({ onNavigate }) {
         body: {
           businessDate,
           note: closingNote,
-          ownerCashIn: Number(cash.ownerCashIn || 0),
-          cashierCashOut: Number(cash.cashierCashOut || 0),
-          cashReturnToOwner: Number(cash.cashReturnToOwner || 0),
         },
       });
       setData(response);
-      setClosingNote('');
-      setCash({ ownerCashIn: '', cashierCashOut: '', cashReturnToOwner: '' });
+      setClosingNote('');
       setNotice(response.message || 'Business day closed.');
     } catch (requestError) {
       setError(requestError?.message || 'Daily closing failed');
@@ -188,38 +181,6 @@ export default function DashboardBusinessV3({ onNavigate }) {
       {data ? <>
         <section className="bc-metrics">{metrics.map((item) => <MetricCard key={item.label} {...item} />)}</section>
 
-        <section className="bc-close-section">
-          <article className="bc-panel">
-            <header><div><span>DAY CLOSE</span><h3>{dateLabel(businessDate)}</h3></div><CheckCircle2 size={23} /></header>
-            {notice ? <p className="bc-close-notice">{notice}</p> : null}
-            {data.closing ? (
-              <div className="bc-closed-box">
-                <CheckCircle2 size={26} />
-                <div>
-                  <b>Closed</b>
-                  <span>{data.closing.closedAt ? new Date(data.closing.closedAt).toLocaleString() : ''}</span>
-                  <p>{data.closing.note || 'No closing note.'}</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="bc-cash-summary">
-                  <b>Cash Summary</b>
-                  <label>Income From Owner<input type="number" min="0" step="1" placeholder="0" value={cash.ownerCashIn} onChange={(event) => setCash((current) => ({ ...current, ownerCashIn: event.target.value }))} /></label>
-                  <label>Expense From Casher<input type="number" min="0" step="1" placeholder="0" value={cash.cashierCashOut} onChange={(event) => setCash((current) => ({ ...current, cashierCashOut: event.target.value }))} /></label>
-                  <label>ဆိုင်ရှင်ပြန်အပ်ရမည့်ငွေ<input type="number" min="0" step="1" placeholder="0" value={cash.cashReturnToOwner} onChange={(event) => setCash((current) => ({ ...current, cashReturnToOwner: event.target.value }))} /></label>
-                </div>
-                <textarea value={closingNote} onChange={(event) => setClosingNote(event.target.value)} placeholder="Daily closing note (optional)" maxLength={500} />
-                <button className="bc-close-button" type="button" onClick={closeBusinessDay} disabled={!canClose || closing}>
-                  {closing ? <Loader2 className="bc-spin" size={18} /> : <CheckCircle2 size={18} />}
-                  {canClose ? 'Close This Business Day' : 'Shop Admin Only'}
-                </button>
-                <small className="bc-helper">Cash Summary is reported separately and never changes the income or expense totals.</small>
-              </>
-            )}
-          </article>
-        </section>
-
         <section className="bc-account-grid">
           <AccountCard icon={Banknote} label="Cash Balance" value={accountBalances.CASH} />
           <AccountCard icon={Wallet} label="KBZPay Balance" value={accountBalances.KPAY} />
@@ -268,6 +229,32 @@ export default function DashboardBusinessV3({ onNavigate }) {
 
 
 
+
+        <section className="bc-close-section">
+          <article className="bc-panel">
+            <header><div><span>DAY CLOSE</span><h3>{dateLabel(businessDate)}</h3></div><CheckCircle2 size={23} /></header>
+            {notice ? <p className="bc-close-notice">{notice}</p> : null}
+            {data.closing ? (
+              <div className="bc-closed-box">
+                <CheckCircle2 size={26} />
+                <div>
+                  <b>Closed</b>
+                  <span>{data.closing.closedAt ? new Date(data.closing.closedAt).toLocaleString() : ''}</span>
+                  <p>{data.closing.note || 'No closing note.'}</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <textarea value={closingNote} onChange={(event) => setClosingNote(event.target.value)} placeholder="Daily closing note (optional)" maxLength={500} />
+                <button className="bc-close-button" type="button" onClick={closeBusinessDay} disabled={!canClose || closing}>
+                  {closing ? <Loader2 className="bc-spin" size={18} /> : <CheckCircle2 size={18} />}
+                  {canClose ? 'Close This Business Day' : 'Shop Admin Only'}
+                </button>
+                <small className="bc-helper">Closing stores one locked snapshot of this day.</small>
+              </>
+            )}
+          </article>
+        </section>
 
         <section className="bc-quick-links">
           {[
