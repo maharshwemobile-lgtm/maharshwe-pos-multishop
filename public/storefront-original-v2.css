@@ -15,5 +15,6 @@ button,input,select,textarea{font-family:inherit}button:focus-visible,input:focu
 @media(min-width:900px){.app-shell{max-width:1240px;margin:0 auto}.product-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.sheet{max-width:560px}.detail{max-width:1040px;margin:0 auto}.checkout-wrap{max-width:760px;margin:0 auto}.store-contact{margin-bottom:30px}}
 .welcome-product img{animation:hero-enter .45s ease both}.welcome-copy h1,.welcome-copy p{animation:hero-copy-enter .38s ease both}.hero-dots{display:flex;align-items:center;gap:6px;margin-top:14px}.hero-dots button{width:7px;height:7px;min-width:0;padding:0;border:0;border-radius:999px;background:rgba(255,255,255,.45);transition:width .2s ease,background .2s ease}.hero-dots button.active{width:22px;background:#fff}@keyframes hero-enter{from{opacity:.2;transform:translateX(18px) scale(.96)}to{opacity:1;transform:none}}@keyframes hero-copy-enter{from{opacity:.2;transform:translateY(7px)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.welcome-product img,.welcome-copy h1,.welcome-copy p{animation:none}}
 
-.store-welcome.has-banner{background:linear-gradient(135deg,rgba(5,55,38,.86),rgba(10,120,84,.66)),var(--shop-banner) center/cover no-repeat}
-.store-welcome.has-banner:after{opacity:.35}
+.store-welcome.has-banner{background:linear-gradient(100deg,rgba(4,42,29,.90) 0%,rgba(5,60,42,.72) 38%,rgba(8,95,66,.30) 70%,rgba(10,120,84,.12) 100%),var(--shop-banner) center/cover no-repeat}
+.store-welcome.has-banner .welcome-copy h1,.store-welcome.has-banner .welcome-copy p{text-shadow:0 1px 6px rgba(2,26,18,.55)}
+.store-welcome.has-banner:after{opacity:.18}
