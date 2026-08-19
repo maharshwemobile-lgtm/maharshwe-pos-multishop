@@ -519,6 +519,7 @@ async function buildDailyReport(shopId) {
     '',
     '━━━━━━━━━━━━━━',
     '📊 Cash Summary',
+    line('Income From Cashier', close.cashierCashIn),
     line('Income From Owner', close.ownerCashIn),
     line('Expense From Casher', close.cashierCashOut),
     line('ဆိုင်ရှင်ပြန်အပ်ရမည့်ငွေ', close.cashReturnToOwner),
