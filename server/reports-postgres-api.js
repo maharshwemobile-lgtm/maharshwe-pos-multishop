@@ -39,14 +39,6 @@ const OTHER_INCOME_CATEGORY_KEYS = {
   otherOtherIncome: categoryValue('income', 'Other Income'),
 };
 
-const CASH_SUMMARY_CATEGORY_KEYS = {
-  income: { ownerCashIn: categoryValue('income', 'Income From Owner') },
-  expense: {
-    cashierCashOut: categoryValue('expense', 'Expense From Casher'),
-    cashReturnToOwner: categoryValue('expense', 'Cash Return To Owner'),
-  },
-};
-
 const OTHER_EXPENSE_CATEGORY_KEYS = {
   otherServiceExpense: categoryValue('expense', 'Other Service Expense'),
   otherSaleExpense: categoryValue('expense', 'Other Sales Expense'),
@@ -61,17 +53,8 @@ function businessRecordMetric(type, category) {
 }
 
 function mergeBusinessRecordRows(target, rows, type) {
-  const cashKeys = CASH_SUMMARY_CATEGORY_KEYS[type] || {};
   for (const raw of rows || []) {
     const bucket = String(raw.bucket || '');
-    const normalized = normalizeBusinessRecordCategory(type, raw.category);
-    const cashMetric = Object.keys(cashKeys).find((key) => cashKeys[key] === normalized);
-    if (bucket && cashMetric) {
-      const cashRow = target.get(bucket) || emptyCloseRow(bucket);
-      cashRow[cashMetric] = round(Number(cashRow[cashMetric] || 0) + number(raw.amount));
-      target.set(bucket, cashRow);
-      continue;
-    }
     const metric = businessRecordMetric(type, raw.category);
     if (!bucket || !metric) continue;
     const row = target.get(bucket) || emptyCloseRow(bucket);

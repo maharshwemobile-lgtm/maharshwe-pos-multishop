@@ -36,15 +36,6 @@
         "OTHER_INCOME",
         "OTHER_OTHER_INCOME"
       ]
-    },
-    {
-      "value": "ဆိုင်ရှင်ထံမှ ငွေ",
-      "my": "ဆိုင်ရှင်ထံမှ ငွေ",
-      "en": "Income From Owner",
-      "aliases": [
-        "OWNER_CASH_IN",
-        "Income From Owner"
-      ]
     }
   ],
   "expense": [
@@ -82,25 +73,6 @@
       "en": "Other Expense",
       "aliases": [
         "OTHER_OTHER_EXPENSE"
-      ]
-    },
-    {
-      "value": "ကက်ရှာ သုံးငွေ",
-      "my": "ကက်ရှာ သုံးငွေ",
-      "en": "Expense From Casher",
-      "aliases": [
-        "CASHIER_CASH_OUT",
-        "Expense From Cashier",
-        "Expense From Casher"
-      ]
-    },
-    {
-      "value": "ဆိုင်ရှင်ပြန်အပ်ရမည့်ငွေ",
-      "my": "ဆိုင်ရှင်ပြန်အပ်ရမည့်ငွေ",
-      "en": "Cash Return To Owner",
-      "aliases": [
-        "CASH_RETURN_TO_OWNER",
-        "Cash Return To Owner"
       ]
     }
   ]
