@@ -41,3 +41,15 @@ button.ecom-online-badge:disabled{opacity:.5;cursor:not-allowed}
   .ecom-row-tools{grid-column:1/-1;padding:0 12px 10px}
   .ecom-list.grid-view .ecom-product-title{grid-template-columns:52px minmax(0,1fr) 18px}
 }
+
+/* Store Setup: the storefront hero photo, with a preview at the shape it
+   actually renders in so a shop can tell a wide banner from a portrait snap. */
+.ecom-banner-field{display:grid;gap:8px}
+.ecom-banner-label{font-size:12px;font-weight:700;color:#334155}
+.ecom-banner-label i{font-style:normal;font-weight:600;color:#94a3b8}
+.ecom-banner-preview{display:grid;place-items:center;aspect-ratio:16/6;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;overflow:hidden}
+.ecom-banner-preview img{width:100%;height:100%;object-fit:cover}
+.ecom-banner-preview span{color:#94a3b8;font-size:12px}
+.ecom-banner-actions{display:flex;flex-wrap:wrap;gap:8px}
+.ecom-banner-actions button{border:1px solid #cbd5e1;border-radius:8px;padding:8px 11px;background:#fff;color:#b91c1c;font-size:12px;font-weight:700;cursor:pointer}
+.ecom-banner-field input[type=url]{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;background:#fff;font-size:12px}

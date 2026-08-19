@@ -40,6 +40,10 @@ const settingsInput = z.object({
     z.string().trim().url().max(1000).refine((value) => /^https:\/\/(maps\.app\.goo\.gl|www\.google\.com\/maps|maps\.google\.com)\//i.test(value), 'Use a valid Google Maps link'),
     z.literal(''), z.null(),
   ]).optional().transform((value) => (value === undefined ? undefined : (value || null))),
+  // The storefront hero photo. Uploads land here as a same-origin path, but a
+  // shop may also paste any https image link.
+  bannerUrl: z.union([z.string().trim().max(1000), z.literal(''), z.null()])
+    .optional().transform((value) => (value === undefined ? undefined : (value || null))),
   deliveryEnabled: z.boolean().optional(), pickupEnabled: z.boolean().optional(), deliveryFee: z.coerce.number().min(0).max(10000000).optional(),
 });
 const productInput = z.object({
@@ -257,6 +261,13 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024, files: 3 }
   if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) return callback(new Error('Only JPG, PNG, WEBP or GIF images are allowed'));
   return callback(null, true);
 } });
+function bannerImageUpload(req, res, next) {
+  upload.single('image')(req, res, (error) => {
+    if (!error) return next();
+    const message = error.code === 'LIMIT_FILE_SIZE' ? 'Photo သည် 5 MB ထက်မကြီးရပါ' : error.message;
+    return res.status(400).json({ ok: false, message: message || 'Image upload failed' });
+  });
+}
 function productImageUpload(req, res, next) {
   upload.array('images', 3)(req, res, (error) => {
     if (!error) return next();
@@ -383,6 +394,23 @@ function attachEcommerceStorefrontApi(app) {
     res.status(201).json({ ok: true, images: rows });
   }));
 
+  app.post('/api/ecommerce/banner', requireAuth, bannerImageUpload, handle(async (req, res) => {
+    if (!req.file) return res.status(400).json({ ok: false, message: 'Upload လုပ်ရန် Photo ရွေးပါ' });
+    const url = publicImageUrl(req.auth.shopId, req.file.filename);
+    const previous = await prisma.ecommerceStoreSettings.findUnique({ where: { shopId: req.auth.shopId }, select: { bannerUrl: true } });
+    const settings = await prisma.ecommerceStoreSettings.upsert({
+      where: { shopId: req.auth.shopId },
+      update: { bannerUrl: url },
+      create: { shopId: req.auth.shopId, bannerUrl: url },
+    });
+    // Only sweep up files this server wrote; a pasted link owns nothing here.
+    const old = String(previous?.bannerUrl || '');
+    if (old && old.includes('/uploads/storefront/')) {
+      fs.rmSync(path.join(uploadRoot(), cleanFilePart(req.auth.shopId), path.basename(old)), { force: true });
+    }
+    res.status(201).json({ ok: true, settings });
+  }));
+
   app.delete('/api/ecommerce/images/:id', requireAuth, handle(async (req, res) => {
     const image = await prisma.ecommerceProductImage.findFirst({ where: { id: req.params.id, shopId: req.auth.shopId } });
     if (!image) notFound('Image not found');
@@ -469,7 +497,7 @@ function attachEcommerceStorefrontApi(app) {
     const verified = Boolean(subscription && subscription.status === 'ACTIVE' && subscription.endsAt > new Date() && !planText.includes('trial') && !planText.includes('free'));
     res.set('Cache-Control', 'public, max-age=60');
     const vpnBotName = String(process.env.MAIN_BOT_USERNAME || 'maharshwebot').replace(/^@/, '').trim();
-    res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, telegramUrl: shop.ecommerceSettings.telegramUrl, vpnBotUrl: `https://t.me/${vpnBotName}`, googleClientId: String(process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID), mapUrl: shop.ecommerceSettings.mapUrl, address: shop.address, verified, verificationType: verified ? 'PAID' : null, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
+    res.json({ ok: true, store: { slug: shop.slug, name: shop.ecommerceSettings.storeName || shop.name, logoUrl: shop.logoUrl, description: shop.ecommerceSettings.description, phone: shop.ecommerceSettings.contactPhone || shop.phone, telegramUrl: shop.ecommerceSettings.telegramUrl, vpnBotUrl: `https://t.me/${vpnBotName}`, googleClientId: String(process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID), mapUrl: shop.ecommerceSettings.mapUrl, bannerUrl: shop.ecommerceSettings.bannerUrl, address: shop.address, verified, verificationType: verified ? 'PAID' : null, deliveryEnabled: shop.ecommerceSettings.deliveryEnabled, pickupEnabled: shop.ecommerceSettings.pickupEnabled, deliveryFee: Number(shop.ecommerceSettings.deliveryFee) } });
   }));
 
   app.get('/api/public/store/:slug/manifest.webmanifest', handle(async (req, res) => {
