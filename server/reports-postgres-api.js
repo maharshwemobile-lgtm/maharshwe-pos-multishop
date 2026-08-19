@@ -39,14 +39,6 @@ const OTHER_INCOME_CATEGORY_KEYS = {
   otherOtherIncome: categoryValue('income', 'Other Income'),
 };
 
-// Cash float categories. Deliberately outside the four bucket maps above, so
-// businessRecordMetric returns null for them and the income and expense
-// totals never see them — they are reported, not counted.
-const CASH_SUMMARY_CATEGORY_KEYS = {
-  income: { ownerCashIn: categoryValue('income', 'Income From Owner') },
-  expense: { cashierCashOut: categoryValue('expense', 'Expense From Casher') },
-};
-
 const OTHER_EXPENSE_CATEGORY_KEYS = {
   otherServiceExpense: categoryValue('expense', 'Other Service Expense'),
   otherSaleExpense: categoryValue('expense', 'Other Sales Expense'),
@@ -61,20 +53,10 @@ function businessRecordMetric(type, category) {
 }
 
 function mergeBusinessRecordRows(target, rows, type) {
-  const cashKeys = CASH_SUMMARY_CATEGORY_KEYS[type] || {};
   for (const raw of rows || []) {
     const bucket = String(raw.bucket || '');
-    if (!bucket) continue;
-    const normalized = normalizeBusinessRecordCategory(type, raw.category);
-    const cashMetric = Object.keys(cashKeys).find((key) => cashKeys[key] === normalized);
-    if (cashMetric) {
-      const cashRow = target.get(bucket) || emptyCloseRow(bucket);
-      cashRow[cashMetric] = round(Number(cashRow[cashMetric] || 0) + number(raw.amount));
-      target.set(bucket, cashRow);
-      continue;
-    }
     const metric = businessRecordMetric(type, raw.category);
-    if (!metric) continue;
+    if (!bucket || !metric) continue;
     const row = target.get(bucket) || emptyCloseRow(bucket);
     row[metric] = round(Number(row[metric] || 0) + number(raw.amount));
     target.set(bucket, row);
@@ -131,11 +113,6 @@ function emptyCloseRow(bucket) {
     expenseTotal: 0,
     netProfit: 0,
     closedDays: 0,
-    cashierCashIn: 0,
-    ownerCashOut: 0,
-    ownerCashIn: 0,
-    cashierCashOut: 0,
-    cashReturnToOwner: 0,
     lastClosedAt: null,
   };
 }
@@ -157,7 +134,6 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
   const saleDate = `((sold_at AT TIME ZONE 'Asia/Yangon')::date)`;
   const repairDate = `((COALESCE(completed_at,delivered_at,updated_at) AT TIME ZONE 'Asia/Yangon')::date)`;
   const serviceDate = `((created_at AT TIME ZONE 'Asia/Yangon')::date)`;
-  const paymentDate = `((created_at AT TIME ZONE 'Asia/Yangon')::date)`;
   const saleBucket = bucketExpression(saleDate, period);
   const repairBucket = bucketExpression(repairDate, period);
   const serviceBucket = bucketExpression(serviceDate, period);
@@ -338,6 +314,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     row.closedDays = Number(raw.closedDays || 0);
     row.lastClosedAt = raw.lastClosedAt || null;
   });
+
   const rows = [...map.values()]
     .map((row) => {
       row.otherTopupIncome = round(Number(row.otherTopupIncome || 0) + Number(row.billSoldVolume || 0));
@@ -347,10 +324,6 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
       const billClosingBalance = billOpeningBalance + row.billRefill - (row.billBalanceSold || row.billSoldVolume) + row.billAdjustment;
       const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee + row.billEloadProfit + otherIncomeSubtotal;
       const expenseTotal = row.salePosExpense + row.servicePosExpense + otherExpenseSubtotal;
-      // Cash Summary. The first two are recorded on Other Records; the money
-      // the cashier still owes back is whatever the day took in beyond them.
-      const ownerCashIn = Number(row.ownerCashIn || 0);
-      const cashierCashOut = Number(row.cashierCashOut || 0);
       return {
         ...row,
         billOpeningBalance: round(billOpeningBalance),
@@ -360,11 +333,6 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
         incomeTotal: round(incomeTotal),
         expenseTotal: round(expenseTotal),
         netProfit: round(incomeTotal - expenseTotal),
-        cashierCashIn: round(incomeTotal - ownerCashIn),
-        ownerCashIn: round(ownerCashIn),
-        cashierCashOut: round(cashierCashOut),
-        ownerCashOut: round(otherExpenseSubtotal - cashierCashOut),
-        cashReturnToOwner: round(incomeTotal - ownerCashIn - cashierCashOut),
       };
     })
     .sort((a, b) => b.bucket.localeCompare(a.bucket));
@@ -402,11 +370,6 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     expenseTotal: 0,
     netProfit: 0,
     closedDays: 0,
-    cashierCashIn: 0,
-    ownerCashOut: 0,
-    ownerCashIn: 0,
-    cashierCashOut: 0,
-    cashReturnToOwner: 0,
   });
 
   for (const key of Object.keys(totals)) totals[key] = round(totals[key]);

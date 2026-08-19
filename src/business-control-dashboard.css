@@ -581,16 +581,3 @@ html.dark .bc-permission-note { background: #332b16; color: #f5cc62; }
 .bc-day-state:empty{
   display:none!important;
 }
-
-/* Day-close cash float inputs: owner money in, cashier spend, cash going back. */
-.bc-cash-summary{display:grid;gap:8px;margin-bottom:10px}
-.bc-cash-summary>b{font-size:12px;font-weight:800;color:#334155}
-.bc-cash-summary label{display:grid;gap:4px;font-size:12px;font-weight:600;color:#64748b}
-.bc-cash-summary input{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:9px 10px;background:#fff;font-size:13px;font-weight:700;color:#0f172a}
-@media(min-width:640px){.bc-cash-summary{grid-template-columns:repeat(3,1fr)}.bc-cash-summary>b{grid-column:1/-1}}
-
-/* Day close panel restored into the live dashboard. */
-.bc-close-section{display:grid;gap:12px;margin-top:12px}
-.bc-close-notice{margin:0;padding:9px 11px;border-radius:9px;background:#ecfdf5;color:#047857;font-size:13px;font-weight:700}
-.bc-close-section .bc-panel{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.09)}
-.bc-close-section .bc-panel header span{color:#047857}

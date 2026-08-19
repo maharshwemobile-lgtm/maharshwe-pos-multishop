@@ -1,98 +1,14 @@
 {
   "income": [
-    {
-      "value": "အခြား Service ဝင်ငွေ",
-      "my": "အခြား Service ဝင်ငွေ",
-      "en": "Other Service Income",
-      "aliases": [
-        "SERVICE_INCOME",
-        "OTHER_SERVICE_INCOME"
-      ]
-    },
-    {
-      "value": "အခြား အရောင်းပိုင်း ဝင်ငွေ",
-      "my": "အခြား အရောင်းပိုင်း ဝင်ငွေ",
-      "en": "Other Sales Income",
-      "aliases": [
-        "OTHER_SALE_INCOME",
-        "Other Sales Income",
-        "အခြား အရောင်းပိုင် ဝင်ငွေ"
-      ]
-    },
-    {
-      "value": "အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ",
-      "my": "အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ",
-      "en": "Other Top-up Income",
-      "aliases": [
-        "OTHER_TOPUP_INCOME",
-        "Other Top-up Income"
-      ]
-    },
-    {
-      "value": "အခြား အခြား ဝင်ငွေ",
-      "my": "အခြား အခြား ဝင်ငွေ",
-      "en": "Other Income",
-      "aliases": [
-        "OTHER_INCOME",
-        "OTHER_OTHER_INCOME"
-      ]
-    },
-    {
-      "value": "ဆိုင်ရှင်ထံရောက်ငွေ",
-      "my": "ဆိုင်ရှင်ထံရောက်ငွေ",
-      "en": "Income From Owner",
-      "aliases": [
-        "OWNER_CASH_IN",
-        "Income From Owner"
-      ]
-    }
+    { "value": "အခြား Service ဝင်ငွေ", "my": "အခြား Service ဝင်ငွေ", "en": "Other Service Income", "aliases": ["SERVICE_INCOME", "OTHER_SERVICE_INCOME"] },
+    { "value": "အခြား အရောင်းပိုင်း ဝင်ငွေ", "my": "အခြား အရောင်းပိုင်း ဝင်ငွေ", "en": "Other Sales Income", "aliases": ["OTHER_SALE_INCOME", "Other Sales Income", "အခြား အရောင်းပိုင် ဝင်ငွေ"] },
+    { "value": "အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ", "my": "အခြား ငွေဖြည့်ကဒ် ဝင်ငွေ", "en": "Other Top-up Income", "aliases": ["OTHER_TOPUP_INCOME", "Other Top-up Income"] },
+    { "value": "အခြား အခြား ဝင်ငွေ", "my": "အခြား အခြား ဝင်ငွေ", "en": "Other Income", "aliases": ["OTHER_INCOME", "OTHER_OTHER_INCOME"] }
   ],
   "expense": [
-    {
-      "value": "အခြား Service ထွက်ငွေ",
-      "my": "အခြား Service ထွက်ငွေ",
-      "en": "Other Service Expense",
-      "aliases": [
-        "OTHER_SERVICE_EXPENSE",
-        "Other Service Expense",
-        "Expense"
-      ]
-    },
-    {
-      "value": "အခြား အရောင်းပိုင်း ထွက်ငွေ",
-      "my": "အခြား အရောင်းပိုင်း ထွက်ငွေ",
-      "en": "Other Sales Expense",
-      "aliases": [
-        "OTHER_SALE_EXPENSE",
-        "Other Sales Expense"
-      ]
-    },
-    {
-      "value": "အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ",
-      "my": "အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ",
-      "en": "Other Top-up Expense",
-      "aliases": [
-        "OTHER_TOPUP_EXPENSE",
-        "Other Top-up Expense"
-      ]
-    },
-    {
-      "value": "အခြား အခြား ထွက်ငွေ",
-      "my": "အခြား အခြား ထွက်ငွေ",
-      "en": "Other Expense",
-      "aliases": [
-        "OTHER_OTHER_EXPENSE"
-      ]
-    },
-    {
-      "value": "ကက်ရှာ ထွက်ငွေ",
-      "my": "ကက်ရှာ ထွက်ငွေ",
-      "en": "Expense From Casher",
-      "aliases": [
-        "CASHIER_CASH_OUT",
-        "Expense From Cashier",
-        "Expense From Casher"
-      ]
-    }
+    { "value": "အခြား Service ထွက်ငွေ", "my": "အခြား Service ထွက်ငွေ", "en": "Other Service Expense", "aliases": ["OTHER_SERVICE_EXPENSE", "Other Service Expense", "Expense"] },
+    { "value": "အခြား အရောင်းပိုင်း ထွက်ငွေ", "my": "အခြား အရောင်းပိုင်း ထွက်ငွေ", "en": "Other Sales Expense", "aliases": ["OTHER_SALE_EXPENSE", "Other Sales Expense"] },
+    { "value": "အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ", "my": "အခြား ငွေဖြည့်ကဒ် ထွက်ငွေ", "en": "Other Top-up Expense", "aliases": ["OTHER_TOPUP_EXPENSE", "Other Top-up Expense"] },
+    { "value": "အခြား အခြား ထွက်ငွေ", "my": "အခြား အခြား ထွက်ငွေ", "en": "Other Expense", "aliases": ["OTHER_OTHER_EXPENSE"] }
   ]
 }
