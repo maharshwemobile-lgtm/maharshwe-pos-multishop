@@ -132,6 +132,7 @@ function emptyCloseRow(bucket) {
     netProfit: 0,
     closedDays: 0,
     cashierCashIn: 0,
+    ownerCashOut: 0,
     ownerCashIn: 0,
     cashierCashOut: 0,
     cashReturnToOwner: 0,
@@ -362,6 +363,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
         cashierCashIn: round(incomeTotal - ownerCashIn),
         ownerCashIn: round(ownerCashIn),
         cashierCashOut: round(cashierCashOut),
+        ownerCashOut: round(otherExpenseSubtotal - cashierCashOut),
         cashReturnToOwner: round(incomeTotal - ownerCashIn - cashierCashOut),
       };
     })
@@ -401,6 +403,7 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     netProfit: 0,
     closedDays: 0,
     cashierCashIn: 0,
+    ownerCashOut: 0,
     ownerCashIn: 0,
     cashierCashOut: 0,
     cashReturnToOwner: 0,
