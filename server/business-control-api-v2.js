@@ -524,6 +524,11 @@ async function resolveAccount(tx, shopId, requestedAccountId, method) {
   });
 }
 
+const CASH_SUMMARY_CATEGORIES = new Set([
+  businessRecordCategories.income.find((item) => item.en === 'Income From Owner')?.value,
+  businessRecordCategories.expense.find((item) => item.en === 'Expense From Casher')?.value,
+].filter(Boolean));
+
 async function applyAccountChange(tx, req, account, amount, direction, note) {
   if (!account) return;
   const before = number(account.balance);
@@ -605,7 +610,9 @@ async function recordExpense(actor, input) {
   const id = crypto.randomUUID();
   await prisma.$transaction(async (tx) => {
     const account = await resolveAccount(tx, actor.shopId, requestedAccountId, method);
-    await applyAccountChange(tx, req, account, amount, -1, `[EXPENSE:${category}] ${note || ''}`.trim());
+    if (!CASH_SUMMARY_CATEGORIES.has(category)) {
+      await applyAccountChange(tx, req, account, amount, -1, `[EXPENSE:${category}] ${note || ''}`.trim());
+    }
     await tx.businessExpenses.create({
       data: {
         id,
@@ -651,7 +658,9 @@ async function recordOtherIncome(actor, input) {
   const id = crypto.randomUUID();
   await prisma.$transaction(async (tx) => {
     const account = await resolveAccount(tx, actor.shopId, requestedAccountId, method);
-    await applyAccountChange(tx, req, account, amount, 1, `[OTHER_INCOME:${source}] ${note || ''}`.trim());
+    if (!CASH_SUMMARY_CATEGORIES.has(category)) {
+      await applyAccountChange(tx, req, account, amount, 1, `[OTHER_INCOME:${source}] ${note || ''}`.trim());
+    }
     await tx.businessOtherIncome.create({
       data: {
         id,
