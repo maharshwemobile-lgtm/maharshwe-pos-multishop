@@ -113,6 +113,9 @@ function emptyCloseRow(bucket) {
     expenseTotal: 0,
     netProfit: 0,
     closedDays: 0,
+    ownerCashIn: 0,
+    cashierCashOut: 0,
+    cashReturnToOwner: 0,
     lastClosedAt: null,
   };
 }
@@ -273,7 +276,10 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     prisma.$queryRawUnsafe(
       `SELECT ${closeBucket} AS bucket,
               COUNT(*)::int AS "closedDays",
-              MAX(closed_at) AS "lastClosedAt"
+              MAX(closed_at) AS "lastClosedAt",
+              COALESCE(SUM(owner_cash_in),0) AS "ownerCashIn",
+              COALESCE(SUM(cashier_cash_out),0) AS "cashierCashOut",
+              COALESCE(SUM(cash_return_to_owner),0) AS "cashReturnToOwner"
          FROM daily_closings
         WHERE shop_id=$1::uuid
           AND closing_date >= $2::date
@@ -312,6 +318,9 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
   mergeBusinessRecordRows(map, expenseRows, 'expense');
   mergeCloseRows(map, closingRows, (row, raw) => {
     row.closedDays = Number(raw.closedDays || 0);
+    row.ownerCashIn = round(raw.ownerCashIn);
+    row.cashierCashOut = round(raw.cashierCashOut);
+    row.cashReturnToOwner = round(raw.cashReturnToOwner);
     row.lastClosedAt = raw.lastClosedAt || null;
   });
 
@@ -370,6 +379,9 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     expenseTotal: 0,
     netProfit: 0,
     closedDays: 0,
+    ownerCashIn: 0,
+    cashierCashOut: 0,
+    cashReturnToOwner: 0,
   });
 
   for (const key of Object.keys(totals)) totals[key] = round(totals[key]);

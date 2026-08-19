@@ -83,6 +83,9 @@ export default function DashboardBusinessV2({ onNavigate }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [closingNote, setClosingNote] = useState('');
+  // Cash the owner handed the till and cash going back at the end of the day.
+  // Recorded with the close, never added to income or expense totals.
+  const [cashSummary, setCashSummary] = useState({ ownerCashIn: '', cashierCashOut: '', cashReturnToOwner: '' });
   const [closing, setClosing] = useState(false);
   const [savingExpense, setSavingExpense] = useState(false);
   const [savingIncome, setSavingIncome] = useState(false);
@@ -189,10 +192,17 @@ export default function DashboardBusinessV2({ onNavigate }) {
     try {
       const response = await apiFetch('/api/business-control/daily-closing', {
         method: 'POST',
-        body: { businessDate, note: closingNote },
+        body: {
+          businessDate,
+          note: closingNote,
+          ownerCashIn: Number(cashSummary.ownerCashIn || 0),
+          cashierCashOut: Number(cashSummary.cashierCashOut || 0),
+          cashReturnToOwner: Number(cashSummary.cashReturnToOwner || 0),
+        },
       });
       setData(response);
       setClosingNote('');
+      setCashSummary({ ownerCashIn: '', cashierCashOut: '', cashReturnToOwner: '' });
       setNotice(response.message || 'Business day closed successfully.');
     } catch (requestError) {
       setError(requestError?.message || 'Daily closing failed');
@@ -271,7 +281,7 @@ export default function DashboardBusinessV2({ onNavigate }) {
               <span>Total Profit / Loss <b className={Number(dashboard.todayProfit || 0) < 0 ? 'bc-loss-value' : ''}>{money(dashboard.todayProfit)}</b></span>
             </div>
             {data.closing ? <div className="bc-closed-box"><CheckCircle2 size={28} /><div><b>{data.closing.businessDate} Closed</b><span>{data.closing.closedAt ? new Date(data.closing.closedAt).toLocaleString() : ''}</span><p>{data.closing.note || 'No closing note.'}</p></div></div> : <>
-              <textarea value={closingNote} onChange={(event) => setClosingNote(event.target.value)} placeholder="Daily closing note (optional)" maxLength={500} />
+              <div className="bc-cash-summary"><b>Cash Summary</b><label>Income From Owner<input type="number" min="0" step="1" value={cashSummary.ownerCashIn} onChange={(event) => setCashSummary((current) => ({ ...current, ownerCashIn: event.target.value }))} placeholder="0"/></label><label>Expense From Casher<input type="number" min="0" step="1" value={cashSummary.cashierCashOut} onChange={(event) => setCashSummary((current) => ({ ...current, cashierCashOut: event.target.value }))} placeholder="0"/></label><label>ဆိုင်ရှင်ပြန်အပ်ရမည့်ငွေ<input type="number" min="0" step="1" value={cashSummary.cashReturnToOwner} onChange={(event) => setCashSummary((current) => ({ ...current, cashReturnToOwner: event.target.value }))} placeholder="0"/></label></div><textarea value={closingNote} onChange={(event) => setClosingNote(event.target.value)} placeholder="Daily closing note (optional)" maxLength={500} />
               <button className="bc-close-button" type="button" onClick={closeBusinessDay} disabled={!canClose || closing}>{closing ? <Loader2 className="bc-spin" size={18} /> : <CheckCircle2 size={18} />} {canClose ? 'Close This Business Day' : 'Shop Admin Only'}</button>
               <small className="bc-helper">Profit/Loss can be negative. Closing stores one locked PostgreSQL snapshot.</small>
             </>}

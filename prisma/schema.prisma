@@ -857,6 +857,11 @@ model DailyClosing {
   serviceIncomeTotal Decimal  @default(0) @map("service_income_total") @db.Decimal(14, 2)
   moneyProfitTotal   Decimal  @default(0) @map("money_profit_total") @db.Decimal(14, 2)
   cashBalance        Decimal  @default(0) @map("cash_balance") @db.Decimal(14, 2)
+  // Cash float moving between owner and cashier. Deliberately outside the
+  // income/expense totals — it is the owner's own money, not takings.
+  ownerCashIn         Decimal  @default(0) @map("owner_cash_in") @db.Decimal(14, 2)
+  cashierCashOut      Decimal  @default(0) @map("cashier_cash_out") @db.Decimal(14, 2)
+  cashReturnToOwner   Decimal  @default(0) @map("cash_return_to_owner") @db.Decimal(14, 2)
   kpayBalance        Decimal  @default(0) @map("kpay_balance") @db.Decimal(14, 2)
   wavePayBalance     Decimal  @default(0) @map("wave_pay_balance") @db.Decimal(14, 2)
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

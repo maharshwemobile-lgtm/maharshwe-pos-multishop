@@ -745,6 +745,12 @@ function attachBusinessControlApiV2(app) {
     const businessDate = parseBusinessDate(req.body?.businessDate);
     if (businessDate > currentYangonDate()) throw new ApiError(400, 'Future business dates cannot be closed');
     const note = clean(req.body?.note, 500) || null;
+    // Cash float handed between owner and cashier over the day. Kept apart from
+    // income and expense totals because it is the owner's own money, not takings.
+    const cashAmount = (value) => Math.max(0, Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100);
+    const ownerCashIn = cashAmount(req.body?.ownerCashIn);
+    const cashierCashOut = cashAmount(req.body?.cashierCashOut);
+    const cashReturnToOwner = cashAmount(req.body?.cashReturnToOwner);
     const snapshot = await buildOverview(req.auth.shopId, businessDate);
     if (snapshot.closing) throw new ApiError(409, 'This business day is already closed');
 
@@ -757,9 +763,9 @@ function attachBusinessControlApiV2(app) {
            id,shop_id,closing_date,sales_total,product_profit_total,service_income_total,money_profit_total,
            cash_balance,kpay_balance,wave_pay_balance,created_at,updated_at,repair_income_total,
            repair_profit_total,expense_total,other_income_total,receivable_total,payable_total,total_profit,
-           closed_by_id,note,closed_at
+           closed_by_id,note,closed_at,owner_cash_in,cashier_cash_out,cash_return_to_owner
          ) VALUES (
-           $1::uuid,$2::uuid,$3::date,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW(),$11,$12,$13,$14,$15,$16,$17,$18::uuid,$19,NOW()
+           $1::uuid,$2::uuid,$3::date,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW(),$11,$12,$13,$14,$15,$16,$17,$18::uuid,$19,NOW(),$20,$21,$22
          )`,
         id,
         req.auth.shopId,
@@ -780,6 +786,9 @@ function attachBusinessControlApiV2(app) {
         values.todayProfit,
         req.auth.userId,
         note,
+        ownerCashIn,
+        cashierCashOut,
+        cashReturnToOwner,
       );
       await tx.auditLog.create({
         data: {
