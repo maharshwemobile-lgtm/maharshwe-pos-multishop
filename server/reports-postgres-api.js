@@ -39,6 +39,14 @@ const OTHER_INCOME_CATEGORY_KEYS = {
   otherOtherIncome: categoryValue('income', 'Other Income'),
 };
 
+// Cash float categories. Deliberately outside the four bucket maps above, so
+// businessRecordMetric returns null for them and the income and expense
+// totals never see them — they are reported, not counted.
+const CASH_SUMMARY_CATEGORY_KEYS = {
+  income: { ownerCashIn: categoryValue('income', 'Income From Owner') },
+  expense: { cashierCashOut: categoryValue('expense', 'Expense From Casher') },
+};
+
 const OTHER_EXPENSE_CATEGORY_KEYS = {
   otherServiceExpense: categoryValue('expense', 'Other Service Expense'),
   otherSaleExpense: categoryValue('expense', 'Other Sales Expense'),
@@ -53,10 +61,20 @@ function businessRecordMetric(type, category) {
 }
 
 function mergeBusinessRecordRows(target, rows, type) {
+  const cashKeys = CASH_SUMMARY_CATEGORY_KEYS[type] || {};
   for (const raw of rows || []) {
     const bucket = String(raw.bucket || '');
+    if (!bucket) continue;
+    const normalized = normalizeBusinessRecordCategory(type, raw.category);
+    const cashMetric = Object.keys(cashKeys).find((key) => cashKeys[key] === normalized);
+    if (cashMetric) {
+      const cashRow = target.get(bucket) || emptyCloseRow(bucket);
+      cashRow[cashMetric] = round(Number(cashRow[cashMetric] || 0) + number(raw.amount));
+      target.set(bucket, cashRow);
+      continue;
+    }
     const metric = businessRecordMetric(type, raw.category);
-    if (!bucket || !metric) continue;
+    if (!metric) continue;
     const row = target.get(bucket) || emptyCloseRow(bucket);
     row[metric] = round(Number(row[metric] || 0) + number(raw.amount));
     target.set(bucket, row);
@@ -155,7 +173,6 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     incomeRows,
     expenseRows,
     closingRows,
-    cashSplitRows,
   ] = await Promise.all([
     prisma.$queryRawUnsafe(
       `SELECT ${saleBucket} AS bucket,
@@ -288,31 +305,6 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
       fromDay,
       toDay,
     ).catch(() => []),
-    prisma.$queryRawUnsafe(
-      `SELECT bucket,
-              COALESCE(SUM(cash_in),0) AS "cashIn",
-              COALESCE(SUM(cash_out),0) AS "cashOut"
-         FROM (
-           SELECT ${bucketExpression(paymentDate, period)} AS bucket, amount AS cash_in, 0 AS cash_out
-             FROM payments
-            WHERE shop_id=$1::uuid AND method='CASH'
-              AND ((created_at AT TIME ZONE 'Asia/Yangon')::date) >= $2::date AND ((created_at AT TIME ZONE 'Asia/Yangon')::date) <= $3::date
-           UNION ALL
-           SELECT ${bucketExpression(`(income_date)`, period)} AS bucket, amount AS cash_in, 0 AS cash_out
-             FROM business_other_income
-            WHERE shop_id=$1::uuid AND method='CASH'
-              AND income_date >= $2::date AND income_date <= $3::date
-           UNION ALL
-           SELECT ${bucketExpression(`(expense_date)`, period)} AS bucket, 0 AS cash_in, amount AS cash_out
-             FROM business_expenses
-            WHERE shop_id=$1::uuid AND method='CASH' AND voided_at IS NULL
-              AND expense_date >= $2::date AND expense_date <= $3::date
-         ) parts
-        GROUP BY bucket`,
-      shopId,
-      fromDay,
-      toDay,
-    ).catch(() => []),
   ]);
 
   const map = new Map();
@@ -344,11 +336,6 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
     row.closedDays = Number(raw.closedDays || 0);
     row.lastClosedAt = raw.lastClosedAt || null;
   });
-  mergeCloseRows(map, cashSplitRows, (row, raw) => {
-    row.cashIn = round(raw.cashIn);
-    row.cashOut = round(raw.cashOut);
-  });
-
   const rows = [...map.values()]
     .map((row) => {
       row.otherTopupIncome = round(Number(row.otherTopupIncome || 0) + Number(row.billSoldVolume || 0));
@@ -358,12 +345,10 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
       const billClosingBalance = billOpeningBalance + row.billRefill - (row.billBalanceSold || row.billSoldVolume) + row.billAdjustment;
       const incomeTotal = row.salePosIncome + row.servicePosIncome + row.moneyServiceFee + row.billEloadProfit + otherIncomeSubtotal;
       const expenseTotal = row.salePosExpense + row.servicePosExpense + otherExpenseSubtotal;
-      // Cash Summary: whatever did not arrive as cash is already with the
-      // owner, cash paid out came from the till, and the remainder is what
-      // the cashier still has to hand back. Nothing here is typed in.
-      const cashIn = Number(row.cashIn || 0);
-      const cashOut = Number(row.cashOut || 0);
-      const ownerCashIn = Math.max(0, incomeTotal - cashIn);
+      // Cash Summary. The first two are recorded on Other Records; the money
+      // the cashier still owes back is whatever the day took in beyond them.
+      const ownerCashIn = Number(row.ownerCashIn || 0);
+      const cashierCashOut = Number(row.cashierCashOut || 0);
       return {
         ...row,
         billOpeningBalance: round(billOpeningBalance),
@@ -374,8 +359,8 @@ async function buildDailyCloseReport(shopId, from, to, requestedPeriod) {
         expenseTotal: round(expenseTotal),
         netProfit: round(incomeTotal - expenseTotal),
         ownerCashIn: round(ownerCashIn),
-        cashierCashOut: round(cashOut),
-        cashReturnToOwner: round(cashIn - cashOut),
+        cashierCashOut: round(cashierCashOut),
+        cashReturnToOwner: round(incomeTotal - ownerCashIn - cashierCashOut),
       };
     })
     .sort((a, b) => b.bucket.localeCompare(a.bucket));
