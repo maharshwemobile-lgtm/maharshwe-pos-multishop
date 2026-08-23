@@ -35,7 +35,10 @@ async function call(route, data = {}) {
   const creds = credentials();
   if (!creds) throw new MoogoldApiError('NOT_CONFIGURED', 'MooGold API credentials are not set');
 
-  const payload = { ...data, path: route };
+  // Shape and key order follow MooGold's published sample exactly: path
+  // first, arguments nested under data, and nothing else at the top level.
+  const hasData = data && Object.keys(data).length > 0;
+  const payload = hasData ? { path: route, data } : { path: route };
   const payloadJson = JSON.stringify(payload);
   const timestamp = String(Math.floor(Date.now() / 1000));
   const stringToSign = payloadJson + timestamp + route;
@@ -93,9 +96,8 @@ function createOrder({ category, productId, quantity, playerId, server, partnerO
   const data = { category, 'product-id': productId, quantity: String(quantity) };
   if (playerId) data['User ID'] = playerId;
   if (server) data.Server = server;
-  const payload = { ...data };
-  if (partnerOrderId) payload.partnerOrderId = partnerOrderId;
-  return call('order/create_order', payload);
+  if (partnerOrderId) data.partnerOrderId = partnerOrderId;
+  return call('order/create_order', data);
 }
 
 function orderDetail(orderId) {
