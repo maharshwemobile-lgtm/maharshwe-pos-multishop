@@ -207,6 +207,27 @@ function attachPublicLandingApi(app) {
     }
   });
 
+  app.get('/api/public/live-stats', async (_req, res) => {
+    try {
+      const [businessCount, activeBusinessCount, products, repairs] = await Promise.all([
+        prisma.shop.count().catch(() => 0),
+        prisma.shop.count({ where: { active: true } }).catch(() => 0),
+        prisma.product.count({ where: { active: true } }).catch(() => 0),
+        prisma.repair.count().catch(() => 0),
+      ]);
+      res.set('Cache-Control', 'public, max-age=45');
+      return res.json({
+        ok: true,
+        generatedAt: new Date().toISOString(),
+        stats: { businessCount, activeBusinessCount, products, repairs },
+        businesses: [],
+      });
+    } catch (error) {
+      console.error('public live stats failed:', error);
+      return res.status(500).json({ ok: false, message: 'Unable to load live stats' });
+    }
+  });
+
   app.get('/api/public/active-users', async (req, res) => {
     try {
       const limit = Math.min(10, Math.max(1, Number.parseInt(req.query.limit, 10) || 4));
@@ -241,12 +262,9 @@ function attachPublicLandingApi(app) {
         ok: true,
         periodDays: 30,
         updatedAt: new Date().toISOString(),
-        users: rows.map((row) => ({
-          shopId: row.id,
-          displayName: row.name,
-          loginCount: Number(row.loginCount || 0),
-          lastActiveAt: row.lastActiveAt ? new Date(row.lastActiveAt).toISOString() : null,
-        })),
+        activeShops: rows.length,
+        totalLogins: rows.reduce((sum, row) => sum + Number(row.loginCount || 0), 0),
+        users: [],
       });
     } catch (error) {
       console.error('public active users failed:', error);
@@ -260,7 +278,9 @@ function attachPublicLandingApi(app) {
       const search = String(req.query.search || '').trim();
       const location = String(req.query.location || '').trim();
       const businessType = String(req.query.businessType || '').trim();
-      const where = { active: true };
+      // A shop appears here only if it opened its own public storefront, which
+      // is the one action that shows it agreed to be listed publicly.
+      const where = { active: true, ecommerceSettings: { is: { enabled: true } } };
       if (search) where.name = { contains: search, mode: 'insensitive' };
       if (businessType) where.businessType = businessType.includes(' ') ? businessType.toUpperCase().replace(/\s+/g, '_') : businessType;
       const cacheKey = `shops:${page}:${limit}:${search}:${location}:${businessType}`;
@@ -284,7 +304,7 @@ function attachPublicLandingApi(app) {
               take: 1,
               select: { status: true, endsAt: true },
             },
-            _count: { select: { products: true, sales: true, users: true } },
+            ecommerceSettings: { select: { description: true } },
           },
           orderBy: [{ createdAt: 'desc' }],
           skip: (page - 1) * limit,
@@ -298,7 +318,7 @@ function attachPublicLandingApi(app) {
         logo: shop.logoUrl || '',
         location: safeShopLocation(shop.address),
         businessType: normalizeBusinessType(shop.businessType),
-        description: `${shop._count?.products || 0} products · ${shop._count?.sales || 0} sales records`,
+        description: shop.ecommerceSettings?.description || '',
         verified: shop.subscriptions?.[0]?.status === 'ACTIVE'
           && Boolean(shop.subscriptions[0].endsAt)
           && new Date(shop.subscriptions[0].endsAt) >= now,
