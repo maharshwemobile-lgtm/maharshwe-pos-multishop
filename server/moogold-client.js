@@ -35,10 +35,10 @@ async function call(route, data = {}) {
   const creds = credentials();
   if (!creds) throw new MoogoldApiError('NOT_CONFIGURED', 'MooGold API credentials are not set');
 
-  // Shape and key order follow MooGold's published sample exactly: path
-  // first, arguments nested under data, and nothing else at the top level.
-  const hasData = data && Object.keys(data).length > 0;
-  const payload = hasData ? { path: route, data } : { path: route };
+  // Per the OpenAPI spec every endpoint but create_order takes its arguments
+  // flat beside "path"; create_order is the one that nests them under "data",
+  // which it does by passing { data: ... }. Path goes first, as the docs show.
+  const payload = { path: route, ...data };
   const payloadJson = JSON.stringify(payload);
   const timestamp = String(Math.floor(Date.now() / 1000));
   const stringToSign = payloadJson + timestamp + route;
@@ -96,8 +96,9 @@ function createOrder({ category, productId, quantity, playerId, server, partnerO
   const data = { category, 'product-id': productId, quantity: String(quantity) };
   if (playerId) data['User ID'] = playerId;
   if (server) data.Server = server;
-  if (partnerOrderId) data.partnerOrderId = partnerOrderId;
-  return call('order/create_order', data);
+  const body = { data };
+  if (partnerOrderId) body.partnerOrderId = partnerOrderId;
+  return call('order/create_order', body);
 }
 
 function orderDetail(orderId) {
