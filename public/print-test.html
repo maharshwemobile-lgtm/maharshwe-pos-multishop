@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Print Density Test — Mahar POS</title>
+<style>
+  /* Screen chrome — none of this prints */
+  body{font-family:Arial,"Noto Sans Myanmar",sans-serif;background:#eef1f6;margin:0;padding:16px}
+  .intro{max-width:520px;margin:0 auto 16px;background:#fff;border-radius:12px;padding:16px 18px;line-height:1.6}
+  .intro h1{font-size:18px;margin:0 0 8px}
+  .intro p{margin:0 0 8px;font-size:14px;color:#334}
+  .intro b{color:#0a6b4a}
+  .go{display:inline-block;margin-top:6px;background:#0E8A5F;color:#fff;border:0;border-radius:9px;padding:11px 18px;font-size:15px;font-weight:700;cursor:pointer}
+  .sheet{width:80mm;margin:0 auto;background:#fff;padding:4mm 2mm;box-shadow:0 4px 18px rgba(0,0,0,.15)}
+
+  /* The sample rows. Each row is one recipe; whichever prints darkest wins. */
+  .row{border-bottom:1px solid #000;padding:5px 0}
+  .tag{font-size:8px;font-weight:900;color:#000;letter-spacing:.5px}
+  .sample{color:#000}
+
+  .r-a .sample{font-size:11px;font-weight:700}
+  .r-b .sample{font-size:11px;font-weight:900}
+  .r-c .sample{font-size:11px;font-weight:900;-webkit-text-stroke:.2px #000}
+  .r-d .sample{font-size:11px;font-weight:900;-webkit-text-stroke:.35px #000}
+  .r-e .sample{font-size:12px;font-weight:900;-webkit-text-stroke:.2px #000}
+  .r-f .sample{font-size:11px;font-weight:900;font-family:"Arial Black","Arial Bold",Arial,sans-serif}
+  .r-g .sample{font-size:11px;font-weight:900;text-shadow:0 0 .4px #000,0 0 .4px #000}
+  .r-h .sample{font-size:13px;font-weight:900}
+
+  @page{size:80mm auto;margin:0 2mm 3mm}
+  @media print{
+    body{background:#fff;padding:0;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .intro{display:none!important}
+    .sheet{width:auto;box-shadow:none;padding:0}
+  }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Print မှိန်နေတာ — ဘယ်ဟာကြောင့်လဲ စစ်ရန်</h1>
+  <p><b>အဆင့် ၁။</b> အောက်က ခလုတ်နဲ့ ဒီစာမျက်နှာကို ရိုက်ထုတ်ပါ။ စာကြောင်း ၈ ကြောင်း (A မှ H) ထွက်လာပါမယ်။</p>
+  <p><b>အဆင့် ၂။</b> ဘယ်စာကြောင်းက <b>အမဲဆုံး/အဖတ်ရအလွယ်ဆုံး</b> လဲ ကြည့်ပြီး အက္ခရာ (ဥပမာ "D") ကို ပြောပါ။ အဲဒီအတိုင်း slip အားလုံးကို ချိန်ပေးပါမယ်။</p>
+  <p><b>အဆင့် ၃။</b> အားလုံး တူတူ မှိန်နေရင်တော့ <b>printer driver / density</b> ကြောင့်ပါ — CSS နဲ့ ဖြေရှင်းလို့ မရတော့ပါ။</p>
+  <button class="go" onclick="window.print()">🖨 ရိုက်ထုတ်မည်</button>
+</div>
+
+<div class="sheet">
+  <div class="row r-a"><div class="tag">A · 11px / 700</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+  <div class="row r-b"><div class="tag">B · 11px / 900</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+  <div class="row r-c"><div class="tag">C · 900 + stroke .2 (ယခုသုံးနေသည်)</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+  <div class="row r-d"><div class="tag">D · 900 + stroke .35</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+  <div class="row r-e"><div class="tag">E · 12px / 900 + stroke .2</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+  <div class="row r-f"><div class="tag">F · Arial Black</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+  <div class="row r-g"><div class="tag">G · 900 + text-shadow</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+  <div class="row r-h"><div class="tag">H · 13px / 900</div><div class="sample">မဟာရွှေ ဖုန်းပြင်ဆိုင် · 45,000 ကျပ် · MS0551</div></div>
+</div>
+
+</body>
+</html>
