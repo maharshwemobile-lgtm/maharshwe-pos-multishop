@@ -178,3 +178,33 @@
 .repair-id-copy:hover svg { opacity: 1; }
 .repair-id-copy.copied,
 .repair-id-copy.copied svg { color: #16a34a; opacity: 1; }
+
+/* Shown after an intake saves, so the voucher can be printed from a fresh click */
+.repair-saved-panel {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+.repair-saved-panel > svg { color: #16a34a; }
+.repair-saved-panel h3 { font-size: 18px; }
+.repair-saved-panel p { color: var(--text-muted, #64748b); font-size: 14px; }
+.repair-saved-number {
+  display: grid;
+  gap: 3px;
+  padding: 12px 26px;
+  border: 2px solid var(--ink, #0f172a);
+  border-radius: 12px;
+}
+.repair-saved-number span { font-size: 11.5px; color: var(--text-muted, #64748b); }
+.repair-saved-number b { font-size: 27px; letter-spacing: 1.5px; line-height: 1.2; }
+.repair-saved-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.repair-saved-actions button {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 42px; padding: 0 18px; border-radius: 10px;
+  border: 1px solid var(--border, #dfe4ea); background: var(--card, #fff);
+  color: inherit; font-weight: 700; cursor: pointer;
+}
+.repair-saved-actions button.primary { background: var(--primary, #2563eb); border-color: transparent; color: #fff; }
+.repair-saved-actions button:disabled { opacity: .6; }

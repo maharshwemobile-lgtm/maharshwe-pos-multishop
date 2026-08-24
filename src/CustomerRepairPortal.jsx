@@ -8,6 +8,10 @@ import {
   PackageCheck,
   RefreshCw,
   ShieldCheck,
+  Gamepad2,
+  Globe,
+  MapPin,
+  Phone,
   Smartphone,
   Store,
   Wrench,
@@ -105,7 +109,11 @@ export default function CustomerRepairPortal() {
     <main className="customer-repair-portal">
       <div className="customer-portal-shell">
         <header className="customer-portal-brand">
-          <div className="customer-brand-icon"><Smartphone size={28} /></div>
+          <div className="customer-brand-icon">
+            {data?.shop?.logoUrl
+              ? <img src={data.shop.logoUrl} alt={data.shop.name || 'Shop'} />
+              : <Smartphone size={28} />}
+          </div>
           <div><span>MAHAR POS REPAIR TRACKING</span><h1>{data?.shop?.name || 'Repair Status'}</h1><p>ဖုန်းပြင်ဆင်မှုအခြေအနေကို လုံခြုံစွာ ကြည့်ရှုနိုင်ပါသည်။</p></div>
           <button type="button" onClick={load} disabled={loading}>{loading ? <Loader2 className="customer-spin" size={18} /> : <RefreshCw size={18} />}</button>
         </header>
@@ -115,13 +123,43 @@ export default function CustomerRepairPortal() {
 
         {data?.repair ? <>
           <section className={`customer-status-hero status-${data.repair.status?.toLowerCase()}`}>
-            <div><Wrench size={26} /><span><small>Repair ID</small><b>{data.repair.repairNumber}</b></span></div>
+            <div><Wrench size={26} /><span><small>ဘောက်ချာနံပါတ်</small><b>{data.repair.repairNumber}</b></span></div>
             <div><small>လက်ရှိအခြေအနေ</small><h2>{STATUS_TEXT[data.repair.status] || data.repair.status}</h2></div>
           </section>
 
           <section className="customer-portal-card">
             <StatusProgress status={data.repair.status} />
           </section>
+
+          {data?.shop ? (
+            <section className="customer-shop-card">
+              <header>
+                {data.shop.logoUrl ? <img src={data.shop.logoUrl} alt="" /> : null}
+                <div>
+                  <b>{data.shop.name}</b>
+                  {data.shop.address ? <small>{data.shop.address}</small> : null}
+                </div>
+              </header>
+              <div className="customer-shop-links">
+                {data.shop.phone ? (
+                  <a href={`tel:${data.shop.phone}`}><Phone size={16} /><span>ဖုန်းခေါ်ရန်</span></a>
+                ) : null}
+                {data.shop.mapUrl ? (
+                  <a href={data.shop.mapUrl} target="_blank" rel="noreferrer noopener"><MapPin size={16} /><span>ဆိုင်တည်နေရာ</span></a>
+                ) : null}
+                {data.shop.storeUrl ? (
+                  <a href={data.shop.storeUrl} target="_blank" rel="noreferrer noopener"><Store size={16} /><span>Online Shop</span></a>
+                ) : null}
+                {data.shop.topUpUrl ? (
+                  <a href={data.shop.topUpUrl} target="_blank" rel="noreferrer noopener"><Gamepad2 size={16} /><span>Game Top-up</span></a>
+                ) : null}
+                {data.shop.websiteUrl ? (
+                  <a href={data.shop.websiteUrl} target="_blank" rel="noreferrer noopener"><Globe size={16} /><span>Website</span></a>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+
 
           <section className="customer-info-grid">
             <article><Store size={21} /><span><small>Customer</small><b>{data.repair.customerName}</b></span></article>

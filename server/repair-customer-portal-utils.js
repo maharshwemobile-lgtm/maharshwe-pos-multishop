@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { prisma } = require('./prisma');
-const { appUrl } = require('./public-urls');
+const { appUrl, landingUrl } = require('./public-urls');
 
 function normalizeRepairNumber(value) {
   return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
@@ -42,7 +42,8 @@ async function findTenantRepair(shopId, identifier) {
             r.customer_telegram_chat_id AS "telegramChatId",
             r.customer_fcm_token AS "appPushToken",
             r.warranty_status AS "warrantyStatus",
-            s.slug AS "shopSlug", s.name AS "shopName"
+            s.slug AS "shopSlug", s.name AS "shopName",
+            s.logo_url AS "shopLogoUrl", s.phone AS "shopPhone", s.address AS "shopAddress"
        FROM repairs r JOIN shops s ON s.id = r.shop_id
       WHERE r.shop_id = $1::uuid
         AND (r.id::text = $2 OR r.repair_number = $3)
@@ -67,7 +68,8 @@ async function findPublicRepair(shopSlug, repairNumber) {
             r.pickup_code_created_at AS "pickupCodeCreatedAt",
             r.pickup_verified_at AS "pickupVerifiedAt",
             r.warranty_status AS "warrantyStatus",
-            s.slug AS "shopSlug", s.name AS "shopName"
+            s.slug AS "shopSlug", s.name AS "shopName",
+            s.logo_url AS "shopLogoUrl", s.phone AS "shopPhone", s.address AS "shopAddress"
        FROM repairs r JOIN shops s ON s.id = r.shop_id
       WHERE s.slug = $1 AND s.active = TRUE AND r.repair_number = $2
       LIMIT 1`,
@@ -107,7 +109,19 @@ async function publicRepairPayload(repair) {
   const finalCost = Number(repair.finalCost || 0);
   const today = new Date(new Date().toISOString().slice(0, 10));
   return {
-    shop: { slug: repair.shopSlug, name: repair.shopName },
+    shop: {
+      slug: repair.shopSlug,
+      name: repair.shopName,
+      logoUrl: repair.shopLogoUrl || null,
+      phone: repair.shopPhone || null,
+      address: repair.shopAddress || null,
+      mapUrl: repair.shopAddress
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(repair.shopAddress)}`
+        : null,
+      storeUrl: `${landingUrl()}/shop/${repair.shopSlug}`,
+      topUpUrl: `${publicBaseUrl()}/topup`,
+      websiteUrl: process.env.PUBLIC_SHOP_SITE_URL || null,
+    },
     repair: {
       repairNumber: repair.repairNumber,
       customerName: customerDisplayName(repair.customerName),

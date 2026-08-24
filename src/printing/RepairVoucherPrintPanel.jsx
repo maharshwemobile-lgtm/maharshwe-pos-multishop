@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2, Printer, Search, Wrench } from 'lucide-react';
-import { apiFetch } from '../phase2Api';
 import { hasPermission } from '../settings/projectAccess';
-import { printRepairVoucher } from './projectPrintUtils';
+import { printRepairVoucherById } from './printRepairVoucherById';
 
 export default function RepairVoucherPrintPanel({ notify }) {
   const [repairId, setRepairId] = useState('');
@@ -14,26 +13,10 @@ export default function RepairVoucherPrintPanel({ notify }) {
   const print = async () => {
     const value = repairId.trim().toUpperCase();
     if (!value) return;
-    const popup = window.open('', '_blank', 'width=430,height=760');
-    if (!popup) {
-      notify?.('error', 'Browser popup blocked. Popups ကို Allow လုပ်ပါ။');
-      return;
-    }
-    popup.document.write('<!doctype html><html><body style="font-family:Arial;padding:30px;text-align:center">Preparing repair voucher…</body></html>');
-    popup.document.close();
     setLoading(true);
     try {
-      const response = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(value)}`);
-      // The share key is stored hashed, so the only way to get a printable URL
-      // is to mint one. That rotates the key: an older voucher's QR stops working.
-      const access = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(value)}/public-access`, { method: 'POST' })
-        .catch(() => null);
-      await printRepairVoucher(response.repair, popup, access?.access?.url || '');
-      setRepairId(response.repair.repairNumber || value);
-      if (!access) notify?.('error', 'Status QR link မထုတ်နိုင်ပါ — voucher ကို QR မပါဘဲ print လုပ်ပါမယ်။');
-    } catch (error) {
-      popup.close();
-      notify?.('error', error.message || 'Repair voucher failed');
+      const ok = await printRepairVoucherById(value, notify);
+      if (ok) setRepairId(value);
     } finally {
       setLoading(false);
     }

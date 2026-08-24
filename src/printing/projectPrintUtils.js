@@ -90,13 +90,16 @@ function baseStyles(paperSize) {
     h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:700}h2{font-size:14px;font-weight:700}.muted{color:#000;font-weight:400}.left{text-align:left}.right{text-align:right}.center{text-align:center}
     .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:400}.meta b,.summary b{font-weight:700}
     table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:400}th{text-align:left;font-size:10px;font-weight:700}td small{display:block;color:#000;font-weight:400;margin-top:2px}
+    .voucher-no{margin-top:9px;padding:7px 0;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center}
+    .voucher-no span{display:block;font-size:9.5px;font-weight:400}
+    .voucher-no b{display:block;font-size:22px;font-weight:700;letter-spacing:1.5px;line-height:1.25}
     .fields{display:grid;grid-template-columns:${twoUp};gap:5px 10px;margin-top:9px;padding:7px 0;border-top:1px solid #000;border-bottom:1px solid #000}
     .fields div{min-width:0;line-height:1.45}.fields .wide{grid-column:1/-1}
     .fields span{font-size:9px;font-weight:400}.fields b{font-size:11px;font-weight:700;word-break:break-word}
     .summary{margin-top:10px}.grand{font-size:15px;font-weight:700;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:700;text-align:center;letter-spacing:2px}
     .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:700;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:400;line-height:1.45;margin-bottom:3px}
     .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:400}.sign-name{display:block;font-size:11px;font-weight:700;padding-bottom:3px}
-    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:22mm;height:22mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
+    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:32mm;height:32mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
     .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:400}.footer-tag{display:block;margin-top:8px;font-weight:700}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:400;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:400}
     @media print{body{padding:0 2mm}.no-print{display:none!important}}
   `;
@@ -211,7 +214,8 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
   const body = `
     ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
     ${customHeader(slip.repairVoucherHeader, settings)}
-    <div class="meta"><div><span>ပြင်ဆင်မှု ID</span><b>${escapeHtml(repairNumber)}</b></div><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
+    <div class="voucher-no"><span>ဘောက်ချာနံပါတ်</span><b>${escapeHtml(repairNumber)}</b></div>
+    <div class="meta"><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
     <div class="fields">${fieldRows}</div>
     <div class="summary"><div><span>ခန့်မှန်းကျသင့်ငွေ</span><b>${Number(repair.estimatedCost || 0).toLocaleString()} ကျပ်</b></div><div><span>စရံ</span><b>${Number(repair.deposit || 0).toLocaleString()} ကျပ်</b></div><div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${Number(repair.balanceDue || Math.max(0, Number(repair.finalCost || 0) - Number(repair.deposit || 0))).toLocaleString()} ကျပ်</b></div></div>
     ${notice}

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import WebBarcodeScanner from './pos/WebBarcodeScanner.jsx';
 import { cleanImei, imeiStatus } from './imeiUtils.js';
+import { printRepairVoucherById } from './printing/printRepairVoucherById';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
   Loader2,
   PackageCheck,
   Plus,
+  Printer,
   RefreshCw,
   Search,
   Smartphone,
@@ -136,6 +138,11 @@ function IntakeModal({ onClose, onSaved, notify }) {
   const field = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const imeiHint = imeiStatus(form.imeiSerial);
   const [imeiLookup, setImeiLookup] = useState(null);
+  // Held after a successful intake so the voucher can be printed from a fresh
+  // click — a browser will not open the print window from a callback that has
+  // already awaited the network.
+  const [saved, setSaved] = useState(null);
+  const [printing, setPrinting] = useState(false);
 
   // A full, valid IMEI identifies a model. Fill brand and model only when they
   // are still blank — never overwrite what the technician typed.
@@ -232,8 +239,8 @@ function IntakeModal({ onClose, onSaved, notify }) {
       delete payload.accessoriesText;
       const response = await apiFetch('/api/repair-platform/intake', { method: 'POST', body: payload });
       rememberDeviceSuggestion(payload);
-      notify('success', `Repair ID: ${response.repair.repairNumber}`);
-      onSaved(response.repair);
+      notify('success', `ဘောက်ချာနံပါတ်: ${response.repair.repairNumber}`);
+      setSaved(response.repair);
     } catch (error) {
       notify('error', error.message || 'Repair intake failed');
     } finally {
@@ -241,10 +248,39 @@ function IntakeModal({ onClose, onSaved, notify }) {
     }
   };
 
+  const done = () => { const record = saved; setSaved(null); onSaved(record); };
+
+  if (saved) {
+    return (
+      <Modal onClose={done}>
+        <div className="repair-saved-panel">
+          <CheckCircle2 size={44} />
+          <h3>ဘောက်ချာ ထုတ်ပြီးပါပြီ</h3>
+          <div className="repair-saved-number"><span>ဘောက်ချာနံပါတ်</span><b>{saved.repairNumber}</b></div>
+          <p>{saved.customerName}{saved.deviceModel ? ` · ${saved.deviceModel}` : ''}</p>
+          <div className="repair-saved-actions">
+            <button
+              type="button"
+              className="primary"
+              disabled={printing}
+              onClick={async () => {
+                setPrinting(true);
+                try { await printRepairVoucherById(saved.repairNumber, notify); } finally { setPrinting(false); }
+              }}
+            >
+              {printing ? <Loader2 className="repair-spin" size={18} /> : <Printer size={18} />} ဘောက်ချာ ထုတ်မည်
+            </button>
+            <button type="button" onClick={done}>ပြီးပါပြီ</button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <Modal onClose={onClose} wide>
       <header className="repair-modal-header">
-        <div><Plus size={22} /><span><h3>New Repair Intake</h3><p>ဆိုင် Prefix နဲ့ Code ထဲကပုံစံအတိုင်း MS0001 / AC0001 လို Repair ID တစ်ခုပဲ ထုတ်ပါမယ်။</p></span></div>
+        <div><Plus size={22} /><span><h3>New Repair Intake</h3><p>ဆိုင် Prefix နဲ့ Code ထဲကပုံစံအတိုင်း MS0001 / AC0001 လို ဘောက်ချာနံပါတ် တစ်ခုပဲ ထုတ်ပါမယ်။</p></span></div>
         <button type="button" onClick={onClose}><X size={20} /></button>
       </header>
       <form className="repair-form" onSubmit={submit}>
