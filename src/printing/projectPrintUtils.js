@@ -1,6 +1,5 @@
 import QRCode from 'qrcode';
 import { loadProjectSettings } from '../settings/projectSettingsClient';
-import { bitmapPage, slipToBitmap } from './rasterPrint';
 
 // Printed on every repair voucher. The shop asked for this wording verbatim,
 // so it is not built from settings — changing it is a code change on purpose.
@@ -113,12 +112,14 @@ function brandBlock(settings, title) {
   return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
 }
 
-// Slips go to the printer as a 1-bit image so the driver's dithering pass has
-// nothing to thin out. If the render fails for any reason the original markup
-// is printed instead — a faint slip beats no slip.
-async function emitSlip(targetWindow, { title, body, styles, paperSize }) {
-  const bitmap = await slipToBitmap(body, styles, paperSize);
-  if (bitmap) return printWindow(targetWindow, bitmapPage(title, bitmap));
+// Slips print as ordinary markup and let the driver rasterise them.
+//
+// They were rendered to a 1-bit image for a while, to get around a driver that
+// dithered the text into nothing. The real fix turned out to be the printer:
+// the XP-80C exposes a density setting that was sitting on its lowest step.
+// With that raised the text prints properly, and rasterising only cost weight
+// control and a logo that had to survive a canvas round trip.
+function emitSlip(targetWindow, { title, body, styles }) {
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${styles}</style></head><body>${body}
     <script>window.onload=()=>window.print();<\/script></body></html>`;
   return printWindow(targetWindow, html);
@@ -159,7 +160,6 @@ export async function printSaleReceipt(sale, targetWindow = null) {
     title: escapeHtml(invoice),
     body,
     styles: baseStyles(slip.salePaperSize),
-    paperSize: slip.salePaperSize,
   });
 }
 
@@ -208,6 +208,5 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     title: escapeHtml(repairNumber),
     body,
     styles: baseStyles(slip.repairPaperSize),
-    paperSize: slip.repairPaperSize,
   });
 }
