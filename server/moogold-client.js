@@ -11,6 +11,7 @@
 // every caller gets a clean "not configured" result instead of a crash —
 // same shape as imei-lookup-api.js's provider gate.
 const crypto = require('crypto');
+const https = require('https');
 
 const BASE_URL = 'https://moogold.com/wp-json/v1/api';
 
@@ -31,6 +32,32 @@ class MoogoldApiError extends Error {
   }
 }
 
+// MooGold authorises by whitelisted IP, and this host prefers IPv6, which the
+// whitelist does not cover — so requests were rejected before authentication
+// with a 403 HTML page. Node's fetch cannot pick an address family, so this
+// goes through https.request with family 4 pinned.
+function postIpv4(url, body, headers) {
+  const target = new URL(url);
+  return new Promise((resolve, reject) => {
+    const request = https.request({
+      hostname: target.hostname,
+      path: target.pathname + target.search,
+      method: 'POST',
+      family: 4,
+      headers: { ...headers, 'Content-Length': Buffer.byteLength(body) },
+      timeout: 15000,
+    }, (res) => {
+      let text = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => { text += chunk; });
+      res.on('end', () => resolve({ status: res.statusCode, ok: res.statusCode >= 200 && res.statusCode < 300, text }));
+    });
+    request.on('error', reject);
+    request.on('timeout', () => { request.destroy(new Error('MooGold request timed out')); });
+    request.end(body);
+  });
+}
+
 async function call(route, data = {}) {
   const creds = credentials();
   if (!creds) throw new MoogoldApiError('NOT_CONFIGURED', 'MooGold API credentials are not set');
@@ -45,20 +72,15 @@ async function call(route, data = {}) {
   const auth = crypto.createHmac('sha256', creds.secret).update(stringToSign).digest('hex');
   const basicAuth = Buffer.from(`${creds.partnerId}:${creds.secret}`).toString('base64');
 
-  const response = await fetch(`${BASE_URL}/${route}`, {
-    method: 'POST',
-    headers: {
-      timestamp,
-      auth,
-      Authorization: `Basic ${basicAuth}`,
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: payloadJson,
-    signal: AbortSignal.timeout(15000),
+  const response = await postIpv4(`${BASE_URL}/${route}`, payloadJson, {
+    timestamp,
+    auth,
+    Authorization: `Basic ${basicAuth}`,
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
   });
 
-  const text = await response.text();
+  const text = response.text;
   let body;
   try {
     body = JSON.parse(text);
