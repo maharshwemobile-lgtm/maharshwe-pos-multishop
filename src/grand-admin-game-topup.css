@@ -62,3 +62,12 @@
 .gt-admin-pager button:disabled{opacity:.45;cursor:not-allowed}
 .dark .gt-admin-search-row label{background:#0b1b33;border-color:#1e3555}
 .dark .gt-admin-pager button{background:#10223d;border-color:#1e3555;color:#e5eef8}
+.gt-admin-product-toggle{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:0;border-bottom:1px solid #eef2f7;cursor:pointer;text-align:left;color:inherit}
+.gt-admin-product-toggle>div{flex:1;min-width:0;display:grid;gap:2px}
+.gt-admin-product-toggle b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gt-admin-product:not(.expanded) .gt-admin-product-toggle{border-bottom:0}
+.gt-admin-chevron{flex:none;color:#94a3b8;transition:transform .15s}
+.gt-admin-product.expanded .gt-admin-chevron{transform:rotate(180deg)}
+.gt-admin-product-actions{display:flex;justify-content:flex-end;padding:8px 12px;background:#fff;border-bottom:1px solid #eef2f7}
+.dark .gt-admin-product-toggle{background:#10223d;border-color:#1e3555}
+.dark .gt-admin-product-actions{background:#0b1b33;border-color:#1e3555}

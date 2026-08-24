@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Gamepad2, Loader2, RefreshCw, Search, Wallet } from 'lucide-react';
+import { ChevronDown, Gamepad2, Loader2, RefreshCw, Search, Wallet } from 'lucide-react';
 import { apiFetch } from './phase2Api';
 import './grand-admin-game-topup.css';
 
@@ -56,6 +56,10 @@ function CatalogPanel({ notify }) {
   // page 1 with no search is the best-selling games without asking for them.
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  // Packages stay collapsed until a product is opened — 5 products can each
+  // carry dozens of packages, and showing every table at once is exactly the
+  // sprawl a 5-per-page catalog was meant to avoid.
+  const [expandedId, setExpandedId] = useState(null);
 
   const load = async (targetPage = page, targetSearch = search) => {
     setLoading(true);
@@ -85,7 +89,7 @@ function CatalogPanel({ notify }) {
   // Debounced: a search box that refetches on every keystroke would hammer a
   // 500+ row table for nothing.
   useEffect(() => {
-    const timer = window.setTimeout(() => { setPage(1); load(1, search); }, 350);
+    const timer = window.setTimeout(() => { setPage(1); setExpandedId(null); load(1, search); }, 350);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
@@ -93,6 +97,7 @@ function CatalogPanel({ notify }) {
   const goToPage = (nextPage) => {
     const clamped = Math.max(1, Math.min(catalog.totalPages || 1, nextPage));
     setPage(clamped);
+    setExpandedId(null);
     load(clamped, search);
   };
 
@@ -208,29 +213,37 @@ function CatalogPanel({ notify }) {
         <div className="grand-empty">{search.trim() ? 'ရှာဖွေမှု နှင့် ကိုက်ညီသော ပစ္စည်း မတွေ့ပါ' : 'ပစ္စည်း မရှိသေးပါ — Category ID နဲ့ Sync လုပ်ပါ'}</div>
       ) : null}
 
-      {catalog.products.map((product) => (
-        <div className="gt-admin-product" key={product.id}>
-          <header>
-            <div>
+      {catalog.products.map((product) => {
+        const open = expandedId === product.id;
+        return (
+          <div className={`gt-admin-product ${open ? 'expanded' : ''}`} key={product.id}>
+            <button type="button" className="gt-admin-product-toggle" onClick={() => setExpandedId(open ? null : product.id)} aria-expanded={open}>
               {product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <div className="gt-admin-icon"><Gamepad2 size={18} /></div>}
               <div>
                 <b>{product.name}</b>
-                <span>{product.moogoldProductId} · Category {product.moogoldCategoryId} · {product.requiresPlayerId ? 'Player ID' : ''}{product.requiresServer ? ' + Server' : ''} · ရောင်းပြီး {product.salesCount || 0}</span>
+                <span>{product.moogoldProductId} · Category {product.moogoldCategoryId} · {product.requiresPlayerId ? 'Player ID' : ''}{product.requiresServer ? ' + Server' : ''} · ရောင်းပြီး {product.salesCount || 0} · Package {product.variations.length}</span>
               </div>
-            </div>
-            <button type="button" onClick={() => toggleProduct(product.id, !product.active)}>{product.active ? 'Product ဖျောက်မယ်' : 'Product ပြမယ်'}</button>
-          </header>
-          <div className="grand-table-wrap">
-            <table className="grand-table">
-              <thead><tr><th>Variation</th><th>Wallet ကို ကုန်ကျစျေး (shop_cost)</th><th>Shop သုံးမယ့် အကြံပြု ရောင်းစျေး</th><th>အမြတ်</th><th /></tr></thead>
-              <tbody>
-                {product.variations.map((variation) => <VariationRow key={variation.id} variation={variation} onSave={saveVariation} />)}
-                {!product.variations.length ? <tr><td colSpan={5} className="grand-empty">Variation မရှိပါ</td></tr> : null}
-              </tbody>
-            </table>
+              <ChevronDown size={18} className="gt-admin-chevron" />
+            </button>
+            {open ? (
+              <>
+                <div className="gt-admin-product-actions">
+                  <button type="button" onClick={() => toggleProduct(product.id, !product.active)}>{product.active ? 'Product ဖျောက်မယ်' : 'Product ပြမယ်'}</button>
+                </div>
+                <div className="grand-table-wrap">
+                  <table className="grand-table">
+                    <thead><tr><th>Variation</th><th>Wallet ကို ကုန်ကျစျေး (shop_cost)</th><th>Shop သုံးမယ့် အကြံပြု ရောင်းစျေး</th><th>အမြတ်</th><th /></tr></thead>
+                    <tbody>
+                      {product.variations.map((variation) => <VariationRow key={variation.id} variation={variation} onSave={saveVariation} />)}
+                      {!product.variations.length ? <tr><td colSpan={5} className="grand-empty">Variation မရှိပါ</td></tr> : null}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : null}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {catalog.totalPages > 1 ? (
         <div className="gt-admin-pager">
