@@ -234,7 +234,7 @@ function attachGameTopupAdminApi(app) {
         `SELECT p.id, p.moogold_category_id AS "moogoldCategoryId", p.moogold_product_id AS "moogoldProductId", p.name,
                 p.image_url AS "imageUrl", p.requires_player_id AS "requiresPlayerId", p.requires_server AS "requiresServer",
                 p.active, p.sort_order AS "sortOrder", p.updated_at AS "updatedAt",
-                ${SALES_COUNT_SQL}::int AS "salesCount"
+                (${SALES_COUNT_SQL})::int AS "salesCount"
            FROM game_topup_products p ${where}
           ORDER BY "salesCount" DESC, p.sort_order ASC, p.name ASC
           LIMIT $${searchArgs.length + 1} OFFSET $${searchArgs.length + 2}`,
