@@ -54,40 +54,105 @@ function svgWrapper(innerHtml, styles, widthPx, heightPx) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${widthPx}" height="${heightPx}" viewBox="0 0 ${widthPx} ${heightPx}">
     <foreignObject width="100%" height="100%">
       <div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff">
-        <style>${styles}</style>
+        <style>/*<![CDATA[*/${styles}/*]]>*/</style>
         ${innerHtml}
       </div>
     </foreignObject>
   </svg>`;
 }
 
-function loadImage(source) {
+// A slip that never finishes rendering would leave the cashier staring at an
+// empty popup, so the load is bounded and failure falls back to text.
+function loadImage(source, timeoutMs = 4000) {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('slip image failed to load'));
+    const timer = setTimeout(() => reject(new Error('slip image timed out')), timeoutMs);
+    image.onload = () => { clearTimeout(timer); resolve(image); };
+    image.onerror = () => { clearTimeout(timer); reject(new Error('slip image failed to load')); };
     image.src = source;
   });
 }
 
+function lumaAt(pixels, index) {
+  // transparent counts as paper
+  if (pixels[index + 3] < 128) return 255;
+  return (pixels[index] * 0.299) + (pixels[index + 1] * 0.587) + (pixels[index + 2] * 0.114);
+}
+
+function writeGrey(pixels, index, value) {
+  pixels[index] = value;
+  pixels[index + 1] = value;
+  pixels[index + 2] = value;
+  pixels[index + 3] = 255;
+}
+
+// A shop logo is usually flat brand colour, and those sit in the middle of the
+// range — the jade in this one reads as luma 96, the orange as 175. Diffused
+// straight, both become sparse dots and the mark looks washed out on paper.
+// This pulls anything meaningfully darker than paper down towards solid ink
+// while leaving genuinely light tones to dither, so a flat logo prints as a
+// silhouette and a photographic one still keeps its shading.
+function inkCurve(luma) {
+  const adjusted = ((luma - 205) * 2.2) + 140;
+  return Math.min(255, Math.max(0, adjusted));
+}
+
+function captureRegion(pixels, width, region) {
+  const { left, top, right, bottom } = region;
+  // Float, so the error carried between pixels is not truncated.
+  const shades = new Float32Array((right - left) * (bottom - top));
+  for (let y = top; y < bottom; y += 1) {
+    for (let x = left; x < right; x += 1) {
+      shades[((y - top) * (right - left)) + (x - left)] = inkCurve(lumaAt(pixels, ((y * width) + x) * 4));
+    }
+  }
+  return shades;
+}
+
+// Floyd–Steinberg, for the logo only.
+//
+// A hard threshold is right for text — it keeps strokes solid — but it wrecks a
+// logo, because every mid-tone falls to one side and the shape comes out half
+// missing. Error diffusion keeps the shading by trading it for dot density,
+// which is what a one-colour head can actually reproduce.
+function ditherRegion(pixels, width, region, shades) {
+  const { left, top, right, bottom } = region;
+  const spanWidth = right - left;
+  const spread = (x, y, error, factor) => {
+    if (x < 0 || x >= spanWidth || y >= bottom - top) return;
+    shades[(y * spanWidth) + x] += error * factor;
+  };
+
+  for (let y = 0; y < bottom - top; y += 1) {
+    for (let x = 0; x < spanWidth; x += 1) {
+      const old = shades[(y * spanWidth) + x];
+      const value = old < 128 ? 0 : 255;
+      const error = old - value;
+      spread(x + 1, y, error, 7 / 16);
+      spread(x - 1, y + 1, error, 3 / 16);
+      spread(x, y + 1, error, 5 / 16);
+      spread(x + 1, y + 1, error, 1 / 16);
+      writeGrey(pixels, (((y + top) * width) + (x + left)) * 4, value);
+    }
+  }
+}
+
 // Round every pixel to black or white. After this the driver's threshold pass
-// has nothing left to decide, so it cannot thin the strokes.
-function binarise(canvas) {
+// has nothing left to decide, so it cannot thin the strokes. Regions listed in
+// `ditherRegions` are shaded instead of thresholded.
+function binarise(canvas, ditherRegions = []) {
   const context = canvas.getContext('2d');
   const frame = context.getImageData(0, 0, canvas.width, canvas.height);
   const pixels = frame.data;
+
+  // Snapshot the logo's real shading before the threshold pass flattens it.
+  const captured = ditherRegions.map((region) => captureRegion(pixels, canvas.width, region));
+
   for (let index = 0; index < pixels.length; index += 4) {
-    const alpha = pixels[index + 3];
-    // luma, with transparent treated as paper
-    const luma = alpha < 128
-      ? 255
-      : (pixels[index] * 0.299) + (pixels[index + 1] * 0.587) + (pixels[index + 2] * 0.114);
-    const value = luma < INK_THRESHOLD ? 0 : 255;
-    pixels[index] = value;
-    pixels[index + 1] = value;
-    pixels[index + 2] = value;
-    pixels[index + 3] = 255;
+    writeGrey(pixels, index, lumaAt(pixels, index) < INK_THRESHOLD ? 0 : 255);
   }
+  ditherRegions.forEach((region, at) => ditherRegion(pixels, canvas.width, region, captured[at]));
+
   context.putImageData(frame, 0, 0);
 }
 
@@ -119,18 +184,37 @@ export async function slipToBitmap(bodyHtml, styles, paperSize) {
     await new Promise((resolve) => window.requestAnimationFrame(resolve));
 
     const root = stage.querySelector('.slip-root');
-    const cssWidth = root.getBoundingClientRect().width;
-    const cssHeight = Math.max(1, Math.ceil(root.getBoundingClientRect().height));
-    const inner = root.outerHTML;
-    stage.remove();
-    if (!cssWidth) return null;
+    const rootBox = root.getBoundingClientRect();
+    const cssWidth = rootBox.width;
+    const cssHeight = Math.max(1, Math.ceil(rootBox.height));
 
     // Rasterise at head resolution. The foreignObject content is still vector at
     // this point, so scaling up sharpens the glyphs rather than blurring them.
     const targetWidth = mmToDots(widthMm);
-    const scale = targetWidth / cssWidth;
+    const scale = cssWidth ? targetWidth / cssWidth : 0;
     const targetHeight = Math.max(1, Math.ceil(cssHeight * scale));
 
+    // Only the shop logo gets shaded. The QR is already one bit per dot and
+    // diffusing it would break the scan.
+    const logoRegions = [...root.querySelectorAll('img.slip-logo')].map((image) => {
+      const box = image.getBoundingClientRect();
+      return {
+        left: Math.max(0, Math.floor((box.left - rootBox.left) * scale)),
+        top: Math.max(0, Math.floor((box.top - rootBox.top) * scale)),
+        right: Math.min(targetWidth, Math.ceil((box.right - rootBox.left) * scale)),
+        bottom: Math.min(targetHeight, Math.ceil((box.bottom - rootBox.top) * scale)),
+      };
+    }).filter((region) => region.right > region.left && region.bottom > region.top);
+
+    // outerHTML leaves <img> unclosed, which is valid HTML and invalid XML —
+    // the SVG then refuses to parse and the slip silently falls back to text.
+    const inner = new XMLSerializer().serializeToString(root);
+    stage.remove();
+    if (!cssWidth) return null;
+
+    // A data: URL, not a blob: one. Chrome treats an SVG image loaded from a
+    // blob URL as cross-origin, and getImageData then throws on the tainted
+    // canvas — which would lose the binarising step the whole approach rests on.
     const svg = svgWrapper(inner, scopedStyles, cssWidth, cssHeight);
     const rendered = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
 
@@ -141,7 +225,7 @@ export async function slipToBitmap(bodyHtml, styles, paperSize) {
     context.fillStyle = '#fff';
     context.fillRect(0, 0, targetWidth, targetHeight);
     context.drawImage(rendered, 0, 0, targetWidth, targetHeight);
-    binarise(canvas);
+    binarise(canvas, logoRegions);
 
     return { dataUrl: canvas.toDataURL('image/png'), widthMm };
   } catch (error) {

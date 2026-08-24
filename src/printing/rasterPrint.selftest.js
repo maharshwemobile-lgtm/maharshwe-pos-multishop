@@ -9,9 +9,13 @@ const SAMPLE_STYLES = `
   .meta div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
   .fields{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:9px;padding:7px 0;border-top:1px solid #000;border-bottom:1px solid #000}
   .fields .wide{grid-column:1/-1}.fields span{font-size:9px}.fields b{font-size:11px}
+  .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 6px auto}
 `;
 
+const LOGO_SRC = '/mahar-pos-logo.png';
+
 const SAMPLE_BODY = `
+  <img class="slip-logo" src="${LOGO_SRC}" alt=""/>
   <h1>မဟာရွှေ ဖုန်းပြင်ဆိုင်</h1><p>ဖုန်းပြင် ဘောင်ချာ</p>
   <div class="meta"><div><span>ပြင်ဆင်မှု ID</span><b>MS0551</b></div><div><span>နေ့စွဲ</span><b>24/8/2026</b></div></div>
   <div class="fields">
@@ -47,8 +51,15 @@ export async function runRasterSelfTest() {
     else if (value !== 255) grey += 1;
   }
   const total = pixels.length / 4;
+  // The logo sits in the top strip; measure its ink separately so a logo that
+  // thresholded away shows up as a number rather than something to squint at.
+  const logoBand = context.getImageData(0, 0, canvas.width, Math.min(canvas.height, Math.round(66 * (canvas.width / 302)))).data;
+  let logoBlack = 0;
+  for (let index = 0; index < logoBand.length; index += 4) if (logoBand[index] === 0) logoBlack += 1;
+
   return {
     ok: black > 0 && grey === 0,
+    logoInkPercent: Number(((logoBlack / (logoBand.length / 4)) * 100).toFixed(2)),
     width: canvas.width,
     height: canvas.height,
     inkPercent: Number(((black / total) * 100).toFixed(2)),
