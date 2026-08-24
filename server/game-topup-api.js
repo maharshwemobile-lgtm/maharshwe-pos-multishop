@@ -140,6 +140,12 @@ const orderSchema = z.object({
   paymentAccountId: z.string().uuid().optional().nullable(),
 });
 
+const validateSchema = z.object({
+  variationId: z.string().uuid(),
+  playerId: z.string().trim().min(1).max(80),
+  server: z.string().trim().max(80).optional().nullable(),
+});
+
 async function generateOrderNumber(shopId) {
   const count = await prisma.$queryRawUnsafe(
     `SELECT COUNT(*)::int AS count FROM game_topup_orders WHERE shop_id = $1::uuid`,
@@ -179,6 +185,38 @@ function orderRow(row) {
 function attachGameTopupApi(app) {
   const read = [requireAuth, requireShopUser, requireGameTopup];
   const write = [requireAuth, requireShopUser, requireWritableSubscription, requireGameTopup];
+
+  // Confirms whose account a top-up is going to before staff charge a
+  // customer — same check the public storefront runs, gated the same way as
+  // every other Game Top-up route rather than left open like that one.
+  app.post('/api/game-topup/validate', ...read, async (req, res) => {
+    try {
+      await ensureGameTopupSchema();
+      const input = parse(validateSchema, req.body || {});
+      const variation = await loadVariationWithProduct(input.variationId);
+      if (!variation || !variation.variationActive || !variation.productActive) throw new ApiError(404, 'Product not found');
+      if (variation.requiresServer && !input.server) throw new ApiError(400, 'Server ထည့်ပါ');
+      if (!moogold.isConfigured()) throw new ApiError(503, 'Validation is unavailable right now');
+
+      const result = await moogold.validateAccount({
+        productId: variation.moogoldProductId,
+        playerId: input.playerId,
+        server: input.server,
+        playerField: variation.playerField,
+        serverField: variation.serverField,
+      });
+
+      res.json({
+        ok: true,
+        valid: result.valid,
+        username: result.username,
+        country: result.country,
+        message: result.valid ? null : (result.message || 'Account not found'),
+      });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Validation failed' });
+    }
+  });
 
   app.get('/api/game-topup/settings', ...read, async (req, res) => {
     try {

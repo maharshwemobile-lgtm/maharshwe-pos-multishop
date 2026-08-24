@@ -9,9 +9,7 @@
 <link rel="icon" type="image/png" href="/mahar-pos-logo-192.png">
 <link rel="apple-touch-icon" href="/mahar-pos-logo-192.png">
 <style>
-#fCheckWrap{margin:2px 0 4px}
-.check{width:100%;padding:12px;border:1px solid #2b6cb0;border-radius:10px;background:#fff;color:#2b6cb0;font-weight:700;cursor:pointer}
-.check:disabled{opacity:.55;cursor:not-allowed}
+#fCheckWrap{margin:-4px 0 4px}
 .note.good{background:#e8f7ee;border-color:#57b97a;color:#1c6b3a}
 #gCheckOut b{font-size:16px}
 :root{
@@ -155,7 +153,6 @@ footer a{color:var(--blue);font-weight:700}
       <label id="fPlayerWrap"><span>Player ID / User ID *</span><input id="fPlayer" placeholder="ဂိမ်းထဲက ID"></label>
       <label id="fServerWrap"><span>Server / Zone ID *</span><input id="fServer" placeholder="ဥပမာ - 2001"></label>
       <div id="fCheckWrap">
-        <button class="check" type="button" id="gCheck">အကောင့် စစ်ဆေးမည်</button>
         <div id="gCheckOut" class="note hid"></div>
       </div>
       <label><span>ဆက်သွယ်ရန် ဖုန်းနံပါတ် *</span><input id="fPhone" type="tel" placeholder="09xxxxxxxxx" inputmode="tel"></label>
@@ -334,9 +331,12 @@ footer a{color:var(--blue);font-weight:700}
   }
 
   // Cleared whenever the id or server changes, so a confirmed name can never
-  // belong to a different account than the one now typed in.
+  // belong to a different account than the one now typed in. Bumping the
+  // sequence number here too means a reply for an id already abandoned is
+  // dropped even if no new check ever gets queued for it.
   function resetCheck() {
     state.checked = null;
+    checkSeq += 1;
     show($('gCheckOut'), false);
     $('gCheckOut').className = 'note hid';
     syncNext();
@@ -352,18 +352,27 @@ footer a{color:var(--blue);font-weight:700}
     $('gNext').textContent = ok ? 'ငွေပေးချေရန် ဆက်သွားမည်' : 'အကောင့် အရင် စစ်ပါ';
   }
 
-  ['fPlayer', 'fServer'].forEach((id) => $(id).addEventListener('input', resetCheck));
+  // Auto-checks as the customer finishes typing, rather than making them press
+  // a button — a mistyped id is unrecoverable, so the name should appear on its
+  // own the moment there is enough to check.
+  let checkTimer = null;
+  let checkSeq = 0;
 
-  $('gCheck').addEventListener('click', async () => {
-    const out = $('gCheckOut');
+  function queueAutoCheck() {
+    resetCheck();
+    window.clearTimeout(checkTimer);
     const playerId = $('fPlayer').value.trim();
     const server = $('fServer').value.trim();
-    if (!playerId) { out.className = 'note bad'; out.textContent = 'Player ID ထည့်ပါ'; show(out, true); return; }
-    if (state.game.requiresServer && !server) { out.className = 'note bad'; out.textContent = 'Server ထည့်ပါ'; show(out, true); return; }
+    if (!playerId) return;
+    if (state.game.requiresServer && !server) return;
+    checkTimer = window.setTimeout(() => runCheck(playerId, server), 600);
+  }
 
-    $('gCheck').disabled = true;
+  async function runCheck(playerId, server) {
+    const mySeq = ++checkSeq;
+    const out = $('gCheckOut');
     out.className = 'note';
-    out.textContent = 'စစ်ဆေးနေပါသည်…';
+    out.textContent = 'အကောင့် စစ်ဆေးနေပါသည်…';
     show(out, true);
     try {
       const res = await fetch('/api/public/game-topup/validate', {
@@ -372,6 +381,9 @@ footer a{color:var(--blue);font-weight:700}
         body: JSON.stringify({ variationId: state.pack.id, playerId: playerId, server: server || undefined }),
       });
       const data = await res.json();
+      // The fields may have changed again while this request was in flight;
+      // an answer for an id the customer has since edited must not land.
+      if (mySeq !== checkSeq) return;
       if (data.ok && data.valid) {
         state.checked = { playerId: playerId, server: server, username: data.username };
         out.className = 'note good';
@@ -395,14 +407,16 @@ footer a{color:var(--blue);font-weight:700}
         out.textContent = data.message || 'အကောင့် မတွေ့ပါ — ID နှင့် Server ပြန်စစ်ပါ';
       }
     } catch (e) {
+      if (mySeq !== checkSeq) return;
       state.checked = null;
       out.className = 'note bad';
-      out.textContent = 'စစ်ဆေးလို့ မရပါ — ပြန်ကြိုးစားပါ';
+      out.textContent = 'စစ်ဆေးလို့ မရပါ — ID ကို ထပ်ရိုက်ကြည့်ပါ';
     } finally {
-      $('gCheck').disabled = false;
-      syncNext();
+      if (mySeq === checkSeq) syncNext();
     }
-  });
+  }
+
+  ['fPlayer', 'fServer'].forEach((id) => $(id).addEventListener('input', queueAutoCheck));
 
   $('gNext').addEventListener('click', () => {
     const err = (m) => { $('gFormErr').textContent = m; show($('gFormErr'), true); };

@@ -31,18 +31,52 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
   });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  // Confirms whose account the top-up is going to before staff take payment —
+  // a mistyped id is unrecoverable, so the name appears on its own as soon as
+  // there is enough to check rather than needing a button press.
+  const [check, setCheck] = useState({ state: 'idle', username: '', country: '', message: '' });
 
   const quantity = Math.max(1, Number(form.quantity || 1));
   const unitCost = Number(variation.shopCost || 0);
   const totalCost = unitCost * quantity;
   const totalRetail = Number(form.retailPrice || 0);
   const profit = totalRetail - totalCost;
+  const needsCheck = Boolean(product.requiresPlayerId);
+
+  useEffect(() => {
+    setCheck({ state: 'idle', username: '', country: '', message: '' });
+    if (!needsCheck) return undefined;
+    const playerId = form.playerId.trim();
+    const server = form.server.trim();
+    if (!playerId) return undefined;
+    if (product.requiresServer && !server) return undefined;
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setCheck({ state: 'checking', username: '', country: '', message: '' });
+      try {
+        const response = await apiFetch('/api/game-topup/validate', {
+          method: 'POST',
+          body: { variationId: variation.id, playerId, server: server || undefined },
+        });
+        if (cancelled) return;
+        setCheck(response.valid
+          ? { state: 'valid', username: response.username, country: response.country, message: '' }
+          : { state: 'invalid', username: '', country: '', message: response.message || 'အကောင့် မတွေ့ပါ' });
+      } catch (error) {
+        if (!cancelled) setCheck({ state: 'invalid', username: '', country: '', message: error.message || 'စစ်ဆေးလို့ မရပါ' });
+      }
+    }, 600);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.playerId, form.server]);
 
   const submit = async (event) => {
     event.preventDefault();
     setMessage('');
     if (product.requiresPlayerId && !form.playerId.trim()) return setMessage('Player ID ထည့်ပါ');
     if (product.requiresServer && !form.server.trim()) return setMessage('Server ထည့်ပါ');
+    if (needsCheck && check.state !== 'valid') return setMessage('အကောင့်ကို အရင်စစ်ပါ — Player ID မှန်ကန်ကြောင်း Name ပေါ်လာမှ ဆက်ရောင်းပါ');
     if (!form.paymentAccountId) return setMessage('ငွေလက်ခံမည့် Account ရွေးပါ');
     setBusy(true);
     try {
@@ -86,6 +120,13 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
 
       {product.requiresPlayerId ? <label><span>Player ID *</span><input value={form.playerId} onChange={(event) => setForm({ ...form, playerId: event.target.value })} placeholder="ဥပမာ - 123456789" autoFocus /></label> : null}
       {product.requiresServer ? <label><span>Server *</span><input value={form.server} onChange={(event) => setForm({ ...form, server: event.target.value })} placeholder="ဥပမာ - 2001" /></label> : null}
+      {needsCheck && check.state !== 'idle' ? (
+        <div className={`gt-account-check ${check.state}`}>
+          {check.state === 'checking' ? 'အကောင့် စစ်ဆေးနေပါသည်…' : null}
+          {check.state === 'valid' ? <>✅ <b>{check.username || 'Account'}</b>{check.country ? ` · ${check.country}` : ''}<small>ဒီအကောင့်သို့ ဖြည့်ပါမည် — မှန်မမှန် သေချာစစ်ပါ</small></> : null}
+          {check.state === 'invalid' ? check.message : null}
+        </div>
+      ) : null}
 
       <div className="gt-form-row">
         <label><span>ဖောက်သည်နာမည် (Optional)</span><input value={form.customerName} onChange={(event) => setForm({ ...form, customerName: event.target.value })} /></label>
@@ -104,9 +145,9 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
         <div className={profit < 0 ? 'negative' : ''}><span>အမြတ်</span><b>{money(profit)}</b></div>
       </div>
 
-      <button type="submit" className="gt-submit" disabled={busy}>
+      <button type="submit" className="gt-submit" disabled={busy || (needsCheck && check.state !== 'valid')}>
         {busy ? <Loader2 className="gt-spin" size={17} /> : <Gamepad2 size={17} />}
-        ရောင်းမည်
+        {needsCheck && check.state !== 'valid' ? 'အကောင့် အရင်စစ်ပါ' : 'ရောင်းမည်'}
       </button>
     </form>
   );
