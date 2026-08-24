@@ -191,15 +191,56 @@ function attachGameTopupAdminApi(app) {
     }
   });
 
-  app.get('/api/grand-admin/game-topup/catalog', async (_req, res) => {
+  // Sales count per product, combined across the shop-facing and the public
+  // storefront order tables. This is what "top" means: real completed sales,
+  // not a manually-set flag — a product nobody has ever sold sorts to the
+  // bottom, and one the shop is actually moving rises to the top on its own.
+  const SALES_COUNT_SQL = `(
+    SELECT COUNT(*) FROM game_topup_orders o JOIN game_topup_variations v ON v.id = o.variation_id
+     WHERE v.product_id = p.id AND o.status = 'COMPLETED'
+  ) + (
+    SELECT COUNT(*) FROM game_topup_public_orders o JOIN game_topup_variations v ON v.id = o.variation_id
+     WHERE v.product_id = p.id AND o.status = 'COMPLETED'
+  )`;
+
+  // A catalog this size (500+ games, thousands of packages) is too heavy to
+  // hand over in one response, so this is paged and searchable rather than
+  // returning everything — the admin finds a product by name instead of
+  // scrolling past hundreds it does not need right now.
+  const catalogQuerySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(50).default(5),
+    search: z.string().trim().max(120).optional().default(''),
+  });
+
+  app.get('/api/grand-admin/game-topup/catalog', async (req, res) => {
     try {
       await ensureGameTopupSchema();
-      const products = await prisma.$queryRawUnsafe(
-        `SELECT id, moogold_category_id AS "moogoldCategoryId", moogold_product_id AS "moogoldProductId", name,
-                image_url AS "imageUrl", requires_player_id AS "requiresPlayerId", requires_server AS "requiresServer",
-                active, sort_order AS "sortOrder", updated_at AS "updatedAt"
-           FROM game_topup_products ORDER BY sort_order ASC, name ASC`,
+      const input = parse(catalogQuerySchema, req.query || {});
+      const search = `%${input.search}%`;
+      const where = input.search
+        ? `WHERE p.name ILIKE $1 OR p.moogold_product_id = $2`
+        : '';
+      const searchArgs = input.search ? [search, input.search] : [];
+
+      const totalRows = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int AS n FROM game_topup_products p ${where}`,
+        ...searchArgs,
       );
+      const total = totalRows[0]?.n || 0;
+
+      const offset = (input.page - 1) * input.pageSize;
+      const products = await prisma.$queryRawUnsafe(
+        `SELECT p.id, p.moogold_category_id AS "moogoldCategoryId", p.moogold_product_id AS "moogoldProductId", p.name,
+                p.image_url AS "imageUrl", p.requires_player_id AS "requiresPlayerId", p.requires_server AS "requiresServer",
+                p.active, p.sort_order AS "sortOrder", p.updated_at AS "updatedAt",
+                ${SALES_COUNT_SQL}::int AS "salesCount"
+           FROM game_topup_products p ${where}
+          ORDER BY "salesCount" DESC, p.sort_order ASC, p.name ASC
+          LIMIT $${searchArgs.length + 1} OFFSET $${searchArgs.length + 2}`,
+        ...searchArgs, input.pageSize, offset,
+      );
+
       const variations = products.length
         ? await prisma.$queryRawUnsafe(
             `SELECT id, product_id AS "productId", moogold_variation_id AS "moogoldVariationId", name,
@@ -215,7 +256,15 @@ function attachGameTopupAdminApi(app) {
         list.push({ ...variation, moogoldPrice: round(variation.moogoldPrice), shopCost: round(variation.shopCost), suggestedRetail: round(variation.suggestedRetail) });
         byProduct.set(variation.productId, list);
       });
-      res.json({ ok: true, configured: moogold.isConfigured(), products: products.map((product) => ({ ...product, variations: byProduct.get(product.id) || [] })) });
+      res.json({
+        ok: true,
+        configured: moogold.isConfigured(),
+        page: input.page,
+        pageSize: input.pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / input.pageSize)),
+        products: products.map((product) => ({ ...product, variations: byProduct.get(product.id) || [] })),
+      });
     } catch (error) {
       res.status(error.status || 500).json({ ok: false, message: error.message || 'Catalog load failed' });
     }

@@ -34,9 +34,19 @@ function hmac(value) {
 }
 
 async function loadPublicCatalog() {
+  // "Top" is real completed sales, combined across the shop-facing and public
+  // order tables — a customer sees the games actually selling well first,
+  // rather than whatever order they happen to sit in the database.
   const products = await prisma.$queryRawUnsafe(
-    `SELECT id, name, image_url AS "imageUrl", requires_player_id AS "requiresPlayerId", requires_server AS "requiresServer"
-       FROM game_topup_products WHERE active = TRUE ORDER BY sort_order ASC, name ASC`,
+    `SELECT p.id, p.name, p.image_url AS "imageUrl", p.requires_player_id AS "requiresPlayerId", p.requires_server AS "requiresServer"
+       FROM game_topup_products p
+      WHERE p.active = TRUE
+      ORDER BY (
+        (SELECT COUNT(*) FROM game_topup_orders o JOIN game_topup_variations v ON v.id = o.variation_id
+          WHERE v.product_id = p.id AND o.status = 'COMPLETED')
+        + (SELECT COUNT(*) FROM game_topup_public_orders o JOIN game_topup_variations v ON v.id = o.variation_id
+          WHERE v.product_id = p.id AND o.status = 'COMPLETED')
+      ) DESC, p.sort_order ASC, p.name ASC`,
   );
   if (!products.length) return [];
   const variations = await prisma.$queryRawUnsafe(

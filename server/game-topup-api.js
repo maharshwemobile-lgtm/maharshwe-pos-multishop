@@ -91,10 +91,19 @@ async function applyPaymentAccountChange(tx, shopId, accountId, delta) {
 }
 
 async function loadActiveCatalog() {
+  // Same "top = real completed sales" ordering as the public storefront, so
+  // staff see the games actually moving first.
   const products = await prisma.$queryRawUnsafe(
-    `SELECT id, moogold_category_id AS "moogoldCategoryId", moogold_product_id AS "moogoldProductId",
-            name, image_url AS "imageUrl", requires_player_id AS "requiresPlayerId", requires_server AS "requiresServer"
-       FROM game_topup_products WHERE active = TRUE ORDER BY sort_order ASC, name ASC`,
+    `SELECT p.id, p.moogold_category_id AS "moogoldCategoryId", p.moogold_product_id AS "moogoldProductId",
+            p.name, p.image_url AS "imageUrl", p.requires_player_id AS "requiresPlayerId", p.requires_server AS "requiresServer"
+       FROM game_topup_products p
+      WHERE p.active = TRUE
+      ORDER BY (
+        (SELECT COUNT(*) FROM game_topup_orders o JOIN game_topup_variations v ON v.id = o.variation_id
+          WHERE v.product_id = p.id AND o.status = 'COMPLETED')
+        + (SELECT COUNT(*) FROM game_topup_public_orders o JOIN game_topup_variations v ON v.id = o.variation_id
+          WHERE v.product_id = p.id AND o.status = 'COMPLETED')
+      ) DESC, p.sort_order ASC, p.name ASC`,
   );
   if (!products.length) return [];
   const variations = await prisma.$queryRawUnsafe(

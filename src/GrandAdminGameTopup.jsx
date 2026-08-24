@@ -34,8 +34,10 @@ function VariationRow({ variation, onSave }) {
   );
 }
 
+const CATALOG_PAGE_SIZE = 5;
+
 function CatalogPanel({ notify }) {
-  const [catalog, setCatalog] = useState({ configured: false, products: [] });
+  const [catalog, setCatalog] = useState({ configured: false, products: [], page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(false);
   const [categoryId, setCategoryId] = useState('');
   const [syncing, setSyncing] = useState(false);
@@ -48,11 +50,19 @@ function CatalogPanel({ notify }) {
   const [rate, setRate] = useState('');
   const [savedRate, setSavedRate] = useState(null);
   const [savingRate, setSavingRate] = useState(false);
+  // 500+ games and thousands of packages is too heavy to hand over in one
+  // response, so this is paged and searched by name rather than loaded whole
+  // — "top" (highest completed sales) is already the server's sort order, so
+  // page 1 with no search is the best-selling games without asking for them.
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
-  const load = async () => {
+  const load = async (targetPage = page, targetSearch = search) => {
     setLoading(true);
     try {
-      setCatalog(await apiFetch('/api/grand-admin/game-topup/catalog'));
+      const params = new URLSearchParams({ page: String(targetPage), pageSize: String(CATALOG_PAGE_SIZE) });
+      if (targetSearch.trim()) params.set('search', targetSearch.trim());
+      setCatalog(await apiFetch(`/api/grand-admin/game-topup/catalog?${params}`));
     } catch (error) {
       notify(error.message || 'Catalog load failed', 'error');
     } finally {
@@ -70,7 +80,21 @@ function CatalogPanel({ notify }) {
     }
   };
 
-  useEffect(() => { load(); loadRate(); }, []);
+  useEffect(() => { load(1, search); loadRate(); }, []);
+
+  // Debounced: a search box that refetches on every keystroke would hammer a
+  // 500+ row table for nothing.
+  useEffect(() => {
+    const timer = window.setTimeout(() => { setPage(1); load(1, search); }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const goToPage = (nextPage) => {
+    const clamped = Math.max(1, Math.min(catalog.totalPages || 1, nextPage));
+    setPage(clamped);
+    load(clamped, search);
+  };
 
   const saveRate = async (event) => {
     event.preventDefault();
@@ -171,8 +195,18 @@ function CatalogPanel({ notify }) {
         </form>
       </div>
 
+      <div className="gt-admin-search-row">
+        <label>
+          <Search size={15} />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Game နာမည် ဒါမှမဟုတ် MooGold Product ID ရှာပါ…" />
+        </label>
+        <span className="gt-admin-total">{catalog.total ? `ပစ္စည်း ${catalog.total} ခု — ရောင်းအားများသည် အပေါ်ဆုံးမှာ` : null}</span>
+      </div>
+
       {loading ? <div className="grand-empty"><Loader2 className="grand-spin" size={18} /></div> : null}
-      {!loading && !catalog.products.length ? <div className="grand-empty">ပစ္စည်း မရှိသေးပါ — Category ID နဲ့ Sync လုပ်ပါ</div> : null}
+      {!loading && !catalog.products.length ? (
+        <div className="grand-empty">{search.trim() ? 'ရှာဖွေမှု နှင့် ကိုက်ညီသော ပစ္စည်း မတွေ့ပါ' : 'ပစ္စည်း မရှိသေးပါ — Category ID နဲ့ Sync လုပ်ပါ'}</div>
+      ) : null}
 
       {catalog.products.map((product) => (
         <div className="gt-admin-product" key={product.id}>
@@ -181,7 +215,7 @@ function CatalogPanel({ notify }) {
               {product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <div className="gt-admin-icon"><Gamepad2 size={18} /></div>}
               <div>
                 <b>{product.name}</b>
-                <span>{product.moogoldProductId} · Category {product.moogoldCategoryId} · {product.requiresPlayerId ? 'Player ID' : ''}{product.requiresServer ? ' + Server' : ''}</span>
+                <span>{product.moogoldProductId} · Category {product.moogoldCategoryId} · {product.requiresPlayerId ? 'Player ID' : ''}{product.requiresServer ? ' + Server' : ''} · ရောင်းပြီး {product.salesCount || 0}</span>
               </div>
             </div>
             <button type="button" onClick={() => toggleProduct(product.id, !product.active)}>{product.active ? 'Product ဖျောက်မယ်' : 'Product ပြမယ်'}</button>
@@ -197,6 +231,14 @@ function CatalogPanel({ notify }) {
           </div>
         </div>
       ))}
+
+      {catalog.totalPages > 1 ? (
+        <div className="gt-admin-pager">
+          <button type="button" onClick={() => goToPage(page - 1)} disabled={loading || page <= 1}>‹ နောက်ကျ</button>
+          <span>စာမျက်နှာ {page} / {catalog.totalPages}</span>
+          <button type="button" onClick={() => goToPage(page + 1)} disabled={loading || page >= catalog.totalPages}>ရှေ့ ›</button>
+        </div>
+      ) : null}
     </div>
   );
 }
