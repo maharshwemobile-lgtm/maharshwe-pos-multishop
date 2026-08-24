@@ -89,6 +89,7 @@ function orderRow(row) {
   return {
     orderNumber: row.orderNumber,
     status: row.status,
+    customerName: row.customerName,
     productName: row.productName,
     variationName: row.variationName,
     quantity: row.quantity,
@@ -193,6 +194,7 @@ function attachGameTopupPublicApi(app) {
 
       const rows = await prisma.$queryRawUnsafe(
         `SELECT o.order_number AS "orderNumber", o.status, o.quantity, o.player_id AS "playerId", o.server_id AS "serverId",
+                o.customer_name AS "customerName",
                 o.retail_price AS "retailPrice", o.reject_reason AS "rejectReason", o.failure_reason AS "failureReason",
                 o.moogold_response AS "moogoldResponse", o.created_at AS "createdAt", o.reviewed_at AS "reviewedAt",
                 p.name AS "productName", v.name AS "variationName"
