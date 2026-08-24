@@ -68,23 +68,27 @@ function printWindow(targetWindow, html) {
 function baseStyles(paperSize) {
   const width = paperSize === '58mm' ? '58mm' : '80mm';
   // Thermal heads render grey as sparse dots, so a #555 label comes out faint
-  // and a hairline dashed rule almost disappears. Everything on this slip is
-  // pure black and bold, with solid rules — it is the only way an 80mm roll
-  // stays readable after a few weeks in a customer's pocket.
+  // and a hairline dashed rule almost disappears. Everything is pure black and
+  // bold with solid rules. Sizes stay as they were — weight is what makes it
+  // readable, and bumping the type only spends more paper per slip.
+  const twoUp = width === '58mm' ? '1fr' : '1fr 1fr';
   return `
     @page{size:${width} auto;margin:3mm}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    body{width:${width};max-width:100%;margin:0 auto;padding:3mm;font-family:Arial,sans-serif;color:#000;font-size:12px;font-weight:700;line-height:1.5;background:#fff;-webkit-font-smoothing:none}
+    body{width:${width};max-width:100%;margin:0 auto;padding:3mm;font-family:Arial,sans-serif;color:#000;font-size:11px;font-weight:700;background:#fff;-webkit-font-smoothing:none}
     .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 8px auto;text-align:center}
     .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#000;color:#fff;font-weight:900;font-size:18px}
-    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:19px;font-weight:900}h2{font-size:15px;font-weight:900}.muted{color:#000;font-weight:700}.left{text-align:left}.right{text-align:right}.center{text-align:center}
+    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:900}h2{font-size:14px;font-weight:900}.muted{color:#000;font-weight:700}.left{text-align:left}.right{text-align:right}.center{text-align:center}
     .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:700}.meta b,.summary b{font-weight:900}
-    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:700}th{text-align:left;font-size:11px;font-weight:900}td small{display:block;color:#000;font-weight:700;margin-top:2px;font-size:10.5px}
-    .summary{margin-top:10px}.grand{font-size:16px;font-weight:900;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:900;text-align:center;letter-spacing:2px}
-    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:12px;font-weight:900;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:10.5px;font-weight:700;line-height:1.5;margin-bottom:3px}
-    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:10px;font-weight:700}
-    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:34mm;height:34mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:10px;font-weight:900}
-    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:700}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:10px;color:#000;font-weight:700;text-align:center}.qr-link{word-break:break-all;font-size:10px;color:#000;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:700}th{text-align:left;font-size:10px;font-weight:900}td small{display:block;color:#000;font-weight:700;margin-top:2px}
+    .fields{display:grid;grid-template-columns:${twoUp};gap:5px 10px;margin-top:9px;padding:7px 0;border-top:1px solid #000;border-bottom:1px solid #000}
+    .fields div{min-width:0;line-height:1.45}.fields .wide{grid-column:1/-1}
+    .fields span{font-size:9px;font-weight:700}.fields b{font-size:11px;font-weight:900;word-break:break-word}
+    .summary{margin-top:10px}.grand{font-size:15px;font-weight:900;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:900;text-align:center;letter-spacing:2px}
+    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:900;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:700;line-height:1.45;margin-bottom:3px}
+    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:700}
+    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:34mm;height:34mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:900}
+    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:700}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:700;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:700}
     @media print{body{padding:0}.no-print{display:none!important}}
   `;
 }
@@ -94,9 +98,9 @@ function brandBlock(settings, title) {
   const slip = settings?.slip || {};
   const logo = slip.showLogo && business.logoUrl
     ? `<img class="slip-logo" src="${escapeHtml(business.logoUrl)}" alt="Logo"/>`
-    : slip.showLogo ? '<div class="logo-fallback">MS</div>' : '';
+    : '';
   const contacts = [business.phone, business.secondaryPhone, business.address].filter(Boolean).map(escapeHtml).join(' · ');
-  return `${logo}<h1>${escapeHtml(business.name || 'Mahar Shwe Mobile')}</h1><p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
+  return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
 }
 
 export async function printSaleReceipt(sale, targetWindow = null) {
@@ -129,7 +133,7 @@ export async function printSaleReceipt(sale, targetWindow = null) {
     ${isVoided ? '<div class="void">VOIDED</div>' : ''}
     <table><thead><tr><th>Item</th><th class="center">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${items}</tbody></table>
     <div class="summary"><div><span>Subtotal</span><b>${Number(sale.subtotal || sale.amount || 0).toLocaleString()}</b></div><div><span>Discount</span><b>${Number(sale.discount || 0).toLocaleString()}</b></div><div class="grand"><span>Total</span><b>${Number(sale.amount || sale.total || 0).toLocaleString()} MMK</b></div>${slip.showPaymentType ? `<div><span>Payment</span><b>${escapeHtml(payment)}</b></div>` : ''}<div><span>Customer</span><b>${escapeHtml(customerLine)}</b></div></div>
-    <div class="footer">${slip.saleFooter ? nl2br(slip.saleFooter) : 'Thank you.'}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
+    <div class="footer">${slip.saleFooter ? nl2br(slip.saleFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
     <script>window.onload=()=>window.print();</script></body></html>`;
   return printWindow(targetWindow, html);
 }
@@ -146,31 +150,34 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     : '';
   // Same order as the shop's pre-printed pad, so staff read the two the same way.
   // A field nobody filled in is left off the paper rather than printed as a dash.
+  // Two to a line: a voucher that ran one field per row wasted most of the
+  // roll's width and half its length. Free text keeps the full width, since
+  // a problem description wraps to nothing useful in half a column.
   const fieldRows = [
     ['နာမည်', repair.customerName],
     ['ဖုန်းနံပါတ်', repair.customerPhone],
     ['ဖုန်းအမျိုးအစား', repair.deviceBrand],
     ['မော်ဒယ်', repair.deviceModel],
-    ['IMEI / Serial', repair.imeiSerial || repair.identityValue || repair.identityMasked],
-    ['ပြင်ရန်', repair.problem],
-    ['ဖုန်းအခြေအနေ', repair.intakeCondition],
-    ['ပါလာသောပစ္စည်း', Array.isArray(repair.accessories) ? repair.accessories.join(', ') : repair.accessories],
+    ['IMEI', repair.imeiSerial || repair.identityValue || repair.identityMasked, 'wide'],
+    ['ပြင်ရန်', repair.problem, 'wide'],
+    ['ဖုန်းအခြေအနေ', repair.intakeCondition, 'wide'],
+    ['ပါလာသောပစ္စည်း', Array.isArray(repair.accessories) ? repair.accessories.join(', ') : repair.accessories, 'wide'],
     ['အခြေအနေ', repairStatusMyanmar(repair.status)],
   ]
     .filter(([, value]) => String(value ?? '').trim())
-    .map(([label, value]) => `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(String(value).trim())}</td></tr>`)
+    .map(([label, value, span]) => `<div${span ? ` class="${span}"` : ''}><span>${escapeHtml(label)}:</span> <b>${escapeHtml(String(value).trim())}</b></div>`)
     .join('');
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(repairNumber)}</title><style>${baseStyles(slip.repairPaperSize)}</style></head><body>
     ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
     ${slip.repairVoucherHeader ? `<p>${nl2br(slip.repairVoucherHeader)}</p>` : ''}
     <div class="meta"><div><span>ပြင်ဆင်မှု ID</span><b>${escapeHtml(repairNumber)}</b></div><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
-    <table><tbody>${fieldRows}</tbody></table>
+    <div class="fields">${fieldRows}</div>
     <div class="summary"><div><span>ခန့်မှန်းကျသင့်ငွေ</span><b>${Number(repair.estimatedCost || 0).toLocaleString()} ကျပ်</b></div><div><span>စရံ</span><b>${Number(repair.deposit || 0).toLocaleString()} ကျပ်</b></div><div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${Number(repair.balanceDue || Math.max(0, Number(repair.finalCost || 0) - Number(repair.deposit || 0))).toLocaleString()} ကျပ်</b></div></div>
     ${notice}
     ${qrBlock}
     <div class="sign-row"><div><span>လက်ခံသူလက်မှတ်</span></div><div><span>ရွေးယူသူလက်မှတ်</span></div></div>
     ${business.website ? `<p class="qr-link">${escapeHtml(business.website)}</p>` : ''}
-    <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : 'ဤဘောင်ချာကို သိမ်းဆည်းထားပါ။'}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
+    <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
     <script>window.onload=()=>window.print();</script></body></html>`;
   return printWindow(targetWindow, html);
 }
