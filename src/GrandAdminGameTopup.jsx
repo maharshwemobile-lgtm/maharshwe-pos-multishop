@@ -294,6 +294,7 @@ function WalletsPanel({ notify }) {
   const [query, setQuery] = useState('');
   const [adjusting, setAdjusting] = useState('');
   const [moogoldBalance, setMoogoldBalance] = useState(null);
+  const [togglingAccess, setTogglingAccess] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -312,6 +313,20 @@ function WalletsPanel({ notify }) {
   };
 
   useEffect(() => { load(); }, []);
+
+  const toggleAccess = async (wallet) => {
+    setTogglingAccess(wallet.shopId);
+    try {
+      const enabled = !wallet.gameTopupEnabled;
+      await apiFetch(`/api/grand-admin/game-topup/wallets/${wallet.shopId}/access`, { method: 'POST', body: { enabled } });
+      setWallets((current) => current.map((item) => item.shopId === wallet.shopId ? { ...item, gameTopupEnabled: enabled } : item));
+      notify(`${wallet.shopName} — Game Top-up ${enabled ? 'ဖွင့်' : 'ပိတ်'}ပြီးပါပြီ`, 'success');
+    } catch (error) {
+      notify(error.message || 'Access update failed', 'error');
+    } finally {
+      setTogglingAccess('');
+    }
+  };
 
   return (
     <div className="grand-card">
@@ -336,7 +351,7 @@ function WalletsPanel({ notify }) {
 
       <div className="grand-table-wrap">
         <table className="grand-table">
-          <thead><tr><th>Shop</th><th>Wallet Balance</th><th>နောက်ဆုံးပြောင်း</th><th /></tr></thead>
+          <thead><tr><th>Shop</th><th>Wallet Balance</th><th>နောက်ဆုံးပြောင်း</th><th>Game Top-up</th><th /></tr></thead>
           <tbody>
             {wallets.map((wallet) => (
               <React.Fragment key={wallet.shopId}>
@@ -344,16 +359,26 @@ function WalletsPanel({ notify }) {
                   <td><b>{wallet.shopName}</b><span>{wallet.slug}</span></td>
                   <td className={wallet.balance <= 0 ? 'gt-admin-zero' : ''}><b>{money(wallet.balance)}</b></td>
                   <td>{wallet.updatedAt ? new Date(wallet.updatedAt).toLocaleString() : '-'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className={`gt-admin-access-toggle ${wallet.gameTopupEnabled ? 'on' : 'off'}`}
+                      onClick={() => toggleAccess(wallet)}
+                      disabled={togglingAccess === wallet.shopId}
+                    >
+                      {togglingAccess === wallet.shopId ? <Loader2 className="grand-spin" size={14} /> : (wallet.gameTopupEnabled ? '✅ ဖွင့်ထား' : '⛔ ပိတ်ထား')}
+                    </button>
+                  </td>
                   <td><button type="button" onClick={() => setAdjusting(adjusting === wallet.shopId ? '' : wallet.shopId)}>{adjusting === wallet.shopId ? 'Close' : 'ငွေဖြည့်/နှုတ်'}</button></td>
                 </tr>
                 {adjusting === wallet.shopId ? (
-                  <tr><td colSpan={4}>
+                  <tr><td colSpan={5}>
                     <WalletAdjustForm shopId={wallet.shopId} onCancel={() => setAdjusting('')} onDone={() => { setAdjusting(''); load(); notify(`${wallet.shopName} wallet ပြင်ပြီးပါပြီ`, 'success'); }} />
                   </td></tr>
                 ) : null}
               </React.Fragment>
             ))}
-            {!wallets.length && !loading ? <tr><td colSpan={4} className="grand-empty">Shop မတွေ့ပါ</td></tr> : null}
+            {!wallets.length && !loading ? <tr><td colSpan={5} className="grand-empty">Shop မတွေ့ပါ</td></tr> : null}
           </tbody>
         </table>
       </div>

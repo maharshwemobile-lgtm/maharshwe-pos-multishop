@@ -152,6 +152,7 @@ const walletAdjustSchema = z.object({
 const settingsPatchSchema = z.object({
   usdToMmkRate: z.coerce.number().min(1).max(100000),
 });
+const shopAccessSchema = z.object({ enabled: z.boolean() });
 
 function attachGameTopupAdminApi(app) {
   // The USD/MMK rate used to price a newly-synced package. Changing it only
@@ -356,7 +357,10 @@ function attachGameTopupAdminApi(app) {
       await ensureGameTopupSchema();
       const search = clean(req.query.q, 120);
       const rows = await prisma.$queryRawUnsafe(
-        `SELECT s.id AS "shopId", s.name AS "shopName", s.slug, COALESCE(w.balance, 0) AS balance, w.updated_at AS "updatedAt"
+        `SELECT s.id AS "shopId", s.name AS "shopName", s.slug, COALESCE(w.balance, 0) AS balance, w.updated_at AS "updatedAt",
+                EXISTS (
+                  SELECT 1 FROM users u WHERE u.shop_id = s.id AND u.role <> 'CASHIER' AND u.permissions->>'tab.Game Top-up' = 'true'
+                ) AS "gameTopupEnabled"
            FROM shops s LEFT JOIN game_topup_wallets w ON w.shop_id = s.id
           WHERE s.active = TRUE ${search ? 'AND (s.name ILIKE $1 OR s.slug ILIKE $1)' : ''}
           ORDER BY s.name ASC
@@ -366,6 +370,30 @@ function attachGameTopupAdminApi(app) {
       res.json({ ok: true, wallets: rows.map((row) => ({ ...row, balance: round(row.balance) })) });
     } catch (error) {
       res.status(error.status || 500).json({ ok: false, message: error.message || 'Wallet list failed' });
+    }
+  });
+
+  // Game Top-up is closed for every shop by default while the MooGold supply
+  // side is set up; this is the same "tab.Game Top-up" permission key the
+  // sidebar (AppFull.jsx) and requireGameTopup (game-topup-api.js) both read,
+  // granted/revoked on every non-cashier user of the shop at once so a shop's
+  // access does not depend on which staff account happens to log in.
+  app.post('/api/grand-admin/game-topup/wallets/:shopId/access', async (req, res) => {
+    try {
+      const input = parse(shopAccessSchema, req.body || {});
+      const shop = await prisma.shop.findUnique({ where: { id: req.params.shopId }, select: { id: true, name: true } });
+      if (!shop) throw new ApiError(404, 'Shop not found');
+      await prisma.$executeRawUnsafe(
+        `UPDATE users SET permissions = COALESCE(permissions, '{}'::jsonb) || jsonb_build_object('tab.Game Top-up', $2::boolean)
+          WHERE shop_id = $1::uuid AND role <> 'CASHIER'`,
+        shop.id, input.enabled,
+      );
+      await prisma.auditLog.create({
+        data: { shopId: null, userId: req.auth.userId, action: 'GAME_TOPUP_SHOP_ACCESS_CHANGED', entityType: 'shop', entityId: shop.id, details: { shopName: shop.name, enabled: input.enabled }, ipAddress: req.ip || null, userAgent: req.headers['user-agent'] || null },
+      }).catch(() => {});
+      res.json({ ok: true, message: `${shop.name} — Game Top-up ${input.enabled ? 'ဖွင့်' : 'ပိတ်'}ပြီးပါပြီ` });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Access update failed' });
     }
   });
 
