@@ -56,6 +56,15 @@ function nl2br(value) {
   return escapeHtml(value).replaceAll('\n', '<br/>');
 }
 
+// Products with no real variant are stored under a placeholder name, which has
+// no business being on a customer's receipt.
+const PLACEHOLDER_VARIANTS = new Set(['default', 'standard', 'normal', 'n/a', '-']);
+
+function realVariantName(value) {
+  const name = String(value || '').trim();
+  return PLACEHOLDER_VARIANTS.has(name.toLowerCase()) ? '' : name;
+}
+
 function printWindow(targetWindow, html) {
   const popup = targetWindow || window.open('', '_blank', 'width=430,height=760');
   if (!popup) return false;
@@ -73,23 +82,23 @@ function baseStyles(paperSize) {
   // readable, and bumping the type only spends more paper per slip.
   const twoUp = width === '58mm' ? '1fr' : '1fr 1fr';
   return `
-    @page{size:${width} auto;margin:3mm}
+    @page{size:${width} auto;margin:0 2mm 3mm}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    body{width:${width};max-width:100%;margin:0 auto;padding:3mm;font-family:Arial,sans-serif;color:#000;font-size:11px;font-weight:700;background:#fff;-webkit-font-smoothing:none}
-    .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 8px auto;text-align:center}
+    body{width:${width};max-width:100%;margin:0 auto;padding:0 2mm;font-family:Arial,sans-serif;color:#000;font-size:11px;font-weight:900;background:#fff;-webkit-font-smoothing:none;-webkit-text-stroke:.2px #000}
+    .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 6px auto;text-align:center}
     .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#000;color:#fff;font-weight:900;font-size:18px}
-    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:900}h2{font-size:14px;font-weight:900}.muted{color:#000;font-weight:700}.left{text-align:left}.right{text-align:right}.center{text-align:center}
-    .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:700}.meta b,.summary b{font-weight:900}
-    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:700}th{text-align:left;font-size:10px;font-weight:900}td small{display:block;color:#000;font-weight:700;margin-top:2px}
+    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:900}h2{font-size:14px;font-weight:900}.muted{color:#000;font-weight:900}.left{text-align:left}.right{text-align:right}.center{text-align:center}
+    .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:900}.meta b,.summary b{font-weight:900}
+    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:900}th{text-align:left;font-size:10px;font-weight:900}td small{display:block;color:#000;font-weight:900;margin-top:2px}
     .fields{display:grid;grid-template-columns:${twoUp};gap:5px 10px;margin-top:9px;padding:7px 0;border-top:1px solid #000;border-bottom:1px solid #000}
     .fields div{min-width:0;line-height:1.45}.fields .wide{grid-column:1/-1}
-    .fields span{font-size:9px;font-weight:700}.fields b{font-size:11px;font-weight:900;word-break:break-word}
+    .fields span{font-size:9px;font-weight:900}.fields b{font-size:11px;font-weight:900;word-break:break-word}
     .summary{margin-top:10px}.grand{font-size:15px;font-weight:900;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:900;text-align:center;letter-spacing:2px}
-    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:900;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:700;line-height:1.45;margin-bottom:3px}
-    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:700}
+    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:900;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:900;line-height:1.45;margin-bottom:3px}
+    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:900}.sign-name{display:block;font-size:11px;font-weight:900;padding-bottom:3px}
     .qr-block{margin-top:11px;text-align:center}.qr-block img{width:34mm;height:34mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:900}
-    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:700}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:700;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:700}
-    @media print{body{padding:0}.no-print{display:none!important}}
+    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:900}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:900;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:900}
+    @media print{body{padding:0 2mm}.no-print{display:none!important}}
   `;
 }
 
@@ -114,7 +123,7 @@ export async function printSaleReceipt(sale, targetWindow = null) {
     ].filter(Boolean).join(' · ');
     return `
     <tr>
-      <td>${escapeHtml([item.productName, item.variantName].filter(Boolean).join(' · '))}${meta ? `<small>${escapeHtml(meta)}</small>` : ''}</td>
+      <td>${escapeHtml([item.productName, realVariantName(item.variantName)].filter(Boolean).join(' · '))}${meta ? `<small>${escapeHtml(meta)}</small>` : ''}</td>
       <td class="center">${Number(item.quantity || 0)}${item.unit ? ` ${escapeHtml(item.unit)}` : ''}</td>
       <td class="right">${Number(item.unitPrice || 0).toLocaleString()}</td>
       <td class="right">${(Number(item.unitPrice || 0) * Number(item.quantity || 0)).toLocaleString()}</td>
@@ -148,6 +157,7 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
   const qrBlock = qr
     ? `<div class="qr-block"><img src="${qr}" alt="Repair status QR"/><b>QR ဖတ်ပြီး ပြင်ဆင်မှု အခြေအနေ ကြည့်နိုင်ပါသည်</b></div>`
     : '';
+  const receivedBy = String(repair.technicianName || repair.technicianUsername || '').trim();
   // Same order as the shop's pre-printed pad, so staff read the two the same way.
   // A field nobody filled in is left off the paper rather than printed as a dash.
   // Two to a line: a voucher that ran one field per row wasted most of the
@@ -175,7 +185,7 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     <div class="summary"><div><span>ခန့်မှန်းကျသင့်ငွေ</span><b>${Number(repair.estimatedCost || 0).toLocaleString()} ကျပ်</b></div><div><span>စရံ</span><b>${Number(repair.deposit || 0).toLocaleString()} ကျပ်</b></div><div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${Number(repair.balanceDue || Math.max(0, Number(repair.finalCost || 0) - Number(repair.deposit || 0))).toLocaleString()} ကျပ်</b></div></div>
     ${notice}
     ${qrBlock}
-    <div class="sign-row"><div><span>လက်ခံသူလက်မှတ်</span></div><div><span>ရွေးယူသူလက်မှတ်</span></div></div>
+    <div class="sign-row"><div>${receivedBy ? `<b class="sign-name">${escapeHtml(receivedBy)}</b>` : ''}<span>လက်ခံသူ</span></div><div><span>ရွေးယူသူလက်မှတ်</span></div></div>
     ${business.website ? `<p class="qr-link">${escapeHtml(business.website)}</p>` : ''}
     <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
     <script>window.onload=()=>window.print();</script></body></html>`;
