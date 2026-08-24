@@ -109,7 +109,10 @@ function brandBlock(settings, title) {
     ? `<img class="slip-logo" src="${escapeHtml(business.logoUrl)}" alt="Logo"/>`
     : '';
   const contacts = [business.phone, business.secondaryPhone, business.address].filter(Boolean).map(escapeHtml).join(' · ');
-  return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
+  // A shop logo is nearly always a wordmark — it already carries the name. With
+  // the heading printed under it too, the slip opened with the shop named twice.
+  const heading = !logo && business.name ? `<h1>${escapeHtml(business.name)}</h1>` : '';
+  return `${logo}${heading}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
 }
 
 // Slips print as ordinary markup and let the driver rasterise them.
