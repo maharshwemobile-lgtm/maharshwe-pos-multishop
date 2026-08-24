@@ -59,7 +59,9 @@ async function loadVariationForPublicOrder(variationId) {
   const rows = await prisma.$queryRawUnsafe(
     `SELECT v.id, v.name AS "variationName", v.suggested_retail AS "suggestedRetail", v.active AS "variationActive",
             p.id AS "productId", p.name AS "productName", p.requires_player_id AS "requiresPlayerId",
-            p.requires_server AS "requiresServer", p.active AS "productActive"
+            p.requires_server AS "requiresServer", p.active AS "productActive",
+            p.moogold_product_id AS "moogoldProductId",
+            p.player_field AS "playerField", p.server_field AS "serverField"
        FROM game_topup_variations v JOIN game_topup_products p ON p.id = v.product_id
       WHERE v.id = $1::uuid`,
     variationId,
@@ -105,6 +107,58 @@ function orderRow(row) {
 }
 
 function attachGameTopupPublicApi(app) {
+  const validateHits = new Map();
+  function validateAllowed(ip) {
+    const now = Date.now();
+    const window = 60 * 1000;
+    const hits = (validateHits.get(ip) || []).filter((at) => now - at < window);
+    if (hits.length >= 10) return false;
+    hits.push(now);
+    validateHits.set(ip, hits);
+    if (validateHits.size > 5000) validateHits.clear();
+    return true;
+  }
+
+  const validateSchema = z.object({
+    variationId: z.string().uuid(),
+    playerId: z.string().trim().min(1).max(80),
+    server: z.string().trim().max(80).optional().nullable(),
+  });
+
+  // Confirms the account before the customer pays, so they can see whose account
+  // the top-up is going to. A mistyped id is otherwise unrecoverable.
+  app.post('/api/public/game-topup/validate', async (req, res) => {
+    try {
+      await ensureGameTopupSchema();
+      const ip = String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+      if (!validateAllowed(ip)) throw new ApiError(429, 'ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
+
+      const input = parse(validateSchema, req.body || {});
+      const variation = await loadVariationForPublicOrder(input.variationId);
+      if (!variation || !variation.variationActive || !variation.productActive) throw new ApiError(404, 'Product not found');
+      if (variation.requiresServer && !input.server) throw new ApiError(400, 'Server ထည့်ပါ');
+      if (!moogold.isConfigured()) throw new ApiError(503, 'Validation is unavailable right now');
+
+      const result = await moogold.validateAccount({
+        productId: variation.moogoldProductId,
+        playerId: input.playerId,
+        server: input.server,
+        playerField: variation.playerField,
+        serverField: variation.serverField,
+      });
+
+      res.json({
+        ok: true,
+        valid: result.valid,
+        username: result.username,
+        country: result.country,
+        message: result.valid ? null : (result.message || 'Account not found'),
+      });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Validation failed' });
+    }
+  });
+
   app.get('/api/public/game-topup/catalog', async (_req, res) => {
     try {
       await ensureGameTopupSchema();

@@ -157,6 +157,31 @@ function partnerOrderDetail(partnerOrderId) {
   return call('order/order_detail_partner_id', { partner_order_id: partnerOrderId });
 }
 
+// Checks a player id before anyone is charged and returns the account's in-game
+// name, so a customer can confirm the top-up is going to the right account —
+// a mistyped id otherwise sends the diamonds to a stranger, unrecoverably.
+//
+// Three things this needs that nothing else does: the arguments nest under
+// "data", the product-id is the parent product rather than the package being
+// bought, and the field labels are the game's own. Get any of them wrong and
+// MooGold answers "Validation is not available for this product", which reads
+// like the feature is off rather than like a malformed request.
+async function validateAccount({ productId, playerId, server, playerField, serverField }) {
+  const data = { 'product-id': String(productId) };
+  data[playerField || 'User ID'] = String(playerId);
+  if (server) data[serverField || 'Server ID'] = String(server);
+
+  const result = await call('product/validate', { data });
+  const valid = String(result?.status ?? '').toLowerCase() === 'true';
+  return {
+    valid,
+    // MooGold form-encodes the name, so spaces arrive as "+".
+    username: valid ? decodeURIComponent(String(result?.username || '').split('+').join(' ')).trim() || null : null,
+    country: valid ? result?.country || null : null,
+    message: result?.message || null,
+  };
+}
+
 // { currency, balance } — the platform's own prepaid balance held at MooGold,
 // i.e. how much wholesale credit is left before orders start failing.
 function balance() {
@@ -164,6 +189,7 @@ function balance() {
 }
 
 module.exports = {
+  validateAccount,
   orderIdOf,
   isTerminalStatus,
   MoogoldApiError,
