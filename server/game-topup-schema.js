@@ -116,6 +116,18 @@ const statements = [
 
   `ALTER TABLE game_topup_products ADD COLUMN IF NOT EXISTS player_field TEXT NOT NULL DEFAULT 'User ID'`,
   `ALTER TABLE game_topup_products ADD COLUMN IF NOT EXISTS server_field TEXT NOT NULL DEFAULT 'Server ID'`,
+
+  // Single-row settings a Grand Admin can change without a deploy. MooGold
+  // prices everything in USD; this is what a sync converts to MMK for a
+  // package's shop_cost/suggested_retail default, and what the platform's
+  // own wallet top-ups are priced against.
+  `CREATE TABLE IF NOT EXISTS game_topup_settings (
+    id BOOLEAN PRIMARY KEY DEFAULT TRUE,
+    usd_to_mmk_rate NUMERIC(14,2) NOT NULL DEFAULT 4500,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT game_topup_settings_singleton CHECK (id)
+  )`,
+  `INSERT INTO game_topup_settings (id) VALUES (TRUE) ON CONFLICT (id) DO NOTHING`,
 ];
 
 async function ensureGameTopupSchema() {

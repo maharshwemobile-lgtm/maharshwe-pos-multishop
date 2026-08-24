@@ -42,6 +42,12 @@ function CatalogPanel({ notify }) {
   const [productId, setProductId] = useState('');
   const [productCategoryId, setProductCategoryId] = useState('');
   const [syncingProduct, setSyncingProduct] = useState(false);
+  // The USD/MMK rate a sync converts a brand-new package's price with. Only
+  // future syncs use it — an existing package's price is the admin's own
+  // decision and a rate change never rewrites it.
+  const [rate, setRate] = useState('');
+  const [savedRate, setSavedRate] = useState(null);
+  const [savingRate, setSavingRate] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -54,7 +60,33 @@ function CatalogPanel({ notify }) {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadRate = async () => {
+    try {
+      const result = await apiFetch('/api/grand-admin/game-topup/settings');
+      setRate(String(result.usdToMmkRate));
+      setSavedRate(result.usdToMmkRate);
+    } catch (error) {
+      notify(error.message || 'Rate load failed', 'error');
+    }
+  };
+
+  useEffect(() => { load(); loadRate(); }, []);
+
+  const saveRate = async (event) => {
+    event.preventDefault();
+    const value = Number(rate);
+    if (!(value > 0)) return notify('နှုန်း မှန်ကန်စွာ ထည့်ပါ', 'error');
+    setSavingRate(true);
+    try {
+      const result = await apiFetch('/api/grand-admin/game-topup/settings', { method: 'PATCH', body: { usdToMmkRate: value } });
+      setSavedRate(result.usdToMmkRate);
+      notify(`နှုန်း ${result.usdToMmkRate.toLocaleString('en-US')} Ks/$ အဖြစ် သိမ်းပြီးပါပြီ — Sync အသစ်တွေမှာသာ သက်ရောက်ပါမယ်`, 'success');
+    } catch (error) {
+      notify(error.message || 'Rate update failed', 'error');
+    } finally {
+      setSavingRate(false);
+    }
+  };
 
   const syncCategory = async (event) => {
     event.preventDefault();
@@ -116,6 +148,16 @@ function CatalogPanel({ notify }) {
       {!catalog.configured ? (
         <div className="gt-admin-notice">MOOGOLD_PARTNER_ID / MOOGOLD_SECRET ကို server .env မှာ ထည့်ပါ — Sync မလုပ်ခင် လိုအပ်ပါတယ်။</div>
       ) : null}
+
+      <form className="gt-admin-rate-row" onSubmit={saveRate}>
+        <label><span>USD → MMK နှုန်း (Sync အသစ်များအတွက်)</span>
+          <input type="number" min="1" step="1" value={rate} onChange={(event) => setRate(event.target.value)} placeholder="ဥပမာ - 4500" />
+        </label>
+        <button type="submit" disabled={savingRate || !rate || Number(rate) === savedRate}>
+          {savingRate ? <Loader2 className="grand-spin" size={15} /> : null} နှုန်း သိမ်းမည်
+        </button>
+        {savedRate ? <span className="gt-admin-rate-current">လက်ရှိ — $1 = {savedRate.toLocaleString('en-US')} Ks</span> : null}
+      </form>
 
       <div className="gt-admin-sync-row">
         <form onSubmit={syncCategory}>

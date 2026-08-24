@@ -29,6 +29,15 @@ const number = (value) => Number(value || 0);
 const round = (value) => Math.round((number(value) + Number.EPSILON) * 100) / 100;
 const clean = (value, max = 300) => String(value ?? '').trim().slice(0, max) || null;
 
+// MooGold prices every package in USD; the platform sells in MMK. This rate
+// converts one to the other and lives in the database (game_topup_settings)
+// rather than an env var, so a Grand Admin can change it without a deploy —
+// exactly the knob the exchange rate needs, since USD/MMK does not sit still.
+async function getUsdToMmkRate() {
+  const rows = await prisma.$queryRawUnsafe(`SELECT usd_to_mmk_rate AS rate FROM game_topup_settings WHERE id = TRUE`);
+  return number(rows[0]?.rate) || 4500;
+}
+
 // MooGold's product_detail lists the extra fields a purchase needs as free
 // text (e.g. "Server", "Zone ID") rather than a fixed enum, so this is a
 // best-effort read — admins can still flip requiresServer by hand afterward.
@@ -81,6 +90,11 @@ async function upsertProductFromMoogold(categoryId, productId, fallbackName) {
     productDbId, productId, categoryId, name, imageUrl, requiresServer, playerField, serverField || 'Server ID',
   );
 
+  // MooGold prices in USD; a brand-new package's cost/retail default to the
+  // converted MMK amount rather than the raw USD number, or a $0.24 package
+  // would default to a 0.24 Ks price.
+  const rate = await getUsdToMmkRate();
+
   let variationsAdded = 0;
   let variationsUpdated = 0;
   for (const variation of detail?.Variation || []) {
@@ -100,13 +114,15 @@ async function upsertProductFromMoogold(categoryId, productId, fallbackName) {
       );
       variationsUpdated += 1;
     } else {
-      // No margin guess beyond "same as MooGold's price" — a 0% margin is a
-      // visible, obviously-wrong default that forces the admin to set a real
-      // one, instead of a made-up percentage quietly under-pricing sales.
+      // No margin guess beyond "same as MooGold's converted price" — a 0%
+      // margin is a visible, obviously-wrong default that forces the admin to
+      // set a real one, instead of a made-up percentage quietly under-pricing
+      // sales.
+      const mmk = round(price * rate);
       await prisma.$executeRawUnsafe(
         `INSERT INTO game_topup_variations(id, product_id, moogold_variation_id, name, moogold_price, shop_cost, suggested_retail, created_at, updated_at)
-         VALUES($1::uuid, $2::uuid, $3, $4, $5, $5, $5, NOW(), NOW())`,
-        crypto.randomUUID(), productDbId, variationId, packageName(variation.variation_name, variationId), price,
+         VALUES($1::uuid, $2::uuid, $3, $4, $5, $6, $6, NOW(), NOW())`,
+        crypto.randomUUID(), productDbId, variationId, packageName(variation.variation_name, variationId), price, mmk,
       );
       variationsAdded += 1;
     }
@@ -133,8 +149,37 @@ const walletAdjustSchema = z.object({
   amount: z.coerce.number().refine((value) => Math.abs(value) > 0.005, 'Amount must not be zero'),
   note: z.string().trim().min(3).max(300),
 });
+const settingsPatchSchema = z.object({
+  usdToMmkRate: z.coerce.number().min(1).max(100000),
+});
 
 function attachGameTopupAdminApi(app) {
+  // The USD/MMK rate used to price a newly-synced package. Changing it only
+  // affects packages synced after the change — same rule as shop_cost and
+  // suggested_retail generally: once a price exists, only the admin edits it.
+  app.get('/api/grand-admin/game-topup/settings', async (_req, res) => {
+    try {
+      await ensureGameTopupSchema();
+      res.json({ ok: true, usdToMmkRate: await getUsdToMmkRate() });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Settings load failed' });
+    }
+  });
+
+  app.patch('/api/grand-admin/game-topup/settings', async (req, res) => {
+    try {
+      await ensureGameTopupSchema();
+      const input = parse(settingsPatchSchema, req.body || {});
+      await prisma.$executeRawUnsafe(
+        `UPDATE game_topup_settings SET usd_to_mmk_rate = $1, updated_at = NOW() WHERE id = TRUE`,
+        input.usdToMmkRate,
+      );
+      res.json({ ok: true, usdToMmkRate: input.usdToMmkRate });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Settings update failed' });
+    }
+  });
+
   app.get('/api/grand-admin/game-topup/moogold-balance', async (_req, res) => {
     try {
       await ensureGameTopupSchema();
