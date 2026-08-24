@@ -161,9 +161,16 @@ const legacyVisibility = {
   'About Us': () => true,
 };
 
+// A platform super admin (SUPER_ADMIN with no shopId) manages shops from the
+// outside and never rings up a sale, so the ordinary shop-operations pages
+// (Sale POS, Inventory, Accounting...) don't apply to that account and would
+// only bury Grand Admin / Game Top-up Admin among menu items it can't use.
+const PLATFORM_ADMIN_PAGES = new Set(['Grand Admin', 'Game Top-up Admin', 'Audit Trail', 'Settings', 'About Us']);
+
 function pageVisible(page, user) {
   const safePage = validPageName(page);
   if (!user) return true;
+  if (user.role === 'SUPER_ADMIN' && !user?.shopId) return PLATFORM_ADMIN_PAGES.has(safePage);
   if (user.role === 'SUPER_ADMIN') return true;
   if (safePage === 'Audit Trail') return false;
   if (isSaleHistoryOnly(user) && !LIMITED_SUBSCRIPTION_PAGES.has(safePage)) return false;
