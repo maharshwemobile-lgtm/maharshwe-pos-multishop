@@ -16,9 +16,15 @@
 // 203dpi is the standard thermal head. 80mm of paper is 640 dots across.
 const DOTS_PER_MM = 203 / 25.4;
 
-// Any pixel darker than this becomes black. It sits high on purpose: the grey
-// halo around a glyph is what we want to claim, not discard.
-const INK_THRESHOLD = 205;
+// Any pixel darker than this becomes black.
+//
+// It was set high at first, to claim the antialiased halo around each glyph as
+// extra ink. That worked, and then worked too well: taking the whole halo adds
+// about a dot on every edge, so a 700-weight face printed like a 900 and the
+// strokes started closing up. Nearer the middle of the range takes the half of
+// the halo that is really part of the stroke and leaves the rest as paper, so
+// text prints at the weight it was set in.
+const INK_THRESHOLD = 140;
 
 function mmToDots(mm) {
   return Math.round(mm * DOTS_PER_MM);
