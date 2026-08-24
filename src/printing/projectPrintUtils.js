@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import { loadProjectSettings } from '../settings/projectSettingsClient';
+import { bitmapPage, slipToBitmap } from './rasterPrint';
 
 // Printed on every repair voucher. The shop asked for this wording verbatim,
 // so it is not built from settings — changing it is a code change on purpose.
@@ -112,6 +113,17 @@ function brandBlock(settings, title) {
   return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
 }
 
+// Slips go to the printer as a 1-bit image so the driver's dithering pass has
+// nothing to thin out. If the render fails for any reason the original markup
+// is printed instead — a faint slip beats no slip.
+async function emitSlip(targetWindow, { title, body, styles, paperSize }) {
+  const bitmap = await slipToBitmap(body, styles, paperSize);
+  if (bitmap) return printWindow(targetWindow, bitmapPage(title, bitmap));
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${styles}</style></head><body>${body}
+    <script>window.onload=()=>window.print();<\/script></body></html>`;
+  return printWindow(targetWindow, html);
+}
+
 export async function printSaleReceipt(sale, targetWindow = null) {
   const settings = await loadProjectSettings(true);
   const slip = settings?.slip || {};
@@ -135,16 +147,20 @@ export async function printSaleReceipt(sale, targetWindow = null) {
   const customerPhone = sale.customerPhone || '';
   const payment = sale.payment || sale.paymentMethod || '-';
   const cashier = sale.cashier || sale.cashierName || '-';
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(invoice)}</title><style>${baseStyles(slip.salePaperSize)}</style></head><body>
+  const body = `
     ${brandBlock(settings, 'Sale Receipt')}
     ${slip.saleHeader ? `<p>${nl2br(slip.saleHeader)}</p>` : ''}
     <div class="meta"><div><span>Invoice</span><b>${escapeHtml(invoice)}</b></div><div><span>Date</span><b>${escapeHtml(new Date(sale.dateTime || sale.date || Date.now()).toLocaleString())}</b></div>${slip.showCustomerPhone && customerPhone ? `<div><span>Phone</span><b>${escapeHtml(customerPhone)}</b></div>` : ''}${slip.showCashierName ? `<div><span>Cashier</span><b>${escapeHtml(cashier)}</b></div>` : ''}</div>
     ${isVoided ? '<div class="void">VOIDED</div>' : ''}
     <table><thead><tr><th>Item</th><th class="center">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${items}</tbody></table>
     <div class="summary"><div><span>Subtotal</span><b>${Number(sale.subtotal || sale.amount || 0).toLocaleString()}</b></div><div><span>Discount</span><b>${Number(sale.discount || 0).toLocaleString()}</b></div><div class="grand"><span>Total</span><b>${Number(sale.amount || sale.total || 0).toLocaleString()} MMK</b></div>${slip.showPaymentType ? `<div><span>Payment</span><b>${escapeHtml(payment)}</b></div>` : ''}<div><span>Customer</span><b>${escapeHtml(customerLine)}</b></div></div>
-    <div class="footer">${slip.saleFooter ? nl2br(slip.saleFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
-    <script>window.onload=()=>window.print();</script></body></html>`;
-  return printWindow(targetWindow, html);
+    <div class="footer">${slip.saleFooter ? nl2br(slip.saleFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>`;
+  return emitSlip(targetWindow, {
+    title: escapeHtml(invoice),
+    body,
+    styles: baseStyles(slip.salePaperSize),
+    paperSize: slip.salePaperSize,
+  });
 }
 
 export async function printRepairVoucher(repair, targetWindow = null, statusUrl = '') {
@@ -177,7 +193,7 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     .filter(([, value]) => String(value ?? '').trim())
     .map(([label, value, span]) => `<div${span ? ` class="${span}"` : ''}><span>${escapeHtml(label)}:</span> <b>${escapeHtml(String(value).trim())}</b></div>`)
     .join('');
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(repairNumber)}</title><style>${baseStyles(slip.repairPaperSize)}</style></head><body>
+  const body = `
     ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
     ${slip.repairVoucherHeader ? `<p>${nl2br(slip.repairVoucherHeader)}</p>` : ''}
     <div class="meta"><div><span>ပြင်ဆင်မှု ID</span><b>${escapeHtml(repairNumber)}</b></div><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
@@ -187,7 +203,11 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     ${qrBlock}
     <div class="sign-row"><div>${receivedBy ? `<b class="sign-name">${escapeHtml(receivedBy)}</b>` : ''}<span>လက်ခံသူ</span></div><div><span>ရွေးယူသူလက်မှတ်</span></div></div>
     ${business.website ? `<p class="qr-link">${escapeHtml(business.website)}</p>` : ''}
-    <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>
-    <script>window.onload=()=>window.print();</script></body></html>`;
-  return printWindow(targetWindow, html);
+    <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>`;
+  return emitSlip(targetWindow, {
+    title: escapeHtml(repairNumber),
+    body,
+    styles: baseStyles(slip.repairPaperSize),
+    paperSize: slip.repairPaperSize,
+  });
 }
