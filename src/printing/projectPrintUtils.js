@@ -90,6 +90,7 @@ function baseStyles(paperSize) {
     h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:700}h2{font-size:14px;font-weight:700}.muted{color:#000;font-weight:400}.left{text-align:left}.right{text-align:right}.center{text-align:center}
     .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:400}.meta b,.summary b{font-weight:700}
     table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:400}th{text-align:left;font-size:10px;font-weight:700}td small{display:block;color:#000;font-weight:400;margin-top:2px}
+    .estimate-note{margin-top:6px;font-size:9.5px;text-align:center;line-height:1.45}
     .voucher-no{margin-top:9px;padding:7px 0;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center}
     .voucher-no span{display:block;font-size:9.5px;font-weight:400}
     .voucher-no b{display:block;font-size:22px;font-weight:700;letter-spacing:1.5px;line-height:1.25}
@@ -211,13 +212,34 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     .filter(([, value]) => String(value ?? '').trim())
     .map(([label, value, span]) => `<div${span ? ` class="${span}"` : ''}><span>${escapeHtml(label)}:</span> <b>${escapeHtml(String(value).trim())}</b></div>`)
     .join('');
+  const estimated = Number(repair.estimatedCost || 0);
+  const settled = Number(repair.finalCost || 0);
+  const deposit = Number(repair.deposit || 0);
+  const kyat = (value) => `${Number(value || 0).toLocaleString()} ကျပ်`;
+  const depositRow = deposit > 0 ? `<div><span>စရံ</span><b>${kyat(deposit)}</b></div>` : '';
+
+  let money;
+  if (settled > 0) {
+    // Repaired and priced: this is the real figure.
+    const due = Number(repair.balanceDue ?? Math.max(0, settled - deposit));
+    money = `<div class="summary"><div><span>ပြင်ခ</span><b>${kyat(settled)}</b></div>${depositRow}<div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${kyat(due)}</b></div></div>`;
+  } else if (estimated > 0) {
+    // Quoted but not final — say so, and do not call it a total.
+    money = `<div class="summary"><div><span>ခန့်မှန်းပြင်ခ</span><b>${kyat(estimated)}</b></div>${depositRow}<div class="grand"><span>ခန့်မှန်း ကျန်ငွေ</span><b>${kyat(Math.max(0, estimated - deposit))}</b></div></div>
+    <p class="estimate-note">* ခန့်မှန်းချက်သာ ဖြစ်ပါသည်။ အတိအကျ ကျသင့်ငွေကို ပြင်ပြီးမှ အတည်ပြုပါမည်။</p>`;
+  } else {
+    // Nothing priced yet. Show the deposit if one was taken, and nothing else.
+    money = `${depositRow ? `<div class="summary">${depositRow}</div>` : ''}
+    <p class="estimate-note">ကျသင့်ငွေ — စစ်ဆေးပြီးမှ အတည်ပြုပါမည်။</p>`;
+  }
+
   const body = `
     ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
     ${customHeader(slip.repairVoucherHeader, settings)}
     <div class="voucher-no"><span>ဘောက်ချာနံပါတ်</span><b>${escapeHtml(repairNumber)}</b></div>
     <div class="meta"><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
     <div class="fields">${fieldRows}</div>
-    <div class="summary"><div><span>ခန့်မှန်းကျသင့်ငွေ</span><b>${Number(repair.estimatedCost || 0).toLocaleString()} ကျပ်</b></div><div><span>စရံ</span><b>${Number(repair.deposit || 0).toLocaleString()} ကျပ်</b></div><div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${Number(repair.balanceDue || Math.max(0, Number(repair.finalCost || 0) - Number(repair.deposit || 0))).toLocaleString()} ကျပ်</b></div></div>
+    ${money}
     ${notice}
     ${qrBlock}
     <div class="sign-row"><div>${receivedBy ? `<b class="sign-name">${escapeHtml(receivedBy)}</b>` : ''}<span>လက်ခံသူ</span></div><div><span>ရွေးယူသူလက်မှတ်</span></div></div>
