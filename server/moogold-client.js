@@ -114,11 +114,20 @@ function serverList(productId) {
 
 // category is MooGold's own category id/slug the product belongs to, not our
 // internal id. { status, message, account_details: { player_id, server_id, order_id } }
+// create_order's "category" is not the id used to list products: the spec says it
+// is 1 for a direct top-up or 2 for an eVoucher, and warns that it differs from
+// list_product's category_id. 50 is MooGold's direct top-up listing; every other
+// listing category is a gift card.
+const DIRECT_TOPUP_LIST_CATEGORY = '50';
+function orderCategory(listCategoryId) {
+  return String(listCategoryId) === DIRECT_TOPUP_LIST_CATEGORY ? 1 : 2;
+}
+
 // playerField/serverField are the labels MooGold gave for this particular game
 // (product_detail returns them); they differ per game, so they are carried on
 // the product rather than assumed here.
 function createOrder({ category, productId, quantity, playerId, server, partnerOrderId, playerField, serverField }) {
-  const data = { category, 'product-id': productId, quantity: String(quantity) };
+  const data = { category: orderCategory(category), 'product-id': productId, quantity: String(quantity) };
   if (playerId) data[playerField || 'User ID'] = playerId;
   if (server) data[serverField || 'Server ID'] = server;
   const body = { data };
