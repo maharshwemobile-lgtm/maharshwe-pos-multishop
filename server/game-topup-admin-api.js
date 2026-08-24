@@ -32,6 +32,12 @@ const clean = (value, max = 300) => String(value ?? '').trim().slice(0, max) || 
 // MooGold's product_detail lists the extra fields a purchase needs as free
 // text (e.g. "Server", "Zone ID") rather than a fixed enum, so this is a
 // best-effort read — admins can still flip requiresServer by hand afterward.
+function packageName(raw, fallback) {
+  const name = String(raw || '').trim();
+  if (!name) return String(fallback);
+  return name.replace(/\s*\(#\d+\)\s*$/, '').trim() || String(fallback);
+}
+
 function fieldNames(fields) {
   const names = (fields || []).map((entry) => String(entry?.field || entry || '').trim()).filter(Boolean);
   // MooGold labels these per game: "User ID" + "Server ID" for Mobile Legends,
@@ -90,7 +96,7 @@ async function upsertProductFromMoogold(categoryId, productId, fallbackName) {
       // be silently overwritten by a resync.
       await prisma.$executeRawUnsafe(
         `UPDATE game_topup_variations SET name = $3, moogold_price = $4, updated_at = NOW() WHERE id = $1::uuid AND product_id = $2::uuid`,
-        already[0].id, productDbId, variation.variation_name || variationId, price,
+        already[0].id, productDbId, packageName(variation.variation_name, variationId), price,
       );
       variationsUpdated += 1;
     } else {
@@ -100,7 +106,7 @@ async function upsertProductFromMoogold(categoryId, productId, fallbackName) {
       await prisma.$executeRawUnsafe(
         `INSERT INTO game_topup_variations(id, product_id, moogold_variation_id, name, moogold_price, shop_cost, suggested_retail, created_at, updated_at)
          VALUES($1::uuid, $2::uuid, $3, $4, $5, $5, $5, NOW(), NOW())`,
-        crypto.randomUUID(), productDbId, variationId, variation.variation_name || variationId, price,
+        crypto.randomUUID(), productDbId, variationId, packageName(variation.variation_name, variationId), price,
       );
       variationsAdded += 1;
     }
