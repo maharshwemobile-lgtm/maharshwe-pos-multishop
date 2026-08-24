@@ -9,6 +9,11 @@
 <link rel="icon" type="image/png" href="/mahar-pos-logo-192.png">
 <link rel="apple-touch-icon" href="/mahar-pos-logo-192.png">
 <style>
+#fCheckWrap{margin:2px 0 4px}
+.check{width:100%;padding:12px;border:1px solid #2b6cb0;border-radius:10px;background:#fff;color:#2b6cb0;font-weight:700;cursor:pointer}
+.check:disabled{opacity:.55;cursor:not-allowed}
+.note.good{background:#e8f7ee;border-color:#57b97a;color:#1c6b3a}
+#gCheckOut b{font-size:16px}
 :root{
   --ink:#0E1B2C; --ink-soft:#475569; --muted:#64748b;
   --paper:#F4F7FB; --card:#fff; --line:#e2e8f0;
@@ -149,6 +154,10 @@ footer a{color:var(--blue);font-weight:700}
       <label><span>အရေအတွက်</span><input id="fQty" type="number" min="1" max="10" value="1" inputmode="numeric"></label>
       <label id="fPlayerWrap"><span>Player ID / User ID *</span><input id="fPlayer" placeholder="ဂိမ်းထဲက ID"></label>
       <label id="fServerWrap"><span>Server / Zone ID *</span><input id="fServer" placeholder="ဥပမာ - 2001"></label>
+      <div id="fCheckWrap">
+        <button class="check" type="button" id="gCheck">အကောင့် စစ်ဆေးမည်</button>
+        <div id="gCheckOut" class="note hid"></div>
+      </div>
       <label><span>ဆက်သွယ်ရန် ဖုန်းနံပါတ် *</span><input id="fPhone" type="tel" placeholder="09xxxxxxxxx" inputmode="tel"></label>
       <label><span>နာမည် (ဖြည့်စရာမလို)</span><input id="fName"></label>
       <div class="total"><span>စုစုပေါင်း</span><b id="gTotal">0 MMK</b></div>
@@ -318,16 +327,89 @@ footer a{color:var(--blue);font-weight:700}
     $('gFormPick').textContent = state.pack.name + ' · ' + money(state.pack.retailPrice);
     show($('fPlayerWrap'), !!state.game.requiresPlayerId);
     show($('fServerWrap'), !!state.game.requiresServer);
+    resetCheck();
     show($('gFormErr'), false);
     syncTotal();
     step('form');
   }
+
+  // Cleared whenever the id or server changes, so a confirmed name can never
+  // belong to a different account than the one now typed in.
+  function resetCheck() {
+    state.checked = null;
+    show($('gCheckOut'), false);
+    $('gCheckOut').className = 'note hid';
+    syncNext();
+  }
+
+  function needsCheck() {
+    return !!(state.game && state.game.requiresPlayerId);
+  }
+
+  function syncNext() {
+    const ok = !needsCheck() || !!state.checked;
+    $('gNext').disabled = !ok;
+    $('gNext').textContent = ok ? 'ငွေပေးချေရန် ဆက်သွားမည်' : 'အကောင့် အရင် စစ်ပါ';
+  }
+
+  ['fPlayer', 'fServer'].forEach((id) => $(id).addEventListener('input', resetCheck));
+
+  $('gCheck').addEventListener('click', async () => {
+    const out = $('gCheckOut');
+    const playerId = $('fPlayer').value.trim();
+    const server = $('fServer').value.trim();
+    if (!playerId) { out.className = 'note bad'; out.textContent = 'Player ID ထည့်ပါ'; show(out, true); return; }
+    if (state.game.requiresServer && !server) { out.className = 'note bad'; out.textContent = 'Server ထည့်ပါ'; show(out, true); return; }
+
+    $('gCheck').disabled = true;
+    out.className = 'note';
+    out.textContent = 'စစ်ဆေးနေပါသည်…';
+    show(out, true);
+    try {
+      const res = await fetch('/api/public/game-topup/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variationId: state.pack.id, playerId: playerId, server: server || undefined }),
+      });
+      const data = await res.json();
+      if (data.ok && data.valid) {
+        state.checked = { playerId: playerId, server: server, username: data.username };
+        out.className = 'note good';
+        out.textContent = '';
+        const tick = document.createElement('span');
+        tick.textContent = '✅ ';
+        const nameEl = document.createElement('b');
+        nameEl.textContent = data.username || 'Account';
+        const where = document.createElement('span');
+        where.textContent = data.country ? ' · ' + data.country : '';
+        const hint = document.createElement('small');
+        hint.textContent = 'ဒီအကောင့်သို့ ဖြည့်ပါမည် — မှန်မမှန် သေချာစစ်ပါ';
+        out.appendChild(tick);
+        out.appendChild(nameEl);
+        out.appendChild(where);
+        out.appendChild(document.createElement('br'));
+        out.appendChild(hint);
+      } else {
+        state.checked = null;
+        out.className = 'note bad';
+        out.textContent = data.message || 'အကောင့် မတွေ့ပါ — ID နှင့် Server ပြန်စစ်ပါ';
+      }
+    } catch (e) {
+      state.checked = null;
+      out.className = 'note bad';
+      out.textContent = 'စစ်ဆေးလို့ မရပါ — ပြန်ကြိုးစားပါ';
+    } finally {
+      $('gCheck').disabled = false;
+      syncNext();
+    }
+  });
 
   $('gNext').addEventListener('click', () => {
     const err = (m) => { $('gFormErr').textContent = m; show($('gFormErr'), true); };
     show($('gFormErr'), false);
     if (state.game.requiresPlayerId && !$('fPlayer').value.trim()) return err('Player ID ထည့်ပါ');
     if (state.game.requiresServer && !$('fServer').value.trim()) return err('Server ထည့်ပါ');
+    if (needsCheck() && !state.checked) return err('အကောင့်ကို အရင် စစ်ဆေးပါ');
     if ($('fPhone').value.trim().length < 7) return err('ဆက်သွယ်ရန် ဖုန်းနံပါတ် ထည့်ပါ');
     renderPay();
     step('pay');
@@ -429,6 +511,7 @@ footer a{color:var(--blue);font-weight:700}
   $('gAgain').addEventListener('click', () => {
     state.game = null; state.pack = null; state.placed = null;
     ['fPlayer', 'fServer', 'fPhone', 'fName', 'fTxn'].forEach((id) => { $(id).value = ''; });
+    resetCheck();
     $('fQty').value = '1';
     step('games');
   });
