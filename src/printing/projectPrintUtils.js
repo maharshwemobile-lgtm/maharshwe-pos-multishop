@@ -84,20 +84,20 @@ function baseStyles(paperSize) {
   return `
     @page{size:${width} auto;margin:0 2mm 3mm}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    body{width:${width};max-width:100%;margin:0 auto;padding:0 2mm;font-family:Arial,sans-serif;color:#000;font-size:11px;font-weight:700;background:#fff;-webkit-font-smoothing:none}
+    body{width:${width};max-width:100%;margin:0 auto;padding:0 2mm;font-family:Arial,sans-serif;color:#000;font-size:11px;font-weight:400;background:#fff;-webkit-font-smoothing:none}
     .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 6px auto;text-align:center}
-    .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#000;color:#fff;font-weight:900;font-size:18px}
-    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:900}h2{font-size:14px;font-weight:900}.muted{color:#000;font-weight:700}.left{text-align:left}.right{text-align:right}.center{text-align:center}
-    .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:700}.meta b,.summary b{font-weight:900}
-    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:700}th{text-align:left;font-size:10px;font-weight:900}td small{display:block;color:#000;font-weight:700;margin-top:2px}
+    .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#000;color:#fff;font-weight:700;font-size:18px}
+    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:700}h2{font-size:14px;font-weight:700}.muted{color:#000;font-weight:400}.left{text-align:left}.right{text-align:right}.center{text-align:center}
+    .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:400}.meta b,.summary b{font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:400}th{text-align:left;font-size:10px;font-weight:700}td small{display:block;color:#000;font-weight:400;margin-top:2px}
     .fields{display:grid;grid-template-columns:${twoUp};gap:5px 10px;margin-top:9px;padding:7px 0;border-top:1px solid #000;border-bottom:1px solid #000}
     .fields div{min-width:0;line-height:1.45}.fields .wide{grid-column:1/-1}
-    .fields span{font-size:9px;font-weight:700}.fields b{font-size:11px;font-weight:900;word-break:break-word}
-    .summary{margin-top:10px}.grand{font-size:15px;font-weight:900;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:900;text-align:center;letter-spacing:2px}
-    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:900;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:700;line-height:1.45;margin-bottom:3px}
-    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:700}.sign-name{display:block;font-size:11px;font-weight:900;padding-bottom:3px}
-    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:22mm;height:22mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:900}
-    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:700}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:700;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:700}
+    .fields span{font-size:9px;font-weight:400}.fields b{font-size:11px;font-weight:700;word-break:break-word}
+    .summary{margin-top:10px}.grand{font-size:15px;font-weight:700;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:700;text-align:center;letter-spacing:2px}
+    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:700;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:400;line-height:1.45;margin-bottom:3px}
+    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:400}.sign-name{display:block;font-size:11px;font-weight:700;padding-bottom:3px}
+    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:22mm;height:22mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
+    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:400}.footer-tag{display:block;margin-top:8px;font-weight:700}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:400;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:400}
     @media print{body{padding:0 2mm}.no-print{display:none!important}}
   `;
 }
@@ -116,8 +116,12 @@ function customHeader(text, settings) {
 function brandBlock(settings, title) {
   const business = settings?.business || {};
   const slip = settings?.slip || {};
-  const logo = slip.showLogo && business.logoUrl
-    ? `<img class="slip-logo" src="${escapeHtml(business.logoUrl)}" alt="Logo"/>`
+  // A thermal head has one colour and no grey. Brand artwork is usually mid-tone
+  // — this shop's wordmark barely registers — so a slip can name its own
+  // black-and-white copy and leave the colour one for the screen and storefront.
+  const logoSrc = business.printLogoUrl || business.logoUrl;
+  const logo = slip.showLogo && logoSrc
+    ? `<img class="slip-logo" src="${escapeHtml(logoSrc)}" alt="Logo"/>`
     : '';
   const contacts = [business.phone, business.secondaryPhone, business.address].filter(Boolean).map(escapeHtml).join(' · ');
   return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
