@@ -156,14 +156,19 @@ async function approvePublicOrder(orderId, reviewerUserId) {
   }
 
   await prisma.$executeRawUnsafe(
-    `UPDATE game_topup_public_orders SET status='COMPLETED', moogold_order_id=$2, moogold_response=$3::jsonb, reviewed_by_id=$4::uuid, reviewed_at=NOW(), updated_at=NOW() WHERE id=$1::uuid`,
+    `UPDATE game_topup_public_orders SET status=$5, moogold_order_id=$2, moogold_response=$3::jsonb, reviewed_by_id=$4::uuid, reviewed_at=NOW(), updated_at=NOW() WHERE id=$1::uuid`,
     orderId,
-    moogoldResult?.account_details?.order_id ? String(moogoldResult.account_details.order_id) : null,
+    moogold.orderIdOf(moogoldResult),
     JSON.stringify(moogoldResult || {}),
     reviewerUserId || null,
+    // MooGold answers "processing" and settles later, so the order is only
+    // delivered once it says so — the poller moves it on.
+    moogold.isTerminalStatus(moogoldResult?.status) ? 'COMPLETED' : 'PROCESSING',
   );
   const updated = await loadOrderWithNames(orderId);
-  await editOrderMessage(updated, '✅ <b>Approved &amp; delivered</b>');
+  await editOrderMessage(updated, updated.status === 'COMPLETED'
+    ? '✅ <b>Approved &amp; delivered</b>'
+    : '⏳ <b>Approved — MooGold is processing</b>');
   return updated;
 }
 

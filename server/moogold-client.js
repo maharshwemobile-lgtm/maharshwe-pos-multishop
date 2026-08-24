@@ -118,6 +118,20 @@ function serverList(productId) {
 // is 1 for a direct top-up or 2 for an eVoucher, and warns that it differs from
 // list_product's category_id. 50 is MooGold's direct top-up listing; every other
 // listing category is a gift card.
+// create_order answers with order_id at the top level; account_details holds
+// only the game inputs echoed back.
+function orderIdOf(result) {
+  const id = result?.order_id ?? result?.account_details?.order_id;
+  return id === undefined || id === null || id === '' ? null : String(id);
+}
+
+// MooGold keeps working after create_order returns: it answers "processing"
+// and only later settles to completed or refunded.
+const TERMINAL_MOOGOLD_STATUSES = new Set(['completed', 'refunded', 'cancelled', 'failed']);
+function isTerminalStatus(status) {
+  return TERMINAL_MOOGOLD_STATUSES.has(String(status || '').toLowerCase());
+}
+
 const DIRECT_TOPUP_LIST_CATEGORY = '50';
 function orderCategory(listCategoryId) {
   return String(listCategoryId) === DIRECT_TOPUP_LIST_CATEGORY ? 1 : 2;
@@ -150,6 +164,8 @@ function balance() {
 }
 
 module.exports = {
+  orderIdOf,
+  isTerminalStatus,
   MoogoldApiError,
   isConfigured,
   listProduct,

@@ -62,6 +62,7 @@ const attachProjectSettingsAppearanceWrite = require('./project-settings-appeara
 const attachProjectFunctionAccessMiddleware = require('./project-function-access-middleware');
 
 const { attachTelegramAutomationApi, attachTelegramWebhookEndpoint, startTelegramAutomationRunner } = require('./telegram-automation-api');
+const { startGameTopupPoller } = require('./game-topup-poller');
 const attachHardDbApi = require('./hard-db-api');
 const attachProductImportApi = require('./product-import-api');
 const attachProductCrudApi = require('./product-crud-api');
@@ -174,6 +175,7 @@ async function start() {
       startRepairOutboxRunner();
       startGoogleSheetSyncRunner();
       startTelegramAutomationRunner();
+      startGameTopupPoller();
     }
   });
 }

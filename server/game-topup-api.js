@@ -295,13 +295,15 @@ function attachGameTopupApi(app) {
           ledgerId, req.auth.shopId, -shopCost, closing, `${variation.productName} · ${variation.variationName} × ${quantity}`, orderId, req.auth.userId,
         );
         const account = await applyPaymentAccountChange(tx, req.auth.shopId, input.paymentAccountId, retailPrice);
-        const accountDetails = moogoldResult?.account_details || {};
+        const moogoldOrderId = moogold.orderIdOf(moogoldResult);
+        // Only 'completed' means the diamonds landed; 'processing' settles later.
+        const orderStatus = moogold.isTerminalStatus(moogoldResult?.status) ? 'COMPLETED' : 'PROCESSING';
         await tx.$executeRawUnsafe(
           `INSERT INTO game_topup_orders(id, order_number, shop_id, variation_id, quantity, player_id, server_id, customer_name, customer_phone, shop_cost, retail_price, profit, payment_account_id, status, moogold_order_id, moogold_response, created_by_id, created_at, updated_at)
-           VALUES($1::uuid,$2,$3::uuid,$4::uuid,$5,$6,$7,$8,$9,$10,$11,$12,$13::uuid,'COMPLETED',$14,$15::jsonb,$16::uuid,NOW(),NOW())`,
+           VALUES($1::uuid,$2,$3::uuid,$4::uuid,$5,$6,$7,$8,$9,$10,$11,$12,$13::uuid,$17,$14,$15::jsonb,$16::uuid,NOW(),NOW())`,
           orderId, orderNumber, req.auth.shopId, variation.id, quantity, clean(input.playerId, 80), clean(input.server, 80),
           clean(input.customerName), clean(input.customerPhone, 40), shopCost, retailPrice, round(retailPrice - shopCost),
-          input.paymentAccountId || null, accountDetails.order_id ? String(accountDetails.order_id) : null, JSON.stringify(moogoldResult || {}), req.auth.userId,
+          input.paymentAccountId || null, moogoldOrderId, JSON.stringify(moogoldResult || {}), req.auth.userId, orderStatus,
         );
         return { walletBalance: closing, account };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 15000 });
