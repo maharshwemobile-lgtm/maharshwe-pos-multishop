@@ -102,6 +102,17 @@ function baseStyles(paperSize) {
   `;
 }
 
+// 169 of the 170 shops carry a receipt header that is just their own name,
+// left over from an older settings screen. Printed under the heading it named
+// the shop twice on every slip. A header that says something else still prints.
+function customHeader(text, settings) {
+  const value = String(text || '').trim();
+  if (!value) return '';
+  const name = String(settings?.business?.name || '').trim();
+  if (name && value.toLowerCase() === name.toLowerCase()) return '';
+  return `<p>${nl2br(value)}</p>`;
+}
+
 function brandBlock(settings, title) {
   const business = settings?.business || {};
   const slip = settings?.slip || {};
@@ -109,10 +120,7 @@ function brandBlock(settings, title) {
     ? `<img class="slip-logo" src="${escapeHtml(business.logoUrl)}" alt="Logo"/>`
     : '';
   const contacts = [business.phone, business.secondaryPhone, business.address].filter(Boolean).map(escapeHtml).join(' · ');
-  // A shop logo is nearly always a wordmark — it already carries the name. With
-  // the heading printed under it too, the slip opened with the shop named twice.
-  const heading = !logo && business.name ? `<h1>${escapeHtml(business.name)}</h1>` : '';
-  return `${logo}${heading}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
+  return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
 }
 
 // Slips print as ordinary markup and let the driver rasterise them.
@@ -153,7 +161,7 @@ export async function printSaleReceipt(sale, targetWindow = null) {
   const cashier = sale.cashier || sale.cashierName || '-';
   const body = `
     ${brandBlock(settings, 'Sale Receipt')}
-    ${slip.saleHeader ? `<p>${nl2br(slip.saleHeader)}</p>` : ''}
+    ${customHeader(slip.saleHeader, settings)}
     <div class="meta"><div><span>Invoice</span><b>${escapeHtml(invoice)}</b></div><div><span>Date</span><b>${escapeHtml(new Date(sale.dateTime || sale.date || Date.now()).toLocaleString())}</b></div>${slip.showCustomerPhone && customerPhone ? `<div><span>Phone</span><b>${escapeHtml(customerPhone)}</b></div>` : ''}${slip.showCashierName ? `<div><span>Cashier</span><b>${escapeHtml(cashier)}</b></div>` : ''}</div>
     ${isVoided ? '<div class="void">VOIDED</div>' : ''}
     <table><thead><tr><th>Item</th><th class="center">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${items}</tbody></table>
@@ -198,7 +206,7 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     .join('');
   const body = `
     ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
-    ${slip.repairVoucherHeader ? `<p>${nl2br(slip.repairVoucherHeader)}</p>` : ''}
+    ${customHeader(slip.repairVoucherHeader, settings)}
     <div class="meta"><div><span>ပြင်ဆင်မှု ID</span><b>${escapeHtml(repairNumber)}</b></div><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
     <div class="fields">${fieldRows}</div>
     <div class="summary"><div><span>ခန့်မှန်းကျသင့်ငွေ</span><b>${Number(repair.estimatedCost || 0).toLocaleString()} ကျပ်</b></div><div><span>စရံ</span><b>${Number(repair.deposit || 0).toLocaleString()} ကျပ်</b></div><div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${Number(repair.balanceDue || Math.max(0, Number(repair.finalCost || 0) - Number(repair.deposit || 0))).toLocaleString()} ကျပ်</b></div></div>
