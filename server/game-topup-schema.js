@@ -113,6 +113,9 @@ const statements = [
   )`,
   `CREATE INDEX IF NOT EXISTS game_topup_public_orders_status_idx ON game_topup_public_orders (status, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS game_topup_public_orders_txn_idx ON game_topup_public_orders (payment_transaction_id)`,
+
+  `ALTER TABLE game_topup_products ADD COLUMN IF NOT EXISTS player_field TEXT NOT NULL DEFAULT 'User ID'`,
+  `ALTER TABLE game_topup_products ADD COLUMN IF NOT EXISTS server_field TEXT NOT NULL DEFAULT 'Server ID'`,
 ];
 
 async function ensureGameTopupSchema() {

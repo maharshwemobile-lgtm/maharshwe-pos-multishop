@@ -120,6 +120,7 @@ async function loadVariationWithProduct(variationId) {
             v.shop_cost AS "shopCost", v.suggested_retail AS "suggestedRetail", v.active AS "variationActive",
             p.moogold_category_id AS "moogoldCategoryId", p.moogold_product_id AS "moogoldProductId",
             p.name AS "productName", p.requires_player_id AS "requiresPlayerId", p.requires_server AS "requiresServer",
+            p.player_field AS "playerField", p.server_field AS "serverField",
             p.active AS "productActive"
        FROM game_topup_variations v JOIN game_topup_products p ON p.id = v.product_id
       WHERE v.id = $1::uuid`,
@@ -267,6 +268,8 @@ function attachGameTopupApi(app) {
           quantity,
           playerId: input.playerId,
           server: input.server,
+          playerField: variation.playerField,
+          serverField: variation.serverField,
           partnerOrderId: orderNumber,
         });
       } catch (error) {

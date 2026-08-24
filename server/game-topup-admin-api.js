@@ -32,8 +32,13 @@ const clean = (value, max = 300) => String(value ?? '').trim().slice(0, max) || 
 // MooGold's product_detail lists the extra fields a purchase needs as free
 // text (e.g. "Server", "Zone ID") rather than a fixed enum, so this is a
 // best-effort read — admins can still flip requiresServer by hand afterward.
-function detectRequiresServer(fields) {
-  return (fields || []).some((entry) => /server|zone/i.test(entry?.field || entry || ''));
+function fieldNames(fields) {
+  const names = (fields || []).map((entry) => String(entry?.field || entry || '').trim()).filter(Boolean);
+  // MooGold labels these per game: "User ID" + "Server ID" for Mobile Legends,
+  // "Zone ID" elsewhere, and some games ask for no server at all.
+  const server = names.find((name) => /server|zone/i.test(name)) || null;
+  const player = names.find((name) => name !== server) || 'User ID';
+  return { player, server };
 }
 
 async function upsertProductFromMoogold(categoryId, productId, fallbackName) {
@@ -48,7 +53,8 @@ async function upsertProductFromMoogold(categoryId, productId, fallbackName) {
 
   const name = detail?.Product_Name || fallbackName || productId;
   const imageUrl = detail?.Image_URL || null;
-  const requiresServer = detectRequiresServer(detail?.fields);
+  const { player: playerField, server: serverField } = fieldNames(detail?.fields);
+  const requiresServer = Boolean(serverField);
 
   const existing = await prisma.$queryRawUnsafe(
     `SELECT id FROM game_topup_products WHERE moogold_product_id = $1`, productId,
@@ -56,15 +62,17 @@ async function upsertProductFromMoogold(categoryId, productId, fallbackName) {
   const productDbId = existing[0]?.id || crypto.randomUUID();
 
   await prisma.$executeRawUnsafe(
-    `INSERT INTO game_topup_products(id, moogold_product_id, moogold_category_id, name, image_url, requires_player_id, requires_server, created_at, updated_at)
-     VALUES($1::uuid, $2, $3, $4, $5, TRUE, $6, NOW(), NOW())
+    `INSERT INTO game_topup_products(id, moogold_product_id, moogold_category_id, name, image_url, requires_player_id, requires_server, player_field, server_field, created_at, updated_at)
+     VALUES($1::uuid, $2, $3, $4, $5, TRUE, $6, $7, $8, NOW(), NOW())
      ON CONFLICT (moogold_product_id) DO UPDATE SET
        moogold_category_id = EXCLUDED.moogold_category_id,
        name = EXCLUDED.name,
        image_url = COALESCE(EXCLUDED.image_url, game_topup_products.image_url),
        requires_server = EXCLUDED.requires_server,
+       player_field = EXCLUDED.player_field,
+       server_field = EXCLUDED.server_field,
        updated_at = NOW()`,
-    productDbId, productId, categoryId, name, imageUrl, requiresServer,
+    productDbId, productId, categoryId, name, imageUrl, requiresServer, playerField, serverField || 'Server ID',
   );
 
   let variationsAdded = 0;

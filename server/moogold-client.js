@@ -114,10 +114,13 @@ function serverList(productId) {
 
 // category is MooGold's own category id/slug the product belongs to, not our
 // internal id. { status, message, account_details: { player_id, server_id, order_id } }
-function createOrder({ category, productId, quantity, playerId, server, partnerOrderId }) {
+// playerField/serverField are the labels MooGold gave for this particular game
+// (product_detail returns them); they differ per game, so they are carried on
+// the product rather than assumed here.
+function createOrder({ category, productId, quantity, playerId, server, partnerOrderId, playerField, serverField }) {
   const data = { category, 'product-id': productId, quantity: String(quantity) };
-  if (playerId) data['User ID'] = playerId;
-  if (server) data.Server = server;
+  if (playerId) data[playerField || 'User ID'] = playerId;
+  if (server) data[serverField || 'Server ID'] = server;
   const body = { data };
   if (partnerOrderId) body.partnerOrderId = partnerOrderId;
   return call('order/create_order', body);

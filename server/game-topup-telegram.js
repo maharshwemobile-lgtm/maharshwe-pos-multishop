@@ -116,6 +116,7 @@ async function loadOrderWithNames(orderId) {
             o.telegram_chat_id AS "telegramChatId", o.telegram_message_id AS "telegramMessageId",
             o.variation_id AS "variationId", o.created_at AS "createdAt",
             p.moogold_category_id AS "moogoldCategoryId", p.moogold_product_id AS "moogoldProductId", p.name AS "productName",
+            p.player_field AS "playerField", p.server_field AS "serverField",
             v.moogold_variation_id AS "moogoldVariationId", v.name AS "variationName"
        FROM game_topup_public_orders o
        JOIN game_topup_variations v ON v.id = o.variation_id
@@ -140,6 +141,8 @@ async function approvePublicOrder(orderId, reviewerUserId) {
       quantity: order.quantity,
       playerId: order.playerId,
       server: order.serverId,
+      playerField: order.playerField,
+      serverField: order.serverField,
       partnerOrderId: order.orderNumber,
     });
   } catch (error) {
