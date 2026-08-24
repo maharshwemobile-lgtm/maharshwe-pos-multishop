@@ -44,12 +44,6 @@ function CatalogPanel({ notify }) {
   const [productId, setProductId] = useState('');
   const [productCategoryId, setProductCategoryId] = useState('');
   const [syncingProduct, setSyncingProduct] = useState(false);
-  // The USD/MMK rate a sync converts a brand-new package's price with. Only
-  // future syncs use it — an existing package's price is the admin's own
-  // decision and a rate change never rewrites it.
-  const [rate, setRate] = useState('');
-  const [savedRate, setSavedRate] = useState(null);
-  const [savingRate, setSavingRate] = useState(false);
   // 500+ games and thousands of packages is too heavy to hand over in one
   // response, so this is paged and searched by name rather than loaded whole
   // — "top" (highest completed sales) is already the server's sort order, so
@@ -74,17 +68,7 @@ function CatalogPanel({ notify }) {
     }
   };
 
-  const loadRate = async () => {
-    try {
-      const result = await apiFetch('/api/grand-admin/game-topup/settings');
-      setRate(String(result.usdToMmkRate));
-      setSavedRate(result.usdToMmkRate);
-    } catch (error) {
-      notify(error.message || 'Rate load failed', 'error');
-    }
-  };
-
-  useEffect(() => { load(1, search); loadRate(); }, []);
+  useEffect(() => { load(1, search); }, []);
 
   // Debounced: a search box that refetches on every keystroke would hammer a
   // 500+ row table for nothing.
@@ -99,22 +83,6 @@ function CatalogPanel({ notify }) {
     setPage(clamped);
     setExpandedId(null);
     load(clamped, search);
-  };
-
-  const saveRate = async (event) => {
-    event.preventDefault();
-    const value = Number(rate);
-    if (!(value > 0)) return notify('နှုန်း မှန်ကန်စွာ ထည့်ပါ', 'error');
-    setSavingRate(true);
-    try {
-      const result = await apiFetch('/api/grand-admin/game-topup/settings', { method: 'PATCH', body: { usdToMmkRate: value } });
-      setSavedRate(result.usdToMmkRate);
-      notify(`နှုန်း ${result.usdToMmkRate.toLocaleString('en-US')} Ks/$ အဖြစ် သိမ်းပြီးပါပြီ — Sync အသစ်တွေမှာသာ သက်ရောက်ပါမယ်`, 'success');
-    } catch (error) {
-      notify(error.message || 'Rate update failed', 'error');
-    } finally {
-      setSavingRate(false);
-    }
   };
 
   const syncCategory = async (event) => {
@@ -177,16 +145,6 @@ function CatalogPanel({ notify }) {
       {!catalog.configured ? (
         <div className="gt-admin-notice">MOOGOLD_PARTNER_ID / MOOGOLD_SECRET ကို server .env မှာ ထည့်ပါ — Sync မလုပ်ခင် လိုအပ်ပါတယ်။</div>
       ) : null}
-
-      <form className="gt-admin-rate-row" onSubmit={saveRate}>
-        <label><span>USD → MMK နှုန်း (Sync အသစ်များအတွက်)</span>
-          <input type="number" min="1" step="1" value={rate} onChange={(event) => setRate(event.target.value)} placeholder="ဥပမာ - 4500" />
-        </label>
-        <button type="submit" disabled={savingRate || !rate || Number(rate) === savedRate}>
-          {savingRate ? <Loader2 className="grand-spin" size={15} /> : null} နှုန်း သိမ်းမည်
-        </button>
-        {savedRate ? <span className="gt-admin-rate-current">လက်ရှိ — $1 = {savedRate.toLocaleString('en-US')} Ks</span> : null}
-      </form>
 
       <div className="gt-admin-sync-row">
         <form onSubmit={syncCategory}>
@@ -294,7 +252,6 @@ function WalletsPanel({ notify }) {
   const [query, setQuery] = useState('');
   const [adjusting, setAdjusting] = useState('');
   const [moogoldBalance, setMoogoldBalance] = useState(null);
-  const [togglingAccess, setTogglingAccess] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -313,20 +270,6 @@ function WalletsPanel({ notify }) {
   };
 
   useEffect(() => { load(); }, []);
-
-  const toggleAccess = async (wallet) => {
-    setTogglingAccess(wallet.shopId);
-    try {
-      const enabled = !wallet.gameTopupEnabled;
-      await apiFetch(`/api/grand-admin/game-topup/wallets/${wallet.shopId}/access`, { method: 'POST', body: { enabled } });
-      setWallets((current) => current.map((item) => item.shopId === wallet.shopId ? { ...item, gameTopupEnabled: enabled } : item));
-      notify(`${wallet.shopName} — Game Top-up ${enabled ? 'ဖွင့်' : 'ပိတ်'}ပြီးပါပြီ`, 'success');
-    } catch (error) {
-      notify(error.message || 'Access update failed', 'error');
-    } finally {
-      setTogglingAccess('');
-    }
-  };
 
   return (
     <div className="grand-card">
@@ -351,7 +294,7 @@ function WalletsPanel({ notify }) {
 
       <div className="grand-table-wrap">
         <table className="grand-table">
-          <thead><tr><th>Shop</th><th>Wallet Balance</th><th>နောက်ဆုံးပြောင်း</th><th>Game Top-up</th><th /></tr></thead>
+          <thead><tr><th>Shop</th><th>Wallet Balance</th><th>နောက်ဆုံးပြောင်း</th><th /></tr></thead>
           <tbody>
             {wallets.map((wallet) => (
               <React.Fragment key={wallet.shopId}>
@@ -359,26 +302,137 @@ function WalletsPanel({ notify }) {
                   <td><b>{wallet.shopName}</b><span>{wallet.slug}</span></td>
                   <td className={wallet.balance <= 0 ? 'gt-admin-zero' : ''}><b>{money(wallet.balance)}</b></td>
                   <td>{wallet.updatedAt ? new Date(wallet.updatedAt).toLocaleString() : '-'}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`gt-admin-access-toggle ${wallet.gameTopupEnabled ? 'on' : 'off'}`}
-                      onClick={() => toggleAccess(wallet)}
-                      disabled={togglingAccess === wallet.shopId}
-                    >
-                      {togglingAccess === wallet.shopId ? <Loader2 className="grand-spin" size={14} /> : (wallet.gameTopupEnabled ? '✅ ဖွင့်ထား' : '⛔ ပိတ်ထား')}
-                    </button>
-                  </td>
                   <td><button type="button" onClick={() => setAdjusting(adjusting === wallet.shopId ? '' : wallet.shopId)}>{adjusting === wallet.shopId ? 'Close' : 'ငွေဖြည့်/နှုတ်'}</button></td>
                 </tr>
                 {adjusting === wallet.shopId ? (
-                  <tr><td colSpan={5}>
+                  <tr><td colSpan={4}>
                     <WalletAdjustForm shopId={wallet.shopId} onCancel={() => setAdjusting('')} onDone={() => { setAdjusting(''); load(); notify(`${wallet.shopName} wallet ပြင်ပြီးပါပြီ`, 'success'); }} />
                   </td></tr>
                 ) : null}
               </React.Fragment>
             ))}
-            {!wallets.length && !loading ? <tr><td colSpan={5} className="grand-empty">Shop မတွေ့ပါ</td></tr> : null}
+            {!wallets.length && !loading ? <tr><td colSpan={4} className="grand-empty">Shop မတွေ့ပါ</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SettingsPanel({ notify }) {
+  // The USD/MMK rate a sync converts a brand-new package's price with. Only
+  // future syncs use it — an existing package's price is the admin's own
+  // decision and a rate change never rewrites it.
+  const [rate, setRate] = useState('');
+  const [savedRate, setSavedRate] = useState(null);
+  const [savingRate, setSavingRate] = useState(false);
+
+  const [shops, setShops] = useState([]);
+  const [loadingShops, setLoadingShops] = useState(false);
+  const [query, setQuery] = useState('');
+  const [togglingAccess, setTogglingAccess] = useState('');
+
+  const loadRate = async () => {
+    try {
+      const result = await apiFetch('/api/grand-admin/game-topup/settings');
+      setRate(String(result.usdToMmkRate));
+      setSavedRate(result.usdToMmkRate);
+    } catch (error) {
+      notify(error.message || 'Rate load failed', 'error');
+    }
+  };
+
+  const loadShops = async () => {
+    setLoadingShops(true);
+    try {
+      const result = await apiFetch(`/api/grand-admin/game-topup/wallets${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`);
+      setShops(result.wallets || []);
+    } catch (error) {
+      notify(error.message || 'Shop list failed', 'error');
+    } finally {
+      setLoadingShops(false);
+    }
+  };
+
+  useEffect(() => { loadRate(); loadShops(); }, []);
+
+  const saveRate = async (event) => {
+    event.preventDefault();
+    const value = Number(rate);
+    if (!(value > 0)) return notify('နှုန်း မှန်ကန်စွာ ထည့်ပါ', 'error');
+    setSavingRate(true);
+    try {
+      const result = await apiFetch('/api/grand-admin/game-topup/settings', { method: 'PATCH', body: { usdToMmkRate: value } });
+      setSavedRate(result.usdToMmkRate);
+      notify(`နှုန်း ${result.usdToMmkRate.toLocaleString('en-US')} Ks/$ အဖြစ် သိမ်းပြီးပါပြီ — Sync အသစ်တွေမှာသာ သက်ရောက်ပါမယ်`, 'success');
+    } catch (error) {
+      notify(error.message || 'Rate update failed', 'error');
+    } finally {
+      setSavingRate(false);
+    }
+  };
+
+  const toggleAccess = async (shop) => {
+    setTogglingAccess(shop.shopId);
+    try {
+      const enabled = !shop.gameTopupEnabled;
+      await apiFetch(`/api/grand-admin/game-topup/wallets/${shop.shopId}/access`, { method: 'POST', body: { enabled } });
+      setShops((current) => current.map((item) => item.shopId === shop.shopId ? { ...item, gameTopupEnabled: enabled } : item));
+      notify(`${shop.shopName} — Game Top-up ${enabled ? 'ဖွင့်' : 'ပိတ်'}ပြီးပါပြီ`, 'success');
+    } catch (error) {
+      notify(error.message || 'Access update failed', 'error');
+    } finally {
+      setTogglingAccess('');
+    }
+  };
+
+  return (
+    <div className="grand-card">
+      <div className="grand-section-title">
+        <b>Settings</b>
+        <span>USD→MMK နှုန်းနှင့် ဆိုင်တစ်ခုချင်းစီရဲ့ Game Top-up ဖွင့်/ပိတ်ခွင့်ကို ဒီမှာ စီမံပါ။</span>
+      </div>
+
+      <form className="gt-admin-rate-row" onSubmit={saveRate}>
+        <label><span>USD → MMK နှုန်း (Sync အသစ်များအတွက်)</span>
+          <input type="number" min="1" step="1" value={rate} onChange={(event) => setRate(event.target.value)} placeholder="ဥပမာ - 4500" />
+        </label>
+        <button type="submit" disabled={savingRate || !rate || Number(rate) === savedRate}>
+          {savingRate ? <Loader2 className="grand-spin" size={15} /> : null} နှုန်း သိမ်းမည်
+        </button>
+        {savedRate ? <span className="gt-admin-rate-current">လက်ရှိ — $1 = {savedRate.toLocaleString('en-US')} Ks</span> : null}
+      </form>
+
+      <div className="grand-section-title">
+        <b>Shop Access</b>
+        <span>Shop တစ်ခုချင်းစီအတွက် Game Top-up sidebar ဖွင့်/ပိတ် — non-cashier user အားလုံးအတွက် တစ်ပြိုင်နက်တည်း သက်ရောက်ပါမယ်။</span>
+      </div>
+
+      <div className="grand-toolbar">
+        <label><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && loadShops()} placeholder="ဆိုင်နာမည် / Slug ရှာရန်" /></label>
+        <button type="button" onClick={loadShops}>{loadingShops ? <Loader2 className="grand-spin" size={15} /> : <RefreshCw size={15} />} Search</button>
+      </div>
+
+      <div className="grand-table-wrap">
+        <table className="grand-table">
+          <thead><tr><th>Shop</th><th>Game Top-up</th></tr></thead>
+          <tbody>
+            {shops.map((shop) => (
+              <tr key={shop.shopId}>
+                <td><b>{shop.shopName}</b><span>{shop.slug}</span></td>
+                <td>
+                  <button
+                    type="button"
+                    className={`gt-admin-access-toggle ${shop.gameTopupEnabled ? 'on' : 'off'}`}
+                    onClick={() => toggleAccess(shop)}
+                    disabled={togglingAccess === shop.shopId}
+                  >
+                    {togglingAccess === shop.shopId ? <Loader2 className="grand-spin" size={14} /> : (shop.gameTopupEnabled ? '✅ ဖွင့်ထား' : '⛔ ပိတ်ထား')}
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {!shops.length && !loadingShops ? <tr><td colSpan={2} className="grand-empty">Shop မတွေ့ပါ</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -558,6 +612,7 @@ export default function GrandAdminGameTopup() {
       <PublicOrdersPanel notify={notify} />
       <CatalogPanel notify={notify} />
       <WalletsPanel notify={notify} />
+      <SettingsPanel notify={notify} />
     </>
   );
 }
