@@ -71,3 +71,11 @@
 .gt-admin-product-actions{display:flex;justify-content:flex-end;padding:8px 12px;background:#fff;border-bottom:1px solid #eef2f7}
 .dark .gt-admin-product-toggle{background:#10223d;border-color:#1e3555}
 .dark .gt-admin-product-actions{background:#0b1b33;border-color:#1e3555}
+.gt-admin-view-switch{display:flex;gap:6px;padding:4px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc}
+.gt-admin-view-switch button{border:0;background:transparent;padding:7px 12px;border-radius:7px;font-size:12.5px;font-weight:800;color:#64748b;cursor:pointer}
+.gt-admin-view-switch button.active{background:#fff;color:#0f172a;box-shadow:0 1px 4px rgba(15,23,42,.12)}
+.gt-admin-refund-owed{display:block;margin-top:3px;font-size:11.5px;font-weight:800;color:#b45309}
+.gt-admin-refund-done{display:block;margin-top:3px;font-size:11.5px;font-weight:700;color:#0E8A5F}
+.dark .gt-admin-view-switch{background:#0b1b33;border-color:#1e3555}
+.dark .gt-admin-view-switch button{color:#94a3b8}
+.dark .gt-admin-view-switch button.active{background:#10223d;color:#e5eef8}

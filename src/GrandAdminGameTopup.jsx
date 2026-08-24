@@ -365,13 +365,17 @@ function PublicOrdersPanel({ notify }) {
   const [orders, setOrders] = useState([]);
   const [telegramConfigured, setTelegramConfigured] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [onlyPending, setOnlyPending] = useState(true);
+  // 'pending' | 'refunded' | 'all' — refunded is its own view because it is
+  // the one status that still needs a human action (send the KBZ Pay refund)
+  // after the order is otherwise finished.
+  const [view, setView] = useState('pending');
   const [acting, setActing] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
-      const data = await apiFetch(`/api/grand-admin/game-topup/public-orders${onlyPending ? '?status=PENDING_APPROVAL' : ''}`);
+      const status = view === 'pending' ? 'PENDING_APPROVAL' : view === 'refunded' ? 'REFUNDED' : '';
+      const data = await apiFetch(`/api/grand-admin/game-topup/public-orders${status ? `?status=${status}` : ''}`);
       setOrders(data.orders || []);
       setTelegramConfigured(Boolean(data.telegramConfigured));
     } catch (error) {
@@ -381,7 +385,7 @@ function PublicOrdersPanel({ notify }) {
     }
   };
 
-  useEffect(() => { load(); }, [onlyPending]);
+  useEffect(() => { load(); }, [view]);
 
   const approve = async (order) => {
     if (!window.confirm(`${order.orderNumber} — ငွေရောက်ကြောင်း KBZ Pay မှာ စစ်ပြီးပြီလား? Approve လုပ်ရင် ချက်ချင်း ဖြည့်ပေးပါမယ်။`)) return;
@@ -412,6 +416,23 @@ function PublicOrdersPanel({ notify }) {
     }
   };
 
+  // REFUNDED means MooGold could not fulfil an order that already took the
+  // customer's KBZ Pay money — that transfer back has to happen by hand, and
+  // this only records that it did.
+  const markRefundSent = async (order) => {
+    if (!window.confirm(`${order.orderNumber} — ${order.customerPhone} ဆီကို ${money(order.retailPrice)} KBZ Pay နဲ့ ပြန်လွှဲပြီးပြီလား?`)) return;
+    setActing(order.id);
+    try {
+      const result = await apiFetch(`/api/grand-admin/game-topup/public-orders/${order.id}/refund-sent`, { method: 'POST' });
+      notify(result.message || 'Marked as refunded', 'success');
+      await load();
+    } catch (error) {
+      notify(error.message || 'Update failed', 'error');
+    } finally {
+      setActing('');
+    }
+  };
+
   const registerWebhook = async () => {
     try {
       const result = await apiFetch('/api/grand-admin/game-topup/telegram/set-webhook', { method: 'POST' });
@@ -433,10 +454,11 @@ function PublicOrdersPanel({ notify }) {
       ) : null}
 
       <div className="grand-toolbar">
-        <label className="gt-admin-checkbox">
-          <input type="checkbox" checked={onlyPending} onChange={(event) => setOnlyPending(event.target.checked)} />
-          <span>စောင့်ဆိုင်းဆဲသာ ပြမည်</span>
-        </label>
+        <div className="gt-admin-view-switch">
+          <button type="button" className={view === 'pending' ? 'active' : ''} onClick={() => setView('pending')}>စောင့်ဆိုင်းဆဲ</button>
+          <button type="button" className={view === 'refunded' ? 'active' : ''} onClick={() => setView('refunded')}>ပြန်ပေးရန် ကျန်</button>
+          <button type="button" className={view === 'all' ? 'active' : ''} onClick={() => setView('all')}>အားလုံး</button>
+        </div>
         <button type="button" onClick={load}>{loading ? <Loader2 className="grand-spin" size={15} /> : <RefreshCw size={15} />} Refresh</button>
         {telegramConfigured ? <button type="button" onClick={registerWebhook}>Telegram Webhook ချိတ်မည်</button> : null}
       </div>
@@ -460,6 +482,11 @@ function PublicOrdersPanel({ notify }) {
                   <i className={order.status === 'COMPLETED' ? 'green' : order.status === 'PENDING_APPROVAL' ? 'blue' : 'red'}>{order.status}</i>
                   {order.rejectReason ? <span>{order.rejectReason}</span> : null}
                   {order.failureReason ? <span>{order.failureReason}</span> : null}
+                  {order.status === 'REFUNDED' ? (
+                    order.refundSentAt
+                      ? <span className="gt-admin-refund-done">✅ ငွေ ပြန်ပေးပြီး — {new Date(order.refundSentAt).toLocaleString()}</span>
+                      : <span className="gt-admin-refund-owed">⚠️ ဖောက်သည်ကို {money(order.retailPrice)} ပြန်ပေးရန် ကျန်</span>
+                  ) : null}
                 </td>
                 <td>
                   {order.status === 'PENDING_APPROVAL' ? (
@@ -470,10 +497,19 @@ function PublicOrdersPanel({ notify }) {
                       <button type="button" disabled={acting === order.id} onClick={() => reject(order)}>Reject</button>
                     </>
                   ) : null}
+                  {order.status === 'REFUNDED' && !order.refundSentAt ? (
+                    <button type="button" disabled={acting === order.id} onClick={() => markRefundSent(order)}>
+                      {acting === order.id ? <Loader2 className="grand-spin" size={14} /> : 'ငွေပြန်ပေးပြီး'}
+                    </button>
+                  ) : null}
                 </td>
               </tr>
             ))}
-            {!orders.length && !loading ? <tr><td colSpan={8} className="grand-empty">{onlyPending ? 'စောင့်ဆိုင်းနေတဲ့ အော်ဒါ မရှိပါ' : 'အော်ဒါ မရှိသေးပါ'}</td></tr> : null}
+            {!orders.length && !loading ? (
+              <tr><td colSpan={8} className="grand-empty">
+                {view === 'pending' ? 'စောင့်ဆိုင်းနေတဲ့ အော်ဒါ မရှိပါ' : view === 'refunded' ? 'ပြန်ပေးရန် ကျန်နေတဲ့ Refund မရှိပါ' : 'အော်ဒါ မရှိသေးပါ'}
+              </td></tr>
+            ) : null}
           </tbody>
         </table>
       </div>

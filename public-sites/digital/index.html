@@ -319,12 +319,35 @@ footer a{color:var(--blue);font-weight:700}
   }
   $('fQty').addEventListener('input', syncTotal);
 
+  // Remembers a MooGold-confirmed id per game, on this device only, so a
+  // returning customer buying the same game again does not have to retype an
+  // id they already proved is theirs. Keyed by game rather than global,
+  // because the same person's Mobile Legends id and PUBG id are unrelated.
+  function accountStorageKey(gameId) { return 'gt_account_' + gameId; }
+  function rememberAccount(gameId, playerId, server) {
+    try { window.localStorage.setItem(accountStorageKey(gameId), JSON.stringify({ playerId: playerId, server: server || '' })); } catch (e) {}
+  }
+  function recalledAccount(gameId) {
+    try {
+      const raw = window.localStorage.getItem(accountStorageKey(gameId));
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
   function openForm() {
     $('gFormTitle').textContent = state.game.name;
     $('gFormPick').textContent = state.pack.name + ' · ' + money(state.pack.retailPrice);
     show($('fPlayerWrap'), !!state.game.requiresPlayerId);
     show($('fServerWrap'), !!state.game.requiresServer);
+    // Only prefills empty fields — never overwrites something already typed
+    // for this visit (e.g. switching between packages of the same game).
+    const recalled = recalledAccount(state.game.id);
+    if (recalled && !$('fPlayer').value.trim()) {
+      $('fPlayer').value = recalled.playerId || '';
+      $('fServer').value = recalled.server || '';
+    }
     resetCheck();
+    if ($('fPlayer').value.trim()) queueAutoCheck();
     show($('gFormErr'), false);
     syncTotal();
     step('form');
@@ -386,6 +409,7 @@ footer a{color:var(--blue);font-weight:700}
       if (mySeq !== checkSeq) return;
       if (data.ok && data.valid) {
         state.checked = { playerId: playerId, server: server, username: data.username };
+        rememberAccount(state.game.id, playerId, server);
         out.className = 'note good';
         out.textContent = '';
         const tick = document.createElement('span');
@@ -533,9 +557,18 @@ footer a{color:var(--blue);font-weight:700}
   // ── status lookup ──
   const STATUS_TEXT = {
     PENDING_APPROVAL: ['⏳', 'ငွေစစ်ဆေးနေပါသည်', 'ငွေလက်ခံရရှိမှု အတည်ပြုပြီးပါက ချက်ချင်း ဖြည့်ပေးပါမယ်။', 'warn'],
+    // MooGold answers "processing" first and only settles later — this is the
+    // gap between admin approving the order and MooGold actually finishing it.
+    PROCESSING: ['⏳', 'ဖြည့်နေပါသည်', 'ငွေ အတည်ပြုပြီးပါပြီ — ဂိမ်းစနစ်က ဖြည့်နေဆဲပါ။ မိနစ်အနည်းငယ်အတွင်း ပြီးပါမယ်။', 'warn'],
     COMPLETED: ['✅', 'ဖြည့်ပြီးပါပြီ', 'ဂိမ်းအကောင့်ထဲ ရောက်ပြီးပါပြီ။', 'good'],
     REJECTED: ['❌', 'ငြင်းပယ်ခံရသည်', '', 'bad'],
     FAILED: ['⚠️', 'မအောင်မြင်ပါ', 'ဆိုင်သို့ ဆက်သွယ်ပါ။', 'bad'],
+    // The one status where money already left the customer's hand but the
+    // game top-up did not go through — MooGold could not fulfil the package
+    // (out of stock, etc.) after admin had already approved and paid for it.
+    // KBZ Pay cannot be reversed from here, so this tells the customer plainly
+    // that a human still owes them money back, with a way to reach that human.
+    REFUNDED: ['↩️', 'ငွေပြန်အမ်းပေးပါမည်', 'ဂိမ်းစနစ်က ဒီအော်ဒါကို ဖြည့်မပေးနိုင်ခဲ့ပါ (ပစ္စည်းပြတ်နေခြင်း စသည်)။ ငွေကို ဆိုင်မှ ပြန်အမ်းပေးပါမည် — <a href="https://t.me/maharshwebot" target="_blank" rel="noopener">Telegram ကို အော်ဒါနံပါတ်နှင့် ဆက်သွယ်ပါ</a>။', 'bad'],
   };
   async function lookup(order, key) {
     show($('stErr'), false);

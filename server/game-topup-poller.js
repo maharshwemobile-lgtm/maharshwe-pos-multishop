@@ -15,6 +15,7 @@ const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
 const { ensureGameTopupSchema } = require('./game-topup-schema');
 const moogold = require('./moogold-client');
+const { notifyAdminsOfRefund } = require('./game-topup-telegram');
 
 const POLL_INTERVAL_MS = 2 * 60 * 1000;
 // An order MooGold has not settled within a day is not going to settle on its
@@ -44,7 +45,8 @@ async function pendingShopOrders() {
 
 async function pendingPublicOrders() {
   return prisma.$queryRawUnsafe(
-    `SELECT id, order_number AS "orderNumber", moogold_order_id AS "moogoldOrderId", retail_price AS "retailPrice"
+    `SELECT id, order_number AS "orderNumber", moogold_order_id AS "moogoldOrderId", retail_price AS "retailPrice",
+            customer_name AS "customerName", customer_phone AS "customerPhone"
        FROM game_topup_public_orders
       WHERE status = 'PROCESSING'
         AND moogold_order_id IS NOT NULL
@@ -101,6 +103,10 @@ async function settleOne(order, kind) {
         `UPDATE game_topup_public_orders SET status='REFUNDED', failure_reason=$2, updated_at=NOW() WHERE id=$1::uuid`,
         order.id, reason,
       );
+      // The customer paid over KBZ Pay, which cannot be reversed from here —
+      // an admin has to actually send the money back, so they need an active
+      // alert, not just a status change nobody is watching for.
+      await notifyAdminsOfRefund(order).catch(() => {});
     }
     return { orderNumber: order.orderNumber, status: 'REFUNDED', kind };
   }

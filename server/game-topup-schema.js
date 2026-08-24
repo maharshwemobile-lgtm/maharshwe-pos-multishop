@@ -128,6 +128,13 @@ const statements = [
     CONSTRAINT game_topup_settings_singleton CHECK (id)
   )`,
   `INSERT INTO game_topup_settings (id) VALUES (TRUE) ON CONFLICT (id) DO NOTHING`,
+
+  // A REFUNDED public order is money MooGold gave back to the platform that
+  // an admin still owes the customer over KBZ Pay — that transfer happens
+  // outside this system, so these two columns are the record that it was
+  // actually done, and by whom.
+  `ALTER TABLE game_topup_public_orders ADD COLUMN IF NOT EXISTS refund_sent_at TIMESTAMPTZ`,
+  `ALTER TABLE game_topup_public_orders ADD COLUMN IF NOT EXISTS refund_sent_by_id UUID REFERENCES users(id) ON DELETE SET NULL`,
 ];
 
 async function ensureGameTopupSchema() {

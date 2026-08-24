@@ -97,6 +97,26 @@ async function notifyAdminsForApproval(order) {
   }
 }
 
+// Fired by the poller, not by a person, so unlike notifyAdminsForApproval this
+// carries no buttons and is not tied to the original approval message — the
+// poller runs minutes to hours after approval, on its own schedule, and the
+// original message may already be edited or scrolled away. This is a fresh
+// alert saying a human now owes the customer a manual KBZ Pay refund.
+async function notifyAdminsOfRefund(order) {
+  if (!isConfigured()) return;
+  const text = [
+    '↩️ <b>Game Top-up — Refund Needed</b>',
+    `Order: <b>${escapeHtml(order.orderNumber)}</b>`,
+    `Amount: <b>${money(order.retailPrice)}</b>`,
+    `Customer: ${escapeHtml(order.customerName || '-')} · ${escapeHtml(order.customerPhone)}`,
+    '',
+    'MooGold ကနေ ဖြည့်မပေးနိုင်ခဲ့ပါ (ပစ္စည်းပြတ်နေခြင်း စသည်) — ငွေကို ဖောက်သည်ဆီ KBZ Pay နဲ့ ပြန်လွှဲပြီး Grand Admin ➜ Public Orders မှာ "ငွေပြန်ပေးပြီး" နှိပ်ပါ။',
+  ].join('\n');
+  for (const chatId of adminChatIds()) {
+    await callTelegram('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML' });
+  }
+}
+
 async function editOrderMessage(order, resultText) {
   if (!order?.telegramChatId || !order?.telegramMessageId) return;
   await callTelegram('editMessageText', {
@@ -235,6 +255,7 @@ module.exports = {
   ApiError,
   isConfigured,
   notifyAdminsForApproval,
+  notifyAdminsOfRefund,
   approvePublicOrder,
   rejectPublicOrder,
   setGameTopupWebhook,

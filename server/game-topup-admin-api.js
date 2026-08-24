@@ -453,6 +453,7 @@ function attachGameTopupAdminApi(app) {
                 o.retail_price AS "retailPrice", o.payment_transaction_id AS "paymentTransactionId",
                 o.reject_reason AS "rejectReason", o.failure_reason AS "failureReason",
                 o.moogold_order_id AS "moogoldOrderId", o.created_at AS "createdAt", o.reviewed_at AS "reviewedAt",
+                o.refund_sent_at AS "refundSentAt",
                 p.name AS "productName", v.name AS "variationName",
                 (SELECT COUNT(*)::int FROM game_topup_public_orders d WHERE d.payment_transaction_id = o.payment_transaction_id) AS "sameTxnCount"
            FROM game_topup_public_orders o
@@ -494,6 +495,33 @@ function attachGameTopupAdminApi(app) {
       res.json({ ok: true, message: `${order.orderNumber} rejected`, order });
     } catch (error) {
       res.status(error.status || 500).json({ ok: false, message: error.message || 'Reject failed' });
+    }
+  });
+
+  // Records that a human actually sent the KBZ Pay refund for a REFUNDED
+  // order — the money movement itself happens outside this system, so this
+  // is only the confirmation that it was done, not a payment action.
+  app.post('/api/grand-admin/game-topup/public-orders/:id/refund-sent', async (req, res) => {
+    try {
+      await ensureGameTopupSchema();
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT id, order_number AS "orderNumber", status, refund_sent_at AS "refundSentAt" FROM game_topup_public_orders WHERE id = $1::uuid`,
+        req.params.id,
+      );
+      const order = rows[0];
+      if (!order) throw new ApiError(404, 'Order not found');
+      if (order.status !== 'REFUNDED') throw new ApiError(409, 'ဒီ Order က REFUNDED မဟုတ်ပါ');
+      if (order.refundSentAt) throw new ApiError(409, 'ပြန်ပေးပြီးသား Order ပါ');
+      await prisma.$executeRawUnsafe(
+        `UPDATE game_topup_public_orders SET refund_sent_at = NOW(), refund_sent_by_id = $2::uuid WHERE id = $1::uuid`,
+        order.id, req.auth.userId,
+      );
+      await prisma.auditLog.create({
+        data: { shopId: null, userId: req.auth.userId, action: 'GAME_TOPUP_PUBLIC_ORDER_REFUND_SENT', entityType: 'game_topup_public_order', entityId: order.id, details: { orderNumber: order.orderNumber }, ipAddress: req.ip || null, userAgent: req.headers['user-agent'] || null },
+      }).catch(() => {});
+      res.json({ ok: true, message: `${order.orderNumber} ငွေပြန်ပေးပြီးကြောင်း မှတ်တမ်းတင်ပြီးပါပြီ` });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Update failed' });
     }
   });
 
