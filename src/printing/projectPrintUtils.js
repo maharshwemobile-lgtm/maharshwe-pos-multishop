@@ -67,20 +67,24 @@ function printWindow(targetWindow, html) {
 
 function baseStyles(paperSize) {
   const width = paperSize === '58mm' ? '58mm' : '80mm';
+  // Thermal heads render grey as sparse dots, so a #555 label comes out faint
+  // and a hairline dashed rule almost disappears. Everything on this slip is
+  // pure black and bold, with solid rules — it is the only way an 80mm roll
+  // stays readable after a few weeks in a customer's pocket.
   return `
     @page{size:${width} auto;margin:3mm}
-    *{box-sizing:border-box}
-    body{width:${width};max-width:100%;margin:0 auto;padding:3mm;font-family:Arial,sans-serif;color:#111;font-size:11px;background:#fff}
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{width:${width};max-width:100%;margin:0 auto;padding:3mm;font-family:Arial,sans-serif;color:#000;font-size:12px;font-weight:700;line-height:1.5;background:#fff;-webkit-font-smoothing:none}
     .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 8px auto;text-align:center}
-    .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#111;color:#fff;font-weight:900;font-size:18px}
-    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px}h2{font-size:14px}.muted{color:#555}.left{text-align:left}.right{text-align:right}.center{text-align:center}
-    .meta{margin:10px 0;padding:8px 0;border-top:1px dashed #777;border-bottom:1px dashed #777}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#444}
-    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px dashed #999;vertical-align:top}th{text-align:left;font-size:10px}td small{display:block;color:#555;margin-top:2px}
-    .summary{margin-top:10px}.grand{font-size:15px;font-weight:bold;border-top:2px solid #111;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #b91c1c;color:#b91c1c;font-weight:bold;text-align:center;letter-spacing:2px}
-    .notice{margin-top:11px;padding:7px 8px;border:1px solid #111;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;line-height:1.5;margin-bottom:3px}
-    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #111;padding-top:4px;font-size:9px}
-    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:34mm;height:34mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
-    .footer{margin-top:15px;padding-top:10px;border-top:1px dashed #777;text-align:center;white-space:normal}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:9px;color:#444;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#333}
+    .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#000;color:#fff;font-weight:900;font-size:18px}
+    h1,h2,p{text-align:center;margin:3px 0}h1{font-size:19px;font-weight:900}h2{font-size:15px;font-weight:900}.muted{color:#000;font-weight:700}.left{text-align:left}.right{text-align:right}.center{text-align:center}
+    .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:700}.meta b,.summary b{font-weight:900}
+    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:700}th{text-align:left;font-size:11px;font-weight:900}td small{display:block;color:#000;font-weight:700;margin-top:2px;font-size:10.5px}
+    .summary{margin-top:10px}.grand{font-size:16px;font-weight:900;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:900;text-align:center;letter-spacing:2px}
+    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:12px;font-weight:900;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:10.5px;font-weight:700;line-height:1.5;margin-bottom:3px}
+    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:10px;font-weight:700}
+    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:34mm;height:34mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:10px;font-weight:900}
+    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:700}.footer-tag{display:block;margin-top:8px;font-weight:900}.warranty{margin-top:9px;font-size:10px;color:#000;font-weight:700;text-align:center}.qr-link{word-break:break-all;font-size:10px;color:#000;font-weight:700}
     @media print{body{padding:0}.no-print{display:none!important}}
   `;
 }
