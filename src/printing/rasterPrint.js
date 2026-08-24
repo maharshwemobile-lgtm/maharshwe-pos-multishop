@@ -33,7 +33,12 @@ async function inlineImages(root) {
     const src = image.getAttribute('src') || '';
     if (!src || src.startsWith('data:')) return;
     try {
-      const response = await fetch(src, { mode: 'cors' });
+      // A CDN that cached this image before the origin started sending CORS
+      // headers will keep serving the header-less copy. A stable extra param
+      // is a different cache key, so the fetch gets a fresh response with the
+      // header — and still caches, unlike a random buster.
+      const url = src.includes('?') ? `${src}&cors=1` : `${src}?cors=1`;
+      const response = await fetch(url, { mode: 'cors' });
       if (!response.ok) throw new Error(String(response.status));
       const blob = await response.blob();
       const dataUrl = await new Promise((resolve, reject) => {
@@ -86,14 +91,19 @@ function writeGrey(pixels, index, value) {
   pixels[index + 3] = 255;
 }
 
-// A shop logo is usually flat brand colour, and those sit in the middle of the
-// range — the jade in this one reads as luma 96, the orange as 175. Diffused
-// straight, both become sparse dots and the mark looks washed out on paper.
-// This pulls anything meaningfully darker than paper down towards solid ink
-// while leaving genuinely light tones to dither, so a flat logo prints as a
-// silhouette and a photographic one still keeps its shading.
+// A shop logo is flat brand colour, and brand colour is light. Measured on the
+// Mahar Shwe wordmark: a quarter of it is darker than 128, but 40% sits around
+// 175 and another third is lighter still — the yellow and the pale blue. Error
+// diffusion turns a value of 175 into roughly seven dots in ten, which reads as
+// grey, and the mark looked washed out even after the first contrast pass.
+//
+// So the curve is steep: anything clearly darker than paper collapses to solid
+// ink, and only genuinely near-white is left for the dither to shade. A
+// photographic logo comes out heavy under this, which is the right trade — at
+// 203dpi in one colour a photo was never going to reproduce anyway, and a
+// visible mark beats a faithful smudge.
 function inkCurve(luma) {
-  const adjusted = ((luma - 205) * 2.2) + 140;
+  const adjusted = ((luma - 212) * 3.5) + 128;
   return Math.min(255, Math.max(0, adjusted));
 }
 
