@@ -288,6 +288,8 @@ function attachGameTopupPublicApi(app) {
         retailPrice,
         playerId: input.playerId,
         serverId: input.server,
+        playerField: variation.playerField,
+        serverField: variation.serverField,
         customerName: input.customerName,
         customerPhone: input.customerPhone,
         paymentMethod: 'KBZ Pay',

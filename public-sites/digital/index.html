@@ -376,6 +376,8 @@ footer a{color:var(--blue);font-weight:700}
     // every product.
     $('fPlayerLabel').textContent = (state.game.playerField || 'Player ID / User ID') + ' *';
     $('fServerLabel').textContent = (state.game.serverField || 'Server / Zone ID') + ' *';
+    $('fPlayer').placeholder = state.game.playerField || 'ဂိမ်းထဲက ID';
+    $('fServer').placeholder = state.game.serverField || 'ဥပမာ - 2001';
     // Only prefills empty fields — never overwrites something already typed
     // for this visit (e.g. switching between packages of the same game).
     const recalled = recalledAccount(state.game.id);

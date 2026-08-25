@@ -81,7 +81,7 @@ function orderMessageText(order, extra) {
     `Order: <b>${escapeHtml(order.orderNumber)}</b>`,
     `Item: ${escapeHtml(order.productName)} · ${escapeHtml(order.variationName)} × ${order.quantity}`,
     `Price: <b>${money(order.retailPrice)}</b>`,
-    `Player ID: ${escapeHtml(order.playerId || '-')}${order.serverId ? ' · Server ' + escapeHtml(order.serverId) : ''}`,
+    `${escapeHtml(order.playerField || 'Player ID')}: ${escapeHtml(order.playerId || '-')}${order.serverId ? ' · ' + escapeHtml(order.serverField || 'Server') + ' ' + escapeHtml(order.serverId) : ''}`,
     `Customer: ${escapeHtml(order.customerName || '-')} · ${escapeHtml(order.customerPhone)}`,
     `Payment: ${escapeHtml(order.paymentMethod)} · Txn နောက်ဆုံး ၄ လုံး: <code>${escapeHtml(order.paymentTransactionId)}</code>`,
   ];

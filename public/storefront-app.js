@@ -13,7 +13,6 @@
     detailVariant:null, detailQty:1, sheet:null, checkout:false, success:null, orderStatus:'ALL',
     orders:read(ORDER_KEY,[]), customer:null, orderDetail:null, favouriteOnly:false, infoSheet:null, language:localStorage.getItem('storefront-language') || 'my',
     installPrompt:null, isStandalone:matchMedia('(display-mode: standalone)').matches || navigator.standalone === true, historyReady:false, heroIndex:0, heroTimer:null,
-    gameTopup:{loaded:false,products:[]}, gameTopupBuy:null,
   };
   const text = {
     my:{home:'ပင်မ',shop:'ဈေးဝယ်ရန်',cart:'ခြင်းတောင်း',orders:'အော်ဒါများ',profile:'ပရိုဖိုင်',search:'ပစ္စည်းရှာရန်',all:'အားလုံး',filter:'စစ်ထုတ်မည်',sort:'စီစဉ်မည်',clear:'ပြန်ရှင်းမည်',apply:'အသုံးပြုမည်',latest:'အသစ်ဆုံး',popular:'လူကြိုက်အများဆုံး',lowHigh:'ဈေးနည်းမှများ',highLow:'ဈေးများမှနည်း',discount:'လျှော့ဈေးအများဆုံး',recommended:'သင့်အတွက် ရွေးချယ်ထားသည်',categories:'အမျိုးအစားများ',flash:'အထူးလျှော့ဈေး',viewAll:'အားလုံးကြည့်မည်',addCart:'ခြင်းတောင်းထဲထည့်မည်',buyNow:'ယခုဝယ်မည်',out:'ပစ္စည်းကုန်နေပါသည်',empty:'ပစ္စည်းမတွေ့ပါ',retry:'ပြန်စမ်းမည်',selectAll:'အားလုံးရွေးမည်',checkout:'အော်ဒါတင်ရန်',address:'ပို့ဆောင်မည့်လိပ်စာ',delivery:'ပို့ဆောင်မှု',payment:'ငွေပေးချေမှု',summary:'ပစ္စည်းစာရင်း',note:'အော်ဒါမှတ်ချက်',cod:'အိမ်အရောက်ငွေချေ',pickup:'ဆိုင်တွင်လာယူမည်',digital:'ဒစ်ဂျစ်တယ်ဖြင့်ရယူမည်',confirm:'အော်ဒါအတည်ပြုမည်',success:'အော်ဒါတင်ပြီးပါပြီ',continue:'ဆက်လက်ဈေးဝယ်မည်',login:'Telegram ဖြင့် အကောင့်ဝင်မည်',guest:'အကောင့်ဝင်ပြီး အော်ဒါနှင့် အသိပေးချက်များကို တစ်နေရာတည်းကြည့်နိုင်သည်။',pending:'စောင့်ဆိုင်း',confirmed:'ပြင်ဆင်နေ',ready:'ပို့ဆောင်ရန်အသင့်',completed:'ပြီးဆုံး',cancelled:'ပယ်ဖျက်',buyAgain:'ထပ်မံဝယ်ယူမည်',support:'အကူအညီတောင်းမည်',total:'စုစုပေါင်း',subtotal:'ပစ္စည်းတန်ဖိုး',fee:'ပို့ဆောင်ခ',stock:'လက်ကျန်ရှိ',variation:'အမျိုးအစားရွေးရန်',quantity:'အရေအတွက်',description:'ပစ္စည်းအကြောင်း',specs:'အချက်အလက်',warranty:'အာမခံ',related:'ဆက်စပ်ပစ္စည်းများ'},
@@ -82,19 +81,9 @@
       document.title=`${state.store.name} · Online Shop`;const manifestLink=document.getElementById('storeManifest');if(manifestLink)manifestLink.href=`/shop/${encodeURIComponent(slug)}/manifest.webmanifest?v=shop-icon-v2`;const appleIcon=document.getElementById('storeAppleIcon');if(appleIcon)appleIcon.href=state.store.logoUrl||'/mahar-pos-logo-192.png';document.getElementById('storeAppleTitle').content=state.store.name;
       state.selected=new Set(state.cart.map(x=>x.variantId));await mergeServerCart();state.loading=false;startHeroCarousel();
       history.replaceState({storefront:true,tab:state.tab,detailId:null,checkout:false},'');state.historyReady=true;render();
-      loadGameTopupCatalog();
     }catch(error){state.loading=false;state.error=error.message;render()}
   }
   function hydrateProducts(data,append=false){state.products=append?[...state.products,...data.products]:data.products;state.categories=data.categories||state.categories;state.brands=data.brands||state.brands;state.page=data.page;state.totalPages=data.totalPages}
-  async function loadGameTopupCatalog(){
-    try{
-      const data=await request(`/api/public/game-topup/catalog?shop=${encodeURIComponent(slug)}`);
-      state.gameTopup={loaded:true,products:data.products||[]};
-    }catch{
-      state.gameTopup={loaded:true,products:[]};
-    }
-    renderMain();
-  }
   async function loadProducts(reset=true){state.loading=true;renderMain();try{const page=reset?1:state.page+1;const q=new URLSearchParams({page,search:state.search,categoryId:state.categoryId,brand:state.brand,stockLevel:state.inStock?'IN_STOCK':''});const data=await request(`${API}/products?${q}`);hydrateProducts(data,!reset);sortProducts();state.loading=false;renderMain()}catch(e){state.error=e.message;state.loading=false;renderMain()}}
   function sortProducts(){const f={lowHigh:(a,b)=>priceOf(a)-priceOf(b),highLow:(a,b)=>priceOf(b)-priceOf(a),popular:(a,b)=>Number(b.ecommerceDetail?.featured)-Number(a.ecommerceDetail?.featured),discount:()=>0,newest:(a,b)=>String(b.id).localeCompare(String(a.id))}[state.sort];state.products.sort(f)}
 
@@ -127,53 +116,6 @@
     return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
   }
   function CategoryScroller(){return `<div class="category-row"><button class="category-pill" data-category=""><i class="category-icon">${categoryIconSvg()}</i><span>${t('all')}</span></button><button class="category-pill vpn-category" data-action="vpn-plans"><i class="category-icon">${categoryIconSvg('VPN')}</i><span>VPN</span></button><button class="category-pill game-topup-category" data-action="game-topup"><i class="category-icon">${categoryIconSvg('game')}</i><span>${state.language==='my'?'ဂိမ်းဖြည့်ငွေ':'Game Top-up'}</span></button>${state.categories.map(c=>`<button class="category-pill" data-category="${esc(c.id)}"><i class="category-icon">${categoryIconSvg(c.name)}</i><span>${esc(c.name)}</span></button>`).join('')}</div>`}
-  function GameTopupSection(){
-    if(!state.gameTopup.products.length)return '';
-    const cards=state.gameTopup.products.flatMap(p=>p.variations.map(v=>
-      `<button type="button" class="gametopup-card" data-gt-product="${esc(p.id)}" data-gt-variation="${esc(v.id)}">
-        <img loading="lazy" src="${esc(p.imageUrl||placeholderImage(p.name,'game'))}" alt="">
-        <div><b>${esc(p.name)}</b><small>${esc(v.name)}</small><strong>${money(v.retailPrice)}</strong></div>
-      </button>`
-    ).join(''));
-    return `<div class="section-head compact"><h2>🎮 ${state.language==='my'?'ဂိမ်းဖြည့်ငွေ':'Game Top-up'}</h2></div><div class="gametopup-row">${cards.join('')}</div>`;
-  }
-  function gtFindVariation(productId,variationId){
-    const product=state.gameTopup.products.find(p=>p.id===productId);
-    const variation=product?.variations.find(v=>v.id===variationId);
-    return product&&variation?{product,variation}:null;
-  }
-  function GameTopupBottomSheet(){
-    const buy=state.gameTopupBuy;
-    if(!buy)return '';
-    const {product,variation,check}=buy;
-    if(buy.step==='success'){
-      return `<div class="sheet-backdrop" data-action="close-sheet"><section class="sheet" onclick="event.stopPropagation()"><div class="sheet-grab"></div>
-        <div class="empty"><div class="empty-icon">✅</div><h3>${esc(buy.successMessage||'')}</h3>
-        <p>${state.language==='my'?'အော်ဒါနံပါတ်':'Order'}: <b>${esc(buy.orderNumber||'')}</b></p>
-        ${buy.statusUrl?`<a class="primary" href="${esc(buy.statusUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;text-align:center">${state.language==='my'?'အော်ဒါ အခြေအနေ ကြည့်ရန်':'View order status'}</a>`:''}
-        <button class="primary" data-action="close-sheet">${state.language==='my'?'ပြီးပါပြီ':'Done'}</button></div>
-        </section></div>`;
-    }
-    const needsServer=product.requiresServer;
-    const checkBusy=check.state==='checking';
-    const checkOk=check.state==='valid';
-    const checkBad=check.state==='invalid';
-    return `<div class="sheet-backdrop" data-action="close-sheet"><section class="sheet gametopup-sheet" onclick="event.stopPropagation()">
-      <div class="sheet-grab"></div>
-      <div class="sheet-head"><div><small>${esc(product.name)}</small><h2>${esc(variation.name)} · ${money(variation.retailPrice)}</h2></div><button class="icon-btn" data-action="close-sheet">×</button></div>
-      <div class="gametopup-form">
-        <label><span>${esc(product.playerField||'Player ID / User ID')} *</span><input id="gtPlayerId" value="${esc(buy.playerId)}" placeholder="${esc(product.playerField||'Player ID')}"></label>
-        ${needsServer?`<label><span>${esc(product.serverField||'Server ID')} *</span><input id="gtServer" value="${esc(buy.server)}" placeholder="${esc(product.serverField||'Server ID')}"></label>`:''}
-        <button type="button" class="secondary" data-action="gt-check" ${checkBusy?'disabled':''}>${checkBusy?(state.language==='my'?'စစ်နေသည်…':'Checking…'):(state.language==='my'?'အကောင့်စစ်ရန်':'Check account')}</button>
-        ${checkOk?`<div class="note good">✓ ${esc(check.username||'')}${check.country?` · ${esc(check.country)}`:''}</div>`:''}
-        ${checkBad?`<div class="note bad">${esc(check.message||(state.language==='my'?'အကောင့် မတွေ့ပါ':'Account not found'))}</div>`:''}
-        <label><span>${t('phone')} *</span><input id="gtPhone" type="tel" value="${esc(buy.phone)}" placeholder="09xxxxxxxxx"></label>
-        <label><span>KBZ Pay Transaction ID (နောက်ဆုံး ၄ လုံး) *</span><input id="gtTxn" value="${esc(buy.txn)}" placeholder="1234"></label>
-        ${buy.error?`<div class="note bad">${esc(buy.error)}</div>`:''}
-        <button type="button" class="primary" data-action="gt-submit" ${buy.submitting?'disabled':''}>${buy.submitting?(state.language==='my'?'တင်နေသည်…':'Submitting…'):(state.language==='my'?'အော်ဒါတင်မည်':'Place order')}</button>
-      </div>
-      </section></div>`;
-  }
   function FlashSaleRow(){const products=state.products.filter(p=>p.ecommerceDetail?.featured).slice(0,6);if(!products.length)return '';return `<div class="flash-row">${products.map(p=>`<article class="flash-card" data-product="${p.id}"><img loading="lazy" src="${esc(productImage(p))}" alt=""><div><strong>${esc(p.name)}</strong><small>${money(priceOf(p))}</small></div></article>`).join('')}</div>`}
   function ProductCard(p){const v=firstVariant(p),stock=productStock(p),fav=state.favourites.has(p.id);return `<article class="product-card ${stock<1?'is-out':''}" data-product="${p.id}"><div class="product-media"><img loading="lazy" src="${esc(productImage(p))}" alt="${esc(p.name)}">${stock<1?`<span class="out-ribbon">${t('out')}</span>`:''}<button class="heart" data-favourite="${p.id}">${fav?'♥':'♡'}</button></div><div class="product-info"><div class="product-name">${esc(p.name)}</div><div class="price-row"><span class="price">${money(v?.price)}</span></div><div class="mini-meta"><span class="${stock<1?'stock-out':'stock-count'}">${stock>0?`${t('stock')} ${stock}`:t('out')}</span><button class="mini-cart" data-add="${p.id}" ${stock<1?'disabled':''}>＋</button></div></div></article>`}
   function ProductGrid(){const rows=state.favouriteOnly?state.products.filter(product=>state.favourites.has(product.id)):state.products;if(!rows.length&&!state.loading)return EmptyState(state.favouriteOnly?t('noFavourites'):t('empty'));return `<div class="product-grid">${rows.map(ProductCard).join('')}${state.loading?ProductSkeleton(6):''}</div>${!state.favouriteOnly&&state.page<state.totalPages&&!state.loading?`<div class="load-more"><button class="secondary" data-action="more">${t('viewAll')}</button></div>`:''}`}
@@ -207,9 +149,9 @@
   function ProfilePage(){return `<main class="page">${ShopMobileHeader()}<div class="profile">${state.customer?CustomerProfile():GoogleLoginCard()}${!state.customer?`<section class="profile-card profile-actions"><button class="menu-row" data-action="install-app"><span>${state.language==='my'?'App ထည့်မည်':'Install app'}</span><b>${state.isStandalone?'✓':'›'}</b></button><div class="menu-row"><span>${state.language==='my'?'ဘာသာစကား':'Language'}</span><button class="secondary" data-action="language">${state.language==='my'?'မြန်မာ':'English'}</button></div></section>`:''}</div></main>`}
   function ProductVideoFeed(){const rows=state.products.slice(0,8);return `<div class="video-feed">${rows.map(p=>`<article class="video-item" data-product="${p.id}"><img loading="lazy" src="${esc(productImage(p))}" alt=""><div class="video-overlay"><small>${esc(state.store.name)}</small><h2>${esc(p.name)}</h2><strong>${money(priceOf(p))}</strong><p><button class="primary danger" data-product="${p.id}">${t('buyNow')}</button></p></div></article>`).join('')}</div>`}
   function BottomNavigation(){const tabs=[['home','home'],['shop','shop'],['cart','cart'],['orders','orders'],['profile','profile']];return `<nav class="bottom-nav">${tabs.map(([tab,key])=>`<button class="nav-item ${state.tab===tab?'active':''}" data-tab="${tab}"><i>${uiIcon(tab)}</i><span>${t(key)}</span>${tab==='cart'&&cartCount()?`<b class="badge cart-badge">${cartCount()}</b>`:''}</button>`).join('')}</nav>`}
-  function HomePage(){return `<main class="page">${ShopMobileHeader()}<div class="content home-discovery">${ShopSearchBar()}${StoreWelcome()}${StoreAssurance()}<div class="section-head compact"><h2>${t('categories')}</h2><button data-tab="shop">${t('viewAll')}</button></div>${CategoryScroller()}${GameTopupSection()}<div class="product-heading"><div><small>${state.language==='my'?'ONLINE COLLECTION':'ONLINE COLLECTION'}</small><h2>${state.language==='my'?'ရွေးချယ်ဝယ်ယူရန်':'Shop products'}</h2></div><button data-tab="shop">${state.language==='my'?'အားလုံး':'View all'} →</button></div>${ProductGrid()}${StoreContact()}</div></main>`}
+  function HomePage(){return `<main class="page">${ShopMobileHeader()}<div class="content home-discovery">${ShopSearchBar()}${StoreWelcome()}${StoreAssurance()}<div class="section-head compact"><h2>${t('categories')}</h2><button data-tab="shop">${t('viewAll')}</button></div>${CategoryScroller()}<div class="product-heading"><div><small>${state.language==='my'?'ONLINE COLLECTION':'ONLINE COLLECTION'}</small><h2>${state.language==='my'?'ရွေးချယ်ဝယ်ယူရန်':'Shop products'}</h2></div><button data-tab="shop">${state.language==='my'?'အားလုံး':'View all'} →</button></div>${ProductGrid()}${StoreContact()}</div></main>`}
   function ShopPage(){return `<main class="page">${ShopMobileHeader()}<div class="shop-tools"><div class="shop-search"><input id="shopSearch" value="${esc(state.search)}" placeholder="${t('search')}"><button class="tool-btn" data-action="filter">${icon('filter')}</button><button class="tool-btn" data-action="sort">${icon('sort')}</button></div>${ActiveFilterChips()}</div><div class="content">${ProductGrid()}</div></main>`}
-  function renderMain(){if(!root)return;if(state.error)return root.innerHTML=ErrorState(state.error);if(state.success)return root.innerHTML=OrderSuccessPage();if(state.detail)return root.innerHTML=ProductDetailPage();if(state.checkout)return root.innerHTML=CheckoutPage();const pages={home:HomePage,shop:ShopPage,cart:CartPage,orders:OrdersPage,profile:ProfilePage};root.innerHTML=`<div class="app-shell">${(pages[state.tab]||HomePage)()}${BottomNavigation()}${state.sheet==='filter'?FilterBottomSheet():state.sheet==='sort'?SortBottomSheet():state.sheet==='menu'?MenuBottomSheet():state.sheet==='gametopup'?GameTopupBottomSheet():''}${state.infoSheet?InfoBottomSheet():''}${state.orderDetail?OrderDetailSheet():''}</div>`}
+  function renderMain(){if(!root)return;if(state.error)return root.innerHTML=ErrorState(state.error);if(state.success)return root.innerHTML=OrderSuccessPage();if(state.detail)return root.innerHTML=ProductDetailPage();if(state.checkout)return root.innerHTML=CheckoutPage();const pages={home:HomePage,shop:ShopPage,cart:CartPage,orders:OrdersPage,profile:ProfilePage};root.innerHTML=`<div class="app-shell">${(pages[state.tab]||HomePage)()}${BottomNavigation()}${state.sheet==='filter'?FilterBottomSheet():state.sheet==='sort'?SortBottomSheet():state.sheet==='menu'?MenuBottomSheet():''}${state.infoSheet?InfoBottomSheet():''}${state.orderDetail?OrderDetailSheet():''}</div>`}
   function render(){renderMain();bindObserver()}
   function startHeroCarousel(){clearInterval(state.heroTimer);state.heroTimer=setInterval(()=>{const slides=heroProducts();if(slides.length<2||state.tab!=='home'||state.detail||state.checkout||state.sheet)return;state.heroIndex=(state.heroIndex+1)%slides.length;renderMain()},4500)}
   function renderNavBadges(){document.querySelectorAll('.cart-badge').forEach(x=>x.textContent=cartCount())}
@@ -228,38 +170,7 @@
     if(action==='vpn-plans'){state.infoSheet='vpn';return render()}
     if(action==='game-topup'){window.location.href='/digital/';return}
     if(action==='sort'){state.sheet='sort';return render()}
-    if(action==='close-sheet'){state.sheet=null;state.gameTopupBuy=null;return render()}
-    if(action==='gt-check'){
-      const buy=state.gameTopupBuy;if(!buy)return;
-      buy.playerId=document.getElementById('gtPlayerId')?.value.trim()||'';
-      buy.server=document.getElementById('gtServer')?.value.trim()||'';
-      if(!buy.playerId){buy.check={state:'invalid',message:(buy.product.playerField||'Player ID')+' ထည့်ပါ'};return render()}
-      if(buy.product.requiresServer&&!buy.server){buy.check={state:'invalid',message:(buy.product.serverField||'Server ID')+' ထည့်ပါ'};return render()}
-      buy.check={state:'checking'};render();
-      try{
-        const result=await request(`/api/public/game-topup/validate`,{method:'POST',body:JSON.stringify({variationId:buy.variation.id,playerId:buy.playerId,server:buy.server||null})});
-        buy.check=result.valid?{state:'valid',username:result.username,country:result.country}:{state:'invalid',message:result.message};
-      }catch(error){buy.check={state:'invalid',message:error.message}}
-      return render();
-    }
-    if(action==='gt-submit'){
-      const buy=state.gameTopupBuy;if(!buy||buy.submitting)return;
-      buy.phone=document.getElementById('gtPhone')?.value.trim()||'';
-      buy.txn=document.getElementById('gtTxn')?.value.trim()||'';
-      buy.error='';
-      if(buy.check.state!=='valid'){buy.error=state.language==='my'?'အကောင့်ကို အရင်စစ်ပါ':'Check the account first';return render()}
-      if(buy.phone.length<7){buy.error=state.language==='my'?'ဖုန်းနံပါတ် ထည့်ပါ':'Enter a phone number';return render()}
-      if(!/^\d{4,20}$/.test(buy.txn)){buy.error=state.language==='my'?'Transaction ID (ဂဏန်း ၄-၂၀လုံး) ထည့်ပါ':'Enter a valid transaction ID';return render()}
-      buy.submitting=true;render();
-      try{
-        const result=await request(`/api/public/game-topup/orders`,{method:'POST',body:JSON.stringify({
-          variationId:buy.variation.id,quantity:1,playerId:buy.playerId,server:buy.server||null,
-          customerPhone:buy.phone,paymentTransactionId:buy.txn,shopSlug:slug,
-        })});
-        buy.step='success';buy.orderNumber=result.orderNumber;buy.statusUrl=result.statusUrl;buy.successMessage=result.message;buy.submitting=false;
-      }catch(error){buy.submitting=false;buy.error=error.message;}
-      return render();
-    }
+    if(action==='close-sheet'){state.sheet=null;return render()}
     if(action==='close-info'){state.infoSheet=null;return render()}
     if(action==='close-order-detail'){state.orderDetail=null;return render()}
     if(action==='clear-filter'){state.categoryId='';state.brand='';state.inStock=false;render();return}
@@ -289,12 +200,6 @@
     if(action==='install-app'){state.sheet=null;render();await installStorefront();return}
     if(action==='logout'){await request(`${API}/customer/logout`,{method:'POST',body:'{}'}).catch(()=>null);state.customer=null;return render()}
     if(target.dataset.orderStatus){state.orderStatus=target.dataset.orderStatus;render();return}
-    if(target.dataset.gtVariation){
-      const found=gtFindVariation(target.dataset.gtProduct,target.dataset.gtVariation);
-      if(!found)return;
-      state.gameTopupBuy={product:found.product,variation:found.variation,step:'form',playerId:'',server:'',phone:'',txn:'',error:'',submitting:false,check:{state:'idle'}};
-      state.sheet='gametopup';return render();
-    }
     if(target.dataset.category!==undefined){state.categoryId=target.dataset.category;state.tab='shop';return loadProducts(true)}
     if(target.dataset.vpnPlan){const base=state.store?.vpnBotUrl||'https://t.me/maharshwebot';window.open(`${base}?start=vpn_${encodeURIComponent(target.dataset.vpnPlan)}`,'_blank','noopener,noreferrer');return}
     if(target.dataset.quick){const quick=target.dataset.quick;if(quick==='orders'){state.tab='orders';return render()}if(quick==='favourites'){state.favouriteOnly=true;state.tab='shop';return render()}if(quick==='address'){state.infoSheet='address';return render()}if(quick==='coupons'){state.infoSheet='coupons';return render()}if(quick==='messages'){if(state.store.telegramUrl)open(state.store.telegramUrl,'_blank','noopener');else toast('ဆိုင်၏ Telegram Support မသတ်မှတ်ရသေးပါ');return}}
