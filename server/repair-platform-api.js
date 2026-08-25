@@ -42,6 +42,9 @@ const statusSchema = z.object({
   resolution: z.string().trim().max(2000).optional().nullable(),
   finalCost: z.coerce.number().min(0).optional(),
   warrantyUntil: z.string().trim().optional().nullable(),
+  // Set explicitly when the counter marks a job settled. Left out, the rule
+  // below keeps deriving it from the deposit as before.
+  paymentStatus: z.enum(['PENDING', 'PARTIAL', 'PAID']).optional(),
 });
 
 const deviceSchema = z.object({
@@ -896,6 +899,7 @@ function attachRepairPlatformApi(app) {
                 diagnosis = COALESCE($4, diagnosis), resolution = COALESCE($5, resolution),
                 final_cost = COALESCE($6::numeric, final_cost), warranty_until = COALESCE($7::date, warranty_until),
                 payment_status = CASE
+                  WHEN $8::text IS NOT NULL THEN $8::"PaymentStatus"
                   WHEN COALESCE($6::numeric, final_cost) > 0 AND deposit >= COALESCE($6::numeric, final_cost) THEN 'PAID'::"PaymentStatus"
                   WHEN deposit > 0 THEN 'PARTIAL'::"PaymentStatus" ELSE payment_status END,
                 completed_at = CASE WHEN $3 IN ('COMPLETED','CANNOT_REPAIR') THEN COALESCE(completed_at, NOW()) ELSE completed_at END,
@@ -904,6 +908,7 @@ function attachRepairPlatformApi(app) {
           WHERE id = $1::uuid AND shop_id = $2::uuid`,
         repair.id, req.auth.shopId, input.status, input.diagnosis || null, input.resolution || null,
         input.finalCost === undefined ? null : input.finalCost, input.warrantyUntil || null,
+        input.paymentStatus || null,
       );
       await addStatusHistory(tx, { shopId: req.auth.shopId, repairId: repair.id, status: input.status, userId: req.auth.userId, note: input.note });
       await addEvent(tx, {

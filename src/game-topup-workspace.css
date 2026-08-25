@@ -85,3 +85,12 @@
 .gt-account-check.valid b{font-size:14px}
 .gt-account-check.valid small{display:block;margin-top:2px;color:#3a7a55}
 .gt-account-check.invalid{background:#fdecec;border-color:#e37f7f;color:#8a2b2b}
+.gt-pricing-panel{margin:14px 0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff}
+.gt-pricing-toggle{width:100%;text-align:left;padding:12px 14px;border:0;background:#f8fafc;font-weight:700;font-size:13.5px;cursor:pointer}
+.gt-pricing-hint{margin:10px 14px;font-size:12px;color:#64748b}
+.gt-pricing-panel table{width:100%;border-collapse:collapse;font-size:13px}
+.gt-pricing-panel th,.gt-pricing-panel td{padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:left}
+.gt-pricing-panel td small{display:block;color:#94a3b8;font-size:11px}
+.gt-pricing-panel input{width:110px;padding:6px 8px;border:1px solid #dbe3ef;border-radius:7px}
+.gt-pricing-panel td button{margin-right:6px;padding:6px 10px;border-radius:7px;border:1px solid #dbe3ef;background:#fff;font-size:12px;cursor:pointer}
+.gt-pricing-panel td button:disabled{opacity:.5;cursor:not-allowed}

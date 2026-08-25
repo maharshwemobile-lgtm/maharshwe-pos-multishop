@@ -15,6 +15,13 @@ const { prisma } = require('./prisma');
 const moogold = require('./moogold-client');
 const { ensureGameTopupSchema } = require('./game-topup-schema');
 const { appUrl } = require('./public-urls');
+// Required lazily (not at module load) because telegram-automation-api.js
+// requires this file back, to route gtapprove/gtreject callbacks through a
+// shop's own bot — a top-level require on both sides would hand one of them
+// a half-initialized module.exports.
+function loadTelegramSettings(shopId) {
+  return require('./telegram-automation-api').loadTelegramSettings(shopId);
+}
 
 class ApiError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -34,14 +41,30 @@ function isConfigured() {
   return Boolean(botToken() && adminChatIds().length);
 }
 
+// A reseller's own storefront order should page THAT shop's own Telegram bot
+// (the same one they already use for sale/audit notifications, set up under
+// Project Settings → Telegram), not the platform's. Only orders with no
+// shop_id — the platform-wide /digital/ storefront — use the env-var bot.
+async function resolveBotForOrder(order) {
+  if (order?.shopId) {
+    const settings = await loadTelegramSettings(order.shopId).catch(() => null);
+    const chatIds = [settings?.chatId, ...(Array.isArray(settings?.notifyChatIds) ? settings.notifyChatIds : [])]
+      .map((id) => String(id || '').trim()).filter(Boolean);
+    const uniqueChatIds = [...new Set(chatIds)];
+    if (settings?.botToken && uniqueChatIds.length) {
+      return { token: settings.botToken, chatIds: uniqueChatIds, shopBot: true };
+    }
+  }
+  return { token: botToken(), chatIds: adminChatIds(), shopBot: false };
+}
+
 const number = (value) => Number(value || 0);
 const money = (value) => `${number(value).toLocaleString('en-US')} MMK`;
 function escapeHtml(value) {
   return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-async function callTelegram(method, payload) {
-  const token = botToken();
+async function callTelegram(method, payload, token = botToken()) {
   if (!token) return null;
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
@@ -71,7 +94,8 @@ function orderMessageText(order, extra) {
 }
 
 async function notifyAdminsForApproval(order) {
-  if (!isConfigured()) return;
+  const { token, chatIds } = await resolveBotForOrder(order);
+  if (!token || !chatIds.length) return;
   const text = orderMessageText(order);
   const buttons = {
     inline_keyboard: [[
@@ -80,8 +104,8 @@ async function notifyAdminsForApproval(order) {
     ]],
   };
   let primary = null;
-  for (const chatId of adminChatIds()) {
-    const result = await callTelegram('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: buttons });
+  for (const chatId of chatIds) {
+    const result = await callTelegram('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: buttons }, token);
     const messageId = result?.result?.message_id;
     // Only one chat's copy of the message gets edited on resolution — every
     // other admin's copy keeps its buttons, but tapping a stale one after
@@ -103,7 +127,8 @@ async function notifyAdminsForApproval(order) {
 // original message may already be edited or scrolled away. This is a fresh
 // alert saying a human now owes the customer a manual KBZ Pay refund.
 async function notifyAdminsOfRefund(order) {
-  if (!isConfigured()) return;
+  const { token, chatIds } = await resolveBotForOrder(order);
+  if (!token || !chatIds.length) return;
   const text = [
     '↩️ <b>Game Top-up — Refund Needed</b>',
     `Order: <b>${escapeHtml(order.orderNumber)}</b>`,
@@ -112,25 +137,27 @@ async function notifyAdminsOfRefund(order) {
     '',
     'MooGold ကနေ ဖြည့်မပေးနိုင်ခဲ့ပါ (ပစ္စည်းပြတ်နေခြင်း စသည်) — ငွေကို ဖောက်သည်ဆီ KBZ Pay နဲ့ ပြန်လွှဲပြီး Grand Admin ➜ Public Orders မှာ "ငွေပြန်ပေးပြီး" နှိပ်ပါ။',
   ].join('\n');
-  for (const chatId of adminChatIds()) {
-    await callTelegram('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML' });
+  for (const chatId of chatIds) {
+    await callTelegram('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML' }, token);
   }
 }
 
 async function editOrderMessage(order, resultText) {
   if (!order?.telegramChatId || !order?.telegramMessageId) return;
+  const { token } = await resolveBotForOrder(order);
   await callTelegram('editMessageText', {
     chat_id: order.telegramChatId,
     message_id: Number(order.telegramMessageId),
     text: orderMessageText(order, resultText),
     parse_mode: 'HTML',
-  });
+  }, token);
 }
 
 async function loadOrderWithNames(orderId) {
   const rows = await prisma.$queryRawUnsafe(
     `SELECT o.id, o.order_number AS "orderNumber", o.quantity, o.player_id AS "playerId", o.server_id AS "serverId",
             o.customer_name AS "customerName", o.customer_phone AS "customerPhone", o.retail_price AS "retailPrice",
+            o.shop_id AS "shopId",
             o.payment_method AS "paymentMethod", o.payment_transaction_id AS "paymentTransactionId", o.status,
             o.reject_reason AS "rejectReason", o.moogold_order_id AS "moogoldOrderId", o.failure_reason AS "failureReason",
             o.telegram_chat_id AS "telegramChatId", o.telegram_message_id AS "telegramMessageId",
@@ -260,4 +287,7 @@ module.exports = {
   rejectPublicOrder,
   setGameTopupWebhook,
   attachGameTopupTelegramWebhook,
+  // Used by telegram-automation-api's per-shop webhook to answer a
+  // gtapprove/gtreject callback through the same bot that sent the message.
+  callTelegram,
 };

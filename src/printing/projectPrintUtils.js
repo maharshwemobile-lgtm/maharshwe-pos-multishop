@@ -65,12 +65,38 @@ function realVariantName(value) {
   return PLACEHOLDER_VARIANTS.has(name.toLowerCase()) ? '' : name;
 }
 
+// Print through a hidden iframe rather than a popup window.
+//
+// A phone browser either blocks window.open or opens a tab that will not print
+// on demand, so printing from the mobile web view never worked. An iframe is
+// part of the page that is already open, so there is nothing to block, and the
+// markup carries its own window.print() call once it loads.
+//
+// A popup passed in by an older caller is still honoured, so a window opened
+// during the click is not left hanging.
 function printWindow(targetWindow, html) {
-  const popup = targetWindow || window.open('', '_blank', 'width=430,height=760');
-  if (!popup) return false;
-  popup.document.open();
-  popup.document.write(html);
-  popup.document.close();
+  if (targetWindow && !targetWindow.closed) {
+    targetWindow.document.open();
+    targetWindow.document.write(html);
+    targetWindow.document.close();
+    return true;
+  }
+
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.setAttribute('style', 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden');
+  document.body.appendChild(frame);
+
+  const remove = () => { if (frame.parentNode) frame.remove(); };
+  // afterprint does not fire everywhere, so the frame is cleaned up on a timer
+  // as well — an orphaned iframe would keep the slip in the DOM for the session.
+  frame.contentWindow.addEventListener('afterprint', () => window.setTimeout(remove, 500));
+  window.setTimeout(remove, 60000);
+
+  const doc = frame.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
   return true;
 }
 
@@ -88,20 +114,20 @@ function baseStyles(paperSize) {
     .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 6px auto;text-align:center}
     .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#000;color:#fff;font-weight:700;font-size:18px}
     h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:700}h2{font-size:14px;font-weight:700}.muted{color:#000;font-weight:400}.left{text-align:left}.right{text-align:right}.center{text-align:center}
-    .meta{margin:10px 0;padding:8px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:400}.meta b,.summary b{font-weight:700}
-    table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:6px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:400}th{text-align:left;font-size:10px;font-weight:700}td small{display:block;color:#000;font-weight:400;margin-top:2px}
+    .meta{margin:7px 0;padding:6px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:400}.meta b,.summary b{font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:7px}th,td{padding:4px 2px;border-bottom:1px solid #000;vertical-align:top;font-weight:400}th{text-align:left;font-size:10px;font-weight:700}td small{display:block;color:#000;font-weight:400;margin-top:2px}
     .estimate-note{margin-top:6px;font-size:9.5px;text-align:center;line-height:1.45}
-    .voucher-no{margin-top:9px;padding:7px 0;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center}
+    .voucher-no{margin-top:7px;padding:5px 0;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center}
     .voucher-no span{display:block;font-size:9.5px;font-weight:400}
     .voucher-no b{display:block;font-size:22px;font-weight:700;letter-spacing:1.5px;line-height:1.25}
-    .fields{display:grid;grid-template-columns:${twoUp};gap:5px 10px;margin-top:9px;padding:7px 0;border-top:1px solid #000;border-bottom:1px solid #000}
+    .fields{display:grid;grid-template-columns:${twoUp};gap:4px 10px;margin-top:7px;padding:6px 0;border-top:1px solid #000;border-bottom:1px solid #000}
     .fields div{min-width:0;line-height:1.45}.fields .wide{grid-column:1/-1}
     .fields span{font-size:9px;font-weight:400}.fields b{font-size:11px;font-weight:700;word-break:break-word}
-    .summary{margin-top:10px}.grand{font-size:15px;font-weight:700;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:700;text-align:center;letter-spacing:2px}
-    .notice{margin-top:11px;padding:7px 8px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:700;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:400;line-height:1.45;margin-bottom:3px}
-    .sign-row{display:flex;gap:12px;margin-top:16px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:400}.sign-name{display:block;font-size:11px;font-weight:700;padding-bottom:3px}
-    .qr-block{margin-top:11px;text-align:center}.qr-block img{width:32mm;height:32mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
-    .footer{margin-top:15px;padding-top:10px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:400}.footer-tag{display:block;margin-top:8px;font-weight:700}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:400;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:400}
+    .summary{margin-top:7px}.grand{font-size:15px;font-weight:700;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:700;text-align:center;letter-spacing:2px}
+    .notice{margin-top:8px;padding:6px 7px;border:1.5px solid #000;border-radius:4px}.notice>b{display:block;text-align:center;font-size:11px;font-weight:700;margin-bottom:5px}.notice ul{margin:0;padding-left:14px}.notice li{font-size:9.5px;font-weight:400;line-height:1.45;margin-bottom:3px}
+    .sign-row{display:flex;gap:12px;margin-top:12px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:4px;font-size:9px;font-weight:400}.sign-name{display:block;font-size:11px;font-weight:700;padding-bottom:3px}
+    .qr-block{margin-top:8px;text-align:center}.qr-block img{width:32mm;height:32mm;display:block;margin:0 auto 4px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
+    .footer{margin-top:11px;padding-top:8px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:400}.footer-tag{display:block;margin-top:8px;font-weight:700}.warranty{margin-top:9px;font-size:9px;color:#000;font-weight:400;text-align:center}.qr-link{word-break:break-all;font-size:9px;color:#000;font-weight:400}
     @media print{body{padding:0 2mm}.no-print{display:none!important}}
   `;
 }
@@ -128,7 +154,7 @@ function brandBlock(settings, title) {
     ? `<img class="slip-logo" src="${escapeHtml(logoSrc)}" alt="Logo"/>`
     : '';
   const contacts = [business.phone, business.secondaryPhone, business.address].filter(Boolean).map(escapeHtml).join(' · ');
-  return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}<p>${escapeHtml(title)}</p>${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
+  return `${logo}${business.name ? `<h1>${escapeHtml(business.name)}</h1>` : ''}${title ? `<p>${escapeHtml(title)}</p>` : ''}${business.subtitle ? `<p class="muted">${escapeHtml(business.subtitle)}</p>` : ''}${contacts ? `<p class="muted">${contacts}</p>` : ''}`;
 }
 
 // Slips print as ordinary markup and let the driver rasterise them.
@@ -222,7 +248,7 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
   if (settled > 0) {
     // Repaired and priced: this is the real figure.
     const due = Number(repair.balanceDue ?? Math.max(0, settled - deposit));
-    money = `<div class="summary"><div><span>ပြင်ခ</span><b>${kyat(settled)}</b></div>${depositRow}<div class="grand"><span>စုစုပေါင်းကျသင့်ငွေ</span><b>${kyat(due)}</b></div></div>`;
+    money = `<div class="summary"><div><span>ပြင်ခ</span><b>${kyat(settled)}</b></div>${depositRow}<div class="grand"><span>စုစုပေါင်း ကျန်ရှိငွေ</span><b>${kyat(due)}</b></div></div>`;
   } else if (estimated > 0) {
     // Quoted but not final — say so, and do not call it a total.
     money = `<div class="summary"><div><span>ခန့်မှန်းပြင်ခ</span><b>${kyat(estimated)}</b></div>${depositRow}<div class="grand"><span>ခန့်မှန်း ကျန်ငွေ</span><b>${kyat(Math.max(0, estimated - deposit))}</b></div></div>
@@ -234,7 +260,7 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
   }
 
   const body = `
-    ${brandBlock(settings, 'ဖုန်းပြင် ဘောင်ချာ')}
+    ${brandBlock(settings, '')}
     ${customHeader(slip.repairVoucherHeader, settings)}
     <div class="voucher-no"><span>ဘောက်ချာနံပါတ်</span><b>${escapeHtml(repairNumber)}</b></div>
     <div class="meta"><div><span>နေ့စွဲ</span><b>${escapeHtml(new Date(repair.receivedAt || Date.now()).toLocaleString())}</b></div></div>
@@ -242,7 +268,7 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
     ${money}
     ${notice}
     ${qrBlock}
-    <div class="sign-row"><div>${receivedBy ? `<b class="sign-name">${escapeHtml(receivedBy)}</b>` : ''}<span>လက်ခံသူ</span></div><div><span>ရွေးယူသူလက်မှတ်</span></div></div>
+    <div class="sign-row"><div><b class="sign-name">${receivedBy ? escapeHtml(receivedBy) : '&nbsp;'}</b><span>လက်ခံသူ</span></div><div><b class="sign-name">&nbsp;</b><span>ရွေးယူသူ</span></div></div>
     ${business.website ? `<p class="qr-link">${escapeHtml(business.website)}</p>` : ''}
     <div class="footer">${slip.repairVoucherFooter ? nl2br(slip.repairVoucherFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>`;
   return emitSlip(targetWindow, {

@@ -135,6 +135,28 @@ const statements = [
   // actually done, and by whom.
   `ALTER TABLE game_topup_public_orders ADD COLUMN IF NOT EXISTS refund_sent_at TIMESTAMPTZ`,
   `ALTER TABLE game_topup_public_orders ADD COLUMN IF NOT EXISTS refund_sent_by_id UUID REFERENCES users(id) ON DELETE SET NULL`,
+
+  // A public order placed through a reseller's own storefront (as opposed to
+  // the platform-wide /digital/ page) is attributed to that shop — this is
+  // what routes the approval notification to the shop's own Telegram bot
+  // instead of the platform's, and what a shop's own price override applies
+  // to. NULL means "platform-wide", exactly like before this column existed.
+  `ALTER TABLE game_topup_public_orders ADD COLUMN IF NOT EXISTS shop_id UUID REFERENCES shops(id) ON DELETE SET NULL`,
+  `CREATE INDEX IF NOT EXISTS game_topup_public_orders_shop_idx ON game_topup_public_orders (shop_id, created_at DESC)`,
+
+  // A reseller can charge more (or less) than the platform's suggested_retail
+  // for the same package on their own storefront — this is the override,
+  // falling back to game_topup_variations.suggested_retail when absent.
+  `CREATE TABLE IF NOT EXISTS game_topup_shop_prices (
+    id UUID PRIMARY KEY,
+    shop_id UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    variation_id UUID NOT NULL REFERENCES game_topup_variations(id) ON DELETE CASCADE,
+    retail_price NUMERIC(14,2) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (shop_id, variation_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS game_topup_shop_prices_shop_idx ON game_topup_shop_prices (shop_id)`,
 ];
 
 async function ensureGameTopupSchema() {

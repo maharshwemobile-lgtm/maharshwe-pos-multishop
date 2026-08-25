@@ -33,7 +33,7 @@ function hmac(value) {
   return crypto.createHmac('sha256', secret).update(`public-game-topup:${value}`).digest('hex');
 }
 
-async function loadPublicCatalog() {
+async function loadPublicCatalog(shopId = null) {
   // "Top" is real completed sales, combined across the shop-facing and public
   // order tables — a customer sees the games actually selling well first,
   // rather than whatever order they happen to sit in the database.
@@ -49,15 +49,21 @@ async function loadPublicCatalog() {
       ) DESC, p.sort_order ASC, p.name ASC`,
   );
   if (!products.length) return [];
+  // A reseller's own price (game_topup_shop_prices) wins over the platform
+  // default when both exist — same override chain as order creation.
   const variations = await prisma.$queryRawUnsafe(
-    `SELECT id, product_id AS "productId", name, suggested_retail AS "suggestedRetail"
-       FROM game_topup_variations WHERE active = TRUE AND product_id = ANY($1::uuid[]) ORDER BY suggested_retail ASC`,
-    products.map((product) => product.id),
+    `SELECT v.id, v.product_id AS "productId", v.name, v.suggested_retail AS "suggestedRetail",
+            sp.retail_price AS "shopRetail"
+       FROM game_topup_variations v
+       LEFT JOIN game_topup_shop_prices sp ON sp.variation_id = v.id AND sp.shop_id = $2::uuid
+      WHERE v.active = TRUE AND v.product_id = ANY($1::uuid[])
+      ORDER BY COALESCE(sp.retail_price, v.suggested_retail) ASC`,
+    products.map((product) => product.id), shopId,
   );
   const byProduct = new Map();
   variations.forEach((variation) => {
     const list = byProduct.get(variation.productId) || [];
-    list.push({ id: variation.id, name: variation.name, retailPrice: round(variation.suggestedRetail) });
+    list.push({ id: variation.id, name: variation.name, retailPrice: round(variation.shopRetail ?? variation.suggestedRetail) });
     byProduct.set(variation.productId, list);
   });
   return products
@@ -95,7 +101,38 @@ const orderSchema = z.object({
   // reference. That is only a lookup hint for the admin checking the real KBZ
   // Pay history — it is never treated as proof on its own.
   paymentTransactionId: z.string().trim().regex(/^\d{4,20}$/, 'Transaction ID must be 4-20 digits'),
+  // Present only when the order was placed from a reseller's own storefront
+  // (/shop/:slug) rather than the platform-wide /digital/ page — attributes
+  // the order to that shop for pricing and Telegram routing.
+  shopSlug: z.string().trim().max(80).optional().nullable(),
 });
+
+// A reseller may charge more (or less) than the platform default for the
+// same package on their own storefront; falls back to suggested_retail when
+// they haven't set one.
+async function resolveShopForOrder(shopSlug) {
+  if (!shopSlug) return null;
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT s.id, s.name,
+            EXISTS (
+              SELECT 1 FROM users u WHERE u.shop_id = s.id AND u.role <> 'CASHIER' AND u.permissions->>'tab.Game Top-up' = 'true'
+            ) AS "hasAccess"
+       FROM shops s WHERE s.slug = $1 AND s.active = TRUE`,
+    shopSlug,
+  );
+  const shop = rows[0];
+  if (!shop || !shop.hasAccess) return null;
+  return { id: shop.id, name: shop.name };
+}
+
+async function resolveShopPrice(shopId, variationId, defaultRetail) {
+  if (!shopId) return number(defaultRetail);
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT retail_price AS "retailPrice" FROM game_topup_shop_prices WHERE shop_id = $1::uuid AND variation_id = $2::uuid`,
+    shopId, variationId,
+  );
+  return rows[0] ? number(rows[0].retailPrice) : number(defaultRetail);
+}
 
 function orderRow(row) {
   return {
@@ -169,10 +206,13 @@ function attachGameTopupPublicApi(app) {
     }
   });
 
-  app.get('/api/public/game-topup/catalog', async (_req, res) => {
+  app.get('/api/public/game-topup/catalog', async (req, res) => {
     try {
       await ensureGameTopupSchema();
-      res.json({ ok: true, products: await loadPublicCatalog() });
+      const shopSlug = clean(req.query.shop, 80);
+      const shop = shopSlug ? await resolveShopForOrder(shopSlug) : null;
+      if (shopSlug && !shop) return res.json({ ok: true, products: [] });
+      res.json({ ok: true, products: await loadPublicCatalog(shop?.id || null) });
     } catch (error) {
       res.status(error.status || 500).json({ ok: false, message: error.message || 'Catalog load failed' });
     }
@@ -200,27 +240,32 @@ function attachGameTopupPublicApi(app) {
       if (variation.requiresPlayerId && !input.playerId) throw new ApiError(400, 'Player ID ထည့်ပါ');
       if (variation.requiresServer && !input.server) throw new ApiError(400, 'Server ထည့်ပါ');
 
+      const shop = await resolveShopForOrder(input.shopSlug);
+      if (input.shopSlug && !shop) throw new ApiError(403, 'ဒီဆိုင်အတွက် Game Top-up ကို superadmin ကနေ ဖွင့်မပေးရသေးပါ');
+
       const duplicate = await prisma.$queryRawUnsafe(
         `SELECT COUNT(*)::int AS count FROM game_topup_public_orders WHERE payment_transaction_id = $1`,
         input.paymentTransactionId,
       );
       const duplicateWarning = number(duplicate[0]?.count) > 0;
 
-      const retailPrice = round(number(variation.suggestedRetail) * input.quantity);
+      const unitPrice = await resolveShopPrice(shop?.id, variation.id, variation.suggestedRetail);
+      const retailPrice = round(unitPrice * input.quantity);
       const orderId = crypto.randomUUID();
       const orderNumber = await generatePublicOrderNumber();
       const shareKey = crypto.randomBytes(24).toString('base64url');
 
       await prisma.$executeRawUnsafe(
-        `INSERT INTO game_topup_public_orders(id, order_number, variation_id, quantity, player_id, server_id, customer_name, customer_phone, retail_price, payment_method, payment_transaction_id, status, share_key_hash, created_at, updated_at)
-         VALUES($1::uuid,$2,$3::uuid,$4,$5,$6,$7,$8,$9,'KBZ_PAY',$10,'PENDING_APPROVAL',$11,NOW(),NOW())`,
+        `INSERT INTO game_topup_public_orders(id, order_number, variation_id, quantity, player_id, server_id, customer_name, customer_phone, retail_price, payment_method, payment_transaction_id, status, share_key_hash, shop_id, created_at, updated_at)
+         VALUES($1::uuid,$2,$3::uuid,$4,$5,$6,$7,$8,$9,'KBZ_PAY',$10,'PENDING_APPROVAL',$11,$12::uuid,NOW(),NOW())`,
         orderId, orderNumber, variation.id, input.quantity, clean(input.playerId, 80), clean(input.server, 80),
-        clean(input.customerName), clean(input.customerPhone, 40), retailPrice, clean(input.paymentTransactionId, 100), hmac(shareKey),
+        clean(input.customerName), clean(input.customerPhone, 40), retailPrice, clean(input.paymentTransactionId, 100), hmac(shareKey), shop?.id || null,
       );
 
       notifyAdminsForApproval({
         id: orderId,
         orderNumber,
+        shopId: shop?.id || null,
         productName: variation.productName,
         variationName: variation.variationName,
         quantity: input.quantity,

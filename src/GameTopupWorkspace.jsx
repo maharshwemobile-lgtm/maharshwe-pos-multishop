@@ -14,6 +14,101 @@ function formatDate(value) {
   }
 }
 
+function StorefrontPriceRow({ product, variation, onSaved }) {
+  const [value, setValue] = useState(String(variation.storefrontRetail ?? variation.platformRetail));
+  const [busy, setBusy] = useState(false);
+  const overridden = variation.storefrontRetail != null;
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const result = await apiFetch(`/api/game-topup/storefront-prices/${variation.id}`, {
+        method: 'PUT', body: { retailPrice: Number(value) },
+      });
+      onSaved(variation.id, result.storefrontRetail);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reset = async () => {
+    setBusy(true);
+    try {
+      await apiFetch(`/api/game-topup/storefront-prices/${variation.id}`, { method: 'PUT', body: {} });
+      setValue(String(variation.platformRetail));
+      onSaved(variation.id, null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <tr>
+      <td>{product.name}<small>{variation.name}</small></td>
+      <td>{money(variation.platformRetail)}</td>
+      <td>
+        <input type="number" min="1" value={value} onChange={(event) => setValue(event.target.value)} />
+      </td>
+      <td>
+        <button type="button" disabled={busy || !value || Number(value) === (variation.storefrontRetail ?? variation.platformRetail)} onClick={save}>Save</button>
+        {overridden ? <button type="button" disabled={busy} onClick={reset}>ပလက်ဖောင်းစျေးသို့</button> : null}
+      </td>
+    </tr>
+  );
+}
+
+function StorefrontPricingPanel() {
+  const [open, setOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const result = await apiFetch('/api/game-topup/storefront-prices');
+      setProducts(result.products || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { if (open && !products.length) load(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onSaved = (variationId, storefrontRetail) => {
+    setProducts((current) => current.map((product) => ({
+      ...product,
+      variations: product.variations.map((variation) => variation.id === variationId ? { ...variation, storefrontRetail } : variation),
+    })));
+  };
+
+  return (
+    <section className="gt-pricing-panel">
+      <button type="button" className="gt-pricing-toggle" onClick={() => setOpen((value) => !value)}>
+        {open ? '▾' : '▸'} ကိုယ်ပိုင် Online Shop ဈေးနှုန်း (Storefront Pricing)
+      </button>
+      {open ? (
+        <div className="gt-table-wrap">
+          <p className="gt-pricing-hint">
+            ဒီနေရာမှာ ဈေးနှုန်း ပြင်ထားရင် သင့်ဆိုင်ရဲ့ Online Shop (/shop/…) ကနေ ဝယ်တဲ့ဖောက်သည်တွေအတွက်ပဲ သက်ရောက်ပါမယ် —
+            ပလက်ဖောင်းရဲ့ /digital/ page ဈေးနှုန်း မပြောင်းပါ။
+          </p>
+          {loading ? <div className="gt-empty">Loading…</div> : (
+            <table>
+              <thead><tr><th>Package</th><th>ပလက်ဖောင်းဈေး</th><th>ကိုယ့်ဆိုင်ဈေး</th><th /></tr></thead>
+              <tbody>
+                {products.flatMap((product) => product.variations.map((variation) => (
+                  <StorefrontPriceRow key={variation.id} product={product} variation={variation} onSaved={onSaved} />
+                )))}
+                {!products.length ? <tr><td colSpan={4} className="gt-empty-cell">Package မရှိသေးပါ</td></tr> : null}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function StatusBadge({ status }) {
   const label = { COMPLETED: 'ပြီး', FAILED: 'မအောင်မြင်', PENDING: 'စောင့်ဆိုင်း', PROCESSING: 'လုပ်ဆောင်နေ' }[status] || status;
   return <span className={`gt-status ${String(status || '').toLowerCase()}`}>{label}</span>;
@@ -213,6 +308,8 @@ export default function GameTopupWorkspace() {
         <div className="gt-message">Game Top-up ကို Platform Admin မှ ဖွင့်ပေးရန် လိုအပ်ပါသေးတယ် — MooGold API key ထည့်ပြီးမှ ပစ္စည်းများ ပေါ်လာပါမယ်။</div>
       ) : null}
       {message ? <div className="gt-message">{message}</div> : null}
+
+      {canSeeCost ? <StorefrontPricingPanel /> : null}
 
       <div className="gt-layout">
         <div className="gt-catalog">

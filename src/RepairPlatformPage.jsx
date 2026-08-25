@@ -14,6 +14,7 @@ import {
   History,
   Link2,
   Loader2,
+  Banknote,
   PackageCheck,
   Plus,
   Printer,
@@ -329,6 +330,8 @@ function IntakeModal({ onClose, onSaved, notify }) {
 }
 
 function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) {
+  const [showStatusDetail, setShowStatusDetail] = useState(false);
+  const [printingVoucher, setPrintingVoucher] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -407,22 +410,56 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
           </section>
 
           <section className="repair-detail-card">
-            <h4>Status ပြောင်းရန်</h4>
-            <div className="repair-action-form">
-              <label>Status ရွေးပါ<select value={statusForm.status} onChange={(event) => setStatusForm({ ...statusForm, status: event.target.value })}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <label>Final Cost<input type="number" min="0" value={statusForm.finalCost} onChange={(event) => setStatusForm({ ...statusForm, finalCost: event.target.value })} /></label>
-              <label>Warranty Until<input type="date" value={statusForm.warrantyUntil} onChange={(event) => setStatusForm({ ...statusForm, warrantyUntil: event.target.value })} /></label>
-              <label>Diagnosis<textarea value={statusForm.diagnosis} onChange={(event) => setStatusForm({ ...statusForm, diagnosis: event.target.value })} /></label>
-              <label>Resolution<textarea value={statusForm.resolution} onChange={(event) => setStatusForm({ ...statusForm, resolution: event.target.value })} /></label>
-              <label>Timeline Note<textarea value={statusForm.note} onChange={(event) => setStatusForm({ ...statusForm, note: event.target.value })} /></label>
-              <button type="button" className="repair-status-save-button" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
-                method: 'PATCH',
-                body: {
-                  ...statusForm,
-                  finalCost: statusForm.finalCost === '' ? undefined : Number(statusForm.finalCost),
-                  warrantyUntil: statusForm.warrantyUntil || null,
-                },
-              }), 'Status ပြောင်းပြီးပါပြီ')}><CheckCircle2 size={18} /> Status ပြောင်းရန်</button>
+            <h4>လုပ်ဆောင်ချက်</h4>
+            <div className="repair-quick-actions">
+              <label className="repair-status-pick">
+                <span>အခြေအနေ</span>
+                <select value={statusForm.status} onChange={(event) => setStatusForm({ ...statusForm, status: event.target.value })}>
+                  {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <div className="repair-action-row">
+                {/* Only offered when the selection actually differs — a button that
+                    saves the status it already has just invites doubt. */}
+                {statusForm.status !== repair.status ? (
+                  <button type="button" className="primary" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
+                    method: 'PATCH',
+                    body: {
+                      ...statusForm,
+                      finalCost: statusForm.finalCost === '' ? undefined : Number(statusForm.finalCost),
+                      warrantyUntil: statusForm.warrantyUntil || null,
+                    },
+                  }), 'အခြေအနေ ပြောင်းပြီးပါပြီ')}><CheckCircle2 size={17} /> အခြေအနေ ပြောင်းမည်</button>
+                ) : null}
+
+                <button type="button" disabled={printingVoucher} onClick={async () => {
+                  setPrintingVoucher(true);
+                  try { await printRepairVoucherById(repair.repairNumber, notify); } finally { setPrintingVoucher(false); }
+                }}>{printingVoucher ? <Loader2 className="repair-spin" size={17} /> : <Printer size={17} />} ဘောက်ချာ ပြန်ထုတ်</button>
+
+                {repair.paymentStatus !== 'PAID' ? (
+                  <button type="button" className="repair-paid-button" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
+                    method: 'PATCH',
+                    body: { status: repair.status, paymentStatus: 'PAID' },
+                  }), 'ငွေရှင်းပြီး မှတ်ပြီးပါပြီ')}><Banknote size={17} /> ရှင်းပြီး</button>
+                ) : <span className="repair-paid-flag"><CheckCircle2 size={16} /> ငွေရှင်းပြီး</span>}
+              </div>
+
+              {/* The rest is filled in once, when the repair is finished. Kept out
+                  of the way until then so the common case is three buttons. */}
+              <button type="button" className="repair-more-toggle" onClick={() => setShowStatusDetail((value) => !value)}>
+                {showStatusDetail ? 'အသေးစိတ် ဖျောက်မည်' : 'အသေးစိတ် ဖြည့်မည် (ပြင်ခ၊ အာမခံ၊ မှတ်ချက်)'}
+              </button>
+
+              {showStatusDetail ? (
+                <div className="repair-action-form">
+                  <label>ပြင်ခ<input type="number" min="0" value={statusForm.finalCost} onChange={(event) => setStatusForm({ ...statusForm, finalCost: event.target.value })} /></label>
+                  <label>အာမခံ ရက်<input type="date" value={statusForm.warrantyUntil} onChange={(event) => setStatusForm({ ...statusForm, warrantyUntil: event.target.value })} /></label>
+                  <label>စစ်ဆေးတွေ့ရှိချက်<textarea value={statusForm.diagnosis} onChange={(event) => setStatusForm({ ...statusForm, diagnosis: event.target.value })} /></label>
+                  <label>ပြင်ဆင်ပုံ<textarea value={statusForm.resolution} onChange={(event) => setStatusForm({ ...statusForm, resolution: event.target.value })} /></label>
+                  <label>မှတ်ချက်<textarea value={statusForm.note} onChange={(event) => setStatusForm({ ...statusForm, note: event.target.value })} /></label>
+                </div>
+              ) : null}
             </div>
           </section>
 

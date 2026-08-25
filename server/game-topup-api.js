@@ -51,6 +51,12 @@ function requireGameTopup(req, res, next) {
 function canSeeCost(auth) {
   return auth?.role === 'SUPER_ADMIN' || auth?.role === 'SHOP_ADMIN' || auth?.permissions?.accounting === true || auth?.permissions?.viewCost === true;
 }
+// Setting the shop's own storefront price is a business/margin decision, so
+// it gets the same bar as seeing wholesale cost — not every cashier with
+// Game Top-up access should be able to change what customers are charged.
+function canManagePricing(auth) {
+  return canSeeCost(auth);
+}
 
 async function ensureWallet(client, shopId) {
   await client.$executeRawUnsafe(
@@ -155,6 +161,12 @@ const validateSchema = z.object({
   server: z.string().trim().max(80).optional().nullable(),
 });
 
+const shopPriceSchema = z.object({
+  // Omit or null clears the override, falling back to the platform's
+  // suggested_retail again.
+  retailPrice: z.coerce.number().gt(0).optional().nullable(),
+});
+
 async function generateOrderNumber(shopId) {
   const count = await prisma.$queryRawUnsafe(
     `SELECT COUNT(*)::int AS count FROM game_topup_orders WHERE shop_id = $1::uuid`,
@@ -248,6 +260,65 @@ function attachGameTopupApi(app) {
       });
     } catch (error) {
       res.status(error.status || 500).json({ ok: false, message: error.message || 'Game Top-up settings load failed' });
+    }
+  });
+
+  // A reseller's own price for the same package as sold on their own
+  // storefront (/shop/:slug) — separate from suggested_retail, which is the
+  // platform default shown on the platform-wide /digital/ storefront and used
+  // here whenever this shop hasn't set its own.
+  app.get('/api/game-topup/storefront-prices', ...read, async (req, res) => {
+    try {
+      if (!canManagePricing(req.auth)) throw new ApiError(403, 'ဈေးနှုန်း ကြည့်ခွင့် မရှိပါ');
+      await ensureGameTopupSchema();
+      const products = await loadActiveCatalog();
+      const overrides = await prisma.$queryRawUnsafe(
+        `SELECT variation_id AS "variationId", retail_price AS "retailPrice" FROM game_topup_shop_prices WHERE shop_id = $1::uuid`,
+        req.auth.shopId,
+      );
+      const byVariation = new Map(overrides.map((row) => [row.variationId, round(row.retailPrice)]));
+      res.json({
+        ok: true,
+        products: products.map((product) => ({
+          id: product.id, name: product.name, imageUrl: product.imageUrl,
+          variations: product.variations.map((variation) => ({
+            id: variation.id,
+            name: variation.name,
+            platformRetail: variation.suggestedRetail,
+            storefrontRetail: byVariation.has(variation.id) ? byVariation.get(variation.id) : null,
+          })),
+        })),
+      });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Storefront prices load failed' });
+    }
+  });
+
+  app.put('/api/game-topup/storefront-prices/:variationId', ...write, async (req, res) => {
+    try {
+      if (!canManagePricing(req.auth)) throw new ApiError(403, 'ဈေးနှုန်း ပြင်ခွင့် မရှိပါ');
+      await ensureGameTopupSchema();
+      const input = parse(shopPriceSchema, req.body || {});
+      const variation = await loadVariationWithProduct(req.params.variationId);
+      if (!variation) throw new ApiError(404, 'Package not found');
+
+      if (input.retailPrice == null) {
+        await prisma.$executeRawUnsafe(
+          `DELETE FROM game_topup_shop_prices WHERE shop_id = $1::uuid AND variation_id = $2::uuid`,
+          req.auth.shopId, req.params.variationId,
+        );
+        return res.json({ ok: true, message: 'ပလက်ဖောင်းရဲ့ ပုံမှန်ဈေးနှုန်းသို့ ပြန်ပြောင်းပြီးပါပြီ', storefrontRetail: null });
+      }
+
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO game_topup_shop_prices(id, shop_id, variation_id, retail_price, created_at, updated_at)
+         VALUES($1::uuid,$2::uuid,$3::uuid,$4,NOW(),NOW())
+         ON CONFLICT (shop_id, variation_id) DO UPDATE SET retail_price = EXCLUDED.retail_price, updated_at = NOW()`,
+        crypto.randomUUID(), req.auth.shopId, req.params.variationId, input.retailPrice,
+      );
+      res.json({ ok: true, message: 'ဆိုင်ရဲ့ storefront ဈေးနှုန်း သိမ်းပြီးပါပြီ', storefrontRetail: input.retailPrice });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Storefront price update failed' });
     }
   });
 

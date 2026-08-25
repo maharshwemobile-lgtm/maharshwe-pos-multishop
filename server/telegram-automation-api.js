@@ -295,7 +295,7 @@ async function registerBotWebhook(shopId, botToken, appUrl) {
     body: JSON.stringify({
       url: webhookUrl,
       secret_token: secret,
-      allowed_updates: ['message'],
+      allowed_updates: ['message', 'callback_query'],
     }),
   });
   const data = await response.json().catch(() => ({}));
@@ -303,8 +303,37 @@ async function registerBotWebhook(shopId, botToken, appUrl) {
   return secret;
 }
 
+// A shop's own bot also carries Game Top-up approve/reject buttons when the
+// order came from that shop's storefront (game-topup-telegram.js routes it
+// here instead of the platform bot) — required lazily to avoid a circular
+// top-level require with game-topup-telegram.js, which requires this file
+// back for loadTelegramSettings.
+async function handleGameTopupCallback(shopId, callback, botToken) {
+  const [action, orderId] = String(callback.data || '').split('|');
+  if (!orderId || (action !== 'gtapprove' && action !== 'gtreject')) return false;
+  const gameTopupTelegram = require('./game-topup-telegram');
+  try {
+    if (action === 'gtapprove') {
+      await gameTopupTelegram.approvePublicOrder(orderId, null);
+      await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'Approved ✅' }, botToken);
+    } else {
+      await gameTopupTelegram.rejectPublicOrder(orderId, null, 'Rejected via Telegram');
+      await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'Rejected' }, botToken);
+    }
+  } catch (error) {
+    await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: error.message || 'Failed', show_alert: true }, botToken);
+  }
+  return true;
+}
+
 // Handle incoming Telegram update from the webhook
 async function handleBotWebhookUpdate(shopId, update) {
+  if (update.callback_query) {
+    const settings = await loadTelegramSettings(shopId);
+    if (settings.botToken) await handleGameTopupCallback(shopId, update.callback_query, settings.botToken);
+    return;
+  }
+
   const msg = update.message;
   if (!msg?.chat?.id || !msg?.from) return;
   if (msg.chat.type !== 'private') return; // only DM chats
