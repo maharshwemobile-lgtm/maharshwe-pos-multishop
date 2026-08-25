@@ -38,7 +38,8 @@ async function loadPublicCatalog(shopId = null) {
   // order tables — a customer sees the games actually selling well first,
   // rather than whatever order they happen to sit in the database.
   const products = await prisma.$queryRawUnsafe(
-    `SELECT p.id, p.name, p.image_url AS "imageUrl", p.requires_player_id AS "requiresPlayerId", p.requires_server AS "requiresServer"
+    `SELECT p.id, p.name, p.image_url AS "imageUrl", p.requires_player_id AS "requiresPlayerId", p.requires_server AS "requiresServer",
+            p.player_field AS "playerField", p.server_field AS "serverField"
        FROM game_topup_products p
       WHERE p.active = TRUE
       ORDER BY (

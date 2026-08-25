@@ -162,8 +162,8 @@
       <div class="sheet-grab"></div>
       <div class="sheet-head"><div><small>${esc(product.name)}</small><h2>${esc(variation.name)} · ${money(variation.retailPrice)}</h2></div><button class="icon-btn" data-action="close-sheet">×</button></div>
       <div class="gametopup-form">
-        <label><span>Player ID / User ID *</span><input id="gtPlayerId" value="${esc(buy.playerId)}" placeholder="Player ID"></label>
-        ${needsServer?`<label><span>Server ID *</span><input id="gtServer" value="${esc(buy.server)}" placeholder="Server ID"></label>`:''}
+        <label><span>${esc(product.playerField||'Player ID / User ID')} *</span><input id="gtPlayerId" value="${esc(buy.playerId)}" placeholder="${esc(product.playerField||'Player ID')}"></label>
+        ${needsServer?`<label><span>${esc(product.serverField||'Server ID')} *</span><input id="gtServer" value="${esc(buy.server)}" placeholder="${esc(product.serverField||'Server ID')}"></label>`:''}
         <button type="button" class="secondary" data-action="gt-check" ${checkBusy?'disabled':''}>${checkBusy?(state.language==='my'?'စစ်နေသည်…':'Checking…'):(state.language==='my'?'အကောင့်စစ်ရန်':'Check account')}</button>
         ${checkOk?`<div class="note good">✓ ${esc(check.username||'')}${check.country?` · ${esc(check.country)}`:''}</div>`:''}
         ${checkBad?`<div class="note bad">${esc(check.message||(state.language==='my'?'အကောင့် မတွေ့ပါ':'Account not found'))}</div>`:''}
@@ -233,8 +233,8 @@
       const buy=state.gameTopupBuy;if(!buy)return;
       buy.playerId=document.getElementById('gtPlayerId')?.value.trim()||'';
       buy.server=document.getElementById('gtServer')?.value.trim()||'';
-      if(!buy.playerId){buy.check={state:'invalid',message:'Player ID ထည့်ပါ'};return render()}
-      if(buy.product.requiresServer&&!buy.server){buy.check={state:'invalid',message:'Server ID ထည့်ပါ'};return render()}
+      if(!buy.playerId){buy.check={state:'invalid',message:(buy.product.playerField||'Player ID')+' ထည့်ပါ'};return render()}
+      if(buy.product.requiresServer&&!buy.server){buy.check={state:'invalid',message:(buy.product.serverField||'Server ID')+' ထည့်ပါ'};return render()}
       buy.check={state:'checking'};render();
       try{
         const result=await request(`/api/public/game-topup/validate`,{method:'POST',body:JSON.stringify({variationId:buy.variation.id,playerId:buy.playerId,server:buy.server||null})});

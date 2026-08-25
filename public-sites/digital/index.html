@@ -154,8 +154,8 @@ footer a{color:var(--blue);font-weight:700}
       <h2 id="gFormTitle"></h2>
       <p class="muted" id="gFormPick"></p>
       <div id="gFormErr" class="note bad hid"></div>
-      <label id="fPlayerWrap"><span>Player ID / User ID *</span><input id="fPlayer" placeholder="ဂိမ်းထဲက ID"></label>
-      <label id="fServerWrap"><span>Server / Zone ID *</span><input id="fServer" placeholder="ဥပမာ - 2001"></label>
+      <label id="fPlayerWrap"><span id="fPlayerLabel">Player ID / User ID *</span><input id="fPlayer" placeholder="ဂိမ်းထဲက ID"></label>
+      <label id="fServerWrap"><span id="fServerLabel">Server / Zone ID *</span><input id="fServer" placeholder="ဥပမာ - 2001"></label>
       <div id="fCheckWrap">
         <div id="gCheckOut" class="note hid"></div>
       </div>
@@ -369,6 +369,13 @@ footer a{color:var(--blue);font-weight:700}
     $('gFormPick').appendChild(document.createTextNode(' · ' + money(state.pack.retailPrice)));
     show($('fPlayerWrap'), !!state.game.requiresPlayerId);
     show($('fServerWrap'), !!state.game.requiresServer);
+    // Each game asks for something different here — "Tik Tok User ID",
+    // "Riot Username", "BIGO ID" and 30-odd other labels are all real MooGold
+    // field names, not just "Player ID" — so the label follows what this
+    // specific game actually stores, instead of one generic caption for
+    // every product.
+    $('fPlayerLabel').textContent = (state.game.playerField || 'Player ID / User ID') + ' *';
+    $('fServerLabel').textContent = (state.game.serverField || 'Server / Zone ID') + ' *';
     // Only prefills empty fields — never overwrites something already typed
     // for this visit (e.g. switching between packages of the same game).
     const recalled = recalledAccount(state.game.id);
@@ -485,9 +492,9 @@ footer a{color:var(--blue);font-weight:700}
     const orderRows = [
       ['ဂိမ်း', state.game.name, false],
       ['Package', state.pack.name, true],
-      ['Player ID', $('fPlayer').value.trim() || '-', false],
+      [state.game.playerField || 'Player ID', $('fPlayer').value.trim() || '-', false],
     ];
-    if (state.game.requiresServer) orderRows.push(['Server', $('fServer').value.trim() || '-', false]);
+    if (state.game.requiresServer) orderRows.push([state.game.serverField || 'Server', $('fServer').value.trim() || '-', false]);
     orderRows.forEach(([label, value, isPackage]) => {
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;justify-content:space-between;gap:12px;padding:6px 0';
@@ -573,8 +580,8 @@ footer a{color:var(--blue);font-weight:700}
       pad('ပစ္စည်း') + ': ' + state.game.name,
       pad('Package') + ': ' + state.pack.name,
     ];
-    if ($('fPlayer').value.trim()) lines.push(pad('Player ID') + ': ' + $('fPlayer').value.trim());
-    if ($('fServer').value.trim()) lines.push(pad('Server') + ': ' + $('fServer').value.trim());
+    if ($('fPlayer').value.trim()) lines.push(pad(state.game.playerField || 'Player ID') + ': ' + $('fPlayer').value.trim());
+    if ($('fServer').value.trim()) lines.push(pad(state.game.serverField || 'Server') + ': ' + $('fServer').value.trim());
     lines.push(pad('ဖုန်း') + ': ' + $('fPhone').value.trim(), '',
       pad('စုစုပေါင်း') + ': ' + money(total()),
       pad('ငွေပေးချေမှု') + ': KBZ Pay',
