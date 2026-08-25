@@ -167,6 +167,12 @@ const shopPriceSchema = z.object({
   retailPrice: z.coerce.number().gt(0).optional().nullable(),
 });
 
+const paymentSettingsSchema = z.object({
+  kbzPayName: z.string().trim().max(120).optional().nullable(),
+  kbzPayPhone: z.string().trim().max(40).optional().nullable(),
+  kbzPayQrUrl: z.string().trim().max(500).optional().nullable(),
+});
+
 async function generateOrderNumber(shopId) {
   const count = await prisma.$queryRawUnsafe(
     `SELECT COUNT(*)::int AS count FROM game_topup_orders WHERE shop_id = $1::uuid`,
@@ -319,6 +325,105 @@ function attachGameTopupApi(app) {
       res.json({ ok: true, message: 'ဆိုင်ရဲ့ storefront ဈေးနှုန်း သိမ်းပြီးပါပြီ', storefrontRetail: input.retailPrice });
     } catch (error) {
       res.status(error.status || 500).json({ ok: false, message: error.message || 'Storefront price update failed' });
+    }
+  });
+
+  // A reseller who takes payment directly (their own KBZ Pay account) shows
+  // this to their own storefront's customers instead of the platform's, and
+  // correspondingly gets approve/reject authority over those orders below —
+  // the two always travel together, since whoever receives the money is the
+  // only one who can actually check it landed.
+  app.get('/api/game-topup/payment-settings', ...read, async (req, res) => {
+    try {
+      if (!canManagePricing(req.auth)) throw new ApiError(403, 'ငွေရေးကြေးရေး အချက်အလက် ကြည့်ခွင့် မရှိပါ');
+      await ensureGameTopupSchema();
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT kbz_pay_name AS "kbzPayName", kbz_pay_phone AS "kbzPayPhone", kbz_pay_qr_url AS "kbzPayQrUrl" FROM game_topup_shop_payment WHERE shop_id = $1::uuid`,
+        req.auth.shopId,
+      );
+      const row = rows[0] || { kbzPayName: null, kbzPayPhone: null, kbzPayQrUrl: null };
+      res.json({ ok: true, ...row, usingOwnAccount: Boolean(row.kbzPayName && row.kbzPayPhone) });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Payment settings load failed' });
+    }
+  });
+
+  app.put('/api/game-topup/payment-settings', ...write, async (req, res) => {
+    try {
+      if (!canManagePricing(req.auth)) throw new ApiError(403, 'ငွေရေးကြေးရေး အချက်အလက် ပြင်ခွင့် မရှိပါ');
+      await ensureGameTopupSchema();
+      const input = parse(paymentSettingsSchema, req.body || {});
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO game_topup_shop_payment(shop_id, kbz_pay_name, kbz_pay_phone, kbz_pay_qr_url, updated_at)
+         VALUES($1::uuid,$2,$3,$4,NOW())
+         ON CONFLICT (shop_id) DO UPDATE SET kbz_pay_name = EXCLUDED.kbz_pay_name, kbz_pay_phone = EXCLUDED.kbz_pay_phone, kbz_pay_qr_url = EXCLUDED.kbz_pay_qr_url, updated_at = NOW()`,
+        req.auth.shopId, clean(input.kbzPayName, 120), clean(input.kbzPayPhone, 40), clean(input.kbzPayQrUrl, 500),
+      );
+      res.json({ ok: true, message: 'KBZ Pay အချက်အလက် သိမ်းပြီးပါပြီ' });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Payment settings update failed' });
+    }
+  });
+
+  // Orders placed through this shop's own storefront (game_topup_public_orders
+  // with shop_id = this shop) — approve/reject only ever act on a row this
+  // shop actually owns, checked here rather than trusted from the caller.
+  app.get('/api/game-topup/public-orders', ...read, async (req, res) => {
+    try {
+      if (!canManagePricing(req.auth)) throw new ApiError(403, 'Order များ ကြည့်ခွင့် မရှိပါ');
+      await ensureGameTopupSchema();
+      const status = clean(req.query.status, 40);
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit || 40)));
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT o.id, o.order_number AS "orderNumber", o.status, o.quantity, o.player_id AS "playerId",
+                o.server_id AS "serverId", o.customer_name AS "customerName", o.customer_phone AS "customerPhone",
+                o.retail_price AS "retailPrice", o.payment_transaction_id AS "paymentTransactionId",
+                o.reject_reason AS "rejectReason", o.failure_reason AS "failureReason", o.created_at AS "createdAt",
+                p.name AS "productName", v.name AS "variationName"
+           FROM game_topup_public_orders o
+           JOIN game_topup_variations v ON v.id = o.variation_id
+           JOIN game_topup_products p ON p.id = v.product_id
+          WHERE o.shop_id = $1::uuid ${status ? 'AND o.status = $3' : ''}
+          ORDER BY o.created_at DESC LIMIT $2`,
+        ...(status ? [req.auth.shopId, limit, status] : [req.auth.shopId, limit]),
+      );
+      res.json({ ok: true, orders: rows.map((row) => ({ ...row, retailPrice: round(row.retailPrice) })) });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Order feed failed' });
+    }
+  });
+
+  async function requireOwnPublicOrder(req) {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT shop_id AS "shopId" FROM game_topup_public_orders WHERE id = $1::uuid`, req.params.id,
+    );
+    if (!rows[0] || rows[0].shopId !== req.auth.shopId) throw new ApiError(404, 'Order not found');
+  }
+
+  app.post('/api/game-topup/public-orders/:id/approve', ...write, async (req, res) => {
+    try {
+      if (!canManagePricing(req.auth)) throw new ApiError(403, 'Order အတည်ပြုခွင့် မရှိပါ');
+      await ensureGameTopupSchema();
+      await requireOwnPublicOrder(req);
+      const gameTopupTelegram = require('./game-topup-telegram');
+      const order = await gameTopupTelegram.approvePublicOrder(req.params.id, req.auth.userId);
+      res.json({ ok: true, message: `${order.orderNumber} အတည်ပြုပြီး ဖြည့်ပေးလိုက်ပါပြီ`, order });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Approve failed' });
+    }
+  });
+
+  app.post('/api/game-topup/public-orders/:id/reject', ...write, async (req, res) => {
+    try {
+      if (!canManagePricing(req.auth)) throw new ApiError(403, 'Order ငြင်းပယ်ခွင့် မရှိပါ');
+      await ensureGameTopupSchema();
+      await requireOwnPublicOrder(req);
+      const reason = clean(req.body?.reason, 300) || 'Payment not verified';
+      const gameTopupTelegram = require('./game-topup-telegram');
+      const order = await gameTopupTelegram.rejectPublicOrder(req.params.id, req.auth.userId, reason);
+      res.json({ ok: true, message: `${order.orderNumber} ငြင်းပယ်ပြီးပါပြီ`, order });
+    } catch (error) {
+      res.status(error.status || 500).json({ ok: false, message: error.message || 'Reject failed' });
     }
   });
 

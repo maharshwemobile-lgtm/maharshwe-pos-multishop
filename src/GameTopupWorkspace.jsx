@@ -117,6 +117,130 @@ function StorefrontPricingPanel() {
   );
 }
 
+function PaymentAndPublicOrdersPanel({ notify }) {
+  const [open, setOpen] = useState(false);
+  const [payment, setPayment] = useState({ kbzPayName: '', kbzPayPhone: '', kbzPayQrUrl: '', usingOwnAccount: false });
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [view, setView] = useState('PENDING_APPROVAL');
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [acting, setActing] = useState('');
+
+  const loadPayment = async () => {
+    const result = await apiFetch('/api/game-topup/payment-settings');
+    setPayment({ kbzPayName: result.kbzPayName || '', kbzPayPhone: result.kbzPayPhone || '', kbzPayQrUrl: result.kbzPayQrUrl || '', usingOwnAccount: result.usingOwnAccount });
+  };
+  const loadOrders = async () => {
+    setLoading(true);
+    try {
+      const result = await apiFetch(`/api/game-topup/public-orders?status=${encodeURIComponent(view)}`);
+      setOrders(result.orders || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { if (open) { loadPayment(); loadOrders(); } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) loadOrders(); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const savePayment = async (event) => {
+    event.preventDefault();
+    setSavingPayment(true);
+    try {
+      await apiFetch('/api/game-topup/payment-settings', { method: 'PUT', body: payment });
+      await loadPayment();
+      notify?.('KBZ Pay အချက်အလက် သိမ်းပြီးပါပြီ', 'success');
+    } catch (error) {
+      notify?.(error.message || 'Save failed', 'error');
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
+  const approve = async (order) => {
+    if (!window.confirm(`${order.orderNumber} — KBZ Pay ငွေလက်ခံရရှိကြောင်း စစ်ဆေးပြီးပြီလား?`)) return;
+    setActing(order.id);
+    try {
+      await apiFetch(`/api/game-topup/public-orders/${order.id}/approve`, { method: 'POST' });
+      notify?.(`${order.orderNumber} အတည်ပြုပြီးပါပြီ`, 'success');
+      await loadOrders();
+    } catch (error) {
+      notify?.(error.message || 'Approve failed', 'error');
+    } finally {
+      setActing('');
+    }
+  };
+  const reject = async (order) => {
+    const reason = window.prompt('ငြင်းပယ်ရသည့် အကြောင်းပြချက်', 'ငွေလက်ခံရရှိမှု အတည်မပြုနိုင်ပါ');
+    if (reason === null) return;
+    setActing(order.id);
+    try {
+      await apiFetch(`/api/game-topup/public-orders/${order.id}/reject`, { method: 'POST', body: { reason } });
+      notify?.(`${order.orderNumber} ငြင်းပယ်ပြီးပါပြီ`, 'success');
+      await loadOrders();
+    } catch (error) {
+      notify?.(error.message || 'Reject failed', 'error');
+    } finally {
+      setActing('');
+    }
+  };
+
+  return (
+    <section className="gt-pricing-panel">
+      <button type="button" className="gt-pricing-toggle" onClick={() => setOpen((value) => !value)}>
+        {open ? '▾' : '▸'} ကိုယ်ပိုင် KBZ Pay & Online Shop Order (Approve/Reject)
+      </button>
+      {open ? (
+        <div className="gt-table-wrap">
+          <p className="gt-pricing-hint">
+            ဒီနေရာမှာ KBZ Pay အချက်အလက် ဖြည့်ထားရင် သင့်ဆိုင်ရဲ့ Online Shop ကနေ ဝယ်တဲ့ဖောက်သည်တွေက သင့် KBZ Pay ကိုပဲ တိုက်ရိုက်လွှဲပေးမှာဖြစ်ပြီး،
+            ဒီအော်ဒါတွေကို platform (Grand Admin) အစား သင့်ကိုယ်တိုင် Approve/Reject လုပ်ရမှာပါ — ငွေကို သင့်ဆီ တိုက်ရိုက်ရောက်လို့ပါ။
+            မဖြည့်ထားဘူးဆိုရင် ပလက်ဖောင်း KBZ Pay နဲ့ Grand Admin ကပဲ ဆက်စီမံပေးနေပါလိမ့်မယ်။
+          </p>
+          <form className="gt-payment-form" onSubmit={savePayment}>
+            <label>KBZ Pay အမည်<input value={payment.kbzPayName} onChange={(e) => setPayment({ ...payment, kbzPayName: e.target.value })} placeholder="ဥပမာ - Khun Myint Aung" /></label>
+            <label>KBZ Pay နံပါတ်<input value={payment.kbzPayPhone} onChange={(e) => setPayment({ ...payment, kbzPayPhone: e.target.value })} placeholder="09xxxxxxxxx" /></label>
+            <label>QR ပုံ Link (ရွေးချယ်ရန်)<input value={payment.kbzPayQrUrl} onChange={(e) => setPayment({ ...payment, kbzPayQrUrl: e.target.value })} placeholder="https://…" /></label>
+            <button type="submit" disabled={savingPayment}>{savingPayment ? <Loader2 className="grand-spin" size={14} /> : null} သိမ်းမည်</button>
+            <span className={`gt-payment-status ${payment.usingOwnAccount ? 'on' : 'off'}`}>{payment.usingOwnAccount ? '✅ ကိုယ်ပိုင် KBZ Pay သုံးနေသည်' : '⛔ ပလက်ဖောင်း KBZ Pay ကို သုံးနေသည်'}</span>
+          </form>
+
+          <div className="gt-order-view-switch">
+            {[['PENDING_APPROVAL', 'စောင့်ဆိုင်း'], ['COMPLETED', 'ပြီးပြီး'], ['REJECTED', 'ငြင်းပယ်']].map(([value, label]) => (
+              <button key={value} type="button" className={view === value ? 'active' : ''} onClick={() => setView(value)}>{label}</button>
+            ))}
+          </div>
+          {loading ? <div className="gt-empty">Loading…</div> : (
+            <table>
+              <thead><tr><th>Order</th><th>Item</th><th>Player ID</th><th>ပမာဏ</th><th>Txn</th><th /></tr></thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td><b>{order.orderNumber}</b><span>{new Date(order.createdAt).toLocaleString()}</span></td>
+                    <td>{order.productName} · {order.variationName}</td>
+                    <td>{order.playerId || '-'}{order.serverId ? ` · ${order.serverId}` : ''}</td>
+                    <td>{money(order.retailPrice)}</td>
+                    <td>{order.paymentTransactionId}</td>
+                    <td>
+                      {order.status === 'PENDING_APPROVAL' ? (
+                        <div className="gt-order-actions">
+                          <button type="button" disabled={acting === order.id} onClick={() => approve(order)}>Approve</button>
+                          <button type="button" disabled={acting === order.id} onClick={() => reject(order)}>Reject</button>
+                        </div>
+                      ) : order.status === 'REJECTED' ? <span className="gt-status rejected">{order.rejectReason}</span> : null}
+                    </td>
+                  </tr>
+                ))}
+                {!orders.length ? <tr><td colSpan={6} className="gt-empty-cell">Order မရှိပါ</td></tr> : null}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function StatusBadge({ status }) {
   const label = { COMPLETED: 'ပြီး', FAILED: 'မအောင်မြင်', PENDING: 'စောင့်ဆိုင်း', PROCESSING: 'လုပ်ဆောင်နေ' }[status] || status;
   return <span className={`gt-status ${String(status || '').toLowerCase()}`}>{label}</span>;
@@ -318,6 +442,7 @@ export default function GameTopupWorkspace() {
       {message ? <div className="gt-message">{message}</div> : null}
 
       {canSeeCost ? <StorefrontPricingPanel /> : null}
+      {canSeeCost ? <PaymentAndPublicOrdersPanel notify={(text) => setMessage(text)} /> : null}
 
       <div className="gt-layout">
         <div className="gt-catalog">

@@ -157,6 +157,17 @@ const statements = [
     UNIQUE (shop_id, variation_id)
   )`,
   `CREATE INDEX IF NOT EXISTS game_topup_shop_prices_shop_idx ON game_topup_shop_prices (shop_id)`,
+
+  // A reseller who takes payment directly (their own KBZ Pay, not the
+  // platform's) shows this to their own storefront's customers instead of
+  // the platform-wide GAME_TOPUP_KBZ_PAY_* env vars.
+  `CREATE TABLE IF NOT EXISTS game_topup_shop_payment (
+    shop_id UUID PRIMARY KEY REFERENCES shops(id) ON DELETE CASCADE,
+    kbz_pay_name TEXT,
+    kbz_pay_phone TEXT,
+    kbz_pay_qr_url TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
 ];
 
 async function ensureGameTopupSchema() {

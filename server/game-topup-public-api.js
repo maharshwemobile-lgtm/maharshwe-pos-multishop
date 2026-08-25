@@ -126,6 +126,21 @@ async function resolveShopForOrder(shopSlug) {
   return { id: shop.id, name: shop.name };
 }
 
+// A reseller who has entered their own KBZ Pay account shows that to their
+// storefront's customers instead of the platform's — the platform never
+// touches money for an order placed this way, so it should never look like
+// it did.
+async function resolveShopPayment(shopId) {
+  if (!shopId) return null;
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT kbz_pay_name AS "name", kbz_pay_phone AS "phone", kbz_pay_qr_url AS "qrUrl" FROM game_topup_shop_payment WHERE shop_id = $1::uuid`,
+    shopId,
+  );
+  const row = rows[0];
+  if (!row || !row.name || !row.phone) return null;
+  return { method: 'KBZ_PAY', name: row.name, phone: row.phone, qrUrl: row.qrUrl || null };
+}
+
 async function resolveShopPrice(shopId, variationId, defaultRetail) {
   if (!shopId) return number(defaultRetail);
   const rows = await prisma.$queryRawUnsafe(
@@ -234,10 +249,15 @@ function attachGameTopupPublicApi(app) {
     }
   });
 
-  app.get('/api/public/game-topup/payment-info', async (_req, res) => {
-    const name = clean(process.env.GAME_TOPUP_KBZ_PAY_NAME, 120);
-    const phone = clean(process.env.GAME_TOPUP_KBZ_PAY_PHONE, 40);
-    const qrUrl = clean(process.env.GAME_TOPUP_KBZ_PAY_QR_URL, 500);
+  app.get('/api/public/game-topup/payment-info', async (req, res) => {
+    await ensureGameTopupSchema();
+    const shopSlug = clean(req.query.shop, 80);
+    const shop = shopSlug ? await resolveShopForOrder(shopSlug) : null;
+    const shopPayment = shop ? await resolveShopPayment(shop.id) : null;
+
+    const name = shopPayment?.name || clean(process.env.GAME_TOPUP_KBZ_PAY_NAME, 120);
+    const phone = shopPayment?.phone || clean(process.env.GAME_TOPUP_KBZ_PAY_PHONE, 40);
+    const qrUrl = shopPayment?.qrUrl || clean(process.env.GAME_TOPUP_KBZ_PAY_QR_URL, 500);
     res.json({
       ok: true,
       configured: Boolean(name && phone),

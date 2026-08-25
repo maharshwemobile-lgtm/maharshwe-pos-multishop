@@ -95,3 +95,18 @@
 .gt-pricing-panel td button{margin-right:6px;padding:6px 10px;border-radius:7px;border:1px solid #dbe3ef;background:#fff;font-size:12px;cursor:pointer}
 .gt-pricing-panel td button:disabled{opacity:.5;cursor:not-allowed}
 .gt-price-error{display:block;margin-top:2px;color:#b91c1c;font-size:11px}
+.gt-status.rejected{background:rgba(239,68,68,.1);color:#dc2626}
+.gt-payment-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:10px 14px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+.gt-payment-form label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#475569;flex:1;min-width:150px}
+.gt-payment-form input{min-height:36px;border:1px solid #cbd5e1;border-radius:8px;padding:0 10px;font-size:13px}
+.gt-payment-form button{min-height:36px;border:0;border-radius:8px;padding:0 14px;background:#0E8A5F;color:#fff;font-weight:800;cursor:pointer}
+.gt-payment-status{font-size:11px;font-weight:800;white-space:nowrap}
+.gt-payment-status.on{color:#0E8A5F}
+.gt-payment-status.off{color:#b45309}
+.gt-order-view-switch{display:flex;gap:6px;margin:0 14px 10px}
+.gt-order-view-switch button{border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer}
+.gt-order-view-switch button.active{background:#0E8A5F;border-color:#0E8A5F;color:#fff}
+.gt-order-actions{display:flex;gap:6px}
+.gt-order-actions button{border:0;border-radius:7px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer}
+.gt-order-actions button:first-child{background:#0E8A5F;color:#fff}
+.gt-order-actions button:last-child{background:#fef2f2;color:#dc2626}

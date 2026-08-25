@@ -8,6 +8,7 @@
 <meta name="description" content="Game top-up နှင့် VPN — ချက်ချင်း ဖြည့်ပေးသည်။">
 <link rel="icon" type="image/png" href="/mahar-pos-logo-192.png">
 <link rel="apple-touch-icon" href="/mahar-pos-logo-192.png">
+<link rel="manifest" href="/digital/manifest.webmanifest">
 <style>
 #fCheckWrap{margin:-4px 0 4px}
 .note.good{background:#e8f7ee;border-color:#57b97a;color:#1c6b3a}
@@ -122,7 +123,10 @@ footer a{color:var(--blue);font-weight:700}
       <img src="/mahar-pos-logo-192.png" alt="Mahar POS">
       <div><b>Digital Products</b><span>ချက်ချင်း ရရှိသည်</span></div>
     </div>
-    <a class="check" href="/digital/?view=status">အော်ဒါ စစ်ရန်</a>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="installBtn" class="hid" type="button" title="App ထည့်မည်" style="width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--blue);cursor:pointer;display:grid;place-items:center;font-size:16px">⬇</button>
+      <a class="check" href="/digital/?view=status">အော်ဒါ စစ်ရန်</a>
+    </div>
   </div>
 
   <div class="cats" id="cats">
@@ -558,6 +562,7 @@ footer a{color:var(--blue);font-weight:700}
           server: $('fServer').value.trim() || undefined,
           customerPhone: $('fPhone').value.trim(),
           paymentTransactionId: txn,
+          shopSlug: state.shopSlug || undefined,
         },
       });
       state.placed = res;
@@ -645,9 +650,30 @@ footer a{color:var(--blue);font-weight:700}
   }
   $('stGo').addEventListener('click', () => lookup($('stOrder').value.trim(), ''));
 
+  // ── install (PWA) ──
+  let installPrompt = null;
+  addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    show($('installBtn'), true);
+  });
+  addEventListener('appinstalled', () => { installPrompt = null; show($('installBtn'), false); });
+  $('installBtn').addEventListener('click', async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') { installPrompt = null; show($('installBtn'), false); }
+  });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/digital/sw.js', { scope: '/digital/' }).catch(() => {});
+
   // ── boot ──
   (async () => {
     const qs = new URLSearchParams(location.search);
+    // Reaching this page via a shop's own "Game Top-up" pill (?shop=slug)
+    // means that shop's own price overrides, KBZ Pay account, and
+    // approve/reject queue apply instead of the platform's — same catalog
+    // and order endpoints, just shop-scoped.
+    state.shopSlug = qs.get('shop') || '';
     if (qs.get('view') === 'status') {
       openCat('status');
       if (qs.get('order')) $('stOrder').value = qs.get('order');
@@ -656,9 +682,10 @@ footer a{color:var(--blue);font-weight:700}
       if (qs.get('order')) lookup(qs.get('order'), qs.get('key') || '');
     }
     try {
+      const shopQs = state.shopSlug ? '?shop=' + encodeURIComponent(state.shopSlug) : '';
       const [cat, pay] = await Promise.all([
-        api('/api/public/game-topup/catalog'),
-        api('/api/public/game-topup/payment-info'),
+        api('/api/public/game-topup/catalog' + shopQs),
+        api('/api/public/game-topup/payment-info' + shopQs),
       ]);
       state.products = cat.products || [];
       state.pay = pay;
