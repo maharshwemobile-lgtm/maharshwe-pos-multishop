@@ -142,7 +142,11 @@ const productPatchSchema = z.object({
 const variationPatchSchema = z.object({
   active: z.boolean().optional(),
   shopCost: z.coerce.number().min(0).optional(),
-  suggestedRetail: z.coerce.number().min(0).optional(),
+  // A zero (or cleared-field) retail price would let a customer order for
+  // free, so this is the one field that must stay strictly positive even
+  // though shopCost — a wholesale figure that can legitimately be a
+  // promotional 0 — does not.
+  suggestedRetail: z.coerce.number().gt(0).optional(),
   name: z.string().trim().min(1).max(200).optional(),
 });
 const walletAdjustSchema = z.object({

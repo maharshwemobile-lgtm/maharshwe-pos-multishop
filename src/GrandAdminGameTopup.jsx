@@ -10,6 +10,10 @@ function VariationRow({ variation, onSave }) {
   const [suggestedRetail, setSuggestedRetail] = useState(String(variation.suggestedRetail));
   const [busy, setBusy] = useState(false);
   const dirty = Number(shopCost) !== variation.shopCost || Number(suggestedRetail) !== variation.suggestedRetail;
+  // A cleared/zero retail price would let customers order for free — never a
+  // valid state, so it can't be saved even if the field is momentarily empty
+  // while someone is mid-edit.
+  const validPrice = Number(shopCost) >= 0 && Number(suggestedRetail) > 0;
 
   const save = async () => {
     setBusy(true);
@@ -27,7 +31,7 @@ function VariationRow({ variation, onSave }) {
       <td><input type="number" min="0" value={suggestedRetail} onChange={(event) => setSuggestedRetail(event.target.value)} /></td>
       <td>{money(Math.max(0, Number(suggestedRetail || 0) - Number(shopCost || 0)))}</td>
       <td>
-        <button type="button" disabled={!dirty || busy} onClick={save}>{busy ? <Loader2 className="grand-spin" size={14} /> : 'Save'}</button>
+        <button type="button" disabled={!dirty || !validPrice || busy} onClick={save}>{busy ? <Loader2 className="grand-spin" size={14} /> : 'Save'}</button>
         <button type="button" onClick={() => onSave(variation.id, { active: !variation.active })}>{variation.active ? 'Hide' : 'Show'}</button>
       </td>
     </tr>
