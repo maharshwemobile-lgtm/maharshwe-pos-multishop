@@ -94,3 +94,4 @@
 .gt-pricing-panel input{width:110px;padding:6px 8px;border:1px solid #dbe3ef;border-radius:7px}
 .gt-pricing-panel td button{margin-right:6px;padding:6px 10px;border-radius:7px;border:1px solid #dbe3ef;background:#fff;font-size:12px;cursor:pointer}
 .gt-pricing-panel td button:disabled{opacity:.5;cursor:not-allowed}
+.gt-price-error{display:block;margin-top:2px;color:#b91c1c;font-size:11px}

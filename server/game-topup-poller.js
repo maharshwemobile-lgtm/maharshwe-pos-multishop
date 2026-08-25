@@ -46,7 +46,7 @@ async function pendingShopOrders() {
 async function pendingPublicOrders() {
   return prisma.$queryRawUnsafe(
     `SELECT id, order_number AS "orderNumber", moogold_order_id AS "moogoldOrderId", retail_price AS "retailPrice",
-            customer_name AS "customerName", customer_phone AS "customerPhone"
+            customer_name AS "customerName", customer_phone AS "customerPhone", shop_id AS "shopId"
        FROM game_topup_public_orders
       WHERE status = 'PROCESSING'
         AND moogold_order_id IS NOT NULL

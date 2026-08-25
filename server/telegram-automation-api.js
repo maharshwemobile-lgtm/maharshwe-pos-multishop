@@ -308,11 +308,12 @@ async function registerBotWebhook(shopId, botToken, appUrl) {
 // here instead of the platform bot) — required lazily to avoid a circular
 // top-level require with game-topup-telegram.js, which requires this file
 // back for loadTelegramSettings.
-// Keyed by chatId: an admin tapped "❌ Reject" and is now expected to reply
-// with the reason as their next plain-text message in that chat. In-memory
-// only (a lost reason prompt on restart just means the tap has to happen
-// again) — there is exactly one Game Top-up approval queue per chat, so a
-// single pending entry per chat is never ambiguous.
+// Keyed by the force-reply PROMPT's own message_id, not chatId — a chat can
+// have more than one reject in flight (two orders notify the same admin chat
+// close together), and Telegram's reply_to_message on the incoming answer
+// already tells us exactly which prompt it belongs to, so this never
+// ambiguously matches the wrong order. In-memory only: a lost prompt on
+// restart just means the tap has to happen again.
 const pendingRejects = new Map();
 
 async function handleGameTopupCallback(shopId, callback, botToken) {
@@ -320,18 +321,36 @@ async function handleGameTopupCallback(shopId, callback, botToken) {
   if (!orderId || (action !== 'gtapprove' && action !== 'gtreject')) return false;
   const gameTopupTelegram = require('./game-topup-telegram');
   const chatId = String(callback.message?.chat?.id || '');
+
+  // This chat's bot only ever gets sent messages for orders that belong to
+  // it — its own shop's orders, or (via the platform-wide fallback in
+  // resolveBotForOrder) an unattributed /digital/ order — never another
+  // shop's. Re-checking here, rather than trusting that the message was
+  // legitimately sent, closes off a shop admin using their own bot token to
+  // hand-craft a gtapprove/gtreject callback for an order that was never
+  // routed to them.
+  const orderRows = await prisma.$queryRawUnsafe(
+    `SELECT shop_id AS "shopId" FROM game_topup_public_orders WHERE id = $1::uuid`, orderId,
+  ).catch(() => []);
+  const orderShopId = orderRows[0]?.shopId || null;
+  if (orderShopId && orderShopId !== shopId) {
+    await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'ဒီ Order က ဒီဆိုင်နဲ့ မသက်ဆိုင်ပါ', show_alert: true }, botToken);
+    return true;
+  }
+
   try {
     if (action === 'gtapprove') {
       await gameTopupTelegram.approvePublicOrder(orderId, null);
       await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'Approved ✅' }, botToken);
     } else {
-      if (chatId) pendingRejects.set(chatId, orderId);
       await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'အကြောင်းပြချက် ရေးပါ' }, botToken);
-      await gameTopupTelegram.callTelegram('sendMessage', {
+      const prompt = await gameTopupTelegram.callTelegram('sendMessage', {
         chat_id: chatId,
         text: `❌ ငြင်းပယ်ချက် — အကြောင်းပြချက် ရိုက်ထည့်ပါ (Order ${orderId.slice(0, 8)}…)`,
         reply_markup: { force_reply: true, selective: true },
       }, botToken);
+      const promptMessageId = prompt?.result?.message_id;
+      if (promptMessageId) pendingRejects.set(String(promptMessageId), orderId);
     }
   } catch (error) {
     await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: error.message || 'Failed', show_alert: true }, botToken);
@@ -339,15 +358,19 @@ async function handleGameTopupCallback(shopId, callback, botToken) {
   return true;
 }
 
-// The plain-text reply to the force-reply prompt above — takes priority over
+// The plain-text reply to a force-reply prompt above — takes priority over
 // the general quick-menu flow so a rejection reason never gets swallowed as
-// an attempted menu command.
-async function handlePendingReject(chatId, botToken, text) {
-  const orderId = pendingRejects.get(chatId);
+// an attempted menu command. `msg` is the incoming Telegram message; only a
+// genuine reply to one of our own prompts (by message_id) is consumed here,
+// so an unrelated message never gets mistaken for a pending reason even if
+// another reject is also awaiting a reply in the same chat.
+async function handlePendingReject(chatId, botToken, msg) {
+  const replyToId = msg?.reply_to_message?.message_id;
+  const orderId = replyToId != null ? pendingRejects.get(String(replyToId)) : undefined;
   if (!orderId) return false;
-  pendingRejects.delete(chatId);
+  pendingRejects.delete(String(replyToId));
   const gameTopupTelegram = require('./game-topup-telegram');
-  const reason = String(text || '').trim().slice(0, 300) || 'Rejected via Telegram';
+  const reason = String(msg.text || '').trim().slice(0, 300) || 'Rejected via Telegram';
   try {
     const order = await gameTopupTelegram.rejectPublicOrder(orderId, null, reason);
     await gameTopupTelegram.callTelegram('sendMessage', { chat_id: chatId, text: `❌ ${order.orderNumber} ငြင်းပယ်ပြီးပါပြီ — ${reason}` }, botToken);
@@ -375,8 +398,8 @@ async function handleBotWebhookUpdate(shopId, update) {
   const settings = await loadTelegramSettings(shopId);
   if (!settings.botToken) return;
 
-  if (msg.text && pendingRejects.has(chatId)) {
-    if (await handlePendingReject(chatId, settings.botToken, msg.text)) return;
+  if (msg.text && msg.reply_to_message) {
+    if (await handlePendingReject(chatId, settings.botToken, msg)) return;
   }
 
   // Only the first person to /start the bot gets linked as the notification target

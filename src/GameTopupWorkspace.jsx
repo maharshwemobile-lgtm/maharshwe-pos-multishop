@@ -17,15 +17,22 @@ function formatDate(value) {
 function StorefrontPriceRow({ product, variation, onSaved }) {
   const [value, setValue] = useState(String(variation.storefrontRetail ?? variation.platformRetail));
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const overridden = variation.storefrontRetail != null;
+  // A 0/blank price would let customers order for free on this shop's own
+  // storefront — same rule as the platform catalog's price editor.
+  const validPrice = Number(value) > 0;
 
   const save = async () => {
     setBusy(true);
+    setError('');
     try {
       const result = await apiFetch(`/api/game-topup/storefront-prices/${variation.id}`, {
         method: 'PUT', body: { retailPrice: Number(value) },
       });
       onSaved(variation.id, result.storefrontRetail);
+    } catch (err) {
+      setError(err.message || 'Save failed');
     } finally {
       setBusy(false);
     }
@@ -48,9 +55,10 @@ function StorefrontPriceRow({ product, variation, onSaved }) {
       <td>{money(variation.platformRetail)}</td>
       <td>
         <input type="number" min="1" value={value} onChange={(event) => setValue(event.target.value)} />
+        {error ? <small className="gt-price-error">{error}</small> : null}
       </td>
       <td>
-        <button type="button" disabled={busy || !value || Number(value) === (variation.storefrontRetail ?? variation.platformRetail)} onClick={save}>Save</button>
+        <button type="button" disabled={busy || !validPrice || Number(value) === (variation.storefrontRetail ?? variation.platformRetail)} onClick={save}>Save</button>
         {overridden ? <button type="button" disabled={busy} onClick={reset}>ပလက်ဖောင်းစျေးသို့</button> : null}
       </td>
     </tr>
