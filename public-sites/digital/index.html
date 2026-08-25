@@ -149,14 +149,12 @@ footer a{color:var(--blue);font-weight:700}
       <h2 id="gFormTitle"></h2>
       <p class="muted" id="gFormPick"></p>
       <div id="gFormErr" class="note bad hid"></div>
-      <label><span>အရေအတွက်</span><input id="fQty" type="number" min="1" max="10" value="1" inputmode="numeric"></label>
       <label id="fPlayerWrap"><span>Player ID / User ID *</span><input id="fPlayer" placeholder="ဂိမ်းထဲက ID"></label>
       <label id="fServerWrap"><span>Server / Zone ID *</span><input id="fServer" placeholder="ဥပမာ - 2001"></label>
       <div id="fCheckWrap">
         <div id="gCheckOut" class="note hid"></div>
       </div>
       <label><span>ဆက်သွယ်ရန် ဖုန်းနံပါတ် *</span><input id="fPhone" type="tel" placeholder="09xxxxxxxxx" inputmode="tel"></label>
-      <label><span>နာမည် (ဖြည့်စရာမလို)</span><input id="fName"></label>
       <div class="total"><span>စုစုပေါင်း</span><b id="gTotal">0 MMK</b></div>
       <button class="primary" type="button" id="gNext">ငွေပေးချေရန် ဆက်သွားမည်</button>
     </div>
@@ -164,6 +162,7 @@ footer a{color:var(--blue);font-weight:700}
     <div id="gPay" class="card hid">
       <button class="back" type="button" data-go="form">‹ ပြန်သွားမည်</button>
       <h2>ငွေလွှဲပါ</h2>
+      <div id="gPayOrderBox" style="border-bottom:1px solid var(--line);padding-bottom:10px"></div>
       <div class="total big"><span>လွှဲရမည့် ပမာဏ</span><b id="gPayTotal">0 MMK</b></div>
       <div id="gPayBox" class="pay"></div>
       <ol class="steps">
@@ -309,15 +308,13 @@ footer a{color:var(--blue);font-weight:700}
   }
 
   function total() {
-    const qty = Math.max(1, Number($('fQty').value || 1));
-    return Number(state.pack ? state.pack.retailPrice : 0) * qty;
+    return Number(state.pack ? state.pack.retailPrice : 0);
   }
   function syncTotal() {
     $('gTotal').textContent = money(total());
     $('gPayTotal').textContent = money(total());
     $('gPayAmt2').textContent = money(total());
   }
-  $('fQty').addEventListener('input', syncTotal);
 
   // Remembers a MooGold-confirmed id per game, on this device only, so a
   // returning customer buying the same game again does not have to retype an
@@ -454,6 +451,23 @@ footer a{color:var(--blue);font-weight:700}
   });
 
   function renderPay() {
+    const orderBox = $('gPayOrderBox');
+    orderBox.innerHTML = '';
+    const orderRows = [
+      ['ဂိမ်း', state.game.name],
+      ['Package', state.pack.name],
+      ['Player ID', $('fPlayer').value.trim() || '-'],
+    ];
+    if (state.game.requiresServer) orderRows.push(['Server', $('fServer').value.trim() || '-']);
+    orderRows.forEach(([label, value]) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;gap:12px;padding:6px 0';
+      row.innerHTML = '<span class="muted"></span><b style="font-size:13.5px;text-align:right"></b>';
+      row.firstElementChild.textContent = label;
+      row.lastElementChild.textContent = value;
+      orderBox.appendChild(row);
+    });
+
     const box = $('gPayBox');
     if (!state.pay || !state.pay.configured) {
       box.innerHTML = '<div class="note bad">ငွေလက်ခံမည့် အချက်အလက် မထည့်ရသေးပါ — ဆိုင်သို့ ဆက်သွယ်ပါ။</div>';
@@ -500,10 +514,9 @@ footer a{color:var(--blue);font-weight:700}
         method: 'POST',
         body: {
           variationId: state.pack.id,
-          quantity: Math.max(1, Number($('fQty').value || 1)),
+          quantity: 1,
           playerId: $('fPlayer').value.trim() || undefined,
           server: $('fServer').value.trim() || undefined,
-          customerName: $('fName').value.trim() || undefined,
           customerPhone: $('fPhone').value.trim(),
           paymentTransactionId: txn,
         },
@@ -528,11 +541,10 @@ footer a{color:var(--blue);font-weight:700}
       pad('နေ့စွဲ') + ': ' + new Date().toLocaleString(),
       '',
       pad('ပစ္စည်း') + ': ' + state.game.name,
-      pad('Package') + ': ' + state.pack.name + ' × ' + Math.max(1, Number($('fQty').value || 1)),
+      pad('Package') + ': ' + state.pack.name,
     ];
     if ($('fPlayer').value.trim()) lines.push(pad('Player ID') + ': ' + $('fPlayer').value.trim());
     if ($('fServer').value.trim()) lines.push(pad('Server') + ': ' + $('fServer').value.trim());
-    if ($('fName').value.trim()) lines.push(pad('နာမည်') + ': ' + $('fName').value.trim());
     lines.push(pad('ဖုန်း') + ': ' + $('fPhone').value.trim(), '',
       pad('စုစုပေါင်း') + ': ' + money(total()),
       pad('ငွေပေးချေမှု') + ': KBZ Pay',
@@ -548,9 +560,8 @@ footer a{color:var(--blue);font-weight:700}
 
   $('gAgain').addEventListener('click', () => {
     state.game = null; state.pack = null; state.placed = null;
-    ['fPlayer', 'fServer', 'fPhone', 'fName', 'fTxn'].forEach((id) => { $(id).value = ''; });
+    ['fPlayer', 'fServer', 'fPhone', 'fTxn'].forEach((id) => { $(id).value = ''; });
     resetCheck();
-    $('fQty').value = '1';
     step('games');
   });
 
