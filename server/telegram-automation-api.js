@@ -308,20 +308,51 @@ async function registerBotWebhook(shopId, botToken, appUrl) {
 // here instead of the platform bot) — required lazily to avoid a circular
 // top-level require with game-topup-telegram.js, which requires this file
 // back for loadTelegramSettings.
+// Keyed by chatId: an admin tapped "❌ Reject" and is now expected to reply
+// with the reason as their next plain-text message in that chat. In-memory
+// only (a lost reason prompt on restart just means the tap has to happen
+// again) — there is exactly one Game Top-up approval queue per chat, so a
+// single pending entry per chat is never ambiguous.
+const pendingRejects = new Map();
+
 async function handleGameTopupCallback(shopId, callback, botToken) {
   const [action, orderId] = String(callback.data || '').split('|');
   if (!orderId || (action !== 'gtapprove' && action !== 'gtreject')) return false;
   const gameTopupTelegram = require('./game-topup-telegram');
+  const chatId = String(callback.message?.chat?.id || '');
   try {
     if (action === 'gtapprove') {
       await gameTopupTelegram.approvePublicOrder(orderId, null);
       await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'Approved ✅' }, botToken);
     } else {
-      await gameTopupTelegram.rejectPublicOrder(orderId, null, 'Rejected via Telegram');
-      await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'Rejected' }, botToken);
+      if (chatId) pendingRejects.set(chatId, orderId);
+      await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: 'အကြောင်းပြချက် ရေးပါ' }, botToken);
+      await gameTopupTelegram.callTelegram('sendMessage', {
+        chat_id: chatId,
+        text: `❌ ငြင်းပယ်ချက် — အကြောင်းပြချက် ရိုက်ထည့်ပါ (Order ${orderId.slice(0, 8)}…)`,
+        reply_markup: { force_reply: true, selective: true },
+      }, botToken);
     }
   } catch (error) {
     await gameTopupTelegram.callTelegram('answerCallbackQuery', { callback_query_id: callback.id, text: error.message || 'Failed', show_alert: true }, botToken);
+  }
+  return true;
+}
+
+// The plain-text reply to the force-reply prompt above — takes priority over
+// the general quick-menu flow so a rejection reason never gets swallowed as
+// an attempted menu command.
+async function handlePendingReject(chatId, botToken, text) {
+  const orderId = pendingRejects.get(chatId);
+  if (!orderId) return false;
+  pendingRejects.delete(chatId);
+  const gameTopupTelegram = require('./game-topup-telegram');
+  const reason = String(text || '').trim().slice(0, 300) || 'Rejected via Telegram';
+  try {
+    const order = await gameTopupTelegram.rejectPublicOrder(orderId, null, reason);
+    await gameTopupTelegram.callTelegram('sendMessage', { chat_id: chatId, text: `❌ ${order.orderNumber} ငြင်းပယ်ပြီးပါပြီ — ${reason}` }, botToken);
+  } catch (error) {
+    await gameTopupTelegram.callTelegram('sendMessage', { chat_id: chatId, text: `⚠️ ${error.message || 'ငြင်းပယ်၍ မရပါ'}` }, botToken);
   }
   return true;
 }
@@ -343,6 +374,10 @@ async function handleBotWebhookUpdate(shopId, update) {
 
   const settings = await loadTelegramSettings(shopId);
   if (!settings.botToken) return;
+
+  if (msg.text && pendingRejects.has(chatId)) {
+    if (await handlePendingReject(chatId, settings.botToken, msg.text)) return;
+  }
 
   // Only the first person to /start the bot gets linked as the notification target
   if (!settings.linkedTelegramId) {
