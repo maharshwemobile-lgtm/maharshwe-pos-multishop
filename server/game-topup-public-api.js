@@ -166,6 +166,21 @@ function attachGameTopupPublicApi(app) {
     return true;
   }
 
+  // Order numbers are sequential, so a lookup that no longer requires the key
+  // (see /orders/status below) is guessable — this doesn't stop it, but it
+  // keeps one IP from walking the whole range in a burst.
+  const statusHits = new Map();
+  function statusLookupAllowed(ip) {
+    const now = Date.now();
+    const window = 60 * 1000;
+    const hits = (statusHits.get(ip) || []).filter((at) => now - at < window);
+    if (hits.length >= 20) return false;
+    hits.push(now);
+    statusHits.set(ip, hits);
+    if (statusHits.size > 5000) statusHits.clear();
+    return true;
+  }
+
   const validateSchema = z.object({
     variationId: z.string().uuid(),
     playerId: z.string().trim().min(1).max(80),
@@ -297,10 +312,16 @@ function attachGameTopupPublicApi(app) {
   app.get('/api/public/game-topup/orders/status', async (req, res) => {
     try {
       await ensureGameTopupSchema();
+      const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+      if (!statusLookupAllowed(ip)) throw new ApiError(429, 'ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
       const orderNumber = clean(req.query.order, 40);
       const shareKey = clean(req.query.key, 200);
-      if (!orderNumber || !shareKey) throw new ApiError(400, 'Missing order or key');
+      if (!orderNumber) throw new ApiError(400, 'Missing order');
 
+      // The key is still honoured when a status link carries one (every link
+      // this system has ever sent does), but the order number alone is now
+      // enough — a deliberate choice to drop the key requirement in exchange
+      // for convenience, since order numbers are shown to the customer anyway.
       const rows = await prisma.$queryRawUnsafe(
         `SELECT o.order_number AS "orderNumber", o.status, o.quantity, o.player_id AS "playerId", o.server_id AS "serverId",
                 o.customer_name AS "customerName",
@@ -310,8 +331,8 @@ function attachGameTopupPublicApi(app) {
            FROM game_topup_public_orders o
            JOIN game_topup_variations v ON v.id = o.variation_id
            JOIN game_topup_products p ON p.id = v.product_id
-          WHERE o.order_number = $1 AND o.share_key_hash = $2`,
-        orderNumber, hmac(shareKey),
+          WHERE o.order_number = $1${shareKey ? ' AND o.share_key_hash = $2' : ''}`,
+        ...(shareKey ? [orderNumber, hmac(shareKey)] : [orderNumber]),
       );
       if (!rows[0]) return res.status(404).json({ ok: false, message: 'Order not found' });
       res.json({ ok: true, order: orderRow(rows[0]) });

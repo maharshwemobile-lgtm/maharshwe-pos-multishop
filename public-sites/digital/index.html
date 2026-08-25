@@ -234,7 +234,6 @@ footer a{color:var(--blue);font-weight:700}
       <h2>အော်ဒါ အခြေအနေ စစ်ရန်</h2>
       <div id="stErr" class="note bad hid"></div>
       <label><span>အော်ဒါနံပါတ်</span><input id="stOrder" placeholder="ဥပမာ - PT00002"></label>
-      <label><span>Key (ဖြတ်ပိုင်းထဲက link ထဲမှာပါသည်)</span><input id="stKey" placeholder="link ထဲက key"></label>
       <button class="primary" type="button" id="stGo">စစ်မည်</button>
     </div>
     <div id="stResult" class="card hid"></div>
@@ -615,7 +614,7 @@ footer a{color:var(--blue);font-weight:700}
   async function lookup(order, key) {
     show($('stErr'), false);
     try {
-      const res = await api('/api/public/game-topup/orders/status?order=' + encodeURIComponent(order) + '&key=' + encodeURIComponent(key));
+      const res = await api('/api/public/game-topup/orders/status?order=' + encodeURIComponent(order) + (key ? '&key=' + encodeURIComponent(key) : ''));
       const o = res.order;
       const [icon, title, hint, tone] = STATUS_TEXT[o.status] || ['•', o.status, '', 'warn'];
       const rows = [
@@ -635,7 +634,7 @@ footer a{color:var(--blue);font-weight:700}
       show($('stResult'), false);
     }
   }
-  $('stGo').addEventListener('click', () => lookup($('stOrder').value.trim(), $('stKey').value.trim()));
+  $('stGo').addEventListener('click', () => lookup($('stOrder').value.trim(), ''));
 
   // ── boot ──
   (async () => {
@@ -643,8 +642,9 @@ footer a{color:var(--blue);font-weight:700}
     if (qs.get('view') === 'status') {
       openCat('status');
       if (qs.get('order')) $('stOrder').value = qs.get('order');
-      if (qs.get('key')) $('stKey').value = qs.get('key');
-      if (qs.get('order') && qs.get('key')) lookup(qs.get('order'), qs.get('key'));
+      // Old links still carry a key (harmless — the endpoint still accepts
+      // one) but new lookups no longer need it.
+      if (qs.get('order')) lookup(qs.get('order'), qs.get('key') || '');
     }
     try {
       const [cat, pay] = await Promise.all([
