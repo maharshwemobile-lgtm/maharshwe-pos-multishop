@@ -91,10 +91,14 @@ async function applySheetRow(shopId, prefix, row) {
   if (status && status !== repair.status) {
     if (!(status === 'IN_PROGRESS' && inFlight.includes(repair.status))) changes.status = status;
   }
-  // The sheet marks collection in its own column, not the status one.
-  if (sheetWord(row.pickupStatus) === '' && row.pickupStatus !== undefined && repair.status !== 'DELIVERED'
-      && (changes.status || repair.status) === 'COMPLETED') {
-    changes.status = 'DELIVERED';
+  // The sheet marks collection in its own column: blank once the customer has
+  // taken the phone, မယူရသေး while it is still on the shelf. It moves the
+  // collection time and leaves the repair state alone.
+  if (row.pickupStatus !== undefined) {
+    const waiting = sheetWord(row.pickupStatus).startsWith('မယူ');
+    const collected = sheetWord(row.pickupStatus) === '';
+    if (collected && !repair.deliveredAt) changes.pickedUp = true;
+    if (waiting && repair.deliveredAt) changes.pickedUp = false;
   }
 
   const payment = PAYMENT_FROM_SHEET[sheetWord(row.paymentStatus)];
@@ -110,7 +114,10 @@ async function applySheetRow(shopId, prefix, row) {
         status = COALESCE($3::"RepairStatus", status),
         payment_status = COALESCE($4::"PaymentStatus", payment_status),
         final_cost = COALESCE($5::numeric, final_cost),
-        delivered_at = CASE WHEN $3 = 'DELIVERED' THEN COALESCE(delivered_at, NOW()) ELSE delivered_at END,
+        delivered_at = CASE
+          WHEN $6::boolean IS TRUE THEN COALESCE(delivered_at, NOW())
+          WHEN $6::boolean IS FALSE THEN NULL
+          ELSE delivered_at END,
         completed_at = CASE WHEN $3 IN ('COMPLETED','CANNOT_REPAIR') THEN COALESCE(completed_at, NOW()) ELSE completed_at END,
         updated_at = NOW()
       WHERE id = $1::uuid AND shop_id = $2::uuid`,
@@ -118,6 +125,7 @@ async function applySheetRow(shopId, prefix, row) {
     changes.status || null,
     changes.paymentStatus || null,
     changes.finalCost === undefined ? null : changes.finalCost,
+    changes.pickedUp === undefined ? null : changes.pickedUp,
   );
 
   await prisma.$executeRawUnsafe(

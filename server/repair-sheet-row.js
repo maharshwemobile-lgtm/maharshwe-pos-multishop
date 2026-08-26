@@ -83,7 +83,10 @@ function amount(value) {
 }
 
 function repairSheetRow(repair) {
-  const delivered = String(repair.status || '') === 'DELIVERED';
+  // The sheet tracks collection in its own column, so a phone that could not be
+  // repaired can still be marked picked up. It follows the collection time, not
+  // the repair state.
+  const delivered = Boolean(repair.deliveredAt);
   const values = {
     date: ddmmyyyy(repair.receivedAt),
     voucherNo: voucherNumber(repair.repairNumber),

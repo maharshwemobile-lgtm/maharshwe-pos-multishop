@@ -22,6 +22,7 @@ import {
   Search,
   Smartphone,
   Unplug,
+  PackageX,
   Wrench,
   X,
 } from 'lucide-react';
@@ -422,6 +423,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
               <div><dt>Diagnosis</dt><dd>{repair.diagnosis || '-'}</dd></div>
               <div><dt>Resolution</dt><dd>{repair.resolution || '-'}</dd></div>
               <div><dt>Technician</dt><dd>{repair.technicianName || repair.technicianUsername || '-'}</dd></div>
+              <div><dt>ယူပြီး ခြေနေ</dt><dd>{repair.deliveredAt ? `ယူသွားပြီ · ${formatDate(repair.deliveredAt)}` : 'မယူရသေး ⏳'}</dd></div>
             </dl>
           </section>
 
@@ -452,6 +454,22 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
                   setPrintingVoucher(true);
                   try { await printRepairVoucherById(repair.repairNumber, notify); } finally { setPrintingVoucher(false); }
                 }}>{printingVoucher ? <Loader2 className="repair-spin" size={17} /> : <Printer size={17} />} ဘောက်ချာ ပြန်ထုတ်</button>
+
+                {/* Collection is separate from the repair state, the way the
+                    shop's book keeps it — an unrepairable phone still gets
+                    taken home. Both directions, since it gets marked by
+                    mistake. */}
+                {repair.deliveredAt ? (
+                  <button type="button" className="repair-pickup-undo" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
+                    method: 'PATCH',
+                    body: { status: repair.status, pickedUp: false },
+                  }), 'မယူရသေး ပြန်ထားပြီးပါပြီ')}><PackageX size={17} /> မယူရသေး ⏳</button>
+                ) : (
+                  <button type="button" className="repair-pickup-button" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
+                    method: 'PATCH',
+                    body: { status: repair.status, pickedUp: true },
+                  }), 'ယူသွားပြီ မှတ်ပြီးပါပြီ')}><PackageCheck size={17} /> ယူပြီး ✅</button>
+                )}
 
                 {repair.paymentStatus !== 'PAID' ? (
                   <button type="button" className="repair-paid-button" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
