@@ -128,8 +128,13 @@ back to the shop's name — which is how the tabs are already named.
 ## Sheet → POS
 
 The bench ticks statuses off in the sheet, so an edit there has to reach the POS
-too. Add this to the same Apps Script project and set an **On change** trigger
-(Triggers → Add trigger → `pushEditsToPos` → From spreadsheet → On change).
+too. In the same Apps Script project: Triggers → Add trigger →
+`pushRepairEditsToPos` → From spreadsheet → **On edit**.
+
+On edit, not On change: On change fires for structural edits and does not say
+which range moved, leaving the script to guess at the active cell. On edit hands
+over the range, including the whole span when a status is dragged down several
+rows at once.
 
 ```js
 const POS_BASE  = 'https://app.maharpos.shop';

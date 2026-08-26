@@ -364,16 +364,36 @@ function writeRepairRow(payload, fallbackTab) {
 // Sheet -> POS. Install with Triggers -> Add trigger -> pushRepairEditsToPos ->
 // From spreadsheet -> On change, so a status ticked off at the bench reaches
 // the counter.
+// Runs from an On edit trigger, which hands over the exact range that changed.
+// getActiveRange is only a guess — right when the person editing is the one the
+// trigger runs as, wrong otherwise — so it is the fallback, not the source.
+//
+// A status is often dragged down several rows at once, so every row the edit
+// touched is reported, not just the first.
 function pushRepairEditsToPos(e) {
-  const sheet = (e && e.source ? e.source : SpreadsheetApp).getActiveSheet();
-  const range = sheet.getActiveRange();
+  const range = (e && e.range) ? e.range : SpreadsheetApp.getActiveSheet().getActiveRange();
   if (!range) return;
-  const row = range.getRow();
-  if (row <= REPAIR_HEADER_ROWS) return;
+  const sheet = range.getSheet();
 
-  const v = sheet.getRange(row, 1, 1, 13).getDisplayValues()[0];
-  const voucherNo = String(v[REPAIR_KEY_COLUMN - 1] || '').trim();
-  if (!voucherNo) return;
+  const firstRow = Math.max(range.getRow(), REPAIR_HEADER_ROWS + 1);
+  const lastRow = Math.min(range.getLastRow(), sheet.getLastRow());
+  if (lastRow < firstRow) return;
+
+  const values = sheet.getRange(firstRow, 1, lastRow - firstRow + 1, 13).getDisplayValues();
+  const rows = [];
+  for (let i = 0; i < values.length; i += 1) {
+    const v = values[i];
+    const voucherNo = String(v[REPAIR_KEY_COLUMN - 1] || '').trim();
+    if (!voucherNo) continue;
+    rows.push({
+      voucherNo: voucherNo,
+      repairStatus: String(v[5] || ''),
+      pickupStatus: String(v[7] || ''),
+      customerPrice: String(v[8] || ''),
+      paymentStatus: String(v[11] || ''),
+    });
+  }
+  if (!rows.length) return;
 
   const response = UrlFetchApp.fetch(POS_CONFIG.BASE_URL + '/api/google-sheet-sync/repair-status', {
     method: 'post',
@@ -383,14 +403,9 @@ function pushRepairEditsToPos(e) {
       secret: getRequiredProperty('POS_SYNC_SECRET'),
       shopSlug: POS_CONFIG.SHOP_SLUG,
       prefix: POS_CONFIG.REPAIR_PREFIX,
-      rows: [{
-        voucherNo: voucherNo,
-        repairStatus: String(v[5] || ''),
-        pickupStatus: String(v[7] || ''),
-        customerPrice: String(v[8] || ''),
-        paymentStatus: String(v[11] || ''),
-      }],
+      rows: rows,
     }),
   });
   return response.getContentText();
 }
+
