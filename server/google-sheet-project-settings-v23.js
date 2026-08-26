@@ -123,7 +123,11 @@ async function saveConfig(shopId, userId, input, req) {
   const raw = await readRawSettings(shopId);
   const api = object(raw.api);
   const previous = object(api.googleSheets);
-  const secret = clean(input.secret, 500) || clean(previous.secret, 500);
+  // The screen generates a secret when it has none to show, so a page that
+  // failed to load and was then saved would replace a working secret with a
+  // fresh one — silently breaking a sheet that is already holding the old
+  // value. Nothing in the UI edits this field, so what is stored always wins.
+  const secret = clean(previous.secret, 500) || clean(input.secret, 500);
   const next = {
     ...previous,
     enabled: input.enabled,
