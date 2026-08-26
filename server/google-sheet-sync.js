@@ -138,10 +138,15 @@ async function deliverPendingGoogleSheetSync(limit = 25) {
   await ensureGoogleSheetSyncSchema();
   if (!process.env.GOOGLE_SHEET_WEB_APP_URL || !process.env.GOOGLE_SHEET_SYNC_SECRET) return { sent: 0, configured: false };
   const rows = await prisma.$queryRawUnsafe(
-    `SELECT id,shop_id AS "shopId",dataset,action,entity_id AS "entityId",payload,created_at AS "createdAt"
-       FROM google_sheet_sync_outbox
-      WHERE status IN ('PENDING','FAILED') AND attempts < 20
-      ORDER BY created_at ASC
+    `SELECT o.id,o.shop_id AS "shopId",o.dataset,o.action,o.entity_id AS "entityId",o.payload,o.created_at AS "createdAt"
+       FROM google_sheet_sync_outbox o
+      WHERE o.status IN ('PENDING','FAILED') AND o.attempts < 20
+        AND NOT EXISTS (
+          SELECT 1 FROM shop_settings ss
+           WHERE ss.shop_id = o.shop_id
+             AND COALESCE(ss.settings->'api'->'googleSheets'->>'postUrl','') <> ''
+        )
+      ORDER BY o.created_at ASC
       LIMIT $1`,
     Math.min(100, Math.max(1, Number(limit || 25))),
   );

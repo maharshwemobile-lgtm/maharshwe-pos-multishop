@@ -12,6 +12,9 @@ const DATASETS = {
   stock: 'STOCK',
   'user-audit': 'User audit',
   'repair-records': 'Repair Records',
+  'daily-closing': 'Daily Closing',
+  // The repair book goes to the shop's own tab, named in the row itself.
+  'repair-voucher': 'Repairs',
 };
 
 const GOOGLE_HOSTS = new Set(['script.google.com', 'script.googleusercontent.com']);
