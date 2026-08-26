@@ -155,6 +155,16 @@ function IntakeModal({ onClose, onSaved, notify }) {
   const [scanImei, setScanImei] = useState(false);
   const [suggestions, setSuggestions] = useState({ brands: [], models: [], pairs: [] });
   const field = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  // The counter says the phone as one thing — "Oppo A3s" — and types it that
+  // way. The split happens once they leave the box, not while they type: on
+  // every keystroke it would cut the word in half the moment the space landed
+  // and the rest would go on the end of the brand.
+  const splitBrand = () => setForm((current) => {
+    const parts = String(current.deviceBrand || '').trim().split(/\s+/);
+    if (parts.length < 2 || String(current.deviceModel || '').trim()) return current;
+    return { ...current, deviceBrand: parts[0], deviceModel: parts.slice(1).join(' ') };
+  });
   const imeiHint = imeiStatus(form.imeiSerial);
   const [imeiLookup, setImeiLookup] = useState(null);
   // Held after a successful intake so the voucher can be printed from a fresh
@@ -299,7 +309,7 @@ function IntakeModal({ onClose, onSaved, notify }) {
   return (
     <Modal onClose={onClose} wide>
       <header className="repair-modal-header">
-        <div><Plus size={22} /><span><h3>New Repair Intake</h3><p>ဆိုင် Prefix နဲ့ Code ထဲကပုံစံအတိုင်း MS0001 / AC0001 လို ဘောက်ချာနံပါတ် တစ်ခုပဲ ထုတ်ပါမယ်။</p></span></div>
+        <div><Plus size={22} /><span><h3>ဖုန်းပြင် အသစ် လက်ခံမည်</h3><p>ဆိုင် Prefix နဲ့ Code ထဲကပုံစံအတိုင်း MS0001 / AC0001 လို ဘောက်ချာနံပါတ် တစ်ခုပဲ ထုတ်ပါမယ်။</p></span></div>
         <button type="button" onClick={onClose}><X size={20} /></button>
       </header>
       <form className="repair-form" onSubmit={submit}>
@@ -310,14 +320,14 @@ function IntakeModal({ onClose, onSaved, notify }) {
           {modelSuggestions.map((model) => <option key={model} value={model} />)}
         </datalist>
         <div className="repair-form-grid">
-          <label>Customer Name<input value={form.customerName} onChange={(event) => field('customerName', event.target.value)} required /></label>
-          <label>Customer ဖုန်းနံပါတ်<input value={form.customerPhone} onChange={(event) => field('customerPhone', event.target.value)} /></label>
-          <label>Device Brand<input list="repair-device-brand-suggestions" value={form.deviceBrand} onChange={(event) => field('deviceBrand', event.target.value)} placeholder="Vivo / Oppo / Redmi" autoComplete="off" /></label>
-          <label>Device Model<input list="repair-device-model-suggestions" value={form.deviceModel} onChange={(event) => field('deviceModel', event.target.value)} placeholder={form.deviceBrand ? `${form.deviceBrand} model` : 'Y28 / A3x / Note 13'} autoComplete="off" required /></label>
-          <label>Estimated Cost<input type="number" min="0" value={form.estimatedCost} onChange={(event) => field('estimatedCost', event.target.value)} /></label>
-          <label>Deposit<input type="number" min="0" value={form.deposit} onChange={(event) => field('deposit', event.target.value)} /></label>
-          <label className="span-2">Problem<textarea value={form.problem} onChange={(event) => field('problem', event.target.value)} required /></label>
-          <button className="span-2" type="button" onClick={() => setShowOptional((value) => !value)}>{showOptional ? 'Optional Details ဖျောက်မည်' : 'Optional Details ဖြည့်မည်'}</button>
+          <label>ပိုင်ရှင် အမည်<input value={form.customerName} onChange={(event) => field('customerName', event.target.value)} required /></label>
+          <label>ဖုန်းနံပါတ်<input value={form.customerPhone} onChange={(event) => field('customerPhone', event.target.value)} /></label>
+          <label>ဖုန်းအမျိုးအစား<input list="repair-device-brand-suggestions" value={form.deviceBrand} onChange={(event) => field('deviceBrand', event.target.value)} onBlur={splitBrand} placeholder="Oppo A3s လို တစ်ခါတည်း ရိုက်လို့ရ" autoComplete="off" /></label>
+          <label>မော်ဒယ်<input list="repair-device-model-suggestions" value={form.deviceModel} onChange={(event) => field('deviceModel', event.target.value)} placeholder={form.deviceBrand ? `${form.deviceBrand} model` : 'Y28 / A3x / Note 13'} autoComplete="off" required /></label>
+          <label>ခန့်မှန်း ကုန်ကျစရိတ်<input type="number" min="0" value={form.estimatedCost} onChange={(event) => field('estimatedCost', event.target.value)} /></label>
+          <label>စရံ<input type="number" min="0" value={form.deposit} onChange={(event) => field('deposit', event.target.value)} /></label>
+          <label className="span-2">ချို့ယွင်းချက်<textarea value={form.problem} onChange={(event) => field('problem', event.target.value)} required /></label>
+          <button className="span-2" type="button" onClick={() => setShowOptional((value) => !value)}>{showOptional ? 'အသေးစိတ် ဖျောက်မည်' : 'အသေးစိတ် ထပ်ဖြည့်မည်'}</button>
           {showOptional ? <>
             <label>IMEI / Serial
               <span className="repair-imei-row">
@@ -334,9 +344,9 @@ function IntakeModal({ onClose, onSaved, notify }) {
               {imeiLookup?.found ? <small className="repair-imei-hint valid">📱 {[imeiLookup.brand, imeiLookup.model].filter(Boolean).join(' ')}{imeiLookup.source === 'history' ? ' — ဒီဆိုင်မှာ အရင်က တွေ့ဖူး' : ''}</small> : null}
               {imeiLookup && imeiLookup.found === false ? <small className="repair-imei-hint typing">ဒီ model ကို အရင်က မမှတ်ရသေးပါ — brand/model ရိုက်ထည့်ပါ</small> : null}
             </label>
-            <label>Priority<select value={form.priority} onChange={(event) => field('priority', event.target.value)}><option>NORMAL</option><option>LOW</option><option>HIGH</option><option>URGENT</option></select></label>
-            <label className="span-2">Intake Condition<textarea value={form.intakeCondition} onChange={(event) => field('intakeCondition', event.target.value)} placeholder="Screen crack, water mark, body condition..." /></label>
-            <label className="span-2">Included Accessories<input value={form.accessoriesText} onChange={(event) => field('accessoriesText', event.target.value)} placeholder="SIM tray, charger, case (comma separated)" /></label>
+            <label>အရေးပေါ် အဆင့်<select value={form.priority} onChange={(event) => field('priority', event.target.value)}><option>NORMAL</option><option>LOW</option><option>HIGH</option><option>URGENT</option></select></label>
+            <label className="span-2">လက်ခံစဉ် အခြေအနေ<textarea value={form.intakeCondition} onChange={(event) => field('intakeCondition', event.target.value)} placeholder="မှန်ကွဲ၊ ရေစို၊ ကိုယ်ထည် အခြေအနေ..." /></label>
+            <label className="span-2">ပါလာသော ပစ္စည်းများ<input value={form.accessoriesText} onChange={(event) => field('accessoriesText', event.target.value)} placeholder="SIM tray၊ အားသွင်းကြိုး၊ ဖုန်းအိတ် (ခဏနဲ့ ခြား)" /></label>
             <label className="span-2">Notes<textarea value={form.notes} onChange={(event) => field('notes', event.target.value)} /></label>
           </> : null}
         </div>
@@ -405,7 +415,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
         <div className="repair-detail-summary">
           <article><span>Status</span><StatusBadge status={repair.status} /></article>
           <article><span>Source</span><SourceBadge job={repair} /></article>
-          <article><span>IMEI / Serial</span><b>{repair.identityMasked || repair.imeiSerial || 'Not linked'}</b></article>
+          <article><span>IMEI / Serial</span><b>{repair.identityMasked || repair.imeiSerial || 'မချိတ်ရသေး'}</b></article>
           <article><span>Received</span><b>{formatDate(repair.receivedAt)}</b></article>
           <article><span>Final Cost</span><b>{money(repair.finalCost)}</b></article>
           <article><span>Balance Due</span><b>{money(repair.balanceDue)}</b></article>
@@ -413,18 +423,18 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
 
         <div className="repair-detail-grid">
           <section className="repair-detail-card">
-            <h4>Repair Information</h4>
+            <h4>ဖုန်းပြင် အချက်အလက်</h4>
             <dl>
-              <div><dt>Repair ID</dt><dd><RepairIdCopy value={repair.repairNumber} as="span"/></dd></div>
-              <div><dt>Customer</dt><dd>{repair.customerName}</dd></div>
-              <div><dt>Phone</dt><dd>{repair.customerPhone || '-'}</dd></div>
-              <div><dt>Device</dt><dd>{repair.deviceBrand || ''} {repair.deviceModel}</dd></div>
-              <div><dt>Problem</dt><dd>{repair.problem}</dd></div>
-              <div><dt>Condition</dt><dd>{repair.intakeCondition || '-'}</dd></div>
-              <div><dt>Included Accessories</dt><dd>{repair.accessories?.join(', ') || '-'}</dd></div>
-              <div><dt>Diagnosis</dt><dd>{repair.diagnosis || '-'}</dd></div>
-              <div><dt>Resolution</dt><dd>{repair.resolution || '-'}</dd></div>
-              <div><dt>Technician</dt><dd>{repair.technicianName || repair.technicianUsername || '-'}</dd></div>
+              <div><dt>ဘောက်ချာနံပါတ်</dt><dd><RepairIdCopy value={repair.repairNumber} as="span"/></dd></div>
+              <div><dt>ပိုင်ရှင်</dt><dd>{repair.customerName}</dd></div>
+              <div><dt>ဖုန်းနံပါတ်</dt><dd>{repair.customerPhone || '-'}</dd></div>
+              <div><dt>ဖုန်း</dt><dd>{repair.deviceBrand || ''} {repair.deviceModel}</dd></div>
+              <div><dt>ချို့ယွင်းချက်</dt><dd>{repair.problem}</dd></div>
+              <div><dt>လက်ခံစဉ် အခြေအနေ</dt><dd>{repair.intakeCondition || '-'}</dd></div>
+              <div><dt>ပါလာသော ပစ္စည်းများ</dt><dd>{repair.accessories?.join(', ') || '-'}</dd></div>
+              <div><dt>စစ်ဆေးတွေ့ရှိချက်</dt><dd>{repair.diagnosis || '-'}</dd></div>
+              <div><dt>ပြင်ဆင်ပုံ</dt><dd>{repair.resolution || '-'}</dd></div>
+              <div><dt>ပြင်သူ ဆရာ</dt><dd>{repair.technicianName || repair.technicianUsername || '-'}</dd></div>
               <div><dt>ယူပြီး ခြေနေ</dt><dd>{repair.deliveredAt ? `ယူသွားပြီ · ${formatDate(repair.deliveredAt)}` : 'မယူရသေး ⏳'}</dd></div>
             </dl>
           </section>
@@ -545,7 +555,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
           <section className="repair-detail-card">
             <h4>Device Identity</h4>
             <p>IMEI သို့မဟုတ် Serial ကိုချိတ်ပြီး ဒီဖုန်းရဲ့ Repair History အားလုံးပြန်ကြည့်နိုင်ပါတယ်။</p>
-            <div className="repair-inline-action"><input value={deviceId} onChange={(event) => setDeviceId(event.target.value)} placeholder="IMEI / Serial" /><button type="button" disabled={saving || deviceId.trim().length < 6} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/device`, { method: 'POST', body: { imeiSerial: deviceId.trim(), deviceBrand: repair.deviceBrand, deviceModel: repair.deviceModel } }), 'Device identity linked')}><Fingerprint size={17} /> Link</button></div>
+            <div className="repair-inline-action"><input value={deviceId} onChange={(event) => setDeviceId(event.target.value)} placeholder="IMEI / Serial" /><button type="button" disabled={saving || deviceId.trim().length < 6} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/device`, { method: 'POST', body: { imeiSerial: deviceId.trim(), deviceBrand: repair.deviceBrand, deviceModel: repair.deviceModel } }), 'ဖုန်း IMEI ချိတ်ပြီးပါပြီ')}><Fingerprint size={17} /> Link</button></div>
           </section>
 
           <section className="repair-detail-card repair-timeline-card">
@@ -717,7 +727,7 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
         </div>
         <div className="repair-table-wrap">
           <table>
-            <thead><tr><th>Repair ID</th><th>Customer</th><th>Device</th><th>Problem</th><th>Source</th><th>Status</th><th>Received</th><th>Amount</th></tr></thead>
+            <thead><tr><th>ဘောက်ချာနံပါတ်</th><th>ပိုင်ရှင်</th><th>ဖုန်း</th><th>ချို့ယွင်းချက်</th><th>ရင်းမြစ်</th><th>အခြေအနေ</th><th>လက်ခံသည့်နေ့</th><th>ကျသင့်ငွေ</th></tr></thead>
             <tbody>
               {(data.jobs || []).map((job) => <tr key={job.id} className="repair-click-row" onClick={() => setSelectedId(job.id)}><td onClick={(event) => event.stopPropagation()}><RepairIdCopy value={job.repairNumber} className="repair-id"/></td><td><b>{job.customerName}</b><small>{job.customerPhone || '-'}</small></td><td><b>{job.deviceBrand || ''} {job.deviceModel}</b><small>{job.identityMasked || 'No IMEI/Serial'}</small></td><td><span className="repair-problem">{job.problem}</span></td><td><SourceBadge job={job} /></td><td onClick={(event) => event.stopPropagation()}>{quickStatusJobId === job.id ? <select className="repair-status-inline-select" value={statusGroup(job.status)} autoFocus disabled={quickStatusSavingId === job.id} onBlur={() => setQuickStatusJobId(null)} onChange={(event) => quickStatusUpdate(job, event.target.value)}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select> : <button type="button" className="repair-status-click" onClick={() => setQuickStatusJobId(job.id)} disabled={quickStatusSavingId === job.id}>{quickStatusSavingId === job.id ? <Loader2 className="repair-spin" size={15} /> : <StatusBadge status={job.status} />}</button>}</td><td>{formatDate(job.receivedAt)}</td><td><b>{money(job.finalCost || job.estimatedCost)}</b><small>Due {money(job.balanceDue)}</small></td></tr>)}
               {!data.jobs?.length && !loading ? <tr><td colSpan="8"><div className="repair-empty"><Unplug size={28} /><span>No repair jobs found.</span></div></td></tr> : null}
@@ -732,13 +742,13 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
 
       {!setControlledShowHistoryTool ? <div className="repair-quick-grid repair-bottom-history-tools">
         <section className="repair-quick-card repair-quick-launcher">
-          <header><Fingerprint size={20} /><span><b>Unique Device Repair History</b><small>နိုပ်မှ IMEI / Serial history search form ပေါ်မယ်။</small></span></header>
+          <header><Fingerprint size={20} /><span><b>ဖုန်းတစ်လုံးချင်း ပြင်ဆင်မှတ်တမ်း</b><small>နိုပ်မှ IMEI / Serial history search form ပေါ်မယ်။</small></span></header>
           <button type="button" onClick={toggleHistoryTool}>{showHistoryTool ? <X size={17} /> : <History size={17} />} {showHistoryTool ? 'Hide History Search' : 'Open History Search'}</button>
         </section>
       </div> : null}
 
       {showHistoryTool ? <section className="repair-quick-card repair-bottom-history-search">
-        <header><Fingerprint size={20} /><span><b>Unique Device Repair History</b><small>IMEI / Serial တစ်ခုနဲ့ ဒီဖုန်း ဘာတွေပြင်ဖူးသလဲ ပြန်လိုက်ပါ။</small></span></header>
+        <header><Fingerprint size={20} /><span><b>ဖုန်းတစ်လုံးချင်း ပြင်ဆင်မှတ်တမ်း</b><small>IMEI / Serial တစ်ခုနဲ့ ဒီဖုန်း ဘာတွေပြင်ဖူးသလဲ ပြန်လိုက်ပါ။</small></span></header>
         <div><input value={historyIdentifier} onChange={(event) => setHistoryIdentifier(event.target.value)} placeholder="IMEI or Serial Number" onKeyDown={(event) => { if (event.key === 'Enter') searchHistory(); }} /><button type="button" onClick={searchHistory} disabled={historyIdentifier.trim().length < 6}><History size={17} /> History</button></div>
       </section> : null}
 
