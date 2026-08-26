@@ -15,7 +15,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-7';
+const SCRIPT_VERSION = 'repair-sync-8';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -56,10 +56,14 @@ function ချိတ်မည်() {
 }
 
 function connectToPos() {
-  const webAppUrl = ScriptApp.getService().getUrl();
-  if (!webAppUrl) {
-    throw new Error('အရင် Deploy လုပ်ပါ — Deploy → New deployment → Web app → Anyone');
-  }
+  // Run from the editor, getUrl() hands back the /dev address. That one only
+  // answers the owner with a live Google session, so the POS calling it from
+  // outside gets a sign-in page. The /exec address belongs to the deployment
+  // and has a different id, so it cannot be derived from this one — when that
+  // is what we have, everything else still registers and the shop is told the
+  // one thing left to do.
+  const serviceUrl = String(ScriptApp.getService().getUrl() || '');
+  const webAppUrl = serviceUrl.slice(-5) === '/exec' ? serviceUrl : '';
 
   let tabs = [];
   try {
@@ -84,6 +88,11 @@ function connectToPos() {
   const body = response.getContentText();
   if (response.getResponseCode() !== 200 || body.indexOf('"ok":true') < 0) {
     throw new Error('POS က လက်မခံပါ: ' + body.slice(0, 300));
+  }
+
+  if (!webAppUrl) {
+    installRepairEditTrigger();
+    throw new Error('နောက်ဆုံး တစ်ဆင့် ကျန်ပါသေးသည်။ Deploy → Manage deployments ကို ဖွင့်ပြီး /exec နှင့် ဆုံးသော Web App URL ကို ကူးယူကာ POS ၏ \"Apps Script Web App URL\" ကွက်ထဲ ထည့်ပါ။ (Run မှ ရသော လိပ်စာမှာ /dev ဖြစ်၍ အပြင်မှ ခေါ်၍ မရပါ။)');
   }
 
   // A leftover property that disagrees with the pasted code is only a trap for

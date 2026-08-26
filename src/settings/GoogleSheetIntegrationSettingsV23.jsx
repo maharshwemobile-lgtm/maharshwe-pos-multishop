@@ -254,11 +254,17 @@ export default function GoogleSheetIntegrationSettingsV23() {
             </div>
 
             <div className="gs-col-6">
-              <label className="gs-label">Apps Script</label>
-              <div className={`gs-static ${form.postUrl ? 'is-good' : ''}`}>
-                {form.postUrl ? `ချိတ်ဆက်ပြီး${form.scriptVersion ? ` · ${form.scriptVersion}` : ''}` : 'မချိတ်ဆက်ရသေး'}
-              </div>
-              <p className="gs-help">{form.postUrl ? 'Script မှ ကိုယ်တိုင် ချိတ်ဆက်ထားခြင်း ဖြစ်သည်။' : 'အောက်ပါအဆင့်များ ပြီးလျှင် အလိုအလျောက် ဝင်လာပါမည်။'}</p>
+              <label className="gs-label" htmlFor="gs-url">Apps Script Web App URL</label>
+              <input id="gs-url" className="gs-input" type="url" value={form.postUrl || ''}
+                placeholder="https://script.google.com/macros/s/.../exec"
+                onChange={(event) => update({ postUrl: event.target.value, getUrl: event.target.value })}/>
+              <p className="gs-help">
+                {/* getUrl() from the editor returns the /dev address, which only
+                    answers its owner — so this one cannot always be filled in
+                    for them. */}
+                <b>/exec</b> နှင့် ဆုံးရပါမည်။ Deploy → Manage deployments တွင် ရှိပါသည်။
+                {form.scriptVersion ? ` · ${form.scriptVersion}` : ''}
+              </p>
             </div>
           </div>
 
@@ -300,7 +306,10 @@ export default function GoogleSheetIntegrationSettingsV23() {
           </li>
           <li>
             <span className="gs-step-n">3</span>
-            <div><b>Deploy → New deployment → Web app</b> · Execute as <b>Me</b> · Access <b>Anyone</b> → Deploy</div>
+            <div>
+              <b>Deploy → New deployment → Web app</b> · Execute as <b>Me</b> · Access <b>Anyone</b> → Deploy။
+              ရလာသော <b>/exec</b> URL ကို အပေါ်က ကွက်ထဲ ထည့်ပြီး <b>သိမ်းမည်</b> နှိပ်ပါ။
+            </div>
           </li>
           <li>
             <span className="gs-step-n">4</span>

@@ -407,10 +407,13 @@ function attachGoogleSheetSyncApi(app) {
   app.post('/api/google-sheet-sync/register', requireShopSheetSecret, async (req, res) => {
     try {
       const shop = req.sheetShop;
+      // The script sends no URL when all it has is the /dev address, which only
+      // answers its owner. Everything else it reports is still worth keeping,
+      // so the tabs and version land and the stored URL is left alone.
       const webAppUrl = clean(req.body?.webAppUrl, 2000);
       let host = '';
       try { host = new URL(webAppUrl).host; } catch { host = ''; }
-      if (host !== 'script.google.com') {
+      if (webAppUrl && (host !== 'script.google.com' || !webAppUrl.endsWith('/exec'))) {
         return res.status(400).json({ ok: false, message: 'webAppUrl must be a script.google.com /exec URL' });
       }
 
@@ -425,8 +428,8 @@ function attachGoogleSheetSyncApi(app) {
 
       const next = {
         ...googleSheets,
-        postUrl: webAppUrl,
-        getUrl: webAppUrl,
+        postUrl: webAppUrl || googleSheets.postUrl || '',
+        getUrl: webAppUrl || googleSheets.getUrl || googleSheets.postUrl || '',
         enabled: true,
         scriptVersion: clean(req.body?.version, 40),
         availableTabs: tabs,
