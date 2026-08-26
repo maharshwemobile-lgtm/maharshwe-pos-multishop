@@ -418,9 +418,8 @@ function attachGoogleSheetSyncApi(app) {
         ? req.body.tabs.map((tab) => clean(tab, 200)).filter(Boolean).slice(0, 100)
         : [];
 
-      const rows = await prisma.$queryRawUnsafe(
-        'SELECT settings FROM shop_settings WHERE shop_id=$1::uuid LIMIT 1', shop.id);
-      const settings = rows[0]?.settings && typeof rows[0].settings === 'object' ? rows[0].settings : {};
+      const existing = await prisma.shopSettings.findUnique({ where: { shopId: shop.id }, select: { settings: true } });
+      const settings = existing?.settings && typeof existing.settings === 'object' ? existing.settings : {};
       const api = settings.api && typeof settings.api === 'object' ? settings.api : {};
       const googleSheets = api.googleSheets && typeof api.googleSheets === 'object' ? api.googleSheets : {};
 
@@ -435,13 +434,14 @@ function attachGoogleSheetSyncApi(app) {
         updatedAt: new Date().toISOString(),
       };
 
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO shop_settings (shop_id, settings, created_at, updated_at)
-         VALUES ($1::uuid, $2::jsonb, NOW(), NOW())
-         ON CONFLICT (shop_id) DO UPDATE SET settings = $2::jsonb, updated_at = NOW()`,
-        shop.id,
-        JSON.stringify({ ...settings, api: { ...api, googleSheets: next } }),
-      );
+      // Through Prisma rather than raw SQL: shop_settings.id has no database
+      // default, so an insert written by hand fails the not-null check.
+      const merged = { ...settings, api: { ...api, googleSheets: next } };
+      await prisma.shopSettings.upsert({
+        where: { shopId: shop.id },
+        create: { shopId: shop.id, settings: merged },
+        update: { settings: merged },
+      });
 
       return res.json({
         ok: true,
