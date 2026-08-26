@@ -15,7 +15,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-6';
+const SCRIPT_VERSION = 'repair-sync-7';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -142,6 +142,22 @@ function doPost(e) {
     }
     // The repair book is the shop's own tab with the shop's own columns, so it
     // is written by voucher number rather than through the generic tab sync.
+    // Asked over POST rather than doGet, because a deployment can serve doPost
+    // perfectly while doGet answers 404, and the check should not fail on that.
+    // Past the secret test, so a reply here also proves the secret.
+    if (String(payload.dataset || '') === 'status') {
+      let tabs = [];
+      try { tabs = targetSpreadsheet().getSheets().map(function (sheet) { return sheet.getName(); }); } catch (error) { tabs = []; }
+      return jsonResponse({
+        ok: true,
+        service: 'MaharShwe POS Google Sheet Sync',
+        version: SCRIPT_VERSION,
+        secretFingerprint: secretFingerprint(),
+        sheetReadable: tabs.length > 0,
+        tabs: tabs,
+      });
+    }
+
     if (String(payload.dataset || '') === 'repair-voucher') {
       const repairRow = payload.payload || {};
       if (repairRow.deleted === true) {

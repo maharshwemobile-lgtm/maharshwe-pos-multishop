@@ -481,38 +481,80 @@ function attachGoogleSheetProjectSettingsApi(app) {
         return res.json({ ok: true, reachable: false, checks });
       }
 
-      let info = null;
-      let failure = '';
-      try {
+      const ask = async (init) => {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
-        const response = await fetch(config.postUrl, { redirect: 'follow', signal: controller.signal });
-        clearTimeout(timeout);
-        const text = await response.text();
         try {
-          info = JSON.parse(text);
-        } catch {
-          failure = text.slice(0, 160);
+          const response = await fetch(config.postUrl, { redirect: 'follow', signal: controller.signal, ...init });
+          const text = await response.text();
+          try { return { info: JSON.parse(text) }; } catch { return { failure: text.slice(0, 140) }; }
+        } catch (error) {
+          return { failure: error.name === 'AbortError' ? 'အချိန်ကုန်သွားပါပြီ' : error.message };
+        } finally {
+          clearTimeout(timeout);
         }
-      } catch (error) {
-        failure = error.name === 'AbortError' ? 'အချိန်ကုန်သွားပါပြီ' : error.message;
+      };
+
+      const post = (body) => ask({
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ secret: config.secret, ...body }),
+      });
+
+      // Ask over POST first. It is the half the sync actually uses, and a reply
+      // past the secret check proves the secret at the same time.
+      let info = null;
+      let failure = '';
+      let secretOk = null;
+
+      const status = await post({ dataset: 'status' });
+      if (status.info?.ok && status.info.version) {
+        info = status.info;
+        secretOk = true;
+      } else if (status.info && String(status.info.message || '').includes('Invalid secret')) {
+        info = status.info;
+        secretOk = false;
+      } else {
+        // An older script has no status branch. A voucher row aimed at a tab
+        // that cannot exist is refused after the secret is checked and before
+        // anything is written, so the answer still says whether the secret is
+        // right.
+        const probe = await post({
+          dataset: 'repair-voucher',
+          tab: 'Repairs',
+          payload: { key: '', row: [], sheetTab: '__pos_probe__' },
+        });
+        if (probe.info) {
+          info = probe.info;
+          secretOk = !String(probe.info.message || '').includes('Invalid secret');
+        } else {
+          const fallback = await ask({});
+          if (fallback.info) {
+            info = fallback.info;
+            secretOk = null;
+          } else {
+            failure = probe.failure || fallback.failure || status.failure || '';
+          }
+        }
       }
 
       if (!info) {
         add('reach', false, failure || 'Apps Script က မဖြေပါ');
         return res.json({ ok: true, reachable: false, checks });
       }
-      add('reach', true, String(info.service || ''));
+      add('reach', true, String(info.service || 'တုံ့ပြန်မှု ရရှိ'));
 
       const expected = secretFingerprint(config.secret);
       const actual = String(info.secretFingerprint || '');
-      add('secret', Boolean(actual) && actual === expected,
-        !actual ? 'Script Properties မှာ POS_SYNC_SECRET မထည့်ရသေးပါ'
-          : actual === expected ? '' : `Script မှာ ${actual} · POS မှာ ${expected}`);
+      if (actual) {
+        add('secret', actual === expected, actual === expected ? '' : `Script မှာ ${actual} · POS မှာ ${expected}`);
+      } else {
+        add('secret', secretOk === true, secretOk === false ? 'Script ထဲက secret လွဲနေပါသည် — code ပြန်ကူးထည့်ပါ' : '');
+      }
 
       const version = String(info.version || '');
       add('version', version === SCRIPT_VERSION,
-        !version ? 'Code အဟောင်း — version မပါပါ'
+        !version ? 'Code အဟောင်း — ပြန်ကူးထည့်ပါ'
           : version === SCRIPT_VERSION ? version : `Script မှာ ${version} · အသစ်က ${SCRIPT_VERSION}`);
 
       return res.json({ ok: true, reachable: true, version, expectedVersion: SCRIPT_VERSION, checks });
