@@ -388,8 +388,16 @@ footer a{color:var(--blue);font-weight:700}
   // id they already proved is theirs. Keyed by game rather than global,
   // because the same person's Mobile Legends id and PUBG id are unrelated.
   function accountStorageKey(gameId) { return 'gt_account_' + gameId; }
-  function rememberAccount(gameId, playerId, server) {
-    try { window.localStorage.setItem(accountStorageKey(gameId), JSON.stringify({ playerId: playerId, server: server || '' })); } catch (e) {}
+  function rememberAccount(gameId, playerId, server, username) {
+    try {
+      const prev = recalledAccount(gameId) || {};
+      // MooGold's own account-check intermittently omits the username on an
+      // otherwise-valid response for the very same account — keep the last
+      // one actually seen for this id+server so a blank reply doesn't wipe
+      // out a name we already confirmed.
+      const keepUsername = username || (prev.playerId === playerId && prev.server === (server || '') ? prev.username : null);
+      window.localStorage.setItem(accountStorageKey(gameId), JSON.stringify({ playerId: playerId, server: server || '', username: keepUsername || null }));
+    } catch (e) {}
   }
   function recalledAccount(gameId) {
     try {
@@ -482,13 +490,19 @@ footer a{color:var(--blue);font-weight:700}
       // an answer for an id the customer has since edited must not land.
       if (mySeq !== checkSeq) return;
       if (data.ok && data.valid) {
-        state.checked = { playerId: playerId, server: server, username: data.username };
-        rememberAccount(state.game.id, playerId, server);
+        // A blank username on this call doesn't mean the account has no
+        // name — MooGold's check sometimes just doesn't send one back. If we
+        // already confirmed a name for this exact id+server, keep using it.
+        const recalled = recalledAccount(state.game.id);
+        const sameAccount = recalled && recalled.playerId === playerId && recalled.server === (server || '');
+        const username = data.username || (sameAccount ? recalled.username : null) || null;
+        state.checked = { playerId: playerId, server: server, username: username };
+        rememberAccount(state.game.id, playerId, server, username);
         out.className = 'note good compact';
         out.textContent = '';
         const line = document.createElement('div');
         const nameEl = document.createElement('b');
-        nameEl.textContent = (data.username || 'Account') + (data.country ? ' · ' + data.country : '');
+        nameEl.textContent = (username || 'Account') + (data.country ? ' · ' + data.country : '');
         line.appendChild(document.createTextNode('✅ '));
         line.appendChild(nameEl);
         const hint = document.createElement('small');
