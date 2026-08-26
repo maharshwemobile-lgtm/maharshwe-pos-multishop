@@ -113,3 +113,65 @@ Then `pm2 restart maharshwe-pos-api`.
 
 The tab a shop writes to is `settings.integrations.repairSheetTab`, falling
 back to the shop's name — which is how the tabs are already named.
+
+## Sheet → POS
+
+The bench ticks statuses off in the sheet, so an edit there has to reach the POS
+too. Add this to the same Apps Script project and set an **On change** trigger
+(Triggers → Add trigger → `pushEditsToPos` → From spreadsheet → On change).
+
+```js
+const POS_BASE  = 'https://app.maharpos.shop';
+const SHOP_SLUG = 'maharshwemobile';   // the tab's shop
+const PREFIX    = 'MS';                // its voucher prefix
+
+function pushEditsToPos(e) {
+  const sheet = e && e.source ? e.source.getActiveSheet() : SpreadsheetApp.getActiveSheet();
+  const row = sheet.getActiveRange().getRow();
+  if (row <= HEADER_ROWS) return;
+
+  const v = sheet.getRange(row, 1, 1, 13).getValues()[0];
+  const payload = {
+    secret: PropertiesService.getScriptProperties().getProperty('POS_SYNC_SECRET'),
+    shopSlug: SHOP_SLUG,
+    prefix: PREFIX,
+    rows: [{
+      voucherNo:     String(v[1]),
+      repairStatus:  String(v[5]),
+      pickupStatus:  String(v[7]),
+      customerPrice: String(v[8]),
+      paymentStatus: String(v[11]),
+    }],
+  };
+
+  UrlFetchApp.fetch(POS_BASE + '/api/google-sheet-sync/repair-status', {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
+  });
+}
+```
+
+### What an edit is allowed to change
+
+| Sheet says | POS becomes |
+|---|---|
+| `ပြင်ပြီး ✅` | COMPLETED |
+| `ပြင်မရ ❌` | CANNOT_REPAIR |
+| `ပြင်ရန် ⏳` | IN_PROGRESS — but only if the repair has not moved past it |
+| ယူပြီး ခြေနေ cleared, status COMPLETED | DELIVERED |
+| `ရှင်းပြီး` / `တစ်ဝက်` in ငွေရှင်း status | PAID / PARTIAL |
+| a number in Customer ဈေး | final cost |
+
+Wording it does not recognise is left alone rather than guessed at, and
+`ပြင်ရန်` never drags a repair backwards out of a state the counter already
+set. Every voucher number the sheet reports also raises the POS numbering
+high-water mark, so numbers issued here continue the sheet's series instead of
+colliding with it.
+
+### Loops
+
+Applying a sheet edit writes the repair row directly and does not queue an
+outbound sync, so an edit does not bounce back and forth. Changes made in the
+POS still flow out to the sheet as normal.

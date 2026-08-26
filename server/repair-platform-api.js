@@ -924,6 +924,8 @@ function attachRepairPlatformApi(app) {
     });
     const updated = await getRepair(prisma, req.auth.shopId, repair.id);
     // Keep the shop's spreadsheet row in step with the status they just set.
+    // Safe against loops: a sheet edit is applied straight to the row by
+    // repair-sheet-inbound and never comes through this endpoint.
     await syncRepairToSheet(req.auth.shopId, updated, 'STATUS_CHANGED');
     res.json({ ok: true, message: 'Repair status updated', repair: updated });
   }));

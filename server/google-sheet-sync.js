@@ -361,6 +361,31 @@ function attachGoogleSheetSyncApi(app) {
     }
   });
 
+  // Sheet -> POS. Called by the workbook's Apps Script when a row is edited, so
+  // a status ticked off at the bench reaches the counter.
+  app.post('/api/google-sheet-sync/repair-status', requireSheetSecret, async (req, res) => {
+    try {
+      const { applySheetRow } = require('./repair-sheet-inbound');
+      const shop = await resolveSyncShop(clean(req.body?.shopSlug, 120));
+      if (!shop) return res.status(404).json({ ok: false, message: 'Shop not found' });
+      const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 500) : [];
+      if (!rows.length) return res.json({ ok: true, applied: 0, results: [] });
+
+      const prefix = clean(req.body?.prefix, 8) || '';
+      const results = [];
+      for (const row of rows) {
+        results.push(await applySheetRow(shop.id, prefix, row));
+      }
+      return res.json({
+        ok: true,
+        applied: results.filter((r) => r.applied).length,
+        results,
+      });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Sheet status sync failed' });
+    }
+  });
+
   app.get('/api/google-sheet-sync/export/:dataset', requireSheetSecret, async (req, res) => {
     try {
       const dataset = datasetKey(req.params.dataset);
