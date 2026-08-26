@@ -171,7 +171,15 @@ function publicConfig(config) {
 }
 
 async function shopIdentity(shopId) {
-  return prisma.shop.findUnique({ where: { id: shopId }, select: { id: true, slug: true, name: true } });
+  const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { id: true, slug: true, name: true } });
+  if (!shop) return shop;
+  // The Apps Script needs the voucher prefix to report repair numbers back; the
+  // tab is named for the branch, so it cannot be inferred there.
+  const rows = await prisma.$queryRawUnsafe(
+    'SELECT repair_prefix AS "repairPrefix" FROM shop_settings WHERE shop_id=$1::uuid LIMIT 1',
+    shopId,
+  ).catch(() => []);
+  return { ...shop, repairPrefix: rows[0]?.repairPrefix || '' };
 }
 
 async function deliverRow(row) {

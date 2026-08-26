@@ -5,6 +5,17 @@ own columns, their own wording. The POS writes into that book rather than
 asking anyone to move: printing a voucher puts the row there, and moving the
 repair through its statuses updates the same row.
 
+> **Where the shop gets this code**
+>
+> They should not copy it from here. The POS hands out the whole Apps Script,
+> already filled in with their own shop slug, voucher prefix, base URL and
+> secret, under **Project Settings → Integrations → Google Sheet**. That copy
+> is generated from `integrations/google-apps-script/MaharShwePosSync.gs`, so
+> it cannot drift from what the server expects.
+>
+> This document explains what the sync does and why. The snippets below are
+> illustrative — the shipped script is the source of truth.
+
 ## What gets sent
 
 One row per repair, keyed on the voucher number, in the tab's existing shape:

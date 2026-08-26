@@ -69,10 +69,12 @@ export default function GoogleSheetIntegrationSettingsV23() {
   const [message, setMessage] = useState('');
   const effectiveShopSlug = shop?.slug || shop?.shopSlug || fallbackShopSlug || '';
 
+  const repairPrefix = shop?.repairPrefix || shop?.business?.repairPrefix || '';
   const configuredAppsScript = useMemo(() => GOOGLE_APPS_SCRIPT
     .replace('__POS_BASE_URL__', appBaseUrl)
     .replace('__POS_SHOP_SLUG__', effectiveShopSlug || 'YOUR_SHOP_SLUG')
-    .replace('__POS_SYNC_SECRET__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, effectiveShopSlug, form.secret]);
+    .replace('__POS_REPAIR_PREFIX__', repairPrefix || 'RP')
+    .replace('__POS_SYNC_SECRET__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, effectiveShopSlug, repairPrefix, form.secret]);
 
   const configuredPullScript = useMemo(() => PULL_SYNC_SCRIPT
     .replace('__POS_BASE_URL__', appBaseUrl)

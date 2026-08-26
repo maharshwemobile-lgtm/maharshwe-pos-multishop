@@ -2,6 +2,9 @@ const POS_CONFIG = {
   BASE_URL: '__POS_BASE_URL__',
   SHOP_SLUG: '__POS_SHOP_SLUG__',
   SYNC_SECRET: '__POS_SYNC_SECRET__',
+  // Voucher prefix for this shop — MS0978 and so on. The tab is named for the
+  // branch, not the prefix, so this cannot be read off the sheet.
+  REPAIR_PREFIX: '__POS_REPAIR_PREFIX__',
 };
 
 const POS_DATASETS = [
@@ -38,6 +41,11 @@ function doPost(e) {
     const secret = getRequiredProperty('POS_SYNC_SECRET');
     if (String(payload.secret || '') !== secret) {
       return jsonResponse({ ok: false, message: 'Invalid secret' });
+    }
+    // The repair book is the shop's own tab with the shop's own columns, so it
+    // is written by voucher number rather than through the generic tab sync.
+    if (String(payload.dataset || '') === 'repair-voucher') {
+      return jsonResponse(writeRepairRow(payload.payload || {}, payload.tab));
     }
     const tabName = String(payload.tab || '').trim();
     if (!POS_DATASETS.some(function (item) { return item[1] === tabName; })) {
@@ -289,4 +297,81 @@ function postRepairStatusToPos_(repairId, status, rawStatus) {
 
 function onEdit(e) {
   try { handleRepairStatusEdit_(e); } catch (err) { Logger.log(err); }
+}
+
+// ---------------------------------------------------------------------------
+// Repair book
+//
+// One row per voucher in the shop's existing tab. Two rules matter here:
+// the row is found by voucher number so a reprint updates instead of piling
+// up, and a blank coming from the POS never wipes a cell somebody typed in by
+// hand — the shop fills in cost and remarks themselves.
+// ---------------------------------------------------------------------------
+
+const REPAIR_HEADER_ROWS = 1;
+const REPAIR_KEY_COLUMN = 2;   // column B, Repair ID/Voucher
+
+function writeRepairRow(payload, fallbackTab) {
+  const tabName = String(payload.sheetTab || fallbackTab || '').trim();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabName);
+  if (!sheet) return { ok: false, message: 'No tab named ' + tabName };
+
+  const values = payload.row || [];
+  const key = String(payload.key || '').trim();
+  if (!key || !values.length) return { ok: false, message: 'Row has no voucher number' };
+
+  const lastRow = sheet.getLastRow();
+  let target = 0;
+  if (lastRow > REPAIR_HEADER_ROWS) {
+    const keys = sheet
+      .getRange(REPAIR_HEADER_ROWS + 1, REPAIR_KEY_COLUMN, lastRow - REPAIR_HEADER_ROWS, 1)
+      .getDisplayValues();
+    for (let i = 0; i < keys.length; i += 1) {
+      if (String(keys[i][0]).trim() === key) { target = REPAIR_HEADER_ROWS + 1 + i; break; }
+    }
+  }
+
+  if (target) {
+    const existing = sheet.getRange(target, 1, 1, values.length).getValues()[0];
+    const merged = values.map(function (value, i) { return value === '' ? existing[i] : value; });
+    sheet.getRange(target, 1, 1, merged.length).setValues([merged]);
+    return { ok: true, tab: tabName, updated: target, voucher: key };
+  }
+
+  sheet.getRange(lastRow + 1, 1, 1, values.length).setValues([values]);
+  return { ok: true, tab: tabName, appended: lastRow + 1, voucher: key };
+}
+
+// Sheet -> POS. Install with Triggers -> Add trigger -> pushRepairEditsToPos ->
+// From spreadsheet -> On change, so a status ticked off at the bench reaches
+// the counter.
+function pushRepairEditsToPos(e) {
+  const sheet = (e && e.source ? e.source : SpreadsheetApp).getActiveSheet();
+  const range = sheet.getActiveRange();
+  if (!range) return;
+  const row = range.getRow();
+  if (row <= REPAIR_HEADER_ROWS) return;
+
+  const v = sheet.getRange(row, 1, 1, 13).getDisplayValues()[0];
+  const voucherNo = String(v[REPAIR_KEY_COLUMN - 1] || '').trim();
+  if (!voucherNo) return;
+
+  const response = UrlFetchApp.fetch(POS_CONFIG.BASE_URL + '/api/google-sheet-sync/repair-status', {
+    method: 'post',
+    contentType: 'application/json',
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      secret: getRequiredProperty('POS_SYNC_SECRET'),
+      shopSlug: POS_CONFIG.SHOP_SLUG,
+      prefix: POS_CONFIG.REPAIR_PREFIX,
+      rows: [{
+        voucherNo: voucherNo,
+        repairStatus: String(v[5] || ''),
+        pickupStatus: String(v[7] || ''),
+        customerPrice: String(v[8] || ''),
+        paymentStatus: String(v[11] || ''),
+      }],
+    }),
+  });
+  return response.getContentText();
 }
