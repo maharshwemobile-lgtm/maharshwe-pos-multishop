@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { appUrl } = require('./public-urls');
 const { z } = require('zod');
 const { prisma } = require('./prisma');
 const { requireAuth, requireShopUser, requireWritableSubscription } = require('./auth-api');
@@ -433,6 +434,38 @@ function attachGoogleSheetProjectSettingsApi(app) {
   // Setting this up means holding a hash and a version number side by side in
   // two browser tabs and squinting. Every failure so far has been one of the
   // two, so the POS asks the script itself and says which.
+  // The script has to carry this shop's secret, and every JSON response under
+  // /api/project-settings has keys named "secret" blanked by the sanitizer —
+  // rightly so. That is why the copied script used to go out with the
+  // placeholder still in it and nothing ever authenticated. Built here, with
+  // the secret inside the code rather than in a field named after it, behind
+  // the same permission as the rest of the screen.
+  app.get('/api/project-settings/integrations/google-sheet/script', ...write, async (req, res) => {
+    try {
+      const config = await ensureSecret(req.auth.shopId);
+      const shop = await shopIdentity(req.auth.shopId);
+      const source = require('fs').readFileSync(
+        require('path').join(__dirname, '..', 'integrations', 'google-apps-script', 'MaharShwePosSync.gs'), 'utf8');
+
+      const code = source
+        .replace('__POS_BASE_URL__', appUrl())
+        .replace('__POS_SHOP_SLUG__', shop?.slug || '')
+        .replace('__POS_REPAIR_PREFIX__', shop?.repairPrefix || 'RP')
+        .replace('__POS_SHEET_ID__', config.sheetId || '')
+        .replace('__POS_SYNC_SECRET__', config.secret || '');
+
+      const ready = Boolean(config.secret) && Boolean(config.sheetId);
+      return res.json({
+        ok: true,
+        code,
+        ready,
+        message: ready ? '' : 'Google Sheet link ကို အရင် ထည့်ပြီး သိမ်းပါ။',
+      });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Script ထုတ်၍ မရပါ' });
+    }
+  });
+
   app.post('/api/project-settings/integrations/google-sheet/diagnose', ...write, async (req, res) => {
     try {
       const config = await ensureSecret(req.auth.shopId);

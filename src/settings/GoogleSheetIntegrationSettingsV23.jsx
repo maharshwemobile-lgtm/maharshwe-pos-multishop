@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Code2, Copy, Globe2, Loader2, RefreshCw, Save, Send, ShieldCheck } from 'lucide-react';
+import { Code2, Globe2, Loader2, Save, Send, ShieldCheck } from 'lucide-react';
 import { apiFetch, getSession } from '../phase2Api';
-import GOOGLE_APPS_SCRIPT from '../../integrations/google-apps-script/MaharShwePosSync.gs?raw';
-import PULL_SYNC_SCRIPT from '../../integrations/google-apps-script/MaharPosGSheetPullSync.gs?raw';
 import './project-operations-v23.css';
 import { APP_URL } from '../projectBrand';
 
@@ -41,14 +39,6 @@ async function copyText(value) {
   }
 }
 
-function CopyBox({ label, value, buttonLabel = 'Copy', onCopy }) {
-  return <article className="project-google-copy-box">
-    <span>{label}</span>
-    <code>{value}</code>
-    <button type="button" onClick={() => onCopy(value, `${label} copied`)}><Copy size={15}/> {buttonLabel}</button>
-  </article>;
-}
-
 export default function GoogleSheetIntegrationSettingsV23() {
   const session = getSession();
   const canManage = ['SUPER_ADMIN', 'SHOP_ADMIN'].includes(session?.user?.role || '') || session?.user?.permissions?.settings === true;
@@ -66,16 +56,22 @@ export default function GoogleSheetIntegrationSettingsV23() {
   const effectiveShopSlug = shop?.slug || shop?.shopSlug || fallbackShopSlug || '';
 
   const repairPrefix = shop?.repairPrefix || shop?.business?.repairPrefix || '';
-  const configuredAppsScript = useMemo(() => GOOGLE_APPS_SCRIPT
-    .replace('__POS_BASE_URL__', appBaseUrl)
-    .replace('__POS_SHOP_SLUG__', effectiveShopSlug || 'YOUR_SHOP_SLUG')
-    .replace('__POS_REPAIR_PREFIX__', repairPrefix || 'RP')
-    .replace('__POS_SHEET_ID__', form.sheetId || 'PASTE_YOUR_SHEET_URL_HERE')
-    .replace('__POS_SYNC_SECRET__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, effectiveShopSlug, repairPrefix, form.sheetId, form.secret]);
-
-  const configuredPullScript = useMemo(() => PULL_SYNC_SCRIPT
-    .replace('__POS_BASE_URL__', appBaseUrl)
-    .replace('__POS_PULL_KEY__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, form.secret]);
+  const copyScript = async () => {
+    setTesting('COPY');
+    try {
+      const response = await apiFetch('/api/project-settings/integrations/google-sheet/script');
+      if (!response.ready) {
+        setMessage(response.message || 'Google Sheet link ကို အရင် ထည့်ပါ။');
+        return;
+      }
+      const copied = await copyText(response.code);
+      setMessage(copied ? 'Script code ကူးပြီးပါပြီ — Apps Script ထဲ paste လုပ်ပါ။' : 'ကူးလို့ မရပါ။');
+    } catch (error) {
+      setMessage(error.message || 'Script ကူး၍ မရပါ');
+    } finally {
+      setTesting('');
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -100,11 +96,6 @@ export default function GoogleSheetIntegrationSettingsV23() {
   useEffect(() => { load(); }, []);
 
   const update = (patch) => setForm((current) => ({ ...current, ...patch }));
-
-  const notifyCopy = async (value, successMessage = 'Copied') => {
-    const copied = await copyText(value);
-    setMessage(copied ? successMessage : 'Copy failed. Please select and copy manually.');
-  };
 
   const save = async (event) => {
     event.preventDefault();
@@ -264,56 +255,41 @@ export default function GoogleSheetIntegrationSettingsV23() {
       <div className="gsheet-actions">
         <button className="primary" disabled={saving}>{saving ? <Loader2 className="project-operations-spin" size={17}/> : <Save size={17}/>} သိမ်းမည်</button>
         <button type="button" onClick={() => test('POST')} disabled={Boolean(testing)}>{testing === 'POST' ? <Loader2 className="project-operations-spin" size={17}/> : <Send size={17}/>} စမ်းပို့ကြည့်မည်</button>
-        <button type="button" onClick={retry} disabled={Boolean(testing)}>{testing === 'RETRY' ? <Loader2 className="project-operations-spin" size={17}/> : <RefreshCw size={17}/>} ကျန်နေတာ ပြန်ပို့</button>
       </div>
     </form>
 
-    <div className="gsheet-copy">
-      <button type="button" className="primary" onClick={() => notifyCopy(configuredAppsScript, 'Script code ကူးပြီးပါပြီ')}>
-        <Code2 size={17}/> Script Code ကူးမည်
-      </button>
-      <article className="project-google-copy-box">
-        <span>Secret</span>
-        <code>{form.secret ? 'Script Code ထဲ ပါပြီးသား — သီးသန့် ကူးစရာ မလိုပါ' : 'ပြင်ဆင်နေပါသည် — refresh လုပ်ပါ'}</code>
-      </article>
-    </div>
-
-    <details className="gsheet-steps">
-      <summary>ချိတ်ဆက်နည်း — တစ်ကြိမ်ပဲ လုပ်ရပါမယ်</summary>
-      <p className="gsheet-warn">
-        Sheet မှာ Apps Script တစ်ခု <b>ရှိပြီးသားဆိုရင်</b> (ဥပမာ Telegram bot) အဲဒီ script ထဲ
-        <b> လုံးဝ မထည့်ပါနဲ့</b> — <code>doPost</code> ချင်း ထပ်ပြီး တစ်ခုက ရပ်သွားပါမယ်။
-        အောက်က အဆင့်တွေက <b>သီးခြား project အသစ်</b> ဆောက်တာမို့ ရှိပြီးသား script ကို မထိပါဘူး။
-      </p>
+    <details className="gsheet-steps" open={!allGood}>
+      <summary>ချိတ်ဆက်နည်း — ၄ ဆင့်</summary>
       <ol>
-        <li>အပေါ်က <b>Google Sheet link</b> ကွက်ထဲ ကူးထည့် → <b>သိမ်းမည်</b></li>
-        <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> → <b>New project</b> → <b>Script Code ကူးမည်</b> နှိပ်ပြီး အထဲမှာ paste → 💾 Save</li>
+        <li>အပေါ်က <b>Google Sheet link</b> ထည့် → <b>Save</b></li>
+        <li>
+          <a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> →
+          <b> New project</b> → အောက်က ခလုတ်နဲ့ ကူးပြီး အထဲမှာ paste → 💾 Save
+          <div className="gsheet-copy-row">
+            <button type="button" className="primary" onClick={copyScript} disabled={Boolean(testing)}>
+              {testing === 'COPY' ? <Loader2 className="project-operations-spin" size={16}/> : <Code2 size={16}/>} Script Code ကူးမည်
+            </button>
+          </div>
+        </li>
         <li><b>Deploy → New deployment → Web app</b> · Execute as <b>Me</b> · Access <b>Anyone</b> → Deploy</li>
-        <li>function စာရင်းက <b>ချိတ်မည်</b> ကို ရွေး → <b>▶ Run</b> → ခွင့်ပြုချက် တောင်းရင် <i>Advanced → Go to … → Allow</i></li>
+        <li>function စာရင်းက <b>ချိတ်မည်</b> ရွေး → <b>▶ Run</b> → ခွင့်ပြုချက် တောင်းရင် <i>Advanced → Go to … → Allow</i></li>
       </ol>
+      <p className="gsheet-warn">
+        Sheet မှာ Apps Script <b>ရှိပြီးသားဆိုရင်</b> (ဥပမာ Telegram bot) အဲဒီထဲ <b>မထည့်ပါနဲ့</b> —
+        project အသစ် ဆောက်ပါ။
+      </p>
       <p className="gsheet-hint">
-        Code ပြောင်းတိုင်း <b>Deploy → Manage deployments → ✏️ → New version</b> လုပ်မှ အလုပ်လုပ်ပါမယ်။
-        Secret ပြောင်းရင်တော့ Script Properties ထဲမှာပဲ ပြောင်းရင် ရပါတယ်။
+        Code ပြန်ကူးထည့်တိုင်း <b>Deploy → Manage deployments → ✏️ → New version</b> လုပ်ပါ။
       </p>
     </details>
 
-    <details className="gsheet-steps">
-      <summary>ဘယ်ဟာက ဘယ်ဘက်ကို သွားလဲ</summary>
-      <ul>
-        <li>POS မှာ ဘောက်ချာ print → Sheet မှာ အတန်းအသစ်</li>
-        <li>POS မှာ status ပြောင်း / ဖျက် → Sheet မှာ လိုက်ပြောင်း / လိုက်ပျက်</li>
-        <li>Sheet မှာ အတန်းအသစ် ထည့် → POS မှာ ဖုန်းပြင် မှတ်တမ်းအသစ်</li>
-        <li>Sheet မှာ status / ယူပြီး / စျေး ပြင် → POS မှာ လိုက်ပြောင်း</li>
-      </ul>
-      <p className="gsheet-hint">ခင်ဗျား လက်နဲ့ ဖြည့်ထားတဲ့ ကွက်တွေကို POS က ဗလာနဲ့ မဖျက်ပါဘူး။</p>
-    </details>
-
-    <div className="gsheet-foot">
-      <span>ပို့ရန် ကျန် <b>{counts.PENDING || 0}</b></span>
-      <span>မအောင်မြင် <b>{counts.FAILED || 0}</b></span>
-      {form.lastTest ? <span>နောက်ဆုံးစမ်းသပ် <b>{form.lastTest.ok ? 'အောင်မြင်' : 'မအောင်မြင်'}</b></span> : null}
-      <button type="button" onClick={() => notifyCopy(configuredPullScript, 'Pull Sync Script ကူးပြီးပါပြီ')}>နေ့ချုပ် Script</button>
-    </div>
+    {counts.PENDING || counts.FAILED ? (
+      <div className="gsheet-foot">
+        {counts.PENDING ? <span>ပို့ရန် ကျန် <b>{counts.PENDING}</b></span> : null}
+        {counts.FAILED ? <span>မအောင်မြင် <b>{counts.FAILED}</b></span> : null}
+        <button type="button" onClick={retry} disabled={Boolean(testing)}>ပြန်ပို့</button>
+      </div>
+    ) : null}
 
     {message ? <div className="project-google-message">{message}</div> : null}
     {loading ? <div className="project-google-message"><Loader2 className="project-operations-spin" size={15}/> ဖတ်နေပါသည်…</div> : null}
