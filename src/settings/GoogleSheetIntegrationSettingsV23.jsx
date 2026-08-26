@@ -18,16 +18,6 @@ const EMPTY = {
   secretMasked: '',
 };
 
-function randomSecret() {
-  if (window.crypto?.getRandomValues) {
-    const bytes = new Uint8Array(24);
-    window.crypto.getRandomValues(bytes);
-    const value = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-    return `msp_${value}_${Date.now().toString(36)}`;
-  }
-  return `msp_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
-}
-
 async function copyText(value) {
   const text = String(value || '');
   if (!text.trim()) return false;
@@ -87,10 +77,11 @@ export default function GoogleSheetIntegrationSettingsV23() {
     setLoading(true);
     try {
       const response = await apiFetch('/api/project-settings/integrations/google-sheet');
+      // Whatever the server holds, and nothing else. Showing a secret it does
+      // not have is how the shop ends up pasting one that never matches.
       setForm((current) => {
         const incoming = { ...EMPTY, ...(response.config || {}) };
-        const nextSecret = incoming.secret || current.secret || randomSecret();
-        return { ...incoming, secret: nextSecret, getUrl: incoming.getUrl || incoming.postUrl || '' };
+        return { ...incoming, getUrl: incoming.getUrl || incoming.postUrl || '' };
       });
       setCounts(response.counts || {});
       setTabs(response.tabs || []);
@@ -185,15 +176,64 @@ export default function GoogleSheetIntegrationSettingsV23() {
 
     <div className="project-google-guide">
       <div>
-        <b>Setup (တစ်ကြိမ်ပဲ လုပ်ဖို့လို)</b>
+        <b>ချိတ်ဆက်နည်း — တစ်ကြိမ်ပဲ လုပ်ရပါမယ်</b>
+        <p style={{ margin: '6px 0 10px', fontSize: 12.5, lineHeight: 1.7 }}>
+          Sheet မှာ Apps Script တစ်ခု <b>ရှိပြီးသားဆိုရင်</b> (ဥပမာ Telegram bot) —
+          အဲဒီ script ထဲကို <b>လုံးဝ မထည့်ပါနဲ့</b>။ <code>doPost</code> ချင်း ထပ်ပြီး
+          တစ်ခုက ရပ်သွားပါမယ်။ အောက်က အဆင့်တွေက သီးခြား project အသစ် ဆောက်တာမို့
+          ရှိပြီးသား script ကို မထိပါဘူး။
+        </p>
         <ol>
-          <li>Google Sheet ဖွင့် → Extensions → Apps Script ဝင်ပါ။</li>
-          <li><b>Copy Apps Script Code</b> → Apps Script ထဲ paste → <b>Deploy → Web App → Anyone</b> → Web App URL ကို မှတ်ပါ။</li>
-          <li>Apps Script → <b>Project Settings → Script Properties → Add property</b>:<br/><code>POS_SYNC_SECRET</code> = အောက်က Shared Secret ကို copy ပြီး paste ပါ။</li>
-          <li>Web App URL ကို ဒီမှာ paste → Enable → <b>Save → Test POST</b> နှိပ်ပါ။</li>
+          <li>
+            <b>Google Sheet Link</b> ကွက်ထဲ sheet ရဲ့ link ကို ကူးထည့်ပြီး
+            <b> Save Integration</b> နှိပ်ပါ။
+          </li>
+          <li>
+            <a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> →
+            <b> New project</b> (Sheet ထဲက Extensions ကနေ <b>မဝင်ပါနဲ့</b>)။
+          </li>
+          <li>
+            <b>Copy Apps Script Code</b> နှိပ် → project အသစ်ထဲက စာအားလုံး ဖျက် → paste → 💾 <b>Save</b>။
+          </li>
+          <li>
+            Apps Script → ⚙️ <b>Project Settings → Script properties → Add script property</b>:<br/>
+            <code>POS_SYNC_SECRET</code> = အောက်က <b>Copy Secret</b> နဲ့ ကူးထားတာ (လက်နဲ့ မရိုက်ပါနဲ့)
+            → <b>Save script properties</b>။
+          </li>
+          <li>
+            <b>Deploy → New deployment → Web app</b> → <i>Execute as: Me</i> ·
+            <i>Who has access: Anyone</i> → <b>Deploy</b> → ခွင့်ပြုချက် တောင်းရင်
+            <i>Advanced → Go to … (unsafe) → Allow</i>။
+          </li>
+          <li>
+            ရလာတဲ့ <b>/exec URL</b> ကို အောက်က <b>Google Apps Script Web App URL</b> ကွက်ထဲ paste →
+            <b>Enable</b> ဖွင့် → <b>Save Integration</b> → <b>Test POST</b> နှိပ်ပါ။
+          </li>
+          <li>
+            Apps Script ← ပြန်သွား → ⏰ <b>Triggers → Add trigger</b>:
+            function <code>pushRepairEditsToPos</code> · event source <i>From spreadsheet</i> ·
+            event type <b>On edit</b> → Save။
+          </li>
         </ol>
-        <p style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>
-          ✅ Script Properties မှာ Secret ထည့်ပြီးရင် Apps Script ကို re-deploy မလုပ်ရတော့ပါ — Secret ပြောင်းရင် Properties ထဲမှာပဲ ပြောင်းရင် ရပြီ။
+
+        <b style={{ display: 'block', marginTop: 12 }}>မှန်မမှန် စစ်နည်း</b>
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.7 }}>
+          /exec URL ကို browser မှာ ဖွင့်ကြည့်ပါ။ <code>secretFingerprint</code> က
+          အောက်မှာပြထားတဲ့ <b>Secret Fingerprint</b> နဲ့ <b>တူရပါမယ်</b> — မတူရင်
+          Script Properties ထဲက secret လွဲနေတာမို့ ပြန်ကူးထည့်ပါ။
+          <code>version</code> က code အသစ်လား အဟောင်းလား ပြောပါတယ် — code ပြောင်းပြီးတိုင်း
+          <i> Deploy → Manage deployments → ✏️ → New version</i> လုပ်မှ /exec မှာ ပြောင်းပါမယ်။
+        </p>
+
+        <b style={{ display: 'block', marginTop: 12 }}>ဘယ်ဟာက ဘယ်ဘက်ကို သွားလဲ</b>
+        <ul style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.8 }}>
+          <li>ဘောက်ချာ print / status ပြောင်း / ဖျက် → Sheet မှာ လိုက်ပြောင်း</li>
+          <li>Sheet မှာ အတန်းအသစ် ထည့် → POS မှာ ဖုန်းပြင်မှတ်တမ်း အသစ် ဖြစ်လာ</li>
+          <li>Sheet မှာ status / ယူပြီး / စျေး ပြင် → POS မှာ လိုက်ပြောင်း</li>
+        </ul>
+        <p style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
+          Secret ပြောင်းချင်ရင် Script Properties ထဲမှာပဲ ပြောင်းရင် ရပါတယ် — Apps Script ကို
+          re-deploy မလုပ်ရပါ။
         </p>
       </div>
 

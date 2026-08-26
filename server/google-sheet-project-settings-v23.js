@@ -197,6 +197,25 @@ function publicConfig(config) {
   };
 }
 
+// The screen must never invent a secret. It did, on every load, and the shop
+// pasted that invented value into Script Properties while the server kept a
+// different one — so the sync failed with "Invalid secret" and both sides
+// looked correct to whoever was reading them. Minting it here means what is
+// shown is always what is stored.
+async function ensureSecret(shopId) {
+  const config = await loadConfig(shopId);
+  if (config.secret) return config;
+  const raw = await readRawSettings(shopId);
+  const api = object(raw.api);
+  const next = { ...object(api.googleSheets), secret: crypto.randomBytes(24).toString('hex'), updatedAt: new Date().toISOString() };
+  await prisma.shopSettings.upsert({
+    where: { shopId },
+    create: { shopId, settings: { ...raw, api: { ...api, googleSheets: next } } },
+    update: { settings: { ...raw, api: { ...api, googleSheets: next } } },
+  });
+  return loadConfig(shopId);
+}
+
 async function shopIdentity(shopId) {
   const shop = await prisma.shop.findUnique({ where: { id: shopId }, select: { id: true, slug: true, name: true } });
   if (!shop) return shop;
@@ -356,7 +375,7 @@ function attachGoogleSheetProjectSettingsApi(app) {
     try {
       await ensureSchema();
       const [config, counts, shop] = await Promise.all([
-        loadConfig(req.auth.shopId),
+        ensureSecret(req.auth.shopId),
         prisma.$queryRawUnsafe(
           `SELECT status,COUNT(*)::int AS count FROM google_sheet_sync_outbox WHERE shop_id=$1::uuid GROUP BY status`,
           req.auth.shopId,
