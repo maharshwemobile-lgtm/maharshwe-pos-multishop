@@ -56,11 +56,31 @@ function pullSelectedDate() {
   pullDailyClose(date);
 }
 
+// A paste that stops short leaves the early functions defined and the late ones
+// missing, and the first sign of it is "normalizeDate_ is not defined" thrown
+// from inside a pull. Checking the tail of the file says so up front.
 function checkConfig() {
+  var required = ['pullDailyClose', 'apiGet_', 'fillBillerTable_', 'fillTransactionRecord_',
+                  'findOrCreateDateRow_', 'normalizeDate_', 'dateToSheetDate_', 'getErrorMessage_'];
+  var missing = [];
+  for (var i = 0; i < required.length; i++) {
+    if (typeof this[required[i]] !== 'function') missing.push(required[i]);
+  }
+  if (missing.length) {
+    alert_('Code မပြည့်စုံပါ — ပျောက်နေသော function: ' + missing.join(', ')
+      + '\n\nCode ကို အစမှ အဆုံးအထိ အကုန်ကူးပြီး ပြန် paste လုပ်ပါ။'
+      + '\n\nနောက်ဆုံးစာကြောင်းမှာ getErrorMessage_ ဖြစ်ရပါမည်။');
+    return;
+  }
+
   ensureSheetLayout_();
   var hasTrigger = ScriptApp.getProjectTriggers().some(function(t) { return t.getHandlerFunction() === 'pullYesterday'; });
-  alert_('Config OK\n\nBASE_URL: ' + CONFIG.BASE_URL + '\nPULL_KEY: ' + CONFIG.PULL_KEY.slice(0,8) + '...\n\nAuto-Sync: ' + (hasTrigger ? 'INSTALLED' : 'NOT installed'));
+  alert_('Config OK — code ပြည့်စုံသည်'
+    + '\n\nBASE_URL: ' + CONFIG.BASE_URL
+    + '\n\nPULL_KEY: ' + CONFIG.PULL_KEY.slice(0, 8) + '...'
+    + '\n\nAuto-Sync: ' + (hasTrigger ? 'INSTALLED' : 'NOT installed'));
 }
+
 
 function pullDailyClose(date) {
   date = normalizeDate_(date);
