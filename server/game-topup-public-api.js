@@ -225,10 +225,31 @@ function attachGameTopupPublicApi(app) {
         serverField: variation.serverField,
       });
 
+      // MooGold's own check intermittently comes back valid with no username
+      // for an account it named correctly moments earlier — a repeat customer
+      // then loses their name at random, and the anti-abuse point of having
+      // it at all is defeated if it's gone half the time. Falling back to this
+      // server's own order history (rather than anything client-supplied)
+      // means it holds even across a cleared browser or a different device.
+      let username = result.username;
+      if (result.valid && !username) {
+        const prior = await prisma.$queryRawUnsafe(
+          `SELECT o.customer_name AS "customerName"
+             FROM game_topup_public_orders o
+             JOIN game_topup_variations v ON v.id = o.variation_id
+            WHERE v.product_id = $1::uuid AND o.player_id = $2
+              AND COALESCE(o.server_id, '') = COALESCE($3, '')
+              AND o.customer_name IS NOT NULL AND TRIM(o.customer_name) <> ''
+            ORDER BY o.created_at DESC LIMIT 1`,
+          variation.productId, input.playerId, input.server || null,
+        );
+        username = prior[0]?.customerName || null;
+      }
+
       res.json({
         ok: true,
         valid: result.valid,
-        username: result.username,
+        username,
         country: result.country,
         message: result.valid ? null : (result.message || 'Account not found'),
       });
