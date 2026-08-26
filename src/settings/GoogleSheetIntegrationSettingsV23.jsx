@@ -13,6 +13,7 @@ const EMPTY = {
   secret: '',
   timeoutMs: 10000,
   repairSheetTab: '',
+  sheetId: '',
   secretConfigured: false,
   secretMasked: '',
 };
@@ -75,7 +76,8 @@ export default function GoogleSheetIntegrationSettingsV23() {
     .replace('__POS_BASE_URL__', appBaseUrl)
     .replace('__POS_SHOP_SLUG__', effectiveShopSlug || 'YOUR_SHOP_SLUG')
     .replace('__POS_REPAIR_PREFIX__', repairPrefix || 'RP')
-    .replace('__POS_SYNC_SECRET__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, effectiveShopSlug, repairPrefix, form.secret]);
+    .replace('__POS_SHEET_ID__', form.sheetId || 'PASTE_YOUR_SHEET_URL_HERE')
+    .replace('__POS_SYNC_SECRET__', form.secret || 'SYNC_SECRET_WILL_APPEAR_HERE'), [appBaseUrl, effectiveShopSlug, repairPrefix, form.sheetId, form.secret]);
 
   const configuredPullScript = useMemo(() => PULL_SYNC_SCRIPT
     .replace('__POS_BASE_URL__', appBaseUrl)
@@ -123,6 +125,7 @@ export default function GoogleSheetIntegrationSettingsV23() {
           secret: form.secret,
           timeoutMs: Number(form.timeoutMs || 10000),
           repairSheetTab: form.repairSheetTab || '',
+          sheetId: form.sheetId || '',
         },
       });
       setForm((current) => ({ ...current, ...(response.config || {}), secret: response.config?.secret || current.secret, getUrl: response.config?.postUrl || current.postUrl }));
@@ -225,6 +228,21 @@ export default function GoogleSheetIntegrationSettingsV23() {
       <label>
         <span>Google Apps Script Web App URL</span>
         <input type="url" value={form.postUrl || ''} onChange={(event) => update({ postUrl: event.target.value, getUrl: event.target.value })} placeholder="https://script.google.com/macros/s/.../exec"/>
+      </label>
+
+      <label>
+        <span>Google Sheet Link</span>
+        <input
+          type="text"
+          value={form.sheetId || ''}
+          onChange={(event) => update({ sheetId: event.target.value })}
+          placeholder="https://docs.google.com/spreadsheets/d/..."
+        />
+        <small style={{ opacity: 0.7 }}>
+          Sheet ရဲ့ link ကို ကူးထည့်ပါ။ ဒါဆိုရင် Apps Script ကို sheet နဲ့ တွဲမထားဘဲ
+          သီးခြား project အနေနဲ့ ထားလို့ရပါတယ် — sheet မှာ script တစ်ခု ရှိပြီးသားဆိုရင်
+          ဒီနည်းက အဲဒီ script ကို မထိခိုက်ပါဘူး။
+        </small>
       </label>
 
       <label>

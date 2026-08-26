@@ -5,12 +5,17 @@ const POS_CONFIG = {
   // Voucher prefix for this shop — MS0978 and so on. The tab is named for the
   // branch, not the prefix, so this cannot be read off the sheet.
   REPAIR_PREFIX: '__POS_REPAIR_PREFIX__',
+  // Which workbook to write to. Set this and the script no longer has to be
+  // bound to the sheet — it can live in its own project, which is the point:
+  // a workbook that already has a script of its own cannot take a second
+  // doPost, doGet, onOpen or onEdit without one of them being lost.
+  SHEET_ID: '__POS_SHEET_ID__',
 };
 
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-2';
+const SCRIPT_VERSION = 'repair-sync-3';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -22,7 +27,9 @@ const POS_DATASETS = [
   ['user-audit', 'User audit'],
 ];
 
-function onOpen() {
+// Named for this script rather than onOpen, so pasting it beside another
+// script cannot silently take over that script's menu.
+function posSyncOnOpen() {
   SpreadsheetApp.getUi()
     .createMenu('MaharShwe POS')
     .addItem('Setup Tabs', 'setupMaharShwePosSync')
@@ -201,8 +208,28 @@ function upsertRow(tabName, keyHeader, objectRow) {
   sheet.getRange(targetRow, 1, 1, headers.length).setValues([values]);
 }
 
+// A full URL or a bare id, whichever was pasted. The template placeholder is
+// not an id, so it reads as "not configured".
+function sheetIdFrom(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw.indexOf('__') === 0) return '';
+  const match = raw.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/);
+  return match ? match[1] : raw;
+}
+
+function targetSpreadsheet() {
+  const id = sheetIdFrom(
+    PropertiesService.getScriptProperties().getProperty('POS_SHEET_ID') || POS_CONFIG.SHEET_ID,
+  );
+  if (id) return SpreadsheetApp.openById(id);
+  // Bound to the sheet is still fine, and stays the fallback.
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+  throw new Error('POS_SHEET_ID is not set. Add it in Project Settings → Script properties.');
+}
+
 function ensureSheet(name) {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheet = targetSpreadsheet();
   return spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
 }
 
@@ -321,7 +348,10 @@ function postRepairStatusToPos_(repairId, status, rawStatus) {
   }
 }
 
-function onEdit(e) {
+// Likewise not onEdit: a workbook's own onEdit is often doing real work, and
+// two of them in one project means one of them stops running. Attach this
+// deliberately as an installable trigger if it is wanted.
+function posSyncOnEdit(e) {
   try { handleRepairStatusEdit_(e); } catch (err) { Logger.log(err); }
 }
 
@@ -355,7 +385,7 @@ function findRepairRow(sheet, key) {
 // leaving a blank gap in the middle of the book.
 function deleteRepairRow(payload, fallbackTab) {
   const tabName = String(payload.sheetTab || fallbackTab || '').trim();
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabName);
+  const sheet = targetSpreadsheet().getSheetByName(tabName);
   if (!sheet) return { ok: false, message: 'No tab named ' + tabName };
 
   const key = String(payload.key || '').trim();
@@ -372,7 +402,7 @@ function deleteRepairRow(payload, fallbackTab) {
 
 function writeRepairRow(payload, fallbackTab) {
   const tabName = String(payload.sheetTab || fallbackTab || '').trim();
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabName);
+  const sheet = targetSpreadsheet().getSheetByName(tabName);
   if (!sheet) return { ok: false, message: 'No tab named ' + tabName };
 
   const values = payload.row || [];
@@ -403,7 +433,7 @@ function writeRepairRow(payload, fallbackTab) {
 // A status is often dragged down several rows at once, so every row the edit
 // touched is reported, not just the first.
 function pushRepairEditsToPos(e) {
-  const range = (e && e.range) ? e.range : SpreadsheetApp.getActiveSheet().getActiveRange();
+  const range = (e && e.range) ? e.range : targetSpreadsheet().getActiveSheet().getActiveRange();
   if (!range) return;
   const sheet = range.getSheet();
 

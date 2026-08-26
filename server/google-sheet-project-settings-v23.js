@@ -25,6 +25,7 @@ const configSchema = z.object({
   secret: z.string().trim().max(500).optional().default(''),
   timeoutMs: z.coerce.number().int().min(1000).max(60000).default(10000),
   repairSheetTab: z.string().trim().max(200).optional().default(''),
+  sheetId: z.string().trim().max(400).optional().default(''),
 });
 
 let runner = null;
@@ -114,6 +115,9 @@ async function loadConfig(shopId) {
     // Which tab the repair book lives in. It is named for the branch — "Mahar",
     // not the shop's full name — so it has to be told, not guessed.
     repairSheetTab: clean(saved.repairSheetTab || object(raw.integrations).repairSheetTab, 200),
+    // Which workbook. Given, the script does not have to be bound to the sheet
+    // and can live in its own project.
+    sheetId: clean(saved.sheetId, 400),
     lastTest: saved.lastTest || null,
     updatedAt: saved.updatedAt || null,
   };
@@ -136,6 +140,7 @@ async function saveConfig(shopId, userId, input, req) {
     secret,
     timeoutMs: input.timeoutMs,
     repairSheetTab: clean(input.repairSheetTab, 200),
+    sheetId: clean(input.sheetId, 400),
     updatedAt: new Date().toISOString(),
   };
   if (next.enabled && !next.secret) {
@@ -182,6 +187,7 @@ function publicConfig(config) {
     getUrl: config.getUrl,
     timeoutMs: config.timeoutMs,
     repairSheetTab: config.repairSheetTab || '',
+    sheetId: config.sheetId || '',
     secret: config.secret || '',
     secretConfigured: Boolean(config.secret),
     secretMasked: config.secret ? `••••••${config.secret.slice(-4)}` : '',
