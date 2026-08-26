@@ -487,7 +487,7 @@ function attachGameTopupAdminApi(app) {
                 o.moogold_order_id AS "moogoldOrderId", o.created_at AS "createdAt", o.reviewed_at AS "reviewedAt",
                 o.refund_sent_at AS "refundSentAt",
                 p.name AS "productName", v.name AS "variationName",
-                (SELECT COUNT(*)::int FROM game_topup_public_orders d WHERE d.payment_transaction_id = o.payment_transaction_id) AS "sameTxnCount"
+                (SELECT COUNT(*)::int FROM game_topup_public_orders d WHERE o.customer_name IS NOT NULL AND TRIM(o.customer_name) <> '' AND LOWER(TRIM(d.customer_name)) = LOWER(TRIM(o.customer_name))) AS "sameNameCount"
            FROM game_topup_public_orders o
            JOIN game_topup_variations v ON v.id = o.variation_id
            JOIN game_topup_products p ON p.id = v.product_id

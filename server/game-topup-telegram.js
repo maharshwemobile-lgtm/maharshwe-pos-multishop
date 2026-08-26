@@ -59,7 +59,7 @@ async function resolveBotForOrder(order) {
 }
 
 const number = (value) => Number(value || 0);
-const money = (value) => `${number(value).toLocaleString('en-US')} MMK`;
+const money = (value) => `${number(value).toLocaleString('en-US')} ကျပ်`;
 function escapeHtml(value) {
   return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
@@ -85,10 +85,9 @@ function orderMessageText(order, extra) {
     `Customer: ${escapeHtml(order.customerName || '-')} · ${escapeHtml(order.customerPhone)}`,
     `Payment: ${escapeHtml(order.paymentMethod)} · Txn နောက်ဆုံး ၄ လုံး: <code>${escapeHtml(order.paymentTransactionId)}</code>`,
   ];
-  // Four digits repeat by coincidence often enough that this is a "look
-  // twice", not an accusation — the admin is checking the real KBZ Pay
-  // history anyway, where the amount and time disambiguate.
-  if (order.duplicateWarning) lines.push('⚠️ ဒီ ၄ လုံးကို အရင်လည်း တင်ဖူးပါတယ် — ပမာဏနဲ့ အချိန် တိုက်စစ်ပါ');
+  // Same verified in-game account name ordering again — worth a second
+  // look before approving a promo-priced package on repeat.
+  if (order.duplicateWarning) lines.push('⚠️ ဒီ Name နဲ့ အရင်လည်း တင်ဖူးပါတယ် — ပမာဏနဲ့ အချိန် တိုက်စစ်ပါ');
   if (extra) lines.push('', extra);
   return lines.join('\n');
 }

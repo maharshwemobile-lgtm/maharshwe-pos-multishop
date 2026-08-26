@@ -195,7 +195,7 @@ footer a{color:var(--blue);font-weight:700}
         <div id="gCheckOut" class="note hid"></div>
       </div>
       <label><span>ဆက်သွယ်ရန် ဖုန်းနံပါတ် *</span><input id="fPhone" type="tel" placeholder="09xxxxxxxxx" inputmode="tel"></label>
-      <div class="total"><span>စုစုပေါင်း</span><b id="gTotal">0 MMK</b></div>
+      <div class="total"><span>စုစုပေါင်း</span><b id="gTotal">0 ကျပ်</b></div>
       <button class="primary" type="button" id="gNext">ငွေပေးချေရန် ဆက်သွားမည်</button>
     </div>
 
@@ -203,7 +203,7 @@ footer a{color:var(--blue);font-weight:700}
       <button class="back" type="button" data-go="form">‹ ပြန်သွားမည်</button>
       <h2>ငွေလွှဲပါ</h2>
       <div id="gPayOrderBox" style="border-bottom:1px solid var(--line);padding-bottom:10px"></div>
-      <div class="total big"><span>လွှဲရမည့် ပမာဏ</span><b id="gPayTotal">0 MMK</b></div>
+      <div class="total big"><span>လွှဲရမည့် ပမာဏ</span><b id="gPayTotal">0 ကျပ်</b></div>
       <div id="gPayBox" class="pay"></div>
       <ol class="steps">
         <li>အထက်ပါ KBZ Pay နံပါတ်သို့ <b id="gPayAmt2"></b> အတိအကျ လွှဲပါ</li>
@@ -281,7 +281,7 @@ footer a{color:var(--blue);font-weight:700}
 (() => {
   const $ = (id) => document.getElementById(id);
   const show = (el, on) => el.classList.toggle('hid', !on);
-  const money = (v) => Number(v || 0).toLocaleString('en-US') + ' MMK';
+  const money = (v) => Number(v || 0).toLocaleString('en-US') + ' ကျပ်';
 
   const state = { products: [], pay: null, game: null, pack: null, placed: null };
 
@@ -591,6 +591,7 @@ footer a{color:var(--blue);font-weight:700}
           quantity: 1,
           playerId: $('fPlayer').value.trim() || undefined,
           server: $('fServer').value.trim() || undefined,
+          customerName: (state.checked && state.checked.username) || undefined,
           customerPhone: $('fPhone').value.trim(),
           paymentTransactionId: txn,
           shopSlug: state.shopSlug || undefined,

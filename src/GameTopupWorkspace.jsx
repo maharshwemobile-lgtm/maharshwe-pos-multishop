@@ -3,7 +3,7 @@ import { Gamepad2, Loader2, RefreshCw, Wallet, X } from 'lucide-react';
 import { apiFetch } from './phase2Api';
 import './game-topup-workspace.css';
 
-const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
+const money = (value) => `${Number(value || 0).toLocaleString('en-US')} ကျပ်`;
 
 function formatDate(value) {
   if (!value) return '-';
@@ -212,13 +212,14 @@ function PaymentAndPublicOrdersPanel({ notify }) {
           </div>
           {loading ? <div className="gt-empty">Loading…</div> : (
             <table>
-              <thead><tr><th>Order</th><th>Item</th><th>Player ID</th><th>ပမာဏ</th><th>Txn</th><th /></tr></thead>
+              <thead><tr><th>Order</th><th>Item</th><th>Player ID</th><th>ဖောက်သည်</th><th>ပမာဏ</th><th>Txn</th><th /></tr></thead>
               <tbody>
                 {orders.map((order) => (
                   <tr key={order.id}>
                     <td><b>{order.orderNumber}</b><span>{new Date(order.createdAt).toLocaleString()}</span></td>
                     <td>{order.productName} · {order.variationName}</td>
                     <td>{order.playerId || '-'}{order.serverId ? ` · ${order.serverId}` : ''}</td>
+                    <td>{order.customerName || '-'}</td>
                     <td>{money(order.retailPrice)}</td>
                     <td>{order.paymentTransactionId}</td>
                     <td>
@@ -231,7 +232,7 @@ function PaymentAndPublicOrdersPanel({ notify }) {
                     </td>
                   </tr>
                 ))}
-                {!orders.length ? <tr><td colSpan={6} className="gt-empty-cell">Order မရှိပါ</td></tr> : null}
+                {!orders.length ? <tr><td colSpan={7} className="gt-empty-cell">Order မရှိပါ</td></tr> : null}
               </tbody>
             </table>
           )}

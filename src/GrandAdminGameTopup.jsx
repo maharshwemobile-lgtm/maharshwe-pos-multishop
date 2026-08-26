@@ -3,7 +3,7 @@ import { ChevronDown, Gamepad2, Loader2, RefreshCw, Search, Wallet } from 'lucid
 import { apiFetch } from './phase2Api';
 import './grand-admin-game-topup.css';
 
-const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
+const money = (value) => `${Number(value || 0).toLocaleString('en-US')} ကျပ်`;
 
 function VariationRow({ variation, onSave }) {
   const [shopCost, setShopCost] = useState(String(variation.shopCost));
@@ -555,11 +555,13 @@ function PublicOrdersPanel({ notify }) {
                 <td><b>{order.orderNumber}</b><span>{new Date(order.createdAt).toLocaleString()}</span></td>
                 <td>{order.productName}<span>{order.variationName} × {order.quantity}</span></td>
                 <td>{order.playerId || '-'}{order.serverId ? <span>Server {order.serverId}</span> : null}</td>
-                <td>{order.customerName || '-'}<span>{order.customerPhone}</span></td>
+                <td>
+                  {order.customerName || '-'}<span>{order.customerPhone}</span>
+                  {order.sameNameCount > 1 ? <span className="gt-admin-dup">⚠️ {order.sameNameCount} ကြိမ် — ပမာဏ/အချိန် တိုက်စစ်ပါ</span> : null}
+                </td>
                 <td><b>{money(order.retailPrice)}</b></td>
                 <td>
                   <code className="gt-admin-txn">{order.paymentTransactionId}</code>
-                  {order.sameTxnCount > 1 ? <span className="gt-admin-dup">⚠️ {order.sameTxnCount} ကြိမ် — ပမာဏ/အချိန် တိုက်စစ်ပါ</span> : null}
                 </td>
                 <td>
                   <i className={order.status === 'COMPLETED' ? 'green' : order.status === 'PENDING_APPROVAL' ? 'blue' : 'red'}>{order.status}</i>
