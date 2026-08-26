@@ -1,4 +1,5 @@
 const { loadTelegramSettings, sendTelegramMessageToAll } = require('./telegram-automation-api');
+const { prisma } = require('./prisma');
 
 // Actions that are worth sending as audit notifications (skip noise)
 const NOTIFY_ACTIONS = new Set([
@@ -9,6 +10,9 @@ const NOTIFY_ACTIONS = new Set([
   'REPAIR_INTAKE_CREATED', 'REPAIR_STATUS_CHANGED', 'REPAIR_FINANCE_UPDATED',
   'REPAIR_PROVIDER_LINKED', 'REPAIR_REFERRAL_CREATED', 'REPAIR_REFERRAL_CLAIMED',
   'REPAIR_EXTERNAL_IMPORTED', 'REPAIR_DEVICE_LINKED',
+  'BILLER_SOLD', 'BILLER_REFILL', 'BILLER_OPENING', 'BILLER_ADJUSTMENT',
+  'BILLER_VOIDED', 'BILLER_CREATED',
+  'MONEY_SERVICE_CREATED', 'MONEY_SERVICE_COLLECTED', 'MONEY_SERVICE_VOIDED',
 ]);
 
 // Entity-type prefix used for dynamic actions (e.g. POST_INVENTORY → inventory)
@@ -16,6 +20,7 @@ const NOTIFY_ENTITY_TYPES = new Set([
   'sale', 'customer', 'money_account', 'repair', 'repair_referral',
   'inventory', 'product', 'user',
   'business_other_income', 'business_expense', 'business_day_close',
+  'biller_transaction', 'biller', 'money_service',
 ]);
 
 // What each action reads as in the feed. The English summaries came from the
@@ -55,6 +60,15 @@ const ACTION_TEXT = {
   USER_DELETE: 'အသုံးပြုသူ ဖျက်သည်',
   SETTINGS_PUT: 'ဆိုင် ဆက်တင် ပြင်သည်',
   SETTINGS_POST: 'ဆိုင် ဆက်တင် ပြင်သည်',
+  BILLER_SOLD: 'Eload / ဘီလ် ရောင်းသည်',
+  BILLER_REFILL: 'Eload လက်ကျန် ဖြည့်သည်',
+  BILLER_OPENING: 'Eload ဖွင့်လက်ကျန် သတ်မှတ်သည်',
+  BILLER_ADJUSTMENT: 'Eload လက်ကျန် ညှိသည်',
+  BILLER_VOIDED: 'Eload မှတ်တမ်း ပယ်ဖျက်သည်',
+  BILLER_CREATED: 'ဘီလ် / Eload အကောင့် ထည့်သည်',
+  MONEY_SERVICE_CREATED: 'ငွေလွှဲ မှတ်တမ်း ထည့်သည်',
+  MONEY_SERVICE_COLLECTED: 'ငွေလွှဲ ကောက်ခံသည်',
+  MONEY_SERVICE_VOIDED: 'ငွေလွှဲ ပယ်ဖျက်သည်',
 };
 
 // The counter reads these three words on the slip and in the sheet; the feed
@@ -98,6 +112,9 @@ const ACTION_EMOJI = {
   PRODUCT_POST: '🏷', PRODUCT_PUT: '🏷', PRODUCT_PATCH: '🏷', PRODUCT_DELETE: '🗑',
   USER_POST: '👥', USER_PUT: '👥', USER_PATCH: '👥', USER_DELETE: '🗑',
   SETTINGS_PUT: '⚙️', SETTINGS_POST: '⚙️',
+  BILLER_SOLD: '📱', BILLER_REFILL: '🔋', BILLER_OPENING: '🎬',
+  BILLER_ADJUSTMENT: '⚖️', BILLER_VOIDED: '🚫', BILLER_CREATED: '🏦',
+  MONEY_SERVICE_CREATED: '💱', MONEY_SERVICE_COLLECTED: '💵', MONEY_SERVICE_VOIDED: '🚫',
 };
 
 // A sale already sends its own message with the invoice, the total and every
@@ -123,11 +140,26 @@ function yangonTime() {
 
 // The name of the thing acted on, so the feed says which repair, which
 // customer, which product — not just that "repair data" changed.
+// billerId arrives as a uuid, which tells nobody anything. The name is one
+// lookup away and is the first thing you want to read on an Eload alert.
+async function billerName(shopId, billerId) {
+  if (!billerId) return '';
+  try {
+    const rows = await prisma.$queryRawUnsafe(
+      'SELECT name FROM billers WHERE id = $1::uuid AND shop_id = $2::uuid LIMIT 1',
+      billerId, shopId,
+    );
+    return String(rows[0]?.name || '').trim();
+  } catch {
+    return '';
+  }
+}
+
 function subjectOf(event) {
   const body = event.request?.body || {};
   const parts = [
-    body.repairNumber, body.invoiceNumber, body.orderNumber,
-    body.name, body.customerName, body.productName, body.username,
+    body.repairNumber, body.invoiceNumber, body.orderNumber, body.transactionNumber,
+    body.name, body.customerName, body.productName, body.username, body.customerPhone,
   ].map((value) => String(value || '').trim()).filter(Boolean);
   if (parts.length) return parts[0];
   const brand = String(body.deviceBrand || '').trim();
@@ -139,18 +171,19 @@ function money(value) {
   return `${Number(value).toLocaleString('en-US')} ကျပ်`;
 }
 
-function formatAuditMessage(event) {
+function formatAuditMessage(event, extra = {}) {
   const emoji = ACTION_EMOJI[event.action] || '📋';
   const actor = event.actor?.name || event.actor?.username || 'အသုံးပြုသူ';
   const role = ROLE_TEXT[event.actor?.role] || event.actor?.role || '';
   const what = ACTION_TEXT[event.action] || event.summary || event.action.replace(/_/g, ' ');
-  const subject = subjectOf(event);
+  const subject = extra.biller || subjectOf(event);
 
   const lines = [
     `${emoji} <b>${what}</b>`,
     `👤 ${actor}${role ? ` · ${role}` : ''}`,
   ];
   if (subject) lines.push(`📌 ${subject}`);
+  if (extra.biller && subjectOf(event)) lines.push(`📞 ${subjectOf(event)}`);
 
   const body = event.request?.body || {};
   if (body.status) lines.push(`🔄 ${STATUS_TEXT[body.status] || body.status}`);
@@ -159,7 +192,7 @@ function formatAuditMessage(event) {
   if (body.finalCost != null) lines.push(`💰 ${money(body.finalCost)}`);
   if (body.category) lines.push(`🏷 ${body.category}`);
   if (body.source) lines.push(`📎 ${body.source}`);
-  if (body.method) lines.push(`💳 ${body.method}`);
+  if (body.method || body.paymentMethod) lines.push(`💳 ${body.method || body.paymentMethod}`);
   if (body.paymentStatus) lines.push(`💳 ${STATUS_TEXT[body.paymentStatus] || body.paymentStatus}`);
   if (body.note) lines.push(`📝 ${body.note}`);
   lines.push(`🕐 ${yangonTime()} (ရန်ကုန်)`);
@@ -172,7 +205,11 @@ async function notifyTelegramAuditEvent(shopId, event) {
     if (!shouldNotify(event)) return;
     const settings = await loadTelegramSettings(shopId);
     if (!settings.enabled || !settings.auditLogNotifications) return;
-    await sendTelegramMessageToAll(settings, formatAuditMessage(event));
+    const extra = {};
+    if (String(event.action || '').startsWith('BILLER_')) {
+      extra.biller = await billerName(shopId, event.request?.body?.billerId);
+    }
+    await sendTelegramMessageToAll(settings, formatAuditMessage(event, extra));
   } catch {
     // fire-and-forget — never block the request
   }
