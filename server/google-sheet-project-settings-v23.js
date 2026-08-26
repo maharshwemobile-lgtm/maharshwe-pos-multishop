@@ -131,6 +131,11 @@ async function loadConfig(shopId) {
     // Which workbook. Given, the script does not have to be bound to the sheet
     // and can live in its own project.
     sheetId: clean(saved.sheetId, 400),
+    // Reported by the script when it connects itself, so the shop picks a tab
+    // from the workbook instead of typing its name from memory.
+    availableTabs: Array.isArray(saved.availableTabs) ? saved.availableTabs : [],
+    scriptVersion: clean(saved.scriptVersion, 40),
+    registeredAt: saved.registeredAt || null,
     lastTest: saved.lastTest || null,
     updatedAt: saved.updatedAt || null,
   };
@@ -205,6 +210,9 @@ function publicConfig(config) {
     timeoutMs: config.timeoutMs,
     repairSheetTab: config.repairSheetTab || '',
     sheetId: config.sheetId || '',
+    availableTabs: config.availableTabs || [],
+    scriptVersion: config.scriptVersion || '',
+    registeredAt: config.registeredAt || null,
     secret: config.secret || '',
     secretConfigured: Boolean(config.secret),
     secretMasked: config.secret ? `••••••${config.secret.slice(-4)}` : '',

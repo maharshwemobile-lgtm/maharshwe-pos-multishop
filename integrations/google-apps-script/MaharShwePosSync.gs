@@ -15,7 +15,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-4';
+const SCRIPT_VERSION = 'repair-sync-5';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -42,8 +42,73 @@ function posSyncOnOpen() {
 // "Invalid secret", with no way to tell a typo from an unset property from the
 // wrong project answering. This reports a hash of the secret, never the secret,
 // so the POS can say whether the two match.
+// ===========================================================================
+// ချိတ်ဆက်ရန် — ဒီတစ်ခုကိုပဲ Run လုပ်ပါ
+//
+// Deploy လုပ်ပြီးရင် ▶ Run နှိပ်ပါ။ ကျန်တာ အကုန် သူ့ဘာသာ လုပ်ပါမယ်။
+//
+// The URL, the tab names and the trigger were all things the shop had to carry
+// from here back to the POS by hand, and every one of them was somewhere a
+// setup could go wrong. The script knows all three, so it reports them itself.
+// ===========================================================================
+function ချိတ်မည်() {
+  return connectToPos();
+}
+
+function connectToPos() {
+  const webAppUrl = ScriptApp.getService().getUrl();
+  if (!webAppUrl) {
+    throw new Error('အရင် Deploy လုပ်ပါ — Deploy → New deployment → Web app → Anyone');
+  }
+
+  let tabs = [];
+  try {
+    tabs = targetSpreadsheet().getSheets().map(function (sheet) { return sheet.getName(); });
+  } catch (error) {
+    throw new Error('Google Sheet ကို ဖွင့်လို့ မရပါ — POS မှာ Sheet link ထည့်ပြီး Script Code ပြန်ကူးပါ။ (' + error.message + ')');
+  }
+
+  const response = UrlFetchApp.fetch(POS_CONFIG.BASE_URL + '/api/google-sheet-sync/register', {
+    method: 'post',
+    contentType: 'application/json',
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      secret: getRequiredProperty('POS_SYNC_SECRET'),
+      shopSlug: POS_CONFIG.SHOP_SLUG,
+      webAppUrl: webAppUrl,
+      version: SCRIPT_VERSION,
+      tabs: tabs,
+    }),
+  });
+
+  const body = response.getContentText();
+  if (response.getResponseCode() !== 200 || body.indexOf('"ok":true') < 0) {
+    throw new Error('POS က လက်မခံပါ: ' + body.slice(0, 300));
+  }
+
+  installRepairEditTrigger();
+  Logger.log('✅ ချိတ်ပြီးပါပြီ။ POS မှာ စစ်ဆေးမည် နှိပ်ကြည့်ပါ။');
+  return '✅ ချိတ်ပြီးပါပြီ — tab ' + tabs.length + ' ခု တွေ့ပါတယ်။';
+}
+
+// The shop should not have to find the trigger screen and pick the right
+// function and event type off three dropdowns.
+function installRepairEditTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === 'pushRepairEditsToPos') ScriptApp.deleteTrigger(trigger);
+  });
+  ScriptApp.newTrigger('pushRepairEditsToPos')
+    .forSpreadsheet(targetSpreadsheet())
+    .onEdit()
+    .create();
+  return 'Trigger installed';
+}
+
 function secretFingerprint() {
-  const value = PropertiesService.getScriptProperties().getProperty('POS_SYNC_SECRET');
+  let value = PropertiesService.getScriptProperties().getProperty('POS_SYNC_SECRET');
+  if (!value && POS_CONFIG.SYNC_SECRET && POS_CONFIG.SYNC_SECRET.indexOf('__') !== 0) {
+    value = POS_CONFIG.SYNC_SECRET;
+  }
   if (!value) return '';
   const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8);
   return bytes.slice(0, 4).map(function (b) {

@@ -14,6 +14,9 @@ const EMPTY = {
   timeoutMs: 10000,
   repairSheetTab: '',
   sheetId: '',
+  availableTabs: [],
+  scriptVersion: '',
+  registeredAt: null,
   secretConfigured: false,
   secretMasked: '',
 };
@@ -222,25 +225,31 @@ export default function GoogleSheetIntegrationSettingsV23() {
 
     <form className="gsheet-form" onSubmit={save}>
       <div className="gsheet-grid">
-        <label>
-          <span>၁။ Google Sheet link</span>
+        <label className="span-2">
+          <span>Google Sheet link</span>
           <input type="text" value={form.sheetId || ''} placeholder="https://docs.google.com/spreadsheets/d/..."
             onChange={(event) => update({ sheetId: event.target.value })}/>
-          <small>ဆိုင်ရဲ့ sheet ကို ဖွင့်ပြီး လိပ်စာကို ကူးထည့်ပါ။</small>
+          <small>ဖြည့်ရမှာ ဒီတစ်ကွက်ပဲ ရှိပါတယ်။ ကျန်တာ script က ကိုယ်တိုင် ပို့ပေးပါမယ်။</small>
         </label>
 
         <label>
-          <span>၂။ ဖုန်းပြင် စာရင်း tab နာမည်</span>
-          <input type="text" value={form.repairSheetTab || ''} placeholder={shop?.name || 'tab နာမည်'}
-            onChange={(event) => update({ repairSheetTab: event.target.value })}/>
-          <small>ဘောက်ချာတွေ ရေးမယ့် tab။ ဘောက်ချာနံပါတ် prefix — <b>{repairPrefix || 'RP'}</b></small>
+          <span>ဖုန်းပြင် စာရင်း tab</span>
+          {form.availableTabs?.length ? (
+            <select value={form.repairSheetTab || ''} onChange={(event) => update({ repairSheetTab: event.target.value })}>
+              <option value="">— ရွေးပါ —</option>
+              {form.availableTabs.map((tab) => <option key={tab} value={tab}>{tab}</option>)}
+            </select>
+          ) : (
+            <input type="text" value={form.repairSheetTab || ''} placeholder={shop?.name || 'ချိတ်ပြီးရင် ရွေးလို့ရပါမယ်'}
+              onChange={(event) => update({ repairSheetTab: event.target.value })}/>
+          )}
+          <small>ဘောက်ချာနံပါတ် prefix — <b>{repairPrefix || 'RP'}</b></small>
         </label>
 
-        <label className="span-2">
-          <span>၃။ Apps Script Web App URL</span>
-          <input type="url" value={form.postUrl || ''} placeholder="https://script.google.com/macros/s/.../exec"
-            onChange={(event) => update({ postUrl: event.target.value, getUrl: event.target.value })}/>
-          <small>အောက်က အဆင့်တွေ လုပ်ပြီးမှ ရလာမယ့် URL ပါ။</small>
+        <label>
+          <span>Apps Script</span>
+          <input type="text" readOnly value={form.postUrl ? `ချိတ်ပြီး · ${form.scriptVersion || ''}` : 'မချိတ်ရသေးပါ'}/>
+          <small>{form.postUrl ? 'Script က ကိုယ်တိုင် ချိတ်သွားတာပါ။' : 'အောက်က ၂ ဆင့် လုပ်ပြီးရင် အလိုအလျောက် ဝင်လာပါမယ်။'}</small>
         </label>
       </div>
 
@@ -263,9 +272,10 @@ export default function GoogleSheetIntegrationSettingsV23() {
       <button type="button" className="primary" onClick={() => notifyCopy(configuredAppsScript, 'Script code ကူးပြီးပါပြီ')}>
         <Code2 size={17}/> Script Code ကူးမည်
       </button>
-      {form.secret
-        ? <CopyBox label="Secret — Script Properties ထဲ POS_SYNC_SECRET" value={form.secret} buttonLabel="Secret ကူးမည်" onCopy={notifyCopy}/>
-        : <article className="project-google-copy-box"><span>Secret</span><code>ပြင်ဆင်နေပါသည် — စာမျက်နှာ refresh လုပ်ပါ</code></article>}
+      <article className="project-google-copy-box">
+        <span>Secret</span>
+        <code>{form.secret ? 'Script Code ထဲ ပါပြီးသား — သီးသန့် ကူးစရာ မလိုပါ' : 'ပြင်ဆင်နေပါသည် — refresh လုပ်ပါ'}</code>
+      </article>
     </div>
 
     <details className="gsheet-steps">
@@ -276,14 +286,10 @@ export default function GoogleSheetIntegrationSettingsV23() {
         အောက်က အဆင့်တွေက <b>သီးခြား project အသစ်</b> ဆောက်တာမို့ ရှိပြီးသား script ကို မထိပါဘူး။
       </p>
       <ol>
-        <li>အပေါ်က <b>Google Sheet link</b> ထည့် → <b>သိမ်းမည်</b></li>
-        <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> → <b>New project</b></li>
-        <li><b>Script Code ကူးမည်</b> → project အသစ်ထဲ အကုန်ဖျက်ပြီး paste → 💾 Save</li>
-        <li>⚙️ <b>Project Settings → Script properties → Add script property</b><br/>
-          <code>POS_SYNC_SECRET</code> = <b>Secret ကူးမည်</b> နဲ့ ကူးထားတာ → Save script properties</li>
-        <li><b>Deploy → New deployment → Web app</b> · Execute as: <b>Me</b> · Access: <b>Anyone</b> → Deploy</li>
-        <li>ရလာတဲ့ <b>/exec URL</b> ကို အပေါ်မှာ ထည့် → Live Sync ဖွင့် → <b>သိမ်းမည်</b> → <b>စစ်ဆေးမည်</b></li>
-        <li>Apps Script → ⏰ <b>Triggers → Add trigger</b> · <code>pushRepairEditsToPos</code> · From spreadsheet · <b>On edit</b></li>
+        <li>အပေါ်က <b>Google Sheet link</b> ကွက်ထဲ ကူးထည့် → <b>သိမ်းမည်</b></li>
+        <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> → <b>New project</b> → <b>Script Code ကူးမည်</b> နှိပ်ပြီး အထဲမှာ paste → 💾 Save</li>
+        <li><b>Deploy → New deployment → Web app</b> · Execute as <b>Me</b> · Access <b>Anyone</b> → Deploy</li>
+        <li>function စာရင်းက <b>ချိတ်မည်</b> ကို ရွေး → <b>▶ Run</b> → ခွင့်ပြုချက် တောင်းရင် <i>Advanced → Go to … → Allow</i></li>
       </ol>
       <p className="gsheet-hint">
         Code ပြောင်းတိုင်း <b>Deploy → Manage deployments → ✏️ → New version</b> လုပ်မှ အလုပ်လုပ်ပါမယ်။

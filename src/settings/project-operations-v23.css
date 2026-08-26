@@ -96,3 +96,6 @@
   .gsheet-copy>button{width:100%;justify-content:center}
   .gsheet-foot button{margin-left:0}
 }
+.gsheet-form select{height:42px;padding:0 11px;border-radius:9px;border:1px solid var(--border,#dce5ef);
+  background:var(--input-bg,#fff);color:inherit;font:inherit;font-weight:500}
+.gsheet-form input[readonly]{background:var(--surface-2,#f1f5f9);color:var(--text-muted,#64748b);cursor:default}

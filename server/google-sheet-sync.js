@@ -400,6 +400,61 @@ function attachGoogleSheetSyncApi(app) {
 
   // Sheet -> POS. Called by the workbook's Apps Script when a row is edited, so
   // a status ticked off at the bench reaches the counter.
+  // The script knows its own deployment URL and the tabs in the workbook. Having
+  // the shop copy those back into the POS by hand is where the setup kept going
+  // wrong, so the script reports them itself — the shop only ever pastes the
+  // sheet link one way and the script code the other.
+  app.post('/api/google-sheet-sync/register', requireShopSheetSecret, async (req, res) => {
+    try {
+      const shop = req.sheetShop;
+      const webAppUrl = clean(req.body?.webAppUrl, 2000);
+      let host = '';
+      try { host = new URL(webAppUrl).host; } catch { host = ''; }
+      if (host !== 'script.google.com') {
+        return res.status(400).json({ ok: false, message: 'webAppUrl must be a script.google.com /exec URL' });
+      }
+
+      const tabs = Array.isArray(req.body?.tabs)
+        ? req.body.tabs.map((tab) => clean(tab, 200)).filter(Boolean).slice(0, 100)
+        : [];
+
+      const rows = await prisma.$queryRawUnsafe(
+        'SELECT settings FROM shop_settings WHERE shop_id=$1::uuid LIMIT 1', shop.id);
+      const settings = rows[0]?.settings && typeof rows[0].settings === 'object' ? rows[0].settings : {};
+      const api = settings.api && typeof settings.api === 'object' ? settings.api : {};
+      const googleSheets = api.googleSheets && typeof api.googleSheets === 'object' ? api.googleSheets : {};
+
+      const next = {
+        ...googleSheets,
+        postUrl: webAppUrl,
+        getUrl: webAppUrl,
+        enabled: true,
+        scriptVersion: clean(req.body?.version, 40),
+        availableTabs: tabs,
+        registeredAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO shop_settings (shop_id, settings, created_at, updated_at)
+         VALUES ($1::uuid, $2::jsonb, NOW(), NOW())
+         ON CONFLICT (shop_id) DO UPDATE SET settings = $2::jsonb, updated_at = NOW()`,
+        shop.id,
+        JSON.stringify({ ...settings, api: { ...api, googleSheets: next } }),
+      );
+
+      return res.json({
+        ok: true,
+        message: 'Connected',
+        shopName: shop.name,
+        repairSheetTab: next.repairSheetTab || '',
+        tabsSeen: tabs.length,
+      });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Register failed' });
+    }
+  });
+
   app.post('/api/google-sheet-sync/repair-status', requireShopSheetSecret, async (req, res) => {
     try {
       const { applySheetRow } = require('./repair-sheet-inbound');

@@ -279,10 +279,16 @@ function attachGameTopupPublicApi(app) {
       const shop = await resolveShopForOrder(input.shopSlug);
       if (input.shopSlug && !shop) throw new ApiError(403, 'ဒီဆိုင်အတွက် Game Top-up ကို superadmin ကနေ ဖွင့်မပေးရသေးပါ');
 
-      const duplicate = await prisma.$queryRawUnsafe(
-        `SELECT COUNT(*)::int AS count FROM game_topup_public_orders WHERE payment_transaction_id = $1`,
-        input.paymentTransactionId,
-      );
+      // A fake/reused transaction id is trivial to type, so that alone
+      // doesn't catch the same person re-ordering a promo-priced package —
+      // the customer name they type is a better repeat-order signal.
+      const cleanCustomerName = clean(input.customerName);
+      const duplicate = cleanCustomerName
+        ? await prisma.$queryRawUnsafe(
+            `SELECT COUNT(*)::int AS count FROM game_topup_public_orders WHERE LOWER(TRIM(customer_name)) = LOWER(TRIM($1))`,
+            cleanCustomerName,
+          )
+        : [{ count: 0 }];
       const duplicateWarning = number(duplicate[0]?.count) > 0;
 
       const unitPrice = await resolveShopPrice(shop?.id, variation.id, variation.suggestedRetail);
