@@ -143,13 +143,28 @@ function customHeader(text, settings) {
   return `<p>${nl2br(value)}</p>`;
 }
 
+// Replacing a logo usually means putting a new file at the same address, and a
+// slip printed after that kept showing the old one — the browser had it cached
+// and nothing in the URL had changed. Stamping the shop's last-updated time on
+// it means saving settings is enough to fetch the new artwork.
+function logoUrlFor(settings) {
+  const business = settings?.business || {};
+  const src = String(business.printLogoUrl || business.logoUrl || '').trim();
+  if (!src) return '';
+  const stamp = business.logoUpdatedAt || business.updatedAt || '';
+  if (!stamp) return src;
+  const version = String(stamp).replace(/[^0-9]/g, '').slice(0, 14);
+  if (!version) return src;
+  return `${src}${src.includes('?') ? '&' : '?'}v=${version}`;
+}
+
 function brandBlock(settings, title) {
   const business = settings?.business || {};
   const slip = settings?.slip || {};
   // A thermal head has one colour and no grey. Brand artwork is usually mid-tone
   // — this shop's wordmark barely registers — so a slip can name its own
   // black-and-white copy and leave the colour one for the screen and storefront.
-  const logoSrc = business.printLogoUrl || business.logoUrl;
+  const logoSrc = logoUrlFor(settings);
   const logo = slip.showLogo && logoSrc
     ? `<img class="slip-logo" src="${escapeHtml(logoSrc)}" alt="Logo"/>`
     : '';
