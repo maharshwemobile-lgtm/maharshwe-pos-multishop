@@ -204,6 +204,38 @@ function attachGoogleSheetSyncCapture(app) {
   });
 }
 
+// The repair book is per shop: the script in a shop's own workbook signs with
+// the secret from that shop's settings screen, not a server-wide one. Checking
+// against the named shop also scopes it — one shop's secret cannot reach
+// another shop's repairs, which the shared env secret could not prevent.
+async function requireShopSheetSecret(req, res, next) {
+  try {
+    const supplied = req.headers['x-google-sheet-secret'] || req.query.key || req.body?.secret;
+    if (!supplied) return res.status(401).json({ ok: false, message: 'Sync secret is required' });
+
+    const shop = await resolveSyncShop(clean(req.body?.shopSlug, 120));
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT settings->'api'->'googleSheets'->>'secret' AS secret
+         FROM shop_settings WHERE shop_id = $1::uuid LIMIT 1`,
+      shop.id,
+    ).catch(() => []);
+
+    const shopSecret = clean(rows[0]?.secret, 500);
+    const envSecret = clean(process.env.GOOGLE_SHEET_SYNC_SECRET, 500);
+    if (!shopSecret && !envSecret) {
+      return res.status(503).json({ ok: false, message: 'Google Sheet sync is not configured for this shop' });
+    }
+    if (!(shopSecret && safeSecretEqual(supplied, shopSecret))
+        && !(envSecret && safeSecretEqual(supplied, envSecret))) {
+      return res.status(401).json({ ok: false, message: 'Invalid Google Sheet sync secret' });
+    }
+    req.sheetShop = shop;
+    return next();
+  } catch (error) {
+    return res.status(error.status || 500).json({ ok: false, message: error.message || 'Sync authentication failed' });
+  }
+}
+
 function requireSheetSecret(req, res, next) {
   const expected = process.env.GOOGLE_SHEET_SYNC_SECRET;
   const supplied = req.headers['x-google-sheet-secret'] || req.query.key || req.body?.secret;
@@ -368,11 +400,10 @@ function attachGoogleSheetSyncApi(app) {
 
   // Sheet -> POS. Called by the workbook's Apps Script when a row is edited, so
   // a status ticked off at the bench reaches the counter.
-  app.post('/api/google-sheet-sync/repair-status', requireSheetSecret, async (req, res) => {
+  app.post('/api/google-sheet-sync/repair-status', requireShopSheetSecret, async (req, res) => {
     try {
       const { applySheetRow } = require('./repair-sheet-inbound');
-      const shop = await resolveSyncShop(clean(req.body?.shopSlug, 120));
-      if (!shop) return res.status(404).json({ ok: false, message: 'Shop not found' });
+      const shop = req.sheetShop;
       const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 500) : [];
       if (!rows.length) return res.json({ ok: true, applied: 0, results: [] });
 
