@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Code2, Globe2, Loader2, Save, Send, ShieldCheck } from 'lucide-react';
 import { apiFetch, getSession } from '../phase2Api';
 import './project-operations-v23.css';
+import './google-sheet-integration.css';
 import { APP_URL } from '../projectBrand';
 
 const EMPTY = {
@@ -169,129 +170,170 @@ export default function GoogleSheetIntegrationSettingsV23() {
   if (!canManage) return null;
 
   const CHECK_LABELS = {
-    sheet: 'Google Sheet link ထည့်ပြီး',
-    url: 'Web App URL ထည့်ပြီး',
-    enabled: 'Live Sync ဖွင့်ထား',
-    tab: 'ဖုန်းပြင် စာရင်း tab သတ်မှတ်ပြီး',
-    reach: 'Apps Script က ပြန်ဖြေတယ်',
-    secret: 'Secret နှစ်ဖက် ကိုက်ညီ',
-    version: 'Script code အသစ်',
+    sheet: 'Google Sheet link',
+    url: 'Web App URL',
+    enabled: 'Live Sync',
+    tab: 'ဖုန်းပြင် စာရင်း tab',
+    reach: 'Apps Script တုံ့ပြန်မှု',
+    secret: 'Secret ကိုက်ညီမှု',
+    version: 'Script code version',
   };
-  const allGood = Boolean(diagnosis?.checks?.length) && diagnosis.checks.every((check) => check.ok);
+  const checks = diagnosis?.checks || [];
+  const passed = checks.filter((check) => check.ok).length;
+  const allGood = checks.length > 0 && passed === checks.length;
+  const busy = Boolean(testing);
 
-  return <section className="project-operations-card gsheet-card">
-    <header className="gsheet-head">
-      <div>
-        <h3><Globe2 size={18}/> Google Sheet ချိတ်ဆက်ခြင်း</h3>
-        <p>ဖုန်းပြင် ဘောက်ချာနဲ့ ရောင်းအား မှတ်တမ်းတွေကို ဆိုင်ရဲ့ Google Sheet ထဲ တိုက်ရိုက် ရေးပါတယ်။</p>
+  return <section className="gs-card">
+    <header className="gs-card-head">
+      <div className="gs-card-title">
+        <span className="gs-card-icon"><Globe2 size={19}/></span>
+        <div>
+          <h3>Google Sheet ချိတ်ဆက်ခြင်း</h3>
+          <p>ဖုန်းပြင် ဘောက်ချာနဲ့ ရောင်းအား မှတ်တမ်းများကို ဆိုင်၏ Google Sheet ထဲသို့ တိုက်ရိုက် ရေးသွင်းပါသည်။</p>
+        </div>
       </div>
-      <span className={`gsheet-pill ${allGood ? 'good' : diagnosis ? 'bad' : ''}`}>
-        {allGood ? '✅ ချိတ်ပြီး' : diagnosis ? '⚠️ ပြင်စရာ ရှိတယ်' : '— မစစ်ရသေး'}
+      <span className={`gs-badge ${allGood ? 'is-good' : checks.length ? 'is-warn' : 'is-idle'}`}>
+        {allGood ? 'ချိတ်ဆက်ပြီး' : checks.length ? `${passed}/${checks.length} အဆင်သင့်` : 'မစစ်ဆေးရသေး'}
       </span>
     </header>
 
-    {/* The setup used to be checked by opening a URL in another tab and
-        comparing a hash by eye. Every failure so far was one of these lines. */}
-    <div className="gsheet-check">
-      <div className="gsheet-check-top">
-        <b>အခြေအနေ စစ်ဆေးရန်</b>
-        <button type="button" onClick={diagnose} disabled={Boolean(testing)}>
-          {testing === 'CHECK' ? <Loader2 className="project-operations-spin" size={16}/> : <ShieldCheck size={16}/>} စစ်ဆေးမည်
-        </button>
-      </div>
-      {diagnosis ? (
-        <ul className="gsheet-check-list">
-          {diagnosis.checks.map((check) => (
-            <li key={check.key} className={check.ok ? 'ok' : 'no'}>
-              <span>{check.ok ? '✅' : '❌'}</span>
-              <b>{CHECK_LABELS[check.key] || check.key}</b>
-              {check.detail ? <small>{check.detail}</small> : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="gsheet-hint">စစ်ဆေးမည် နှိပ်လိုက်ရင် ဘာလိုသေးလဲ တစ်ခုချင်း ပြပါမယ်။</p>
-      )}
-    </div>
+    <div className="gs-body">
+      {/* Status first: on every visit after the first, this is the only part
+          that matters, and the setup steps were burying it. */}
+      <section className="gs-section">
+        <div className="gs-section-head">
+          <h4>အခြေအနေ</h4>
+          <button type="button" className="gs-btn gs-btn-ghost" onClick={diagnose} disabled={busy}>
+            {testing === 'CHECK' ? <Loader2 className="project-operations-spin" size={15}/> : <ShieldCheck size={15}/>}
+            စစ်ဆေးမည်
+          </button>
+        </div>
+        {checks.length ? (
+          <ul className="gs-status">
+            {checks.map((check) => (
+              <li key={check.key} className={check.ok ? 'is-ok' : 'is-bad'}>
+                <span className="gs-status-mark">{check.ok ? '✓' : '✕'}</span>
+                <span className="gs-status-name">{CHECK_LABELS[check.key] || check.key}</span>
+                {check.detail ? <span className="gs-status-note">{check.detail}</span> : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="gs-empty">စစ်ဆေးမည် ကို နှိပ်ပါ — လိုအပ်ချက်များကို တစ်ခုချင်း ဖော်ပြပါမည်။</p>
+        )}
+      </section>
 
-    <form className="gsheet-form" onSubmit={save}>
-      <div className="gsheet-grid">
-        <label className="span-2">
-          <span>Google Sheet link</span>
-          <input type="text" value={form.sheetId || ''} placeholder="https://docs.google.com/spreadsheets/d/..."
-            onChange={(event) => update({ sheetId: event.target.value })}/>
-          <small>ဖြည့်ရမှာ ဒီတစ်ကွက်ပဲ ရှိပါတယ်။ ကျန်တာ script က ကိုယ်တိုင် ပို့ပေးပါမယ်။</small>
-        </label>
+      <section className="gs-section">
+        <div className="gs-section-head"><h4>ဆက်တင်</h4></div>
+        <form className="gs-form" onSubmit={save}>
+          <div className="gs-row">
+            <div className="gs-col-12">
+              <label className="gs-label" htmlFor="gs-sheet">Google Sheet link</label>
+              <input id="gs-sheet" className="gs-input" type="text" value={form.sheetId || ''}
+                placeholder="https://docs.google.com/spreadsheets/d/..."
+                onChange={(event) => update({ sheetId: event.target.value })}/>
+              <p className="gs-help">ဖြည့်ရန်လိုသည်မှာ ဤတစ်ကွက်သာ ဖြစ်ပါသည်။ ကျန်အချက်များကို script မှ အလိုအလျောက် ပေးပို့ပါမည်။</p>
+            </div>
 
-        <label>
-          <span>ဖုန်းပြင် စာရင်း tab</span>
-          {form.availableTabs?.length ? (
-            <select value={form.repairSheetTab || ''} onChange={(event) => update({ repairSheetTab: event.target.value })}>
-              <option value="">— ရွေးပါ —</option>
-              {form.availableTabs.map((tab) => <option key={tab} value={tab}>{tab}</option>)}
-            </select>
-          ) : (
-            <input type="text" value={form.repairSheetTab || ''} placeholder={shop?.name || 'ချိတ်ပြီးရင် ရွေးလို့ရပါမယ်'}
-              onChange={(event) => update({ repairSheetTab: event.target.value })}/>
-          )}
-          <small>ဘောက်ချာနံပါတ် prefix — <b>{repairPrefix || 'RP'}</b></small>
-        </label>
+            <div className="gs-col-6">
+              <label className="gs-label" htmlFor="gs-tab">ဖုန်းပြင် စာရင်း tab</label>
+              {form.availableTabs?.length ? (
+                <select id="gs-tab" className="gs-input" value={form.repairSheetTab || ''}
+                  onChange={(event) => update({ repairSheetTab: event.target.value })}>
+                  <option value="">— ရွေးချယ်ပါ —</option>
+                  {form.availableTabs.map((tab) => <option key={tab} value={tab}>{tab}</option>)}
+                </select>
+              ) : (
+                <input id="gs-tab" className="gs-input" type="text" value={form.repairSheetTab || ''}
+                  placeholder="ချိတ်ဆက်ပြီးမှ ရွေးနိုင်ပါမည်"
+                  onChange={(event) => update({ repairSheetTab: event.target.value })}/>
+              )}
+              <p className="gs-help">ဘောက်ချာနံပါတ် prefix — <b>{repairPrefix || 'RP'}</b></p>
+            </div>
 
-        <label>
-          <span>Apps Script</span>
-          <input type="text" readOnly value={form.postUrl ? `ချိတ်ပြီး · ${form.scriptVersion || ''}` : 'မချိတ်ရသေးပါ'}/>
-          <small>{form.postUrl ? 'Script က ကိုယ်တိုင် ချိတ်သွားတာပါ။' : 'အောက်က ၂ ဆင့် လုပ်ပြီးရင် အလိုအလျောက် ဝင်လာပါမယ်။'}</small>
-        </label>
-      </div>
+            <div className="gs-col-6">
+              <label className="gs-label">Apps Script</label>
+              <div className={`gs-static ${form.postUrl ? 'is-good' : ''}`}>
+                {form.postUrl ? `ချိတ်ဆက်ပြီး${form.scriptVersion ? ` · ${form.scriptVersion}` : ''}` : 'မချိတ်ဆက်ရသေး'}
+              </div>
+              <p className="gs-help">{form.postUrl ? 'Script မှ ကိုယ်တိုင် ချိတ်ဆက်ထားခြင်း ဖြစ်သည်။' : 'အောက်ပါအဆင့်များ ပြီးလျှင် အလိုအလျောက် ဝင်လာပါမည်။'}</p>
+            </div>
+          </div>
 
-      <label className="gsheet-toggle">
-        <span>
-          <b>Live Sync ဖွင့်မည်</b>
-          <small>ဘောက်ချာ၊ ရောင်းအား၊ ဝင်ငွေ၊ အသုံးစရိတ်၊ ကုန်ပစ္စည်း — အလိုအလျောက် ပို့ပါမယ်။</small>
-        </span>
-        <input type="checkbox" checked={form.enabled} onChange={(event) => update({ enabled: event.target.checked })}/>
-      </label>
+          <div className="gs-switch">
+            <div>
+              <b>Live Sync</b>
+              <span>ဘောက်ချာ၊ ရောင်းအား၊ ဝင်ငွေ၊ အသုံးစရိတ်၊ ကုန်ပစ္စည်း — အလိုအလျောက် ပေးပို့ပါမည်။</span>
+            </div>
+            <input type="checkbox" checked={form.enabled} onChange={(event) => update({ enabled: event.target.checked })}/>
+          </div>
 
-      <div className="gsheet-actions">
-        <button className="primary" disabled={saving}>{saving ? <Loader2 className="project-operations-spin" size={17}/> : <Save size={17}/>} သိမ်းမည်</button>
-        <button type="button" onClick={() => test('POST')} disabled={Boolean(testing)}>{testing === 'POST' ? <Loader2 className="project-operations-spin" size={17}/> : <Send size={17}/>} စမ်းပို့ကြည့်မည်</button>
-      </div>
-    </form>
-
-    <details className="gsheet-steps" open={!allGood}>
-      <summary>ချိတ်ဆက်နည်း — ၄ ဆင့်</summary>
-      <ol>
-        <li>အပေါ်က <b>Google Sheet link</b> ထည့် → <b>Save</b></li>
-        <li>
-          <a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> →
-          <b> New project</b> → အောက်က ခလုတ်နဲ့ ကူးပြီး အထဲမှာ paste → 💾 Save
-          <div className="gsheet-copy-row">
-            <button type="button" className="primary" onClick={copyScript} disabled={Boolean(testing)}>
-              {testing === 'COPY' ? <Loader2 className="project-operations-spin" size={16}/> : <Code2 size={16}/>} Script Code ကူးမည်
+          <div className="gs-btn-row">
+            <button className="gs-btn gs-btn-primary" disabled={saving}>
+              {saving ? <Loader2 className="project-operations-spin" size={15}/> : <Save size={15}/>} သိမ်းမည်
+            </button>
+            <button type="button" className="gs-btn" onClick={() => test('POST')} disabled={busy}>
+              {testing === 'POST' ? <Loader2 className="project-operations-spin" size={15}/> : <Send size={15}/>} စမ်းပို့မည်
             </button>
           </div>
-        </li>
-        <li><b>Deploy → New deployment → Web app</b> · Execute as <b>Me</b> · Access <b>Anyone</b> → Deploy</li>
-        <li>function စာရင်းက <b>ချိတ်မည်</b> ရွေး → <b>▶ Run</b> → ခွင့်ပြုချက် တောင်းရင် <i>Advanced → Go to … → Allow</i></li>
-      </ol>
-      <p className="gsheet-warn">
-        Sheet မှာ Apps Script <b>ရှိပြီးသားဆိုရင်</b> (ဥပမာ Telegram bot) အဲဒီထဲ <b>မထည့်ပါနဲ့</b> —
-        project အသစ် ဆောက်ပါ။
-      </p>
-      <p className="gsheet-hint">
-        Code ပြန်ကူးထည့်တိုင်း <b>Deploy → Manage deployments → ✏️ → New version</b> လုပ်ပါ။
-      </p>
-    </details>
+        </form>
+      </section>
 
-    {counts.PENDING || counts.FAILED ? (
-      <div className="gsheet-foot">
-        {counts.PENDING ? <span>ပို့ရန် ကျန် <b>{counts.PENDING}</b></span> : null}
+      <section className="gs-section">
+        <div className="gs-section-head"><h4>ချိတ်ဆက်နည်း</h4><span className="gs-section-note">တစ်ကြိမ်သာ</span></div>
+        <ol className="gs-steps">
+          <li>
+            <span className="gs-step-n">1</span>
+            <div><b>Google Sheet link</b> ကို အပေါ်တွင် ထည့်ပြီး <b>သိမ်းမည်</b> နှိပ်ပါ။</div>
+          </li>
+          <li>
+            <span className="gs-step-n">2</span>
+            <div>
+              <a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> တွင်
+              <b> New project</b> ဖွင့်ပါ။ အောက်ပါခလုတ်ဖြင့် ကူးယူပြီး အထဲတွင် paste လုပ်ကာ Save ပါ။
+              <button type="button" className="gs-btn gs-btn-primary gs-btn-inline" onClick={copyScript} disabled={busy}>
+                {testing === 'COPY' ? <Loader2 className="project-operations-spin" size={15}/> : <Code2 size={15}/>} Script Code ကူးမည်
+              </button>
+            </div>
+          </li>
+          <li>
+            <span className="gs-step-n">3</span>
+            <div><b>Deploy → New deployment → Web app</b> · Execute as <b>Me</b> · Access <b>Anyone</b> → Deploy</div>
+          </li>
+          <li>
+            <span className="gs-step-n">4</span>
+            <div>function စာရင်းမှ <b>ချိတ်မည်</b> ကို ရွေးပြီး <b>▶ Run</b> နှိပ်ပါ။ ခွင့်ပြုချက်တောင်းလျှင် <i>Advanced → Go to … → Allow</i>။</div>
+          </li>
+        </ol>
+        <div className="gs-note is-warn">
+          Sheet တွင် Apps Script <b>ရှိပြီးသား</b> ဖြစ်ပါက (ဥပမာ Telegram bot) အဲဒီအထဲသို့ <b>မထည့်ပါနှင့်</b> — project အသစ် ဖွင့်ပါ။
+        </div>
+        <div className="gs-note">
+          Code ပြန်ကူးထည့်တိုင်း <b>Deploy → Manage deployments → ✏️ → New version</b> ကို လုပ်ပါ။
+        </div>
+      </section>
+
+      <details className="gs-section gs-collapse">
+        <summary>ဘယ်ဘက်မှ ဘယ်ဘက်သို့ သွားသည်</summary>
+        <ul className="gs-flow">
+          <li><b>POS</b> တွင် ဘောက်ချာ print → <b>Sheet</b> တွင် အတန်းအသစ်</li>
+          <li><b>POS</b> တွင် status ပြောင်း / ဖျက် → <b>Sheet</b> တွင် လိုက်ပြောင်း / လိုက်ပျက်</li>
+          <li><b>Sheet</b> တွင် အတန်းအသစ် → <b>POS</b> တွင် ဖုန်းပြင် မှတ်တမ်းအသစ်</li>
+          <li><b>Sheet</b> တွင် status / ယူပြီး / စျေး ပြင် → <b>POS</b> တွင် လိုက်ပြောင်း</li>
+        </ul>
+        <div className="gs-note">လက်ဖြင့် ဖြည့်ထားသော ကွက်လပ်များကို POS မှ ဗလာဖြင့် ဖျက်မည် မဟုတ်ပါ။</div>
+      </details>
+    </div>
+
+    {(counts.PENDING || counts.FAILED || message) ? (
+      <footer className="gs-card-foot">
+        {counts.PENDING ? <span>ပို့ရန်ကျန် <b>{counts.PENDING}</b></span> : null}
         {counts.FAILED ? <span>မအောင်မြင် <b>{counts.FAILED}</b></span> : null}
-        <button type="button" onClick={retry} disabled={Boolean(testing)}>ပြန်ပို့</button>
-      </div>
+        {message ? <span className="gs-msg">{message}</span> : null}
+        {(counts.PENDING || counts.FAILED)
+          ? <button type="button" className="gs-btn gs-btn-ghost" onClick={retry} disabled={busy}>ပြန်ပို့မည်</button>
+          : null}
+      </footer>
     ) : null}
-
-    {message ? <div className="project-google-message">{message}</div> : null}
-    {loading ? <div className="project-google-message"><Loader2 className="project-operations-spin" size={15}/> ဖတ်နေပါသည်…</div> : null}
   </section>;
 }
