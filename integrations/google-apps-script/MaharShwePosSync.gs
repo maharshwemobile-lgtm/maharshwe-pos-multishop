@@ -15,7 +15,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-5';
+const SCRIPT_VERSION = 'repair-sync-6';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -86,6 +86,12 @@ function connectToPos() {
     throw new Error('POS က လက်မခံပါ: ' + body.slice(0, 300));
   }
 
+  // A leftover property that disagrees with the pasted code is only a trap for
+  // whoever reads it next.
+  const props = PropertiesService.getScriptProperties();
+  const stale = props.getProperty('POS_SYNC_SECRET');
+  if (stale && stale !== POS_CONFIG.SYNC_SECRET) props.deleteProperty('POS_SYNC_SECRET');
+
   installRepairEditTrigger();
   Logger.log('✅ ချိတ်ပြီးပါပြီ။ POS မှာ စစ်ဆေးမည် နှိပ်ကြည့်ပါ။');
   return '✅ ချိတ်ပြီးပါပြီ — tab ' + tabs.length + ' ခု တွေ့ပါတယ်။';
@@ -105,10 +111,8 @@ function installRepairEditTrigger() {
 }
 
 function secretFingerprint() {
-  let value = PropertiesService.getScriptProperties().getProperty('POS_SYNC_SECRET');
-  if (!value && POS_CONFIG.SYNC_SECRET && POS_CONFIG.SYNC_SECRET.indexOf('__') !== 0) {
-    value = POS_CONFIG.SYNC_SECRET;
-  }
+  let value = '';
+  try { value = getRequiredProperty('POS_SYNC_SECRET'); } catch (error) { return ''; }
   if (!value) return '';
   const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8);
   return bytes.slice(0, 4).map(function (b) {
@@ -310,11 +314,12 @@ function ensureHeaders(sheet, incomingHeaders) {
   return headers;
 }
 
+// The POS fills these in when it generates the code, so the copy that was just
+// pasted is what the shop means to use. A Script Property left over from an
+// earlier setup used to win over it — which is how a freshly pasted script kept
+// answering with a secret nobody could see. Properties are the fallback now,
+// for a copy whose placeholders were never substituted.
 function getRequiredProperty(name) {
-  // Script Properties always win — update POS_SYNC_SECRET here without re-deploying the script
-  var fromProps = PropertiesService.getScriptProperties().getProperty(name);
-  if (fromProps) return fromProps;
-  // Fall back to values embedded at deploy time (POS Integrations page → Copy Apps Script Code)
   var configMap = {
     POS_BASE_URL: POS_CONFIG.BASE_URL,
     POS_SHOP_SLUG: POS_CONFIG.SHOP_SLUG,
@@ -322,7 +327,11 @@ function getRequiredProperty(name) {
   };
   var configured = configMap[name];
   if (configured && configured.indexOf('__') !== 0) return configured;
-  throw new Error(name + ' is not configured. Open Apps Script → Project Settings → Script Properties and add ' + name);
+
+  var fromProps = PropertiesService.getScriptProperties().getProperty(name);
+  if (fromProps) return fromProps;
+
+  throw new Error(name + ' is not configured. Copy the code again from the POS Integrations page.');
 }
 
 function jsonResponse(data) {
