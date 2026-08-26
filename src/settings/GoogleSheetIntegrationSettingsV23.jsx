@@ -59,6 +59,7 @@ export default function GoogleSheetIntegrationSettingsV23() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState('');
   const [message, setMessage] = useState('');
+  const [diagnosis, setDiagnosis] = useState(null);
   const effectiveShopSlug = shop?.slug || shop?.shopSlug || fallbackShopSlug || '';
 
   const repairPrefix = shop?.repairPrefix || shop?.business?.repairPrefix || '';
@@ -158,169 +159,157 @@ export default function GoogleSheetIntegrationSettingsV23() {
     }
   };
 
+  const diagnose = async () => {
+    setTesting('CHECK');
+    setMessage('');
+    try {
+      const response = await apiFetch('/api/project-settings/integrations/google-sheet/diagnose', { method: 'POST', body: {} });
+      setDiagnosis(response);
+    } catch (error) {
+      setMessage(error.message || 'စစ်ဆေးမှု မအောင်မြင်ပါ');
+    } finally {
+      setTesting('');
+    }
+  };
+
   if (!canManage) return null;
 
-  return <section className="project-operations-card">
-    <header>
+  const CHECK_LABELS = {
+    sheet: 'Google Sheet link ထည့်ပြီး',
+    url: 'Web App URL ထည့်ပြီး',
+    enabled: 'Live Sync ဖွင့်ထား',
+    tab: 'ဖုန်းပြင် စာရင်း tab သတ်မှတ်ပြီး',
+    reach: 'Apps Script က ပြန်ဖြေတယ်',
+    secret: 'Secret နှစ်ဖက် ကိုက်ညီ',
+    version: 'Script code အသစ်',
+  };
+  const allGood = Boolean(diagnosis?.checks?.length) && diagnosis.checks.every((check) => check.ok);
+
+  return <section className="project-operations-card gsheet-card">
+    <header className="gsheet-head">
       <div>
-        <Globe2 size={23}/>
-        <span>
-          <b>Google Sheet Configure</b>
-          <small>Apps Script Code တစ်ခုပဲ Copy လုပ်ပါ။ Web App URL တစ်ခုပဲ paste လုပ်ရုံနဲ့ ချိတ်နိုင်ပါတယ်။</small>
-        </span>
+        <h3><Globe2 size={18}/> Google Sheet ချိတ်ဆက်ခြင်း</h3>
+        <p>ဖုန်းပြင် ဘောက်ချာနဲ့ ရောင်းအား မှတ်တမ်းတွေကို ဆိုင်ရဲ့ Google Sheet ထဲ တိုက်ရိုက် ရေးပါတယ်။</p>
       </div>
-      {loading ? <Loader2 className="project-operations-spin" size={20}/> : <ShieldCheck size={20}/>}
+      <span className={`gsheet-pill ${allGood ? 'good' : diagnosis ? 'bad' : ''}`}>
+        {allGood ? '✅ ချိတ်ပြီး' : diagnosis ? '⚠️ ပြင်စရာ ရှိတယ်' : '— မစစ်ရသေး'}
+      </span>
     </header>
 
-    {message ? <div className="project-operations-message">{message}</div> : null}
-
-    <div className="project-google-guide">
-      <div>
-        <b>ချိတ်ဆက်နည်း — တစ်ကြိမ်ပဲ လုပ်ရပါမယ်</b>
-        <p style={{ margin: '6px 0 10px', fontSize: 12.5, lineHeight: 1.7 }}>
-          Sheet မှာ Apps Script တစ်ခု <b>ရှိပြီးသားဆိုရင်</b> (ဥပမာ Telegram bot) —
-          အဲဒီ script ထဲကို <b>လုံးဝ မထည့်ပါနဲ့</b>။ <code>doPost</code> ချင်း ထပ်ပြီး
-          တစ်ခုက ရပ်သွားပါမယ်။ အောက်က အဆင့်တွေက သီးခြား project အသစ် ဆောက်တာမို့
-          ရှိပြီးသား script ကို မထိပါဘူး။
-        </p>
-        <ol>
-          <li>
-            <b>Google Sheet Link</b> ကွက်ထဲ sheet ရဲ့ link ကို ကူးထည့်ပြီး
-            <b> Save Integration</b> နှိပ်ပါ။
-          </li>
-          <li>
-            <a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> →
-            <b> New project</b> (Sheet ထဲက Extensions ကနေ <b>မဝင်ပါနဲ့</b>)။
-          </li>
-          <li>
-            <b>Copy Apps Script Code</b> နှိပ် → project အသစ်ထဲက စာအားလုံး ဖျက် → paste → 💾 <b>Save</b>။
-          </li>
-          <li>
-            Apps Script → ⚙️ <b>Project Settings → Script properties → Add script property</b>:<br/>
-            <code>POS_SYNC_SECRET</code> = အောက်က <b>Copy Secret</b> နဲ့ ကူးထားတာ (လက်နဲ့ မရိုက်ပါနဲ့)
-            → <b>Save script properties</b>။
-          </li>
-          <li>
-            <b>Deploy → New deployment → Web app</b> → <i>Execute as: Me</i> ·
-            <i>Who has access: Anyone</i> → <b>Deploy</b> → ခွင့်ပြုချက် တောင်းရင်
-            <i>Advanced → Go to … (unsafe) → Allow</i>။
-          </li>
-          <li>
-            ရလာတဲ့ <b>/exec URL</b> ကို အောက်က <b>Google Apps Script Web App URL</b> ကွက်ထဲ paste →
-            <b>Enable</b> ဖွင့် → <b>Save Integration</b> → <b>Test POST</b> နှိပ်ပါ။
-          </li>
-          <li>
-            Apps Script ← ပြန်သွား → ⏰ <b>Triggers → Add trigger</b>:
-            function <code>pushRepairEditsToPos</code> · event source <i>From spreadsheet</i> ·
-            event type <b>On edit</b> → Save။
-          </li>
-        </ol>
-
-        <b style={{ display: 'block', marginTop: 12 }}>မှန်မမှန် စစ်နည်း</b>
-        <p style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.7 }}>
-          /exec URL ကို browser မှာ ဖွင့်ကြည့်ပါ။ <code>secretFingerprint</code> က
-          အောက်မှာပြထားတဲ့ <b>Secret Fingerprint</b> နဲ့ <b>တူရပါမယ်</b> — မတူရင်
-          Script Properties ထဲက secret လွဲနေတာမို့ ပြန်ကူးထည့်ပါ။
-          <code>version</code> က code အသစ်လား အဟောင်းလား ပြောပါတယ် — code ပြောင်းပြီးတိုင်း
-          <i> Deploy → Manage deployments → ✏️ → New version</i> လုပ်မှ /exec မှာ ပြောင်းပါမယ်။
-        </p>
-
-        <b style={{ display: 'block', marginTop: 12 }}>ဘယ်ဟာက ဘယ်ဘက်ကို သွားလဲ</b>
-        <ul style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.8 }}>
-          <li>ဘောက်ချာ print / status ပြောင်း / ဖျက် → Sheet မှာ လိုက်ပြောင်း</li>
-          <li>Sheet မှာ အတန်းအသစ် ထည့် → POS မှာ ဖုန်းပြင်မှတ်တမ်း အသစ် ဖြစ်လာ</li>
-          <li>Sheet မှာ status / ယူပြီး / စျေး ပြင် → POS မှာ လိုက်ပြောင်း</li>
+    {/* The setup used to be checked by opening a URL in another tab and
+        comparing a hash by eye. Every failure so far was one of these lines. */}
+    <div className="gsheet-check">
+      <div className="gsheet-check-top">
+        <b>အခြေအနေ စစ်ဆေးရန်</b>
+        <button type="button" onClick={diagnose} disabled={Boolean(testing)}>
+          {testing === 'CHECK' ? <Loader2 className="project-operations-spin" size={16}/> : <ShieldCheck size={16}/>} စစ်ဆေးမည်
+        </button>
+      </div>
+      {diagnosis ? (
+        <ul className="gsheet-check-list">
+          {diagnosis.checks.map((check) => (
+            <li key={check.key} className={check.ok ? 'ok' : 'no'}>
+              <span>{check.ok ? '✅' : '❌'}</span>
+              <b>{CHECK_LABELS[check.key] || check.key}</b>
+              {check.detail ? <small>{check.detail}</small> : null}
+            </li>
+          ))}
         </ul>
-        <p style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>
-          Secret ပြောင်းချင်ရင် Script Properties ထဲမှာပဲ ပြောင်းရင် ရပါတယ် — Apps Script ကို
-          re-deploy မလုပ်ရပါ။
-        </p>
-      </div>
-
-      <div className="project-google-guide-actions">
-        <button type="button" onClick={() => notifyCopy(configuredAppsScript, 'Apps Script code copied')}><Code2 size={16}/> Copy Apps Script Code</button>
-        <button type="button" onClick={() => notifyCopy(configuredPullScript, 'Pull Sync Script copied')}><Code2 size={16}/> Copy Pull Sync Script</button>
-      </div>
+      ) : (
+        <p className="gsheet-hint">စစ်ဆေးမည် နှိပ်လိုက်ရင် ဘာလိုသေးလဲ တစ်ခုချင်း ပြပါမယ်။</p>
+      )}
     </div>
 
-    <div className="project-google-copy-grid">
-      <CopyBox label="Shop Slug" value={effectiveShopSlug || 'YOUR_SHOP_SLUG'} onCopy={notifyCopy}/>
-      {form.secret ? <CopyBox label="Shared Secret → Script Properties: POS_SYNC_SECRET" value={form.secret} buttonLabel="Copy Secret" onCopy={notifyCopy}/> : null}
-      {form.secretFingerprint ? <article className="project-google-copy-box">
-        <span>Secret Fingerprint</span>
-        <code>{form.secretFingerprint}</code>
-        <small style={{ opacity: 0.7 }}>
-          Apps Script URL ကို browser မှာ ဖွင့်ကြည့်ပါ။ <b>secretFingerprint</b> က ဒီအတိုင်း တူမှ
-          POS_SYNC_SECRET မှန်ပါတယ်။ မတူရင် Copy Secret နဲ့ ပြန်ကူးပြီး Script Properties မှာ ပြန်ထည့်ပါ။
-        </small>
-      </article> : null}
-    </div>
+    <form className="gsheet-form" onSubmit={save}>
+      <div className="gsheet-grid">
+        <label>
+          <span>၁။ Google Sheet link</span>
+          <input type="text" value={form.sheetId || ''} placeholder="https://docs.google.com/spreadsheets/d/..."
+            onChange={(event) => update({ sheetId: event.target.value })}/>
+          <small>ဆိုင်ရဲ့ sheet ကို ဖွင့်ပြီး လိပ်စာကို ကူးထည့်ပါ။</small>
+        </label>
 
-    <form className="project-google-form" onSubmit={save}>
-      <label className="project-google-toggle">
+        <label>
+          <span>၂။ ဖုန်းပြင် စာရင်း tab နာမည်</span>
+          <input type="text" value={form.repairSheetTab || ''} placeholder={shop?.name || 'tab နာမည်'}
+            onChange={(event) => update({ repairSheetTab: event.target.value })}/>
+          <small>ဘောက်ချာတွေ ရေးမယ့် tab။ ဘောက်ချာနံပါတ် prefix — <b>{repairPrefix || 'RP'}</b></small>
+        </label>
+
+        <label className="span-2">
+          <span>၃။ Apps Script Web App URL</span>
+          <input type="url" value={form.postUrl || ''} placeholder="https://script.google.com/macros/s/.../exec"
+            onChange={(event) => update({ postUrl: event.target.value, getUrl: event.target.value })}/>
+          <small>အောက်က အဆင့်တွေ လုပ်ပြီးမှ ရလာမယ့် URL ပါ။</small>
+        </label>
+      </div>
+
+      <label className="gsheet-toggle">
         <span>
-          <b>Enable Google Sheet Live Sync</b>
-          <small>Sale, Money Service, Income, Expense, Stock, Repair Records and Audit events are sent automatically.</small>
+          <b>Live Sync ဖွင့်မည်</b>
+          <small>ဘောက်ချာ၊ ရောင်းအား၊ ဝင်ငွေ၊ အသုံးစရိတ်၊ ကုန်ပစ္စည်း — အလိုအလျောက် ပို့ပါမယ်။</small>
         </span>
         <input type="checkbox" checked={form.enabled} onChange={(event) => update({ enabled: event.target.checked })}/>
       </label>
 
-      <label>
-        <span>Google Apps Script Web App URL</span>
-        <input type="url" value={form.postUrl || ''} onChange={(event) => update({ postUrl: event.target.value, getUrl: event.target.value })} placeholder="https://script.google.com/macros/s/.../exec"/>
-      </label>
-
-      <label>
-        <span>Google Sheet Link</span>
-        <input
-          type="text"
-          value={form.sheetId || ''}
-          onChange={(event) => update({ sheetId: event.target.value })}
-          placeholder="https://docs.google.com/spreadsheets/d/..."
-        />
-        <small style={{ opacity: 0.7 }}>
-          Sheet ရဲ့ link ကို ကူးထည့်ပါ။ ဒါဆိုရင် Apps Script ကို sheet နဲ့ တွဲမထားဘဲ
-          သီးခြား project အနေနဲ့ ထားလို့ရပါတယ် — sheet မှာ script တစ်ခု ရှိပြီးသားဆိုရင်
-          ဒီနည်းက အဲဒီ script ကို မထိခိုက်ပါဘူး။
-        </small>
-      </label>
-
-      <label>
-        <span>ဖုန်းပြင် စာရင်း Sheet Tab</span>
-        <input
-          type="text"
-          value={form.repairSheetTab || ''}
-          onChange={(event) => update({ repairSheetTab: event.target.value })}
-          placeholder={shop?.name || 'Sheet tab name'}
-        />
-        <small style={{ opacity: 0.7 }}>
-          ဘောက်ချာ print လုပ်တိုင်း ဒီ tab ထဲကို row အသစ်တစ်ကြောင်း ရေးပါမယ်။
-          ဗလာထားရင် ဆိုင်နာမည် ({shop?.name || '-'}) နဲ့ တူတဲ့ tab ကို ရှာပါမယ်။
-          {repairPrefix ? ` ဘောက်ချာနံပါတ် prefix — ${repairPrefix}` : ''}
-        </small>
-      </label>
-
-      <label>
-        <span>Timeout (milliseconds)</span>
-        <input type="number" min="1000" max="60000" value={form.timeoutMs || 10000} onChange={(event) => update({ timeoutMs: Number(event.target.value) })}/>
-      </label>
-
-      <div className="project-google-status">
-        <div><CheckCircle2 size={18}/><span><small>Apps Script</small><b>{form.secret ? 'Ready' : 'Preparing'}</b></span></div>
-        <div><Send size={18}/><span><small>Pending</small><b>{counts.PENDING || 0}</b></span></div>
-        <div><RefreshCw size={18}/><span><small>Failed</small><b>{counts.FAILED || 0}</b></span></div>
-      </div>
-
-      <div className="project-google-tabs"><b>Synced Tabs</b><div>{tabs.map((tab) => <span key={tab}>{tab}</span>)}</div></div>
-
-      {form.lastTest ? <div className={`project-google-test-result ${form.lastTest.ok ? 'good' : 'bad'}`}><b>{form.lastTest.method} · HTTP {form.lastTest.status || 0}</b><span>{form.lastTest.ok ? 'Connection successful' : 'Connection failed'}</span><small>{form.lastTest.testedAt}</small><pre>{form.lastTest.responsePreview || '-'}</pre></div> : null}
-
-      <div className="project-google-actions">
-        <button className="primary" disabled={saving}>{saving ? <Loader2 className="project-operations-spin" size={17}/> : <Save size={17}/>} Save Integration</button>
-        <button type="button" onClick={() => test('POST')} disabled={Boolean(testing)}>{testing === 'POST' ? <Loader2 className="project-operations-spin" size={17}/> : <Send size={17}/>} Test POST</button>
-        <button type="button" onClick={() => test('GET')} disabled={Boolean(testing)}>{testing === 'GET' ? <Loader2 className="project-operations-spin" size={17}/> : <RefreshCw size={17}/>} Test GET</button>
-        <button type="button" onClick={retry} disabled={Boolean(testing)}>{testing === 'RETRY' ? <Loader2 className="project-operations-spin" size={17}/> : <RefreshCw size={17}/>} Retry Pending</button>
+      <div className="gsheet-actions">
+        <button className="primary" disabled={saving}>{saving ? <Loader2 className="project-operations-spin" size={17}/> : <Save size={17}/>} သိမ်းမည်</button>
+        <button type="button" onClick={() => test('POST')} disabled={Boolean(testing)}>{testing === 'POST' ? <Loader2 className="project-operations-spin" size={17}/> : <Send size={17}/>} စမ်းပို့ကြည့်မည်</button>
+        <button type="button" onClick={retry} disabled={Boolean(testing)}>{testing === 'RETRY' ? <Loader2 className="project-operations-spin" size={17}/> : <RefreshCw size={17}/>} ကျန်နေတာ ပြန်ပို့</button>
       </div>
     </form>
+
+    <div className="gsheet-copy">
+      <button type="button" className="primary" onClick={() => notifyCopy(configuredAppsScript, 'Script code ကူးပြီးပါပြီ')}>
+        <Code2 size={17}/> Script Code ကူးမည်
+      </button>
+      {form.secret
+        ? <CopyBox label="Secret — Script Properties ထဲ POS_SYNC_SECRET" value={form.secret} buttonLabel="Secret ကူးမည်" onCopy={notifyCopy}/>
+        : <article className="project-google-copy-box"><span>Secret</span><code>ပြင်ဆင်နေပါသည် — စာမျက်နှာ refresh လုပ်ပါ</code></article>}
+    </div>
+
+    <details className="gsheet-steps">
+      <summary>ချိတ်ဆက်နည်း — တစ်ကြိမ်ပဲ လုပ်ရပါမယ်</summary>
+      <p className="gsheet-warn">
+        Sheet မှာ Apps Script တစ်ခု <b>ရှိပြီးသားဆိုရင်</b> (ဥပမာ Telegram bot) အဲဒီ script ထဲ
+        <b> လုံးဝ မထည့်ပါနဲ့</b> — <code>doPost</code> ချင်း ထပ်ပြီး တစ်ခုက ရပ်သွားပါမယ်။
+        အောက်က အဆင့်တွေက <b>သီးခြား project အသစ်</b> ဆောက်တာမို့ ရှိပြီးသား script ကို မထိပါဘူး။
+      </p>
+      <ol>
+        <li>အပေါ်က <b>Google Sheet link</b> ထည့် → <b>သိမ်းမည်</b></li>
+        <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noreferrer">script.google.com</a> → <b>New project</b></li>
+        <li><b>Script Code ကူးမည်</b> → project အသစ်ထဲ အကုန်ဖျက်ပြီး paste → 💾 Save</li>
+        <li>⚙️ <b>Project Settings → Script properties → Add script property</b><br/>
+          <code>POS_SYNC_SECRET</code> = <b>Secret ကူးမည်</b> နဲ့ ကူးထားတာ → Save script properties</li>
+        <li><b>Deploy → New deployment → Web app</b> · Execute as: <b>Me</b> · Access: <b>Anyone</b> → Deploy</li>
+        <li>ရလာတဲ့ <b>/exec URL</b> ကို အပေါ်မှာ ထည့် → Live Sync ဖွင့် → <b>သိမ်းမည်</b> → <b>စစ်ဆေးမည်</b></li>
+        <li>Apps Script → ⏰ <b>Triggers → Add trigger</b> · <code>pushRepairEditsToPos</code> · From spreadsheet · <b>On edit</b></li>
+      </ol>
+      <p className="gsheet-hint">
+        Code ပြောင်းတိုင်း <b>Deploy → Manage deployments → ✏️ → New version</b> လုပ်မှ အလုပ်လုပ်ပါမယ်။
+        Secret ပြောင်းရင်တော့ Script Properties ထဲမှာပဲ ပြောင်းရင် ရပါတယ်။
+      </p>
+    </details>
+
+    <details className="gsheet-steps">
+      <summary>ဘယ်ဟာက ဘယ်ဘက်ကို သွားလဲ</summary>
+      <ul>
+        <li>POS မှာ ဘောက်ချာ print → Sheet မှာ အတန်းအသစ်</li>
+        <li>POS မှာ status ပြောင်း / ဖျက် → Sheet မှာ လိုက်ပြောင်း / လိုက်ပျက်</li>
+        <li>Sheet မှာ အတန်းအသစ် ထည့် → POS မှာ ဖုန်းပြင် မှတ်တမ်းအသစ်</li>
+        <li>Sheet မှာ status / ယူပြီး / စျေး ပြင် → POS မှာ လိုက်ပြောင်း</li>
+      </ul>
+      <p className="gsheet-hint">ခင်ဗျား လက်နဲ့ ဖြည့်ထားတဲ့ ကွက်တွေကို POS က ဗလာနဲ့ မဖျက်ပါဘူး။</p>
+    </details>
+
+    <div className="gsheet-foot">
+      <span>ပို့ရန် ကျန် <b>{counts.PENDING || 0}</b></span>
+      <span>မအောင်မြင် <b>{counts.FAILED || 0}</b></span>
+      {form.lastTest ? <span>နောက်ဆုံးစမ်းသပ် <b>{form.lastTest.ok ? 'အောင်မြင်' : 'မအောင်မြင်'}</b></span> : null}
+      <button type="button" onClick={() => notifyCopy(configuredPullScript, 'Pull Sync Script ကူးပြီးပါပြီ')}>နေ့ချုပ် Script</button>
+    </div>
+
+    {message ? <div className="project-google-message">{message}</div> : null}
+    {loading ? <div className="project-google-message"><Loader2 className="project-operations-spin" size={15}/> ဖတ်နေပါသည်…</div> : null}
   </section>;
 }

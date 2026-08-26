@@ -18,6 +18,19 @@ const DATASETS = {
 };
 
 const GOOGLE_HOSTS = new Set(['script.google.com', 'script.googleusercontent.com']);
+
+// Read from the script the POS hands out, so this never drifts from what a shop
+// would get by pressing Copy today.
+const SCRIPT_VERSION = (() => {
+  try {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'integrations', 'google-apps-script', 'MaharShwePosSync.gs'), 'utf8');
+    const match = source.match(/SCRIPT_VERSION\s*=\s*'([^']+)'/);
+    return match ? match[1] : '';
+  } catch {
+    return '';
+  }
+})();
 const configSchema = z.object({
   enabled: z.boolean().default(false),
   postUrl: z.string().trim().max(2000).optional().default(''),
@@ -402,6 +415,64 @@ function attachGoogleSheetProjectSettingsApi(app) {
       return res.json({ ok: true, config: publicConfig(config), message: 'Google Sheet integration saved in PostgreSQL' });
     } catch (error) {
       return res.status(error.status || 500).json({ ok: false, message: error.message || 'Google Sheet integration save failed' });
+    }
+  });
+
+  // Setting this up means holding a hash and a version number side by side in
+  // two browser tabs and squinting. Every failure so far has been one of the
+  // two, so the POS asks the script itself and says which.
+  app.post('/api/project-settings/integrations/google-sheet/diagnose', ...write, async (req, res) => {
+    try {
+      const config = await ensureSecret(req.auth.shopId);
+      const checks = [];
+      const add = (key, ok, detail) => checks.push({ key, ok, detail: detail || '' });
+
+      add('url', Boolean(config.postUrl), config.postUrl ? '' : 'Web App URL မထည့်ရသေးပါ');
+      add('enabled', config.enabled === true, config.enabled ? '' : 'Live Sync မဖွင့်ရသေးပါ');
+      add('sheet', Boolean(config.sheetId), config.sheetId ? '' : 'Google Sheet link မထည့်ရသေးပါ');
+      add('tab', Boolean(config.repairSheetTab), config.repairSheetTab ? '' : 'ဖုန်းပြင် စာရင်း tab နာမည် မထည့်ရသေးပါ');
+
+      if (!config.postUrl || typeof fetch !== 'function') {
+        return res.json({ ok: true, reachable: false, checks });
+      }
+
+      let info = null;
+      let failure = '';
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        const response = await fetch(config.postUrl, { redirect: 'follow', signal: controller.signal });
+        clearTimeout(timeout);
+        const text = await response.text();
+        try {
+          info = JSON.parse(text);
+        } catch {
+          failure = text.slice(0, 160);
+        }
+      } catch (error) {
+        failure = error.name === 'AbortError' ? 'အချိန်ကုန်သွားပါပြီ' : error.message;
+      }
+
+      if (!info) {
+        add('reach', false, failure || 'Apps Script က မဖြေပါ');
+        return res.json({ ok: true, reachable: false, checks });
+      }
+      add('reach', true, String(info.service || ''));
+
+      const expected = secretFingerprint(config.secret);
+      const actual = String(info.secretFingerprint || '');
+      add('secret', Boolean(actual) && actual === expected,
+        !actual ? 'Script Properties မှာ POS_SYNC_SECRET မထည့်ရသေးပါ'
+          : actual === expected ? '' : `Script မှာ ${actual} · POS မှာ ${expected}`);
+
+      const version = String(info.version || '');
+      add('version', version === SCRIPT_VERSION,
+        !version ? 'Code အဟောင်း — version မပါပါ'
+          : version === SCRIPT_VERSION ? version : `Script မှာ ${version} · အသစ်က ${SCRIPT_VERSION}`);
+
+      return res.json({ ok: true, reachable: true, version, expectedVersion: SCRIPT_VERSION, checks });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'စစ်ဆေးမှု မအောင်မြင်ပါ' });
     }
   });
 

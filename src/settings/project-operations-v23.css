@@ -32,3 +32,67 @@
 .project-operations-active-title{padding:8px 11px!important}
 @media(max-width:760px){.project-operations-tabs{grid-template-columns:1fr!important}.project-operations-tabs button{justify-content:flex-start!important}}
 
+
+/* Google Sheet integration — the check list is the point of the screen, so it
+   sits above the fields rather than under them. */
+.gsheet-card{display:flex;flex-direction:column;gap:14px}
+.gsheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.gsheet-head h3{margin:0;display:flex;align-items:center;gap:8px;font-size:17px}
+.gsheet-head p{margin:5px 0 0;font-size:12.5px;line-height:1.65;color:var(--text-muted,#64748b);max-width:640px}
+.gsheet-pill{flex:0 0 auto;padding:6px 11px;border-radius:999px;font-size:12.5px;font-weight:800;
+  background:var(--surface-2,#f1f5f9);color:var(--text-muted,#64748b)}
+.gsheet-pill.good{background:#dcfce7;color:#15803d}
+.gsheet-pill.bad{background:#fef3c7;color:#a16207}
+
+.gsheet-check{border:1px solid var(--border,#e2e8f0);border-radius:13px;padding:12px;background:var(--surface-2,#f8fafc)}
+.gsheet-check-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gsheet-check-top button{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:9px;
+  border:1px solid var(--border,#dce5ef);background:var(--surface,#fff);color:inherit;font-weight:800;cursor:pointer}
+.gsheet-check-top button:disabled{opacity:.55;cursor:wait}
+.gsheet-check-list{list-style:none;margin:11px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+.gsheet-check-list li{display:grid;grid-template-columns:22px 1fr;gap:4px 8px;align-items:baseline;font-size:13px}
+.gsheet-check-list li small{grid-column:2;color:var(--text-muted,#64748b);line-height:1.5}
+.gsheet-check-list li.no b{color:#b91c1c}
+.gsheet-hint{margin:9px 0 0;font-size:12.5px;line-height:1.65;color:var(--text-muted,#64748b)}
+
+.gsheet-form{display:flex;flex-direction:column;gap:12px}
+.gsheet-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gsheet-grid .span-2{grid-column:1/3}
+.gsheet-form label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:800}
+.gsheet-form input[type=text],.gsheet-form input[type=url]{height:42px;padding:0 11px;border-radius:9px;
+  border:1px solid var(--border,#dce5ef);background:var(--input-bg,#fff);color:inherit;font:inherit;font-weight:500}
+.gsheet-form small{font-weight:500;color:var(--text-muted,#64748b);line-height:1.55}
+.gsheet-toggle{display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;
+  gap:14px;padding:11px 12px;border:1px solid var(--border,#e2e8f0);border-radius:11px}
+.gsheet-toggle input{width:20px;height:20px;flex:0 0 auto}
+.gsheet-actions{display:flex;gap:9px;flex-wrap:wrap}
+.gsheet-actions button{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:10px;
+  border:1px solid var(--border,#dce5ef);background:var(--surface,#fff);color:inherit;font-weight:800;cursor:pointer}
+.gsheet-actions button.primary{background:#f59e0b;border-color:#f59e0b;color:#fff}
+.gsheet-actions button:disabled{opacity:.55;cursor:not-allowed}
+
+.gsheet-copy{display:flex;gap:11px;align-items:stretch;flex-wrap:wrap}
+.gsheet-copy>button{display:inline-flex;align-items:center;gap:8px;padding:0 16px;min-height:56px;border-radius:11px;
+  border:1px solid #f59e0b;background:#f59e0b;color:#fff;font-weight:900;cursor:pointer;white-space:nowrap}
+.gsheet-copy>article{flex:1;min-width:260px}
+
+.gsheet-steps{border:1px solid var(--border,#e2e8f0);border-radius:11px;padding:11px 12px}
+.gsheet-steps summary{font-weight:800;cursor:pointer;font-size:13.5px}
+.gsheet-steps ol,.gsheet-steps ul{margin:10px 0 0;padding-left:20px;font-size:12.5px;line-height:1.9}
+.gsheet-steps code{padding:1px 5px;border-radius:5px;background:var(--surface-2,#f1f5f9);font-size:12px}
+.gsheet-warn{margin:10px 0 0;padding:9px 11px;border-radius:9px;background:#fef3c7;color:#7c2d12;
+  font-size:12.5px;line-height:1.7}
+.dark .gsheet-warn{background:#3b2f14;color:#fde68a}
+
+.gsheet-foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-top:11px;
+  border-top:1px solid var(--border,#edf2f7);font-size:12.5px;color:var(--text-muted,#64748b)}
+.gsheet-foot b{color:inherit;font-size:14px}
+.gsheet-foot button{margin-left:auto;padding:7px 12px;border-radius:9px;border:1px solid var(--border,#dce5ef);
+  background:transparent;color:inherit;font-weight:700;cursor:pointer;font-size:12.5px}
+
+@media(max-width:760px){
+  .gsheet-grid{grid-template-columns:1fr}
+  .gsheet-grid .span-2{grid-column:auto}
+  .gsheet-copy>button{width:100%;justify-content:center}
+  .gsheet-foot button{margin-left:0}
+}
