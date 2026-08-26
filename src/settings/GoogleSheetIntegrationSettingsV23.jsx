@@ -12,6 +12,7 @@ const EMPTY = {
   getUrl: '',
   secret: '',
   timeoutMs: 10000,
+  repairSheetTab: '',
   secretConfigured: false,
   secretMasked: '',
 };
@@ -121,6 +122,7 @@ export default function GoogleSheetIntegrationSettingsV23() {
           getUrl: form.postUrl,
           secret: form.secret,
           timeoutMs: Number(form.timeoutMs || 10000),
+          repairSheetTab: form.repairSheetTab || '',
         },
       });
       setForm((current) => ({ ...current, ...(response.config || {}), secret: response.config?.secret || current.secret, getUrl: response.config?.postUrl || current.postUrl }));
@@ -215,6 +217,21 @@ export default function GoogleSheetIntegrationSettingsV23() {
       <label>
         <span>Google Apps Script Web App URL</span>
         <input type="url" value={form.postUrl || ''} onChange={(event) => update({ postUrl: event.target.value, getUrl: event.target.value })} placeholder="https://script.google.com/macros/s/.../exec"/>
+      </label>
+
+      <label>
+        <span>ဖုန်းပြင် စာရင်း Sheet Tab</span>
+        <input
+          type="text"
+          value={form.repairSheetTab || ''}
+          onChange={(event) => update({ repairSheetTab: event.target.value })}
+          placeholder={shop?.name || 'Sheet tab name'}
+        />
+        <small style={{ opacity: 0.7 }}>
+          ဘောက်ချာ print လုပ်တိုင်း ဒီ tab ထဲကို row အသစ်တစ်ကြောင်း ရေးပါမယ်။
+          ဗလာထားရင် ဆိုင်နာမည် ({shop?.name || '-'}) နဲ့ တူတဲ့ tab ကို ရှာပါမယ်။
+          {repairPrefix ? ` ဘောက်ချာနံပါတ် prefix — ${repairPrefix}` : ''}
+        </small>
       </label>
 
       <label>

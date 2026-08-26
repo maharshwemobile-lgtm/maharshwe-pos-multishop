@@ -17,12 +17,17 @@ function plainObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
-// One workbook, a tab per branch. The shop says which tab is theirs; falling
-// back to the shop name matches how the tabs are already named.
+// One workbook, a tab per branch. The shop names its tab on the integration
+// screen; the shop name is only a fallback, and often the wrong one — Mahar
+// Shwe Mobile's tab is simply "Mahar".
 async function resolveSheetTab(shopId, shopName) {
   const row = await prisma.shopSettings.findFirst({ where: { shopId } }).catch(() => null);
   const settings = plainObject(row?.settings);
-  const configured = String(plainObject(settings.integrations).repairSheetTab || '').trim();
+  const configured = String(
+    plainObject(plainObject(settings.api).googleSheets).repairSheetTab
+    || plainObject(settings.integrations).repairSheetTab
+    || '',
+  ).trim();
   return configured || String(shopName || '').trim();
 }
 

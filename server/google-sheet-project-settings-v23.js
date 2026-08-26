@@ -21,6 +21,7 @@ const configSchema = z.object({
   getUrl: z.string().trim().max(2000).optional().default(''),
   secret: z.string().trim().max(500).optional().default(''),
   timeoutMs: z.coerce.number().int().min(1000).max(60000).default(10000),
+  repairSheetTab: z.string().trim().max(200).optional().default(''),
 });
 
 let runner = null;
@@ -107,6 +108,9 @@ async function loadConfig(shopId) {
     getUrl: clean(saved.getUrl, 2000),
     secret: clean(saved.secret, 500),
     timeoutMs: Math.min(60000, Math.max(1000, Number(saved.timeoutMs || 10000))),
+    // Which tab the repair book lives in. It is named for the branch — "Mahar",
+    // not the shop's full name — so it has to be told, not guessed.
+    repairSheetTab: clean(saved.repairSheetTab || object(raw.integrations).repairSheetTab, 200),
     lastTest: saved.lastTest || null,
     updatedAt: saved.updatedAt || null,
   };
@@ -124,6 +128,7 @@ async function saveConfig(shopId, userId, input, req) {
     getUrl: validateGoogleUrl(input.getUrl, false),
     secret,
     timeoutMs: input.timeoutMs,
+    repairSheetTab: clean(input.repairSheetTab, 200),
     updatedAt: new Date().toISOString(),
   };
   if (next.enabled && !next.secret) {
@@ -162,6 +167,7 @@ function publicConfig(config) {
     postUrl: config.postUrl,
     getUrl: config.getUrl,
     timeoutMs: config.timeoutMs,
+    repairSheetTab: config.repairSheetTab || '',
     secret: config.secret || '',
     secretConfigured: Boolean(config.secret),
     secretMasked: config.secret ? `••••••${config.secret.slice(-4)}` : '',
