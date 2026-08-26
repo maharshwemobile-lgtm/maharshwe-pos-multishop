@@ -76,7 +76,7 @@ function pullDailyClose(date) {
     fillBillerTable_(bd.rows, bd.totals);
     fillTransactionRecord_(date, cr);
     SpreadsheetApp.flush();
-    SpreadsheetApp.getActive().toast('Pull completed: ' + date, 'Mahar POS Sync', 5);
+    try { targetSpreadsheet_().toast('Pull completed: ' + date, 'Mahar POS Sync', 5); } catch (e) { Logger.log('Pull completed: ' + date); }
   } catch (err) {
     alert_('Sync failed:\n\n' + getErrorMessage_(err)); throw err;
   } finally { if (locked) lock.releaseLock(); }
@@ -99,8 +99,27 @@ function ensureSheetLayout_() {
   bil.getRange('A1:G1').setValues([['Biller Name','Opening','Refill','Sold','Closing','Check / Note','Adjustment / Variance']]);
 }
 
-function getOrCreateSheet_(name) { var ss = SpreadsheetApp.getActive(); return ss.getSheetByName(name) || ss.insertSheet(name); }
-function getSheet_(name) { var sh = SpreadsheetApp.getActive().getSheetByName(name); if (!sh) throw new Error('Sheet not found: ' + name); return sh; }
+// Bound to the sheet, getActive() is the workbook. In a standalone project it
+// is null and every call below fails on it — which is what "Pull Today" was
+// dying on. A script property names the workbook in that case, and if neither
+// is there the message says so instead of a null reference.
+function targetSpreadsheet_() {
+  var active = null;
+  try { active = SpreadsheetApp.getActive(); } catch (e) { active = null; }
+  if (active) return active;
+
+  var id = String(PropertiesService.getScriptProperties().getProperty('POS_PULL_SHEET_ID') || '').trim();
+  var match = id.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/);
+  if (match) id = match[1];
+  if (id) return SpreadsheetApp.openById(id);
+
+  throw new Error(
+    'ဤ script ကို Sheet နှင့် တွဲမထားပါ။ Sheet ကို ဖွင့်ပြီး Extensions → Apps Script မှ ထည့်ပါ၊ '
+    + 'သို့မဟုတ် Project Settings → Script properties တွင် POS_PULL_SHEET_ID = Sheet ၏ link ကို ထည့်ပါ။');
+}
+
+function getOrCreateSheet_(name) { var ss = targetSpreadsheet_(); return ss.getSheetByName(name) || ss.insertSheet(name); }
+function getSheet_(name) { var sh = targetSpreadsheet_().getSheetByName(name); if (!sh) throw new Error('Sheet not found: ' + name); return sh; }
 
 function normalizeBillerReport_(res) {
   var body = unwrap_(res), rows = body.rows || body.items || [];
@@ -166,5 +185,5 @@ function normalizeDate_(v) {
 function dateToSheetDate_(s) { return new Date(s+'T00:00:00+06:30'); }
 function pad2_(v) { return String(v).padStart(2,'0'); }
 function safeJson_(t) { try { return JSON.parse(t); } catch(e) { throw new Error('Invalid JSON: '+t.slice(0,200)); } }
-function alert_(msg) { try { SpreadsheetApp.getUi().alert(msg); } catch(e) { Logger.log(msg); } }
+function alert_(msg) { Logger.log(msg); try { SpreadsheetApp.getUi().alert(msg); } catch(e) {} }
 function getErrorMessage_(err) { return err&&err.message?err.message:String(err); }
