@@ -20,14 +20,25 @@ import './customer-repair-portal.css';
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 
+// The counter sets three states, so a six-step journey would leave four steps
+// no repair can ever reach. Customers see the two that actually move, and the
+// third — ပြင်မရ — replaces the bar rather than sitting in it.
 const STATUS_STEPS = [
-  ['RECEIVED', 'လက်ခံပြီး'],
-  ['CHECKING', 'စစ်ဆေးနေ'],
-  ['IN_PROGRESS', 'ပြင်ဆင်နေ'],
-  ['WAITING_PART', 'ပစ္စည်းစောင့်'],
+  ['IN_PROGRESS', 'ပြင်ရန်'],
   ['COMPLETED', 'ပြင်ပြီး'],
-  ['DELIVERED', 'ယူပြီး'],
 ];
+
+const STATUS_GROUP = {
+  RECEIVED: 'IN_PROGRESS',
+  CHECKING: 'IN_PROGRESS',
+  IN_PROGRESS: 'IN_PROGRESS',
+  WAITING_PART: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  DELIVERED: 'COMPLETED',
+  CANNOT_REPAIR: 'CANNOT_REPAIR',
+};
+
+const statusGroup = (status) => STATUS_GROUP[String(status || '')] || 'IN_PROGRESS';
 
 const STATUS_TEXT = {
   RECEIVED: 'ဖုန်းကို လက်ခံပြီးပါပြီ',
@@ -53,13 +64,14 @@ function formatDate(value, withTime = true) {
 }
 
 function StatusProgress({ status }) {
-  const completedIndex = STATUS_STEPS.findIndex(([value]) => value === status);
-  const cannotRepair = status === 'CANNOT_REPAIR';
+  const group = statusGroup(status);
+  const completedIndex = STATUS_STEPS.findIndex(([value]) => value === group);
+  const cannotRepair = group === 'CANNOT_REPAIR';
   return (
     <div className={`customer-status-progress ${cannotRepair ? 'cannot-repair' : ''}`}>
       {STATUS_STEPS.map(([value, label], index) => {
         const done = !cannotRepair && completedIndex >= index;
-        const active = value === status;
+        const active = value === group;
         return (
           <div key={value} className={`${done ? 'done' : ''} ${active ? 'active' : ''}`}>
             <span>{done ? <CheckCircle2 size={18} /> : index + 1}</span>

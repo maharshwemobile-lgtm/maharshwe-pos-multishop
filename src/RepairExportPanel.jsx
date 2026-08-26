@@ -48,7 +48,7 @@ export default function RepairExportPanel({ notify }) {
       <div className="repair-export-filters">
         <label>From<input type="date" value={exportFrom} onChange={(event) => setExportFrom(event.target.value)} /></label>
         <label>To<input type="date" value={exportTo} onChange={(event) => setExportTo(event.target.value)} /></label>
-        <label>Status<select value={exportStatus} onChange={(event) => setExportStatus(event.target.value)}><option value="">All Statuses</option><option value="RECEIVED">Received</option><option value="CHECKING">Checking</option><option value="IN_PROGRESS">In Progress</option><option value="WAITING_PART">Waiting Part</option><option value="COMPLETED">Completed</option><option value="CANNOT_REPAIR">Cannot Repair</option><option value="DELIVERED">Delivered</option></select></label>
+        <label>Status<select value={exportStatus} onChange={(event) => setExportStatus(event.target.value)}><option value="">အားလုံး</option><option value="IN_PROGRESS">ပြင်ရန် ⏳</option><option value="COMPLETED">ပြင်ပြီး ✅</option><option value="CANNOT_REPAIR">ပြင်မရ ❌</option></select></label>
       </div>
       <button type="button" className="export-button" onClick={exportCsv} disabled={exporting}>
         {exporting ? <Loader2 className="repair-finance-spin" size={18} /> : <Download size={18} />} Export CSV

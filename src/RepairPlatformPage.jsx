@@ -28,15 +28,30 @@ import {
 import { apiFetch, clearSession } from './phase2Api';
 import './repair-platform.css';
 
+// The shop keeps three states in its repair book and speaks in those words at
+// the counter. Seven were never used as seven — they were guessed at — so the
+// three are what is offered here, matching the sheet exactly.
 const STATUS_OPTIONS = [
-  ['RECEIVED', 'Received'],
-  ['CHECKING', 'Checking'],
-  ['IN_PROGRESS', 'In Progress'],
-  ['WAITING_PART', 'Waiting Part'],
-  ['COMPLETED', 'Completed'],
-  ['CANNOT_REPAIR', 'Cannot Repair'],
-  ['DELIVERED', 'Delivered'],
+  ['IN_PROGRESS', 'ပြင်ရန် ⏳'],
+  ['COMPLETED', 'ပြင်ပြီး ✅'],
+  ['CANNOT_REPAIR', 'ပြင်မရ ❌'],
 ];
+
+// Repairs recorded under the older states still have to read as one of the
+// three, in the list and in the timeline alike.
+const STATUS_GROUP = {
+  RECEIVED: 'IN_PROGRESS',
+  CHECKING: 'IN_PROGRESS',
+  IN_PROGRESS: 'IN_PROGRESS',
+  WAITING_PART: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  DELIVERED: 'COMPLETED',
+  CANNOT_REPAIR: 'CANNOT_REPAIR',
+};
+
+function statusGroup(status) {
+  return STATUS_GROUP[String(status || '')] || 'IN_PROGRESS';
+}
 
 const blankIntake = {
   customerName: '',
@@ -67,7 +82,8 @@ function formatDate(value) {
 }
 
 function statusLabel(status) {
-  return STATUS_OPTIONS.find(([value]) => value === status)?.[1] || String(status || '-').replaceAll('_', ' ');
+  if (!status) return '-';
+  return STATUS_OPTIONS.find(([value]) => value === statusGroup(status))?.[1] || String(status).replaceAll('_', ' ');
 }
 
 // The repair number is what a shop reads out over the phone and pastes into
@@ -109,7 +125,7 @@ function RepairIdCopy({ value, as: Tag = 'b', className = '' }) {
 }
 
 function StatusBadge({ status }) {
-  return <span className={`repair-status repair-status-${String(status || '').toLowerCase()}`}>{statusLabel(status)}</span>;
+  return <span className={`repair-status repair-status-${statusGroup(status).toLowerCase()}`}>{statusLabel(status)}</span>;
 }
 
 function SourceBadge({ job }) {
@@ -335,7 +351,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [statusForm, setStatusForm] = useState({ status: 'CHECKING', note: '', diagnosis: '', resolution: '', finalCost: '', warrantyUntil: '' });
+  const [statusForm, setStatusForm] = useState({ status: 'IN_PROGRESS', note: '', diagnosis: '', resolution: '', finalCost: '', warrantyUntil: '' });
   const [maharRepairId, setMaharRepairId] = useState('');
   const [deviceId, setDeviceId] = useState('');
 
@@ -344,7 +360,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
     try {
       const response = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(repairId)}`);
       setData(response);
-      setStatusForm((current) => ({ ...current, status: response.repair.status, finalCost: response.repair.finalCost || '' }));
+      setStatusForm((current) => ({ ...current, status: statusGroup(response.repair.status), finalCost: response.repair.finalCost || '' }));
     } catch (error) {
       notify('error', error.message || 'Repair detail failed');
     } finally {
@@ -421,7 +437,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
               <div className="repair-action-row">
                 {/* Only offered when the selection actually differs — a button that
                     saves the status it already has just invites doubt. */}
-                {statusForm.status !== repair.status ? (
+                {statusForm.status !== statusGroup(repair.status) ? (
                   <button type="button" className="primary" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
                     method: 'PATCH',
                     body: {
@@ -582,7 +598,7 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
   };
 
   const quickStatusUpdate = async (job, nextStatus) => {
-    if (!job?.id || !nextStatus || nextStatus === job.status) {
+    if (!job?.id || !nextStatus || nextStatus === statusGroup(job.status)) {
       setQuickStatusJobId(null);
       return;
     }
@@ -655,7 +671,7 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
           <table>
             <thead><tr><th>Repair ID</th><th>Customer</th><th>Device</th><th>Problem</th><th>Source</th><th>Status</th><th>Received</th><th>Amount</th></tr></thead>
             <tbody>
-              {(data.jobs || []).map((job) => <tr key={job.id} className="repair-click-row" onClick={() => setSelectedId(job.id)}><td onClick={(event) => event.stopPropagation()}><RepairIdCopy value={job.repairNumber} className="repair-id"/></td><td><b>{job.customerName}</b><small>{job.customerPhone || '-'}</small></td><td><b>{job.deviceBrand || ''} {job.deviceModel}</b><small>{job.identityMasked || 'No IMEI/Serial'}</small></td><td><span className="repair-problem">{job.problem}</span></td><td><SourceBadge job={job} /></td><td onClick={(event) => event.stopPropagation()}>{quickStatusJobId === job.id ? <select className="repair-status-inline-select" value={job.status} autoFocus disabled={quickStatusSavingId === job.id} onBlur={() => setQuickStatusJobId(null)} onChange={(event) => quickStatusUpdate(job, event.target.value)}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select> : <button type="button" className="repair-status-click" onClick={() => setQuickStatusJobId(job.id)} disabled={quickStatusSavingId === job.id}>{quickStatusSavingId === job.id ? <Loader2 className="repair-spin" size={15} /> : <StatusBadge status={job.status} />}</button>}</td><td>{formatDate(job.receivedAt)}</td><td><b>{money(job.finalCost || job.estimatedCost)}</b><small>Due {money(job.balanceDue)}</small></td></tr>)}
+              {(data.jobs || []).map((job) => <tr key={job.id} className="repair-click-row" onClick={() => setSelectedId(job.id)}><td onClick={(event) => event.stopPropagation()}><RepairIdCopy value={job.repairNumber} className="repair-id"/></td><td><b>{job.customerName}</b><small>{job.customerPhone || '-'}</small></td><td><b>{job.deviceBrand || ''} {job.deviceModel}</b><small>{job.identityMasked || 'No IMEI/Serial'}</small></td><td><span className="repair-problem">{job.problem}</span></td><td><SourceBadge job={job} /></td><td onClick={(event) => event.stopPropagation()}>{quickStatusJobId === job.id ? <select className="repair-status-inline-select" value={statusGroup(job.status)} autoFocus disabled={quickStatusSavingId === job.id} onBlur={() => setQuickStatusJobId(null)} onChange={(event) => quickStatusUpdate(job, event.target.value)}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select> : <button type="button" className="repair-status-click" onClick={() => setQuickStatusJobId(job.id)} disabled={quickStatusSavingId === job.id}>{quickStatusSavingId === job.id ? <Loader2 className="repair-spin" size={15} /> : <StatusBadge status={job.status} />}</button>}</td><td>{formatDate(job.receivedAt)}</td><td><b>{money(job.finalCost || job.estimatedCost)}</b><small>Due {money(job.balanceDue)}</small></td></tr>)}
               {!data.jobs?.length && !loading ? <tr><td colSpan="8"><div className="repair-empty"><Unplug size={28} /><span>No repair jobs found.</span></div></td></tr> : null}
             </tbody>
           </table>

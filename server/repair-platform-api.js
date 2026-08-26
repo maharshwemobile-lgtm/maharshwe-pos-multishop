@@ -11,6 +11,15 @@ const {
 const { ensureRepairPlatformSchema } = require('./repair-platform-schema');
 
 const REPAIR_STATUSES = ['RECEIVED', 'CHECKING', 'IN_PROGRESS', 'WAITING_PART', 'COMPLETED', 'CANNOT_REPAIR', 'DELIVERED'];
+// The counter works in three states. Filtering by one of them has to bring back
+// every older status that reads as that state, or a repair still marked
+// RECEIVED would vanish from the "ပြင်ရန်" list.
+const STATUS_FILTER_GROUPS = {
+  IN_PROGRESS: ['RECEIVED', 'CHECKING', 'IN_PROGRESS', 'WAITING_PART'],
+  COMPLETED: ['COMPLETED', 'DELIVERED'],
+  CANNOT_REPAIR: ['CANNOT_REPAIR'],
+};
+
 const PAYMENT_STATUSES = ['PENDING', 'PARTIAL', 'PAID', 'REFUNDED', 'VOIDED'];
 const PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
 const REPAIR_ID_PATTERN = /^[A-Z]{1,8}\d+$/i;
@@ -739,8 +748,17 @@ function attachRepairPlatformApi(app) {
       filters.push(`LOWER(CONCAT_WS(' ', r.repair_number, r.customer_name, r.customer_phone, r.device_brand, r.device_model, r.imei_serial, r.problem)) LIKE $${params.length}`);
     }
     if (status) {
-      params.push(status);
-      filters.push(`r.status = $${params.length}::"RepairStatus"`);
+      const group = STATUS_FILTER_GROUPS[status];
+      if (group) {
+        const slots = group.map((value) => {
+          params.push(value);
+          return `$${params.length}::"RepairStatus"`;
+        });
+        filters.push(`r.status IN (${slots.join(',')})`);
+      } else {
+        params.push(status);
+        filters.push(`r.status = $${params.length}::"RepairStatus"`);
+      }
     }
     if (sourceType) {
       params.push(sourceType);
