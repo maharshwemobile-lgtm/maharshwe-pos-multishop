@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { z } = require('zod');
 const { prisma } = require('./prisma');
+const { syncRepairToSheet } = require('./repair-sheet-sync');
 const {
   requireAuth,
   requireShopUser,
@@ -123,6 +124,9 @@ function attachRepairCustomerAdminApi(app) {
     if (!repair) throw new ApiError(404, 'Repair job not found');
     const access = await issuePublicAccess(repair, req.auth.userId);
     await addEvent({ shopId: repair.shopId, repairId: repair.id, eventType: 'PUBLIC_LINK_ROTATED', status: repair.status, userId: req.auth.userId, note: 'Customer repair status link created' });
+    // This endpoint is only hit while a voucher is being printed, which is the
+    // moment the shop wants the row in their sheet.
+    await syncRepairToSheet(repair.shopId, repair, 'VOUCHER_PRINTED');
     res.status(201).json({ ok: true, access });
   }));
 

@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
+const { syncRepairToSheet } = require('./repair-sheet-sync');
 const {
   requireAuth,
   requireShopUser,
@@ -921,7 +922,10 @@ function attachRepairPlatformApi(app) {
         payload: { from: repair.status, to: input.status, finalCost: input.finalCost, warrantyUntil: input.warrantyUntil || null },
       });
     });
-    res.json({ ok: true, message: 'Repair status updated', repair: await getRepair(prisma, req.auth.shopId, repair.id) });
+    const updated = await getRepair(prisma, req.auth.shopId, repair.id);
+    // Keep the shop's spreadsheet row in step with the status they just set.
+    await syncRepairToSheet(req.auth.shopId, updated, 'STATUS_CHANGED');
+    res.json({ ok: true, message: 'Repair status updated', repair: updated });
   }));
 
   app.post('/api/repair-platform/jobs/:id/device', ...write, wrap(async (req, res) => {

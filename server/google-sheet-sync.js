@@ -11,6 +11,9 @@ const DATASETS = {
   'daily-closing': { tab: 'Daily Closing' },
   stock: { tab: 'STOCK' },
   'user-audit': { tab: 'User audit' },
+  // The shop keeps a tab per branch in one workbook, so the row carries the tab
+  // it belongs in; this is only the fallback when none is configured.
+  'repair-voucher': { tab: 'Repairs' },
 };
 
 const SERVICE_PREFIX = '__SERVICE_INCOME__:';
