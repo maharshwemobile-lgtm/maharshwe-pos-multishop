@@ -46,7 +46,9 @@ async function syncRepairToSheet(shopId, repair, action = 'VOUCHER_PRINTED') {
       dataset: 'repair-voucher',
       action,
       entityId: mapped.key,
-      payload: { ...mapped, sheetTab },
+      // A deleted repair still has to reach the sheet, or the book keeps a row
+      // for a voucher the POS no longer has.
+      payload: { ...mapped, sheetTab, deleted: action === 'VOUCHER_DELETED' },
     });
   } catch (error) {
     console.warn('Repair sheet sync skipped:', error.message);

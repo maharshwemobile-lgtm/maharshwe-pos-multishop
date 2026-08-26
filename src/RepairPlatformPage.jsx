@@ -23,10 +23,11 @@ import {
   Smartphone,
   Unplug,
   PackageX,
+  Trash2,
   Wrench,
   X,
 } from 'lucide-react';
-import { apiFetch, clearSession } from './phase2Api';
+import { apiFetch, clearSession, getSession } from './phase2Api';
 import './repair-platform.css';
 
 // The shop keeps three states in its repair book and speaks in those words at
@@ -353,6 +354,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusForm, setStatusForm] = useState({ status: 'IN_PROGRESS', note: '', diagnosis: '', resolution: '', finalCost: '', warrantyUntil: '' });
+  const canDelete = ['SUPER_ADMIN', 'SHOP_ADMIN'].includes(getSession()?.user?.role || '');
   const [maharRepairId, setMaharRepairId] = useState('');
   const [deviceId, setDeviceId] = useState('');
 
@@ -454,6 +456,34 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
                   setPrintingVoucher(true);
                   try { await printRepairVoucherById(repair.repairNumber, notify); } finally { setPrintingVoucher(false); }
                 }}>{printingVoucher ? <Loader2 className="repair-spin" size={17} /> : <Printer size={17} />} ဘောက်ချာ ပြန်ထုတ်</button>
+
+                {/* Owner only, and behind a typed confirmation: this takes the
+                    repair's whole history with it and removes the sheet row. */}
+                {canDelete ? (
+                  <button type="button" className="repair-delete-button" disabled={saving} onClick={async () => {
+                    const typed = window.prompt(`${repair.repairNumber} ကို အပြီးဖျက်ပါမည်။
+
+ဤမှတ်တမ်းနှင့် သက်ဆိုင်သမျှ၊ Google Sheet ထဲက အတန်းပါ ပျက်သွားပါမည် — ပြန်ရလို့ မရပါ။
+
+အတည်ပြုရန် ဘောက်ချာနံပါတ် ရိုက်ထည့်ပါ:`);
+                    if (typed === null) return;
+                    if (String(typed).trim().toUpperCase() !== String(repair.repairNumber).toUpperCase()) {
+                      notify('error', 'ဘောက်ချာနံပါတ် မကိုက်ညီပါ — မဖျက်ပါ');
+                      return;
+                    }
+                    setSaving(true);
+                    try {
+                      const response = await apiFetch(`/api/repair-platform/jobs/${repair.id}`, { method: 'DELETE' });
+                      notify('success', response.message || 'ဖျက်ပြီးပါပြီ');
+                      onChanged?.();
+                      onClose();
+                    } catch (error) {
+                      handleError(error);
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}><Trash2 size={17} /> ဖျက်မည်</button>
+                ) : null}
 
                 {/* Collection is separate from the repair state, the way the
                     shop's book keeps it — an unrepairable phone still gets

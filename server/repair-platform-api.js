@@ -664,6 +664,12 @@ async function syncExternalIntoRepair(db, shopId, userId, repair, external, even
 function attachRepairPlatformApi(app) {
   const read = [requireAuth, requireShopUser, requireRepairAccess];
   const write = [requireAuth, requireShopUser, requireWritableSubscription, requireRepairAccess];
+  // Deleting a repair takes its whole history with it and cannot be undone, so
+  // it stays with the owner rather than whoever is on the counter.
+  const requireShopOwner = (req, res, next) => {
+    if (req.auth?.role === 'SUPER_ADMIN' || req.auth?.role === 'SHOP_ADMIN') return next();
+    return res.status(403).json({ ok: false, message: 'ဖုန်းပြင် မှတ်တမ်း ဖျက်ခွင့် မရှိပါ — ဆိုင်ပိုင်ရှင် အကောင့်ဖြင့် ဝင်ပါ' });
+  };
 
   app.get('/api/repair-platform/mahar-shwe-access', ...read, wrap(async (req, res) => {
     res.json({ ok: true, access: await maharShweApiAccess(prisma, req.auth.shopId) });
@@ -954,6 +960,42 @@ function attachRepairPlatformApi(app) {
     // repair-sheet-inbound and never comes through this endpoint.
     await syncRepairToSheet(req.auth.shopId, updated, 'STATUS_CHANGED');
     res.json({ ok: true, message: 'Repair status updated', repair: updated });
+  }));
+
+  app.delete('/api/repair-platform/jobs/:id', ...write, requireShopOwner, wrap(async (req, res) => {
+    const repair = await getRepair(prisma, req.auth.shopId, req.params.id);
+    if (!repair) throw new ApiError(404, 'Repair job not found');
+
+    // Everything hanging off the repair — events, history, parts, payments —
+    // is declared ON DELETE CASCADE, so the row is the only thing to remove.
+    await prisma.$executeRawUnsafe(
+      'DELETE FROM repairs WHERE id = $1::uuid AND shop_id = $2::uuid',
+      repair.id, req.auth.shopId,
+    );
+
+    await prisma.auditLog.create({
+      data: {
+        shopId: req.auth.shopId,
+        userId: req.auth.userId,
+        action: 'REPAIR_DELETED',
+        entityType: 'repair',
+        entityId: repair.id,
+        details: {
+          repairNumber: repair.repairNumber,
+          customerName: repair.customerName,
+          status: repair.status,
+          finalCost: repair.finalCost,
+        },
+        ipAddress: req?.ip || null,
+        userAgent: req?.headers?.['user-agent'] || null,
+      },
+    }).catch(() => {});
+
+    // The shop's sheet holds a row for this voucher; leaving it there would
+    // show a repair the POS no longer has.
+    await syncRepairToSheet(req.auth.shopId, repair, 'VOUCHER_DELETED');
+
+    res.json({ ok: true, message: `${repair.repairNumber} ဖျက်ပြီးပါပြီ`, repairNumber: repair.repairNumber });
   }));
 
   app.post('/api/repair-platform/jobs/:id/device', ...write, wrap(async (req, res) => {

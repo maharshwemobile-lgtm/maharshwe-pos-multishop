@@ -64,7 +64,11 @@ function doPost(e) {
     // The repair book is the shop's own tab with the shop's own columns, so it
     // is written by voucher number rather than through the generic tab sync.
     if (String(payload.dataset || '') === 'repair-voucher') {
-      return jsonResponse(writeRepairRow(payload.payload || {}, payload.tab));
+      const repairRow = payload.payload || {};
+      if (repairRow.deleted === true) {
+        return jsonResponse(deleteRepairRow(repairRow, payload.tab));
+      }
+      return jsonResponse(writeRepairRow(repairRow, payload.tab));
     }
     const tabName = String(payload.tab || '').trim();
     if (!POS_DATASETS.some(function (item) { return item[1] === tabName; })) {
@@ -330,6 +334,39 @@ function onEdit(e) {
 const REPAIR_HEADER_ROWS = 1;
 const REPAIR_KEY_COLUMN = 2;   // column B, Repair ID/Voucher
 
+// Both writing and deleting start by finding the voucher's row, and the two
+// must agree on what counts as a match.
+function findRepairRow(sheet, key) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= REPAIR_HEADER_ROWS) return 0;
+  const keys = sheet
+    .getRange(REPAIR_HEADER_ROWS + 1, REPAIR_KEY_COLUMN, lastRow - REPAIR_HEADER_ROWS, 1)
+    .getDisplayValues();
+  for (let i = 0; i < keys.length; i += 1) {
+    if (String(keys[i][0]).trim() === key) return REPAIR_HEADER_ROWS + 1 + i;
+  }
+  return 0;
+}
+
+// Deleting removes the whole line so the rows below close up, rather than
+// leaving a blank gap in the middle of the book.
+function deleteRepairRow(payload, fallbackTab) {
+  const tabName = String(payload.sheetTab || fallbackTab || '').trim();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabName);
+  if (!sheet) return { ok: false, message: 'No tab named ' + tabName };
+
+  const key = String(payload.key || '').trim();
+  if (!key) return { ok: false, message: 'Row has no voucher number' };
+
+  const target = findRepairRow(sheet, key);
+  // Already gone is the outcome that was asked for, so it is not a failure —
+  // otherwise the row would be retried until it gave up.
+  if (!target) return { ok: true, tab: tabName, deleted: 0, voucher: key };
+
+  sheet.deleteRow(target);
+  return { ok: true, tab: tabName, deleted: target, voucher: key };
+}
+
 function writeRepairRow(payload, fallbackTab) {
   const tabName = String(payload.sheetTab || fallbackTab || '').trim();
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabName);
@@ -340,15 +377,7 @@ function writeRepairRow(payload, fallbackTab) {
   if (!key || !values.length) return { ok: false, message: 'Row has no voucher number' };
 
   const lastRow = sheet.getLastRow();
-  let target = 0;
-  if (lastRow > REPAIR_HEADER_ROWS) {
-    const keys = sheet
-      .getRange(REPAIR_HEADER_ROWS + 1, REPAIR_KEY_COLUMN, lastRow - REPAIR_HEADER_ROWS, 1)
-      .getDisplayValues();
-    for (let i = 0; i < keys.length; i += 1) {
-      if (String(keys[i][0]).trim() === key) { target = REPAIR_HEADER_ROWS + 1 + i; break; }
-    }
-  }
+  const target = findRepairRow(sheet, key);
 
   if (target) {
     const existing = sheet.getRange(target, 1, 1, values.length).getValues()[0];

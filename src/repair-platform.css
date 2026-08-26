@@ -237,3 +237,8 @@
 .repair-pickup-undo{background:#fff7ed!important;border-color:#fed7aa!important;color:#c2410c!important}
 .dark .repair-pickup-button{background:#0b1b33!important;border-color:#1e3555!important;color:#93c5fd!important}
 .dark .repair-pickup-undo{background:#0b1b33!important;border-color:#1e3555!important;color:#fdba74!important}
+
+/* Destructive, and last in the row: it should never be the button reached for
+   by habit. */
+.repair-delete-button{background:#fef2f2!important;border-color:#fecaca!important;color:#b91c1c!important}
+.dark .repair-delete-button{background:#0b1b33!important;border-color:#7f1d1d!important;color:#fca5a5!important}
