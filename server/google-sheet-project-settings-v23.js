@@ -454,10 +454,21 @@ function attachGoogleSheetProjectSettingsApi(app) {
         .replace('__POS_SHEET_ID__', config.sheetId || '')
         .replace('__POS_SYNC_SECRET__', config.secret || '');
 
+      // The daily-report puller authenticates with the same secret, so it was
+      // shipped with the placeholder in it for exactly the same reason and has
+      // never worked either. Built here alongside the main script.
+      const pullSource = require('fs').readFileSync(
+        require('path').join(__dirname, '..', 'integrations', 'google-apps-script', 'MaharPosGSheetPullSync.gs'), 'utf8');
+      const pullCode = pullSource
+        .replace('__POS_BASE_URL__', appUrl())
+        .replace('__POS_PULL_KEY__', config.secret || '');
+
       const ready = Boolean(config.secret) && Boolean(config.sheetId);
       return res.json({
         ok: true,
         code,
+        pullCode,
+        pullReady: Boolean(config.secret),
         ready,
         message: ready ? '' : 'Google Sheet link ကို အရင် ထည့်ပြီး သိမ်းပါ။',
       });

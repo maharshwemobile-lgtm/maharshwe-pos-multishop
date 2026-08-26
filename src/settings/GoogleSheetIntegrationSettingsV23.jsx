@@ -324,6 +324,23 @@ export default function GoogleSheetIntegrationSettingsV23() {
         </div>
       </section>
 
+      {/* Separate script, separate project, separate job — it pulls the daily
+          close into the sheet rather than pushing records out. Folded away so
+          it does not read as a step in the setup above. */}
+      <details className="gs-section gs-collapse">
+        <summary>နေ့ချုပ် အစီရင်ခံစာ Script (ရွေးချယ်ခွင့်)</summary>
+        <p className="gs-note">
+          နေ့စဉ် ပိတ်ချိန် စာရင်းနှင့် ဘီလ် / Eload လက်ကျန်ကို Sheet ထဲသို့ <b>ဆွဲယူ</b>ရန် script ဖြစ်သည်။
+          အထက်ပါ ချိတ်ဆက်မှုနှင့် မသက်ဆိုင်ဘဲ <b>သီးခြား project</b> တစ်ခုတွင် ထားပါ။
+          ထည့်ပြီးလျှင် Sheet ၏ menu မှ <b>Mahar POS Sync → Pull Today</b> ဖြင့် ဆွဲနိုင်သည်။
+        </p>
+        <div className="gs-btn-row" style={{ marginTop: 12 }}>
+          <button type="button" className="gs-btn" onClick={copyPullScript} disabled={busy}>
+            {testing === 'COPYPULL' ? <Loader2 className="project-operations-spin" size={15}/> : <Code2 size={15}/>} နေ့ချုပ် Script ကူးမည်
+          </button>
+        </div>
+      </details>
+
       <details className="gs-section gs-collapse">
         <summary>ဘယ်ဘက်မှ ဘယ်ဘက်သို့ သွားသည်</summary>
         <ul className="gs-flow">
