@@ -470,7 +470,10 @@ function attachGoogleSheetProjectSettingsApi(app) {
     try {
       const config = await ensureSecret(req.auth.shopId);
       const checks = [];
-      const add = (key, ok, detail) => checks.push({ key, ok, detail: detail || '' });
+      // Three states, not two: a check that cannot be measured is not a check
+      // that failed, and reporting it as one sends the shop off to fix
+      // something that is working.
+      const add = (key, ok, detail, warn) => checks.push({ key, ok, detail: detail || '', warn: Boolean(warn) });
 
       add('url', Boolean(config.postUrl), config.postUrl ? '' : 'Web App URL မထည့်ရသေးပါ');
       add('enabled', config.enabled === true, config.enabled ? '' : 'Live Sync မဖွင့်ရသေးပါ');
@@ -553,9 +556,14 @@ function attachGoogleSheetProjectSettingsApi(app) {
       }
 
       const version = String(info.version || '');
-      add('version', version === SCRIPT_VERSION,
-        !version ? 'Code အဟောင်း — ပြန်ကူးထည့်ပါ'
-          : version === SCRIPT_VERSION ? version : `Script မှာ ${version} · အသစ်က ${SCRIPT_VERSION}`);
+      if (!version) {
+        // Reached over the fallback probe, which no version predates. The sync
+        // is answering, so this says what it is rather than raising an alarm.
+        add('version', true, 'စစ်၍ မရပါ — sync အလုပ်လုပ်နေပါသည်', true);
+      } else {
+        add('version', version === SCRIPT_VERSION,
+          version === SCRIPT_VERSION ? version : `Script မှာ ${version} · အသစ်က ${SCRIPT_VERSION}`);
+      }
 
       return res.json({ ok: true, reachable: true, version, expectedVersion: SCRIPT_VERSION, checks });
     } catch (error) {

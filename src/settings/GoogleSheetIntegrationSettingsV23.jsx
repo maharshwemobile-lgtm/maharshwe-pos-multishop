@@ -180,6 +180,8 @@ export default function GoogleSheetIntegrationSettingsV23() {
   };
   const checks = diagnosis?.checks || [];
   const passed = checks.filter((check) => check.ok).length;
+  // A warn still counts as ready — the sync works, the check just could not
+  // read that one value.
   const allGood = checks.length > 0 && passed === checks.length;
   const busy = Boolean(testing);
 
@@ -211,8 +213,8 @@ export default function GoogleSheetIntegrationSettingsV23() {
         {checks.length ? (
           <ul className="gs-status">
             {checks.map((check) => (
-              <li key={check.key} className={check.ok ? 'is-ok' : 'is-bad'}>
-                <span className="gs-status-mark">{check.ok ? '✓' : '✕'}</span>
+              <li key={check.key} className={check.warn ? 'is-warn' : check.ok ? 'is-ok' : 'is-bad'}>
+                <span className="gs-status-mark">{check.warn ? '!' : check.ok ? '✓' : '✕'}</span>
                 <span className="gs-status-name">{CHECK_LABELS[check.key] || check.key}</span>
                 {check.detail ? <span className="gs-status-note">{check.detail}</span> : null}
               </li>

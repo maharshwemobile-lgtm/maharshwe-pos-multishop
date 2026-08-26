@@ -231,3 +231,7 @@ select.gs-input { padding-right: 32px; }
   .gs-btn-row .gs-btn { flex: 1; }
   .gs-card-foot .gs-btn { margin-left: 0; }
 }
+
+.gs-status li.is-warn { background: #fffbeb; }
+.gs-status li.is-warn .gs-status-mark { color: #b45309; }
+.dark .gs-status li.is-warn { background: rgba(120, 53, 15, .22); }
