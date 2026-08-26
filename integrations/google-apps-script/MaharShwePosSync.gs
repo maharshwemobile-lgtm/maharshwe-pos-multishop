@@ -15,7 +15,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-3';
+const SCRIPT_VERSION = 'repair-sync-4';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -447,12 +447,21 @@ function pushRepairEditsToPos(e) {
     const v = values[i];
     const voucherNo = String(v[REPAIR_KEY_COLUMN - 1] || '').trim();
     if (!voucherNo) continue;
+    // The whole row, not just the cells that change. A voucher the POS has
+    // never seen is taken in there as a new repair, and it needs the customer
+    // and the phone to do that — a status on its own says nothing.
     rows.push({
       voucherNo: voucherNo,
+      date: String(v[0] || ''),
+      customerName: String(v[2] || ''),
+      phoneModel: String(v[3] || ''),
+      repairPart: String(v[4] || ''),
       repairStatus: String(v[5] || ''),
       pickupStatus: String(v[7] || ''),
       customerPrice: String(v[8] || ''),
+      technician: String(v[9] || ''),
       paymentStatus: String(v[11] || ''),
+      note: String(v[12] || ''),
     });
   }
   if (!rows.length) return;

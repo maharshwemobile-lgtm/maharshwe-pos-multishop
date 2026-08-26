@@ -70,6 +70,83 @@ async function raiseSequence(shopId, prefix, value) {
   ).catch(() => {});
 }
 
+// dd/mm/yyyy, the way the sheet writes it. Anything else is left to Date.
+function sheetDate(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (match) {
+    const date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+// "Oppo A16" — the sheet keeps brand and model in one cell, so the first word
+// is the brand and the rest is the model. One word is a model with no brand.
+function splitDevice(value) {
+  const parts = String(value || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return { brand: null, model: parts[0] || null };
+  return { brand: parts[0], model: parts.slice(1).join(' ') };
+}
+
+/**
+ * A row the POS has never seen. The shop takes repairs in at the counter and
+ * through the bot into the sheet, so a voucher written there has to become a
+ * repair here rather than being reported missing forever.
+ *
+ * Only rows that describe an actual job are taken: a voucher number on its own,
+ * or a half-typed line, is left alone until it says who and what.
+ */
+async function createRepairFromSheet(shopId, prefix, voucherNo, row) {
+  const customerName = String(row.customerName || '').trim();
+  const device = splitDevice(row.phoneModel);
+  if (!customerName && !device.model) return null;
+
+  const digits = digitsOf(voucherNo);
+  const repairNumber = `${String(prefix || '').toUpperCase()}${String(digits).padStart(4, '0')}`;
+  const status = STATUS_FROM_SHEET[sheetWord(row.repairStatus)] || 'RECEIVED';
+  const payment = PAYMENT_FROM_SHEET[sheetWord(row.paymentStatus)] || 'PENDING';
+  const price = Number(String(row.customerPrice || '').replace(/[^\d.]/g, ''));
+  const collected = row.pickupStatus !== undefined && sheetWord(row.pickupStatus) === '';
+
+  const rows = await prisma.$queryRawUnsafe(
+    `INSERT INTO repairs (
+       id, shop_id, repair_number, customer_name, device_brand, device_model,
+       problem, final_cost, payment_status, status, received_at, delivered_at,
+       completed_at, notes, source_type, source_provider, priority,
+       created_at, updated_at
+     ) VALUES (
+       gen_random_uuid(), $1::uuid, $2, $3, $4, $5,
+       $6, $7::numeric, $8::"PaymentStatus", $9::"RepairStatus", COALESCE($10::timestamptz, NOW()),
+       CASE WHEN $11::boolean IS TRUE THEN NOW() ELSE NULL END,
+       CASE WHEN $9 IN ('COMPLETED','CANNOT_REPAIR') THEN NOW() ELSE NULL END,
+       $12, 'IMPORTED', 'GOOGLE_SHEET', 'NORMAL',
+       NOW(), NOW()
+     )
+     ON CONFLICT DO NOTHING
+     RETURNING id, repair_number AS "repairNumber"`,
+    shopId,
+    repairNumber,
+    customerName || 'စောင့်ယူ',
+    device.brand,
+    device.model,
+    String(row.repairPart || '').trim() || '-',
+    Number.isFinite(price) && price > 0 ? price : null,
+    payment,
+    status,
+    sheetDate(row.date),
+    collected,
+    String(row.note || '').trim() || null,
+  ).catch((error) => {
+    console.warn('Sheet row could not be created as a repair:', error.message);
+    return [];
+  });
+
+  return rows[0] || null;
+}
+
 /**
  * Apply one sheet row to the POS. Returns what changed, or why nothing did.
  * Never queues an outbound sync — that is what would start a loop.
@@ -80,8 +157,12 @@ async function applySheetRow(shopId, prefix, row) {
 
   await raiseSequence(shopId, prefix, digitsOf(voucherNo));
 
-  const repair = await findRepairByVoucher(shopId, voucherNo);
-  if (!repair) return { voucherNo, applied: false, reason: 'not in POS' };
+  let repair = await findRepairByVoucher(shopId, voucherNo);
+  if (!repair) {
+    const created = await createRepairFromSheet(shopId, prefix, voucherNo, row);
+    if (!created) return { voucherNo, applied: false, reason: 'not in POS' };
+    return { voucherNo, applied: true, created: true, repairNumber: created.repairNumber };
+  }
 
   const changes = {};
   const status = STATUS_FROM_SHEET[sheetWord(row.repairStatus)];
