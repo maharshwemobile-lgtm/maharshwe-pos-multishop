@@ -203,6 +203,14 @@ export default function GoogleSheetIntegrationSettingsV23() {
     <div className="project-google-copy-grid">
       <CopyBox label="Shop Slug" value={effectiveShopSlug || 'YOUR_SHOP_SLUG'} onCopy={notifyCopy}/>
       {form.secret ? <CopyBox label="Shared Secret → Script Properties: POS_SYNC_SECRET" value={form.secret} buttonLabel="Copy Secret" onCopy={notifyCopy}/> : null}
+      {form.secretFingerprint ? <article className="project-google-copy-box">
+        <span>Secret Fingerprint</span>
+        <code>{form.secretFingerprint}</code>
+        <small style={{ opacity: 0.7 }}>
+          Apps Script URL ကို browser မှာ ဖွင့်ကြည့်ပါ။ <b>secretFingerprint</b> က ဒီအတိုင်း တူမှ
+          POS_SYNC_SECRET မှန်ပါတယ်။ မတူရင် Copy Secret နဲ့ ပြန်ကူးပြီး Script Properties မှာ ပြန်ထည့်ပါ။
+        </small>
+      </article> : null}
     </div>
 
     <form className="project-google-form" onSubmit={save}>

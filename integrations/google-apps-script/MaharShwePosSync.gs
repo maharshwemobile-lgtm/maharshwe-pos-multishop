@@ -7,6 +7,8 @@ const POS_CONFIG = {
   REPAIR_PREFIX: '__POS_REPAIR_PREFIX__',
 };
 
+const SCRIPT_VERSION = 'repair-sync-1';
+
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
   ['sale-history', 'Sale History'],
@@ -26,11 +28,28 @@ function onOpen() {
     .addToUi();
 }
 
+// A wrong POS_SYNC_SECRET looks exactly like every other failure from outside:
+// "Invalid secret", with no way to tell a typo from an unset property from the
+// wrong project answering. This reports a hash of the secret, never the secret,
+// so the POS can say whether the two match.
+function secretFingerprint() {
+  const value = PropertiesService.getScriptProperties().getProperty('POS_SYNC_SECRET');
+  if (!value) return '';
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8);
+  return bytes.slice(0, 4).map(function (b) {
+    return ('0' + (b & 0xFF).toString(16)).slice(-2);
+  }).join('');
+}
+
 function doGet(e) {
   return jsonResponse({
     ok: true,
     service: 'MaharShwe POS Google Sheet Sync',
+    version: SCRIPT_VERSION,
     tabs: POS_DATASETS.map(function (item) { return item[1]; }),
+    repairSync: true,
+    secretConfigured: Boolean(secretFingerprint()),
+    secretFingerprint: secretFingerprint(),
     time: new Date().toISOString(),
   });
 }

@@ -164,6 +164,13 @@ async function saveConfig(shopId, userId, input, req) {
   return next;
 }
 
+// The same four bytes the Apps Script reports from doGet, so a mismatched
+// POS_SYNC_SECRET can be seen rather than inferred from a failed sync.
+function secretFingerprint(secret) {
+  if (!secret) return '';
+  return crypto.createHash('sha256').update(String(secret), 'utf8').digest('hex').slice(0, 8);
+}
+
 function publicConfig(config) {
   return {
     enabled: config.enabled,
@@ -174,6 +181,7 @@ function publicConfig(config) {
     secret: config.secret || '',
     secretConfigured: Boolean(config.secret),
     secretMasked: config.secret ? `••••••${config.secret.slice(-4)}` : '',
+    secretFingerprint: secretFingerprint(config.secret),
     lastTest: config.lastTest || null,
     updatedAt: config.updatedAt || null,
   };
