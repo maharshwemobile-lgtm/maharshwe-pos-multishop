@@ -7,7 +7,10 @@ const POS_CONFIG = {
   REPAIR_PREFIX: '__POS_REPAIR_PREFIX__',
 };
 
-const SCRIPT_VERSION = 'repair-sync-1';
+// Bump this whenever the script's behaviour changes. doGet reports it, and it
+// is the only way to tell a workbook running current code from one still on a
+// version pasted weeks ago — the failures otherwise look identical.
+const SCRIPT_VERSION = 'repair-sync-2';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
