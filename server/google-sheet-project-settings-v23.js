@@ -37,8 +37,8 @@ const configSchema = z.object({
   getUrl: z.string().trim().max(2000).optional().default(''),
   secret: z.string().trim().max(500).optional().default(''),
   timeoutMs: z.coerce.number().int().min(1000).max(60000).default(10000),
-  repairSheetTab: z.string().trim().max(200).optional().default(''),
-  sheetId: z.string().trim().max(400).optional().default(''),
+  repairSheetTab: z.string().trim().max(200).optional(),
+  sheetId: z.string().trim().max(400).optional(),
 });
 
 let runner = null;
@@ -152,8 +152,12 @@ async function saveConfig(shopId, userId, input, req) {
     getUrl: validateGoogleUrl(input.getUrl, false),
     secret,
     timeoutMs: input.timeoutMs,
-    repairSheetTab: clean(input.repairSheetTab, 200),
-    sheetId: clean(input.sheetId, 400),
+    // A field the client did not send is a field it does not know about — an
+    // older tab still open, a page loaded before this existed. Absent leaves
+    // what is stored alone; only an empty string that was actually sent clears
+    // it. The sheet link was wiped this way once already.
+    repairSheetTab: input.repairSheetTab === undefined ? clean(previous.repairSheetTab, 200) : clean(input.repairSheetTab, 200),
+    sheetId: input.sheetId === undefined ? clean(previous.sheetId, 400) : clean(input.sheetId, 400),
     updatedAt: new Date().toISOString(),
   };
   if (next.enabled && !next.secret) {
