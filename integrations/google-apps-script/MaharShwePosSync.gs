@@ -15,7 +15,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-8';
+const SCRIPT_VERSION = 'repair-sync-9';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -90,9 +90,12 @@ function connectToPos() {
     throw new Error('POS က လက်မခံပါ: ' + body.slice(0, 300));
   }
 
-  if (!webAppUrl) {
+  // Only ask for the /exec URL when the POS does not already have one. Asked
+  // every time, it reads as a failure on a connection that just succeeded.
+  var posHasUrl = body.indexOf('"hasWebAppUrl":true') >= 0;
+  if (!webAppUrl && !posHasUrl) {
     installRepairEditTrigger();
-    throw new Error('နောက်ဆုံး တစ်ဆင့် ကျန်ပါသေးသည်။ Deploy → Manage deployments ကို ဖွင့်ပြီး /exec နှင့် ဆုံးသော Web App URL ကို ကူးယူကာ POS ၏ \"Apps Script Web App URL\" ကွက်ထဲ ထည့်ပါ။ (Run မှ ရသော လိပ်စာမှာ /dev ဖြစ်၍ အပြင်မှ ခေါ်၍ မရပါ။)');
+    throw new Error('နောက်ဆုံး တစ်ဆင့် ကျန်ပါသေးသည်။ Deploy → Manage deployments ကို ဖွင့်ပြီး /exec နှင့် ဆုံးသော Web App URL ကို ကူးယူကာ POS ၏ "Apps Script Web App URL" ကွက်ထဲ ထည့်ပါ။');
   }
 
   // A leftover property that disagrees with the pasted code is only a trap for
@@ -102,8 +105,9 @@ function connectToPos() {
   if (stale && stale !== POS_CONFIG.SYNC_SECRET) props.deleteProperty('POS_SYNC_SECRET');
 
   installRepairEditTrigger();
-  Logger.log('✅ ချိတ်ပြီးပါပြီ။ POS မှာ စစ်ဆေးမည် နှိပ်ကြည့်ပါ။');
-  return '✅ ချိတ်ပြီးပါပြီ — tab ' + tabs.length + ' ခု တွေ့ပါတယ်။';
+  const done = '✅ ချိတ်ပြီးပါပြီ — tab ' + tabs.length + ' ခု တွေ့ပါတယ်။ POS မှာ စစ်ဆေးမည် နှိပ်ကြည့်ပါ။';
+  Logger.log(done);
+  return done;
 }
 
 // The shop should not have to find the trigger screen and pick the right

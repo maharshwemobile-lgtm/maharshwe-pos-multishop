@@ -449,6 +449,9 @@ function attachGoogleSheetSyncApi(app) {
       return res.json({
         ok: true,
         message: 'Connected',
+        // So the script knows whether the shop still has to supply the /exec
+        // URL, instead of asking for it every single time it connects.
+        hasWebAppUrl: Boolean(next.postUrl),
         shopName: shop.name,
         repairSheetTab: next.repairSheetTab || '',
         tabsSeen: tabs.length,
