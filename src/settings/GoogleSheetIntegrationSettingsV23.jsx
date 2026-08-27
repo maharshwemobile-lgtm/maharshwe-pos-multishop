@@ -57,6 +57,23 @@ export default function GoogleSheetIntegrationSettingsV23() {
   const effectiveShopSlug = shop?.slug || shop?.shopSlug || fallbackShopSlug || '';
 
   const repairPrefix = shop?.repairPrefix || shop?.business?.repairPrefix || '';
+  const copyPullScript = async () => {
+    setTesting('COPYPULL');
+    try {
+      const response = await apiFetch('/api/project-settings/integrations/google-sheet/script');
+      if (!response.pullReady) {
+        setMessage('Secret မရသေးပါ — စာမျက်နှာ refresh လုပ်ပါ။');
+        return;
+      }
+      const copied = await copyText(response.pullCode);
+      setMessage(copied ? 'နေ့ချုပ် Script ကူးပြီးပါပြီ။' : 'ကူးလို့ မရပါ။');
+    } catch (error) {
+      setMessage(error.message || 'Script ကူး၍ မရပါ');
+    } finally {
+      setTesting('');
+    }
+  };
+
   const copyScript = async () => {
     setTesting('COPY');
     try {
