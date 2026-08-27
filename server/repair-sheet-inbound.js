@@ -119,7 +119,9 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row) {
        created_at, updated_at
      ) VALUES (
        gen_random_uuid(), $1::uuid, $2, $3, $4, $5,
-       $6, $7::numeric, $8::"PaymentStatus", $9::"RepairStatus", COALESCE($10::timestamptz, NOW()),
+       -- final_cost is NOT NULL with a default of 0, and passing an explicit
+       -- NULL overrides the default rather than falling back to it.
+       $6, COALESCE($7::numeric, 0), $8::"PaymentStatus", $9::"RepairStatus", COALESCE($10::timestamptz, NOW()),
        CASE WHEN $11::boolean IS TRUE THEN NOW() ELSE NULL END,
        CASE WHEN $9 IN ('COMPLETED','CANNOT_REPAIR') THEN NOW() ELSE NULL END,
        $12, 'IMPORTED', 'GOOGLE_SHEET', 'NORMAL',
