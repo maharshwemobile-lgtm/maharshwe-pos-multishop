@@ -816,7 +816,11 @@ function attachRepairPlatformApi(app) {
       (tx) => createRepair(tx, req.auth.shopId, req.auth.userId, input),
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000, timeout: 20000 },
     );
-    res.status(201).json({ ok: true, message: 'Repair ID generated', repair: await getRepair(prisma, req.auth.shopId, repairId) });
+    const created = await getRepair(prisma, req.auth.shopId, repairId);
+    // The sheet is the shop's repair book, so a repair belongs in it from the
+    // moment it is taken in — not only once a voucher happens to be printed.
+    await syncRepairToSheet(req.auth.shopId, created, 'INTAKE_CREATED');
+    res.status(201).json({ ok: true, message: 'Repair ID generated', repair: created });
   }));
 
   app.post('/api/repair-platform/import', ...write, wrap(async (req, res) => {
