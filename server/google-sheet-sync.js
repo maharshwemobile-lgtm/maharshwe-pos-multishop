@@ -468,20 +468,29 @@ function attachGoogleSheetSyncApi(app) {
       // The workbook has a tab per branch, plus VPN keys and credit. An older
       // script reports every edit in it; one that names its tab can be held to
       // the one this shop actually keeps its repairs in.
-      let tabVerified = false;
+      // Once a shop names its repair tab, a caller has to say which tab it is
+      // reporting. Scripts left behind in older Apps Script projects keep their
+      // triggers and go on reporting the whole workbook; they send no tab, and
+      // treating that as "unknown, allow it" let another branch's rows — a
+      // voucher numbered 4540 from the BOBO tab — into this shop's book.
+      const settingsRows = await prisma.$queryRawUnsafe(
+        `SELECT settings->'api'->'googleSheets'->>'repairSheetTab' AS tab
+           FROM shop_settings WHERE shop_id = $1::uuid LIMIT 1`,
+        shop.id,
+      ).catch(() => []);
+      const expected = clean(settingsRows[0]?.tab, 200);
       const reportedTab = clean(req.body?.tab, 200);
-      if (reportedTab) {
-        const settingsRows = await prisma.$queryRawUnsafe(
-          `SELECT settings->'api'->'googleSheets'->>'repairSheetTab' AS tab
-             FROM shop_settings WHERE shop_id = $1::uuid LIMIT 1`,
-          shop.id,
-        ).catch(() => []);
-        const expected = clean(settingsRows[0]?.tab, 200);
-        if (expected && reportedTab !== expected) {
-          return res.json({ ok: true, applied: 0, skipped: reportedTab, results: [] });
-        }
-        tabVerified = Boolean(expected);
+
+      if (expected && reportedTab !== expected) {
+        return res.json({
+          ok: true,
+          applied: 0,
+          skipped: reportedTab || '(tab မပါ — script အဟောင်း)',
+          expected,
+          results: [],
+        });
       }
+      const tabVerified = Boolean(expected) && reportedTab === expected;
 
       const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 500) : [];
       if (!rows.length) return res.json({ ok: true, applied: 0, results: [] });
