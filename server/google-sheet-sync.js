@@ -468,6 +468,7 @@ function attachGoogleSheetSyncApi(app) {
       // The workbook has a tab per branch, plus VPN keys and credit. An older
       // script reports every edit in it; one that names its tab can be held to
       // the one this shop actually keeps its repairs in.
+      let tabVerified = false;
       const reportedTab = clean(req.body?.tab, 200);
       if (reportedTab) {
         const settingsRows = await prisma.$queryRawUnsafe(
@@ -479,6 +480,7 @@ function attachGoogleSheetSyncApi(app) {
         if (expected && reportedTab !== expected) {
           return res.json({ ok: true, applied: 0, skipped: reportedTab, results: [] });
         }
+        tabVerified = Boolean(expected);
       }
 
       const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 500) : [];
@@ -487,7 +489,7 @@ function attachGoogleSheetSyncApi(app) {
       const prefix = clean(req.body?.prefix, 8) || '';
       const results = [];
       for (const row of rows) {
-        results.push(await applySheetRow(shop.id, prefix, row));
+        results.push(await applySheetRow(shop.id, prefix, row, tabVerified));
       }
       return res.json({
         ok: true,

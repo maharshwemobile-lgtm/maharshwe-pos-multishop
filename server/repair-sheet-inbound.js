@@ -21,6 +21,9 @@ const { REPAIR_STATUS_TEXT } = require('./repair-sheet-row');
 
 // The sheet's wording, read back. Several POS states share one sheet word, so
 // a word only moves the repair when it means something the repair is not yet.
+// 0977 as the POS writes it, MS0978 where somebody typed the prefix in.
+const VOUCHER_PATTERN = /^[A-Za-z]{0,8}\d{1,6}$/;
+
 const STATUS_FROM_SHEET = {
   'ပြင်ပြီး': 'COMPLETED',
   'ပြင်မရ': 'CANNOT_REPAIR',
@@ -99,18 +102,17 @@ function splitDevice(value) {
  * Only rows that describe an actual job are taken: a voucher number on its own,
  * or a half-typed line, is left alone until it says who and what.
  */
-async function createRepairFromSheet(shopId, prefix, voucherNo, row) {
+async function createRepairFromSheet(shopId, prefix, voucherNo, row, trusted) {
   // Rows from other tabs reach here when an older script reports the whole
   // workbook. They do not look like an intake: a VPN key row arrived as a
   // customer called "Available" with no phone, and a credit row as "50000".
   // A voucher is digits, and a real intake names both a person and a phone.
-  // The book holds both forms — 0977 as the POS writes it and MS0978 where
-  // somebody typed the prefix in. Letters then digits, and nothing else.
-  if (!/^[A-Za-z]{0,8}\d{1,6}$/.test(String(voucherNo).trim())) return null;
-
   const customerName = String(row.customerName || '').trim();
   const device = splitDevice(row.phoneModel);
-  if (!customerName || !device.model) return null;
+  // Where the callback named the tab and the server matched it, the row is
+  // known to come from the repair book and an older entry missing a model is
+  // still a repair. Without that assurance, take only rows that carry both.
+  if (trusted ? (!customerName && !device.model) : (!customerName || !device.model)) return null;
 
   const digits = digitsOf(voucherNo);
   const repairNumber = `${String(prefix || '').toUpperCase()}${String(digits).padStart(4, '0')}`;
@@ -161,15 +163,22 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row) {
  * Apply one sheet row to the POS. Returns what changed, or why nothing did.
  * Never queues an outbound sync — that is what would start a loop.
  */
-async function applySheetRow(shopId, prefix, row) {
+async function applySheetRow(shopId, prefix, row, trusted = false) {
   const voucherNo = String(row.voucherNo || row['Repair ID/Voucher'] || '').trim();
   if (!voucherNo) return { voucherNo, applied: false, reason: 'no voucher number' };
 
+  // The numbering high-water mark is raised only for a voucher this book could
+  // actually have issued. It used to be raised before anything was checked, so
+  // a number from another tab pushed the counter to 4590 and the next voucher
+  // the counter would have issued was MS4591.
+  if (!VOUCHER_PATTERN.test(voucherNo)) {
+    return { voucherNo, applied: false, reason: 'not a voucher number' };
+  }
   await raiseSequence(shopId, prefix, digitsOf(voucherNo));
 
   let repair = await findRepairByVoucher(shopId, voucherNo);
   if (!repair) {
-    const created = await createRepairFromSheet(shopId, prefix, voucherNo, row);
+    const created = await createRepairFromSheet(shopId, prefix, voucherNo, row, trusted);
     if (!created) return { voucherNo, applied: false, reason: 'not in POS' };
     return { voucherNo, applied: true, created: true, repairNumber: created.repairNumber };
   }
