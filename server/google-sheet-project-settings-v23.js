@@ -40,6 +40,7 @@ const configSchema = z.object({
   timeoutMs: z.coerce.number().int().min(1000).max(60000).default(10000),
   repairSheetTab: z.string().trim().max(200).optional(),
   sheetId: z.string().trim().max(400).optional(),
+  repairOnly: z.boolean().optional(),
 });
 
 let runner = null;
@@ -132,6 +133,10 @@ async function loadConfig(shopId) {
     // Which workbook. Given, the script does not have to be bound to the sheet
     // and can live in its own project.
     sheetId: clean(saved.sheetId, 400),
+    // The shop asked for one tab. Everything else this sync writes — sales,
+    // income, stock, audit — arrives as tabs it creates itself, in a
+    // workbook that already has its own.
+    repairOnly: saved.repairOnly === true,
     // Reported by the script when it connects itself, so the shop picks a tab
     // from the workbook instead of typing its name from memory.
     availableTabs: Array.isArray(saved.availableTabs) ? saved.availableTabs : [],
@@ -164,6 +169,7 @@ async function saveConfig(shopId, userId, input, req) {
     // it. The sheet link was wiped this way once already.
     repairSheetTab: input.repairSheetTab === undefined ? clean(previous.repairSheetTab, 200) : clean(input.repairSheetTab, 200),
     sheetId: input.sheetId === undefined ? clean(previous.sheetId, 400) : clean(input.sheetId, 400),
+    repairOnly: input.repairOnly === undefined ? previous.repairOnly === true : input.repairOnly === true,
     updatedAt: new Date().toISOString(),
   };
   if (next.enabled && !next.secret) {
@@ -211,6 +217,7 @@ function publicConfig(config) {
     timeoutMs: config.timeoutMs,
     repairSheetTab: config.repairSheetTab || '',
     sheetId: config.sheetId || '',
+    repairOnly: config.repairOnly === true,
     availableTabs: config.availableTabs || [],
     scriptVersion: config.scriptVersion || '',
     registeredAt: config.registeredAt || null,
@@ -324,6 +331,10 @@ async function deliverPending(limit = 25, shopId = null) {
           AND (ss.settings->'api'->'googleSheets'->>'postUrl') <> ''
           AND (ss.settings->'api'->'googleSheets'->>'secret') IS NOT NULL
           AND (ss.settings->'api'->'googleSheets'->>'secret') <> ''
+          AND (
+            COALESCE((ss.settings->'api'->'googleSheets'->>'repairOnly')::boolean, false) = false
+            OR o.dataset = 'repair-voucher'
+          )
         ORDER BY o.created_at ASC LIMIT $1`,
       take,
     );

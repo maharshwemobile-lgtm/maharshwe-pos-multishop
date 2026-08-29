@@ -13,6 +13,7 @@ const EMPTY = {
   timeoutMs: 10000,
   repairSheetTab: '',
   sheetId: '',
+  repairOnly: false,
   availableTabs: [],
   scriptVersion: '',
   registeredAt: null,
@@ -130,6 +131,7 @@ export default function GoogleSheetIntegrationSettingsV23() {
           timeoutMs: Number(form.timeoutMs || 10000),
           repairSheetTab: form.repairSheetTab || '',
           sheetId: form.sheetId || '',
+          repairOnly: Boolean(form.repairOnly),
         },
       });
       setForm((current) => ({ ...current, ...(response.config || {}), secret: response.config?.secret || current.secret, getUrl: response.config?.postUrl || current.postUrl }));
@@ -291,6 +293,18 @@ export default function GoogleSheetIntegrationSettingsV23() {
               <span>ဘောက်ချာ၊ ရောင်းအား၊ ဝင်ငွေ၊ အသုံးစရိတ်၊ ကုန်ပစ္စည်း — အလိုအလျောက် ပေးပို့ပါမည်။</span>
             </div>
             <input type="checkbox" checked={form.enabled} onChange={(event) => update({ enabled: event.target.checked })}/>
+          </div>
+
+          <div className="gs-switch">
+            <div>
+              <b>ဖုန်းပြင် ဘောက်ချာ တစ်ခုတည်းသာ</b>
+              <span>
+                ဖွင့်ထားလျှင် ဖုန်းပြင် စာရင်း tab သို့သာ ရေးပါမည်။ ပိတ်ထားလျှင် ရောင်းအား၊ ဝင်ငွေ၊
+                ကုန်ပစ္စည်း စသည့် tab များကိုပါ Sheet ထဲတွင် ဖန်တီး၍ ရေးပါမည်။
+              </span>
+            </div>
+            <input type="checkbox" checked={Boolean(form.repairOnly)}
+              onChange={(event) => update({ repairOnly: event.target.checked })}/>
           </div>
 
           <div className="gs-btn-row">
