@@ -465,6 +465,22 @@ function attachGoogleSheetSyncApi(app) {
     try {
       const { applySheetRow } = require('./repair-sheet-inbound');
       const shop = req.sheetShop;
+      // The workbook has a tab per branch, plus VPN keys and credit. An older
+      // script reports every edit in it; one that names its tab can be held to
+      // the one this shop actually keeps its repairs in.
+      const reportedTab = clean(req.body?.tab, 200);
+      if (reportedTab) {
+        const settingsRows = await prisma.$queryRawUnsafe(
+          `SELECT settings->'api'->'googleSheets'->>'repairSheetTab' AS tab
+             FROM shop_settings WHERE shop_id = $1::uuid LIMIT 1`,
+          shop.id,
+        ).catch(() => []);
+        const expected = clean(settingsRows[0]?.tab, 200);
+        if (expected && reportedTab !== expected) {
+          return res.json({ ok: true, applied: 0, skipped: reportedTab, results: [] });
+        }
+      }
+
       const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 500) : [];
       if (!rows.length) return res.json({ ok: true, applied: 0, results: [] });
 

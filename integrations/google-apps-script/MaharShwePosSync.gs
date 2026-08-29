@@ -10,12 +10,16 @@ const POS_CONFIG = {
   // a workbook that already has a script of its own cannot take a second
   // doPost, doGet, onOpen or onEdit without one of them being lost.
   SHEET_ID: '__POS_SHEET_ID__',
+  // The workbook holds a tab per branch plus VPN keys, credit and stock. An
+  // edit anywhere in it used to be read as a repair for this shop — a VPN key
+  // row arrived as a customer named "Available". Only this tab is ours.
+  REPAIR_TAB: '__POS_REPAIR_TAB__',
 };
 
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-9';
+const SCRIPT_VERSION = 'repair-sync-10';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -540,6 +544,12 @@ function pushRepairEditsToPos(e) {
   if (!range) return;
   const sheet = range.getSheet();
 
+  // Anything outside the repair tab belongs to another branch or another kind
+  // of record entirely, and its columns mean something different.
+  const ours = String(POS_CONFIG.REPAIR_TAB || '').trim();
+  if (!ours || ours.indexOf('__') === 0) return;
+  if (sheet.getName() !== ours) return;
+
   const firstRow = Math.max(range.getRow(), REPAIR_HEADER_ROWS + 1);
   const lastRow = Math.min(range.getLastRow(), sheet.getLastRow());
   if (lastRow < firstRow) return;
@@ -577,6 +587,7 @@ function pushRepairEditsToPos(e) {
       secret: getRequiredProperty('POS_SYNC_SECRET'),
       shopSlug: POS_CONFIG.SHOP_SLUG,
       prefix: POS_CONFIG.REPAIR_PREFIX,
+      tab: sheet.getName(),
       rows: rows,
     }),
   });

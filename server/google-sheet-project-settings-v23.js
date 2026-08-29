@@ -463,6 +463,7 @@ function attachGoogleSheetProjectSettingsApi(app) {
         .replace('__POS_SHOP_SLUG__', shop?.slug || '')
         .replace('__POS_REPAIR_PREFIX__', shop?.repairPrefix || 'RP')
         .replace('__POS_SHEET_ID__', config.sheetId || '')
+        .replace('__POS_REPAIR_TAB__', config.repairSheetTab || '')
         .replace('__POS_SYNC_SECRET__', config.secret || '');
 
       // The daily-report puller authenticates with the same secret, so it was

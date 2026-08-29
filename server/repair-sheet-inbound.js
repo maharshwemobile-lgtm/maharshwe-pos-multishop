@@ -100,9 +100,15 @@ function splitDevice(value) {
  * or a half-typed line, is left alone until it says who and what.
  */
 async function createRepairFromSheet(shopId, prefix, voucherNo, row) {
+  // Rows from other tabs reach here when an older script reports the whole
+  // workbook. They do not look like an intake: a VPN key row arrived as a
+  // customer called "Available" with no phone, and a credit row as "50000".
+  // A voucher is digits, and a real intake names both a person and a phone.
+  if (!/^\d{1,6}$/.test(String(voucherNo).trim())) return null;
+
   const customerName = String(row.customerName || '').trim();
   const device = splitDevice(row.phoneModel);
-  if (!customerName && !device.model) return null;
+  if (!customerName || !device.model) return null;
 
   const digits = digitsOf(voucherNo);
   const repairNumber = `${String(prefix || '').toUpperCase()}${String(digits).padStart(4, '0')}`;
