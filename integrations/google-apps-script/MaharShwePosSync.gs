@@ -19,7 +19,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-11';
+const SCRIPT_VERSION = 'repair-sync-12';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -192,7 +192,13 @@ function syncAllRepairsToPos() {
 // function and event type off three dropdowns.
 function installRepairEditTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (trigger) {
-    if (trigger.getHandlerFunction() === 'pushRepairEditsToPos') ScriptApp.deleteTrigger(trigger);
+    const fn = trigger.getHandlerFunction();
+    if (fn === 'pushRepairEditsToPos') ScriptApp.deleteTrigger(trigger);
+    // The five-minute backup sync pushes every dataset, which means the tabs
+    // for sales, income and stock get created in a workbook that was only ever
+    // meant to hold the repair book. It has been failing on auth every five
+    // minutes; it should not be running at all.
+    if (fn === 'syncAllTabs') ScriptApp.deleteTrigger(trigger);
   });
   ScriptApp.newTrigger('pushRepairEditsToPos')
     .forSpreadsheet(targetSpreadsheet())
