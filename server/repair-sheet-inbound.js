@@ -104,7 +104,9 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row) {
   // workbook. They do not look like an intake: a VPN key row arrived as a
   // customer called "Available" with no phone, and a credit row as "50000".
   // A voucher is digits, and a real intake names both a person and a phone.
-  if (!/^\d{1,6}$/.test(String(voucherNo).trim())) return null;
+  // The book holds both forms — 0977 as the POS writes it and MS0978 where
+  // somebody typed the prefix in. Letters then digits, and nothing else.
+  if (!/^[A-Za-z]{0,8}\d{1,6}$/.test(String(voucherNo).trim())) return null;
 
   const customerName = String(row.customerName || '').trim();
   const device = splitDevice(row.phoneModel);

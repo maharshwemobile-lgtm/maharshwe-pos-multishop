@@ -19,7 +19,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-10';
+const SCRIPT_VERSION = 'repair-sync-11';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -110,6 +110,80 @@ function connectToPos() {
 
   installRepairEditTrigger();
   const done = '✅ ချိတ်ပြီးပါပြီ — tab ' + tabs.length + ' ခု တွေ့ပါတယ်။ POS မှာ စစ်ဆေးမည် နှိပ်ကြည့်ပါ။';
+  Logger.log(done);
+  return done;
+}
+
+// ===========================================================================
+// ရှိပြီးသား ဘောက်ချာအားလုံးကို POS သို့ ပို့ရန် — လိုအပ်မှ တစ်ခါ Run ပါ
+//
+// The trigger only reports what changes. A book that was kept here long before
+// the POS existed needs its standing rows sent once, or they are only ever
+// created when somebody happens to edit them.
+// ===========================================================================
+function ဘောက်ချာအားလုံးပို့မည်() {
+  return syncAllRepairsToPos();
+}
+
+function syncAllRepairsToPos() {
+  const tabName = String(POS_CONFIG.REPAIR_TAB || '').trim();
+  if (!tabName || tabName.indexOf('__') === 0) {
+    throw new Error('POS မှာ ဖုန်းပြင် စာရင်း tab ကို အရင် သတ်မှတ်ပါ။');
+  }
+  const sheet = targetSpreadsheet().getSheetByName(tabName);
+  if (!sheet) throw new Error('Tab မတွေ့ပါ: ' + tabName);
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= REPAIR_HEADER_ROWS) return 'အတန်း မရှိပါ။';
+  const values = sheet.getRange(REPAIR_HEADER_ROWS + 1, 1, lastRow - REPAIR_HEADER_ROWS, 13).getDisplayValues();
+
+  const all = [];
+  for (let i = 0; i < values.length; i += 1) {
+    const v = values[i];
+    const voucherNo = String(v[REPAIR_KEY_COLUMN - 1] || '').trim();
+    if (!voucherNo) continue;
+    all.push({
+      voucherNo: voucherNo,
+      date: String(v[0] || ''),
+      customerName: String(v[2] || ''),
+      phoneModel: String(v[3] || ''),
+      repairPart: String(v[4] || ''),
+      repairStatus: String(v[5] || ''),
+      pickupStatus: String(v[7] || ''),
+      customerPrice: String(v[8] || ''),
+      technician: String(v[9] || ''),
+      paymentStatus: String(v[11] || ''),
+      note: String(v[12] || ''),
+    });
+  }
+  if (!all.length) return 'ပို့စရာ မရှိပါ။';
+
+  // Batched: a few hundred rows at a time keeps each request inside the
+  // UrlFetch limits and inside the script's own runtime budget.
+  let created = 0;
+  let updated = 0;
+  for (let start = 0; start < all.length; start += 150) {
+    const batch = all.slice(start, start + 150);
+    const response = UrlFetchApp.fetch(POS_CONFIG.BASE_URL + '/api/google-sheet-sync/repair-status', {
+      method: 'post',
+      contentType: 'application/json',
+      muteHttpExceptions: true,
+      payload: JSON.stringify({
+        secret: getRequiredProperty('POS_SYNC_SECRET'),
+        shopSlug: POS_CONFIG.SHOP_SLUG,
+        prefix: POS_CONFIG.REPAIR_PREFIX,
+        tab: tabName,
+        rows: batch,
+      }),
+    });
+    const body = response.getContentText();
+    if (response.getResponseCode() !== 200) throw new Error('POS: ' + body.slice(0, 200));
+    const results = (JSON.parse(body).results || []);
+    results.forEach(function (r) { if (r.created) created += 1; else if (r.applied) updated += 1; });
+    Utilities.sleep(500);
+  }
+
+  const done = 'ဘောက်ချာ ' + all.length + ' ကြောင်း ပို့ပြီး — အသစ် ' + created + ' ခု၊ ပြင်ဆင် ' + updated + ' ခု။';
   Logger.log(done);
   return done;
 }
