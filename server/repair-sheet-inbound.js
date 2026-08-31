@@ -52,7 +52,9 @@ async function findRepairByVoucher(shopId, voucherNo) {
   const key = String(voucherNo || '').trim();
   if (!key) return null;
   const columns = `id, repair_number AS "repairNumber", status, payment_status AS "paymentStatus",
-            final_cost AS "finalCost", delivered_at AS "deliveredAt"`;
+            final_cost AS "finalCost", delivered_at AS "deliveredAt",
+            customer_name AS "customerName", device_brand AS "deviceBrand",
+            device_model AS "deviceModel", problem, notes`;
 
   const byReference = await prisma.$queryRawUnsafe(
     `SELECT ${columns} FROM repairs
@@ -235,6 +237,26 @@ async function applySheetRow(shopId, prefix, row, trusted = false) {
   const price = Number(String(row.customerPrice || '').replace(/[^\d.]/g, ''));
   if (Number.isFinite(price) && price > 0 && price !== Number(repair.finalCost || 0)) changes.finalCost = price;
 
+  // A row is typed left to right, and the trigger fires on the way. The repair
+  // gets created as soon as the voucher and the name are down, and everything
+  // typed after that — the fault, most often — never arrived, because only the
+  // status and the money were ever compared. Filled-in text is carried too now.
+  //
+  // Only a value that is actually there overwrites: blank in the sheet means
+  // not written down yet, never "clear what the counter recorded".
+  const device = splitDevice(row.phoneModel);
+  const text = {
+    customerName: String(row.customerName || '').trim(),
+    deviceBrand: device.brand || '',
+    deviceModel: device.model || '',
+    problem: String(row.repairPart || '').trim(),
+    notes: String(row.note || '').trim(),
+  };
+  Object.keys(text).forEach((field) => {
+    const value = text[field];
+    if (value && value !== String(repair[field] || '').trim()) changes[field] = value;
+  });
+
   if (!Object.keys(changes).length) return { voucherNo, applied: false, reason: 'already matches' };
 
   await prisma.$executeRawUnsafe(
@@ -242,6 +264,11 @@ async function applySheetRow(shopId, prefix, row, trusted = false) {
         status = COALESCE($3::"RepairStatus", status),
         payment_status = COALESCE($4::"PaymentStatus", payment_status),
         final_cost = COALESCE($5::numeric, final_cost),
+        customer_name = COALESCE($7, customer_name),
+        device_brand = COALESCE($8, device_brand),
+        device_model = COALESCE($9, device_model),
+        problem = COALESCE($10, problem),
+        notes = COALESCE($11, notes),
         delivered_at = CASE
           WHEN $6::boolean IS TRUE THEN COALESCE(delivered_at, NOW())
           WHEN $6::boolean IS FALSE THEN NULL
@@ -254,6 +281,11 @@ async function applySheetRow(shopId, prefix, row, trusted = false) {
     changes.paymentStatus || null,
     changes.finalCost === undefined ? null : changes.finalCost,
     changes.pickedUp === undefined ? null : changes.pickedUp,
+    changes.customerName ?? null,
+    changes.deviceBrand ?? null,
+    changes.deviceModel ?? null,
+    changes.problem ?? null,
+    changes.notes ?? null,
   );
 
   await prisma.$executeRawUnsafe(
