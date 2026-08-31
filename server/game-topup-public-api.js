@@ -359,8 +359,10 @@ function attachGameTopupPublicApi(app) {
 
       // The customer bought this on the Digital Products storefront, which
       // lives on the landing domain — send them back there to check on it
-      // rather than across to the shop-facing app subdomain.
-      const statusUrl = `${landingUrl()}/digital/?view=status&order=${encodeURIComponent(orderNumber)}&key=${encodeURIComponent(shareKey)}`;
+      // rather than across to the shop-facing app subdomain. /digital/ is
+      // just the product hub now; the order-status checker lives under the
+      // dedicated Game Top-up page.
+      const statusUrl = `${landingUrl()}/digital/game/?view=status&order=${encodeURIComponent(orderNumber)}&key=${encodeURIComponent(shareKey)}`;
       res.status(201).json({
         ok: true,
         message: 'အော်ဒါ တင်ပြီးပါပြီ — အတည်ပြုပြီးရင် ချက်ချင်း ရောက်ပါမယ်',

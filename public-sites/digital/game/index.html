@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E1B2C">
+<title>Game Top-up · Mahar POS</title>
+<meta name="description" content="Mobile Legends, PUBG, Free Fire စတဲ့ ဂိမ်းတွေအတွက် Diamond/UC ကို ချက်ချင်းဖြည့်ပေးသည်။">
+<link rel="icon" type="image/png" href="/mahar-pos-logo-192.png">
+<link rel="apple-touch-icon" href="/mahar-pos-logo-192.png">
+<link rel="manifest" href="/digital/manifest.webmanifest">
+<link rel="stylesheet" href="/digital/shared.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <img src="/mahar-pos-logo-192.png" alt="Mahar POS">
+      <div><b>Game Top-up</b><span>Diamond / UC ချက်ချင်းဖြည့်</span></div>
+    </div>
+    <div class="top-actions">
+      <button id="installBtn" class="hid" type="button" title="App ထည့်မည်">⬇</button>
+      <a class="check" href="/digital/game/?view=status">အော်ဒါ စစ်ရန်</a>
+    </div>
+  </div>
+
+  <a class="ghost" href="/digital/" style="justify-self:start;min-height:auto;padding:8px 13px;font-size:12.5px">‹ Digital Products</a>
+
+  <!-- ══ GAME TOP-UP ══ -->
+  <div id="game">
+    <div id="gLoading" class="card"><span class="muted">ဖွင့်နေပါသည်…</span></div>
+
+    <div id="gGames" class="hid" style="display:grid;gap:13px">
+      <div id="gEmpty" class="note hid">ရောင်းချရန် ဂိမ်း မရှိသေးပါ။ နောက်မှ ပြန်ကြည့်ပါ။</div>
+      <div class="tiles" id="gTiles"></div>
+    </div>
+
+    <div id="gPacks" class="card hid">
+      <button class="back" type="button" data-go="games">‹ ဂိမ်းများသို့</button>
+      <h2 id="gPackTitle"></h2>
+      <div class="packs" id="gPackGrid"></div>
+    </div>
+
+    <div id="gForm" class="card hid">
+      <button class="back" type="button" data-go="packs">‹ Package ပြန်ရွေး</button>
+      <h2 id="gFormTitle"></h2>
+      <p class="muted" id="gFormPick"></p>
+      <div id="gFormErr" class="note bad hid"></div>
+      <label id="fPlayerWrap"><span id="fPlayerLabel">Player ID / User ID *</span><input id="fPlayer" placeholder="ဂိမ်းထဲက ID"></label>
+      <label id="fServerWrap"><span id="fServerLabel">Server / Zone ID *</span><input id="fServer" placeholder="ဥပမာ - 2001"></label>
+      <div id="fCheckWrap">
+        <div id="gCheckOut" class="note hid"></div>
+      </div>
+      <label id="fManualNameWrap" class="hid"><span>Game Name *</span><input id="fManualName" placeholder="ဂိမ်းထဲက Name ရိုက်ထည့်ပါ"></label>
+      <label><span>ဆက်သွယ်ရန် ဖုန်းနံပါတ် *</span><input id="fPhone" type="tel" placeholder="09xxxxxxxxx" inputmode="tel"></label>
+      <div class="total"><span>စုစုပေါင်း</span><b id="gTotal">0 ကျပ်</b></div>
+      <button class="primary" type="button" id="gNext">ငွေပေးချေရန် ဆက်သွားမည်</button>
+    </div>
+
+    <div id="gPay" class="card hid">
+      <button class="back" type="button" data-go="form">‹ ပြန်သွားမည်</button>
+      <h2>ငွေလွှဲပါ</h2>
+      <div id="gPayOrderBox" style="border-bottom:1px solid var(--line);padding-bottom:10px"></div>
+      <div class="total big"><span>လွှဲရမည့် ပမာဏ</span><b id="gPayTotal">0 ကျပ်</b></div>
+      <div id="gPayBox" class="pay"></div>
+      <ol class="steps">
+        <li>အထက်ပါ KBZ Pay နံပါတ်သို့ <b id="gPayAmt2"></b> အတိအကျ လွှဲပါ</li>
+        <li>လွှဲပြီးရင် KBZ Pay app ထဲက <b>Transaction ID နောက်ဆုံး ၄ လုံး</b> ကို ကြည့်ပါ</li>
+        <li>အောက်မှာ ထည့်ပြီး အော်ဒါ တင်ပါ</li>
+      </ol>
+      <div id="gPayErr" class="note bad hid"></div>
+      <label><span>KBZ Pay Transaction ID — နောက်ဆုံး ၄ လုံး *</span>
+        <input id="fTxn" placeholder="ဥပမာ - 4821" inputmode="numeric" maxlength="20"></label>
+      <div class="note good">ငွေလက်ခံရရှိကြောင်း စစ်ဆေးပြီးမှ ဖြည့်ပေးပါမယ်။ များသောအားဖြင့် မိနစ်အနည်းငယ်အတွင်း ပြီးပါတယ်။</div>
+      <button class="primary" type="button" id="gSubmit">အော်ဒါ တင်မည်</button>
+    </div>
+
+    <div id="gDone" class="card done hid">
+      <div class="tick">✓</div>
+      <h2>အော်ဒါ တင်ပြီးပါပြီ</h2>
+      <p>အော်ဒါနံပါတ် <b id="gOrderNo"></b></p>
+      <p class="muted">ငွေစစ်ဆေးပြီးပါက ချက်ချင်း ဖြည့်ပေးပါမယ်။ ဖြတ်ပိုင်းကို သိမ်းထားပါ။</p>
+      <button class="primary" type="button" id="gSlip">⬇ ဖြတ်ပိုင်း Download ဆွဲမည်</button>
+      <a class="ghost" id="gStatusLink" href="#">အခြေအနေ ကြည့်မည်</a>
+      <button class="ghost" type="button" id="gAgain">နောက်တစ်ခု ဝယ်မည်</button>
+    </div>
+  </div>
+
+  <!-- ══ ORDER STATUS ══ -->
+  <div id="status" class="hid" style="display:grid;gap:13px">
+    <div class="card">
+      <h2>အော်ဒါ အခြေအနေ စစ်ရန်</h2>
+      <div id="stErr" class="note bad hid"></div>
+      <label><span>အော်ဒါနံပါတ်</span><input id="stOrder" placeholder="ဥပမာ - PT00002"></label>
+      <button class="primary" type="button" id="stGo">စစ်မည်</button>
+    </div>
+    <div id="stResult" class="card hid"></div>
+    <button class="ghost" type="button" id="stBack">‹ ဂိမ်းများသို့</button>
+  </div>
+
+  <footer>Mahar POS · <a href="/digital/">ပင်မစာမျက်နှာ</a> · <a href="https://t.me/maharshwebot">ဆက်သွယ်ရန်</a></footer>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const show = (el, on) => el.classList.toggle('hid', !on);
+  const money = (v) => Number(v || 0).toLocaleString('en-US') + ' ကျပ်';
+
+  const state = { products: [], pay: null, game: null, pack: null, placed: null };
+
+  async function api(path, opts) {
+    const res = await fetch(path, {
+      method: (opts && opts.method) || 'GET',
+      headers: { Accept: 'application/json', ...(opts && opts.body ? { 'Content-Type': 'application/json' } : {}) },
+      body: opts && opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) throw new Error(data.message || 'Request failed');
+    return data;
+  }
+
+  // ── top-level pane switch (game flow vs. order status) ──
+  const panes = { game: $('game'), status: $('status') };
+  function openPane(name) {
+    Object.keys(panes).forEach((k) => show(panes[k], k === name));
+  }
+
+  // ── game flow ──
+  const steps = { games: $('gGames'), packs: $('gPacks'), form: $('gForm'), pay: $('gPay'), done: $('gDone') };
+  function step(name) {
+    Object.keys(steps).forEach((k) => show(steps[k], k === name));
+    show($('gLoading'), false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => step(b.dataset.go)));
+
+  function renderGames() {
+    const grid = $('gTiles');
+    grid.innerHTML = '';
+    show($('gEmpty'), state.products.length === 0);
+    state.products.forEach((p) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tile';
+      b.innerHTML = (p.imageUrl ? '<img src="' + p.imageUrl + '" alt="">' : '<div class="ph">🎮</div>')
+        + '<span></span>';
+      b.querySelector('span').textContent = p.name;
+      b.addEventListener('click', () => { state.game = p; renderPacks(); step('packs'); });
+      grid.appendChild(b);
+    });
+    step('games');
+  }
+
+  // MooGold package names bury the actual Diamond/UC count and any bonus in
+  // plain text (e.g. "50 + 5 Diamonds (First Top-Up Bonus)") — a customer
+  // scanning the grid should not have to read every word to see the amount
+  // they are actually getting, so the number and any bonus are pulled out
+  // and styled apart from the rest of the name.
+  function packageParts(name) {
+    const m = String(name || '').match(/^(.*?)(\d[\d,]*(?:\s*\+\s*\d[\d,]*)?)\s*(Diamonds?|UC)\b\s*(.*)$/i);
+    if (!m) return null;
+    return { prefix: m[1].trim(), amount: m[2].replace(/\s+/g, ' ').trim(), unit: m[3], suffix: m[4].trim() };
+  }
+  function renderPackName(container, name) {
+    container.innerHTML = '';
+    const parts = packageParts(name);
+    if (!parts) { container.textContent = name; return; }
+    if (parts.prefix) container.appendChild(document.createTextNode(parts.prefix + ' '));
+    const amt = document.createElement('b');
+    amt.className = 'pack-amount';
+    amt.textContent = parts.amount + ' ' + parts.unit;
+    container.appendChild(amt);
+    if (parts.suffix) {
+      container.appendChild(document.createElement('br'));
+      const bonus = document.createElement('span');
+      bonus.className = 'pack-bonus';
+      bonus.textContent = parts.suffix;
+      container.appendChild(bonus);
+    }
+  }
+
+  function renderPacks() {
+    $('gPackTitle').textContent = state.game.name;
+    const grid = $('gPackGrid');
+    grid.innerHTML = '';
+    state.game.variations.forEach((v) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pack';
+      b.innerHTML = '<span></span><b>' + money(v.retailPrice) + '</b>';
+      renderPackName(b.querySelector('span'), v.name);
+      b.addEventListener('click', () => { state.pack = v; openForm(); });
+      grid.appendChild(b);
+    });
+  }
+
+  function total() {
+    return Number(state.pack ? state.pack.retailPrice : 0);
+  }
+  function syncTotal() {
+    $('gTotal').textContent = money(total());
+    $('gPayTotal').textContent = money(total());
+    $('gPayAmt2').textContent = money(total());
+  }
+
+  // Remembers a MooGold-confirmed id per game, on this device only, so a
+  // returning customer buying the same game again does not have to retype an
+  // id they already proved is theirs. Keyed by game rather than global,
+  // because the same person's Mobile Legends id and PUBG id are unrelated.
+  function accountStorageKey(gameId) { return 'gt_account_' + gameId; }
+  function rememberAccount(gameId, playerId, server, username) {
+    try {
+      const prev = recalledAccount(gameId) || {};
+      // MooGold's own account-check intermittently omits the username on an
+      // otherwise-valid response for the very same account — keep the last
+      // one actually seen for this id+server so a blank reply doesn't wipe
+      // out a name we already confirmed.
+      const keepUsername = username || (prev.playerId === playerId && prev.server === (server || '') ? prev.username : null);
+      window.localStorage.setItem(accountStorageKey(gameId), JSON.stringify({ playerId: playerId, server: server || '', username: keepUsername || null }));
+    } catch (e) {}
+  }
+  function recalledAccount(gameId) {
+    try {
+      const raw = window.localStorage.getItem(accountStorageKey(gameId));
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function openForm() {
+    $('gFormTitle').textContent = state.game.name;
+    renderPackName($('gFormPick'), state.pack.name);
+    $('gFormPick').appendChild(document.createTextNode(' · ' + money(state.pack.retailPrice)));
+    show($('fPlayerWrap'), !!state.game.requiresPlayerId);
+    show($('fServerWrap'), !!state.game.requiresServer);
+    // Each game asks for something different here — "Tik Tok User ID",
+    // "Riot Username", "BIGO ID" and 30-odd other labels are all real MooGold
+    // field names, not just "Player ID" — so the label follows what this
+    // specific game actually stores, instead of one generic caption for
+    // every product.
+    $('fPlayerLabel').textContent = (state.game.playerField || 'Player ID / User ID') + ' *';
+    $('fServerLabel').textContent = (state.game.serverField || 'Server / Zone ID') + ' *';
+    $('fPlayer').placeholder = state.game.playerField || 'ဂိမ်းထဲက ID';
+    $('fServer').placeholder = state.game.serverField || 'ဥပမာ - 2001';
+    // Only prefills empty fields — never overwrites something already typed
+    // for this visit (e.g. switching between packages of the same game).
+    const recalled = recalledAccount(state.game.id);
+    if (recalled && !$('fPlayer').value.trim()) {
+      $('fPlayer').value = recalled.playerId || '';
+      $('fServer').value = recalled.server || '';
+    }
+    resetCheck();
+    if ($('fPlayer').value.trim()) queueAutoCheck();
+    show($('gFormErr'), false);
+    syncTotal();
+    step('form');
+  }
+
+  // Cleared whenever the id or server changes, so a confirmed name can never
+  // belong to a different account than the one now typed in. Bumping the
+  // sequence number here too means a reply for an id already abandoned is
+  // dropped even if no new check ever gets queued for it.
+  function resetCheck() {
+    state.checked = null;
+    checkSeq += 1;
+    show($('gCheckOut'), false);
+    $('gCheckOut').className = 'note hid';
+    show($('fManualNameWrap'), false);
+    $('fManualName').value = '';
+    syncNext();
+  }
+
+  function needsCheck() {
+    return !!(state.game && state.game.requiresPlayerId);
+  }
+
+  function syncNext() {
+    const ok = !needsCheck() || !!state.checked;
+    $('gNext').disabled = !ok;
+    $('gNext').textContent = ok ? 'ငွေပေးချေရန် ဆက်သွားမည်' : 'အကောင့် အရင် စစ်ပါ';
+  }
+
+  // Auto-checks as the customer finishes typing, rather than making them press
+  // a button — a mistyped id is unrecoverable, so the name should appear on its
+  // own the moment there is enough to check.
+  let checkTimer = null;
+  let checkSeq = 0;
+
+  function queueAutoCheck() {
+    resetCheck();
+    window.clearTimeout(checkTimer);
+    const playerId = $('fPlayer').value.trim();
+    const server = $('fServer').value.trim();
+    if (!playerId) return;
+    if (state.game.requiresServer && !server) return;
+    checkTimer = window.setTimeout(() => runCheck(playerId, server), 600);
+  }
+
+  async function runCheck(playerId, server) {
+    const mySeq = ++checkSeq;
+    const out = $('gCheckOut');
+    out.className = 'note';
+    out.textContent = 'အကောင့် စစ်ဆေးနေပါသည်…';
+    show(out, true);
+    try {
+      const res = await fetch('/api/public/game-topup/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variationId: state.pack.id, playerId: playerId, server: server || undefined }),
+      });
+      const data = await res.json();
+      // The fields may have changed again while this request was in flight;
+      // an answer for an id the customer has since edited must not land.
+      if (mySeq !== checkSeq) return;
+
+      // A blank username on this call doesn't mean the account has no name —
+      // MooGold's check sometimes just doesn't send one back, and for an
+      // unavailable product it never sends one at all. The server already
+      // falls back to this account's own past order for a name in both
+      // cases; this only covers a name that came from this browser earlier
+      // in the same visit and hasn't reached the server as an order yet.
+      const recalled = recalledAccount(state.game.id);
+      const sameAccount = recalled && recalled.playerId === playerId && recalled.server === (server || '');
+      const username = data.username || (sameAccount ? recalled.username : null) || null;
+
+      if (data.ok && (data.valid || (data.unavailable && username))) {
+        state.checked = { playerId: playerId, server: server, username: username };
+        rememberAccount(state.game.id, playerId, server, username);
+        out.className = 'note good compact';
+        out.textContent = '';
+        const line = document.createElement('div');
+        const nameEl = document.createElement('b');
+        nameEl.textContent = (username || 'Account') + (data.country ? ' · ' + data.country : '');
+        line.appendChild(document.createTextNode('✅ '));
+        line.appendChild(nameEl);
+        const hint = document.createElement('small');
+        hint.textContent = data.valid ? 'မှန်မမှန် သေချာစစ်ပါ' : 'ဒီဂိမ်းအတွက် အလိုအလျောက် စစ်လို့မရပါ — အရင်တင်ခဲ့တဲ့ Name အတိုင်း သုံးထားသည်';
+        out.appendChild(line);
+        out.appendChild(hint);
+      } else if (data.ok && data.unavailable) {
+        // MooGold can't check this particular product's accounts at all —
+        // neither confirming nor rejecting it — so treating that the same as
+        // a wrong id would block every purchase of it forever. Let the
+        // customer proceed on the id as typed. No name has ever been
+        // captured for this exact id+server before, so it has to be typed in
+        // just this once — every order after this one auto-fills it.
+        state.checked = { playerId: playerId, server: server, username: null, unverified: true };
+        rememberAccount(state.game.id, playerId, server, null);
+        out.className = 'note';
+        out.textContent = '⚠️ ဒီဂိမ်းအတွက် အကောင့် အလိုအလျောက် စစ်ဆေးလို့ မရပါ — ID နှင့် Server မှန်ကန်ကြောင်း ကိုယ်တိုင် သေချာစစ်ပြီး ဆက်သွားပါ';
+        show($('fManualNameWrap'), true);
+      } else {
+        state.checked = null;
+        out.className = 'note bad';
+        out.textContent = data.message || 'အကောင့် မတွေ့ပါ — ID နှင့် Server ပြန်စစ်ပါ';
+      }
+    } catch (e) {
+      if (mySeq !== checkSeq) return;
+      state.checked = null;
+      out.className = 'note bad';
+      out.textContent = 'စစ်ဆေးလို့ မရပါ — ID ကို ထပ်ရိုက်ကြည့်ပါ';
+    } finally {
+      if (mySeq === checkSeq) syncNext();
+    }
+  }
+
+  ['fPlayer', 'fServer'].forEach((id) => $(id).addEventListener('input', queueAutoCheck));
+
+  $('gNext').addEventListener('click', () => {
+    const err = (m) => { $('gFormErr').textContent = m; show($('gFormErr'), true); };
+    show($('gFormErr'), false);
+    if (state.game.requiresPlayerId && !$('fPlayer').value.trim()) return err('Player ID ထည့်ပါ');
+    if (state.game.requiresServer && !$('fServer').value.trim()) return err('Server ထည့်ပါ');
+    if (needsCheck() && !state.checked) return err('အကောင့်ကို အရင် စစ်ဆေးပါ');
+    if (state.checked && state.checked.unverified && !$('fManualName').value.trim()) return err('Game Name ထည့်ပါ');
+    if ($('fPhone').value.trim().length < 7) return err('ဆက်သွယ်ရန် ဖုန်းနံပါတ် ထည့်ပါ');
+    renderPay();
+    step('pay');
+  });
+
+  function renderPay() {
+    const orderBox = $('gPayOrderBox');
+    orderBox.innerHTML = '';
+    const orderRows = [
+      ['ဂိမ်း', state.game.name, false],
+      ['Package', state.pack.name, true],
+      [state.game.playerField || 'Player ID', $('fPlayer').value.trim() || '-', false],
+    ];
+    if (state.game.requiresServer) orderRows.push([state.game.serverField || 'Server', $('fServer').value.trim() || '-', false]);
+    orderRows.forEach(([label, value, isPackage]) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;gap:12px;padding:6px 0';
+      row.innerHTML = '<span class="muted"></span><b style="font-size:13.5px;text-align:right"></b>';
+      row.firstElementChild.textContent = label;
+      if (isPackage) renderPackName(row.lastElementChild, value);
+      else row.lastElementChild.textContent = value;
+      orderBox.appendChild(row);
+    });
+
+    const box = $('gPayBox');
+    if (!state.pay || !state.pay.configured) {
+      box.innerHTML = '<div class="note bad">ငွေလက်ခံမည့် အချက်အလက် မထည့်ရသေးပါ — ဆိုင်သို့ ဆက်သွယ်ပါ။</div>';
+      $('gSubmit').disabled = true;
+      return;
+    }
+    $('gSubmit').disabled = false;
+    const p = state.pay.payment;
+    box.innerHTML = '';
+    [['KBZ Pay နံပါတ်', p.phone], ['အမည်', p.name]].forEach(([label, value]) => {
+      if (!value) return;
+      const row = document.createElement('div');
+      row.className = 'copy';
+      row.innerHTML = '<div><span></span><b></b></div><button type="button" title="ကူးရန်">⧉</button>';
+      row.querySelector('span').textContent = label;
+      row.querySelector('b').textContent = value;
+      row.querySelector('button').addEventListener('click', async (e) => {
+        try { await navigator.clipboard.writeText(value); } catch {
+          const t = document.createElement('textarea'); t.value = value; t.style.position = 'fixed'; t.style.opacity = '0';
+          document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove();
+        }
+        e.target.textContent = '✓';
+        setTimeout(() => { e.target.textContent = '⧉'; }, 1400);
+      });
+      box.appendChild(row);
+    });
+    if (p.qrUrl) {
+      const img = document.createElement('img');
+      img.src = p.qrUrl; img.alt = 'KBZ Pay QR';
+      img.style.cssText = 'width:180px;height:180px;object-fit:contain;justify-self:center;border-radius:12px';
+      box.appendChild(img);
+    }
+  }
+
+  $('gSubmit').addEventListener('click', async () => {
+    const err = (m) => { $('gPayErr').textContent = m; show($('gPayErr'), true); };
+    show($('gPayErr'), false);
+    const txn = $('fTxn').value.trim();
+    if (!/^\d{4,}$/.test(txn)) return err('Transaction ID နောက်ဆုံး ၄ လုံး (ဂဏန်း) ထည့်ပါ');
+    const btn = $('gSubmit');
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> တင်နေပါသည်…';
+    try {
+      const res = await api('/api/public/game-topup/orders', {
+        method: 'POST',
+        body: {
+          variationId: state.pack.id,
+          quantity: 1,
+          playerId: $('fPlayer').value.trim() || undefined,
+          server: $('fServer').value.trim() || undefined,
+          customerName: (state.checked && state.checked.username) || $('fManualName').value.trim() || undefined,
+          customerPhone: $('fPhone').value.trim(),
+          paymentTransactionId: txn,
+          shopSlug: state.shopSlug || undefined,
+        },
+      });
+      state.placed = res;
+      $('gOrderNo').textContent = res.orderNumber;
+      $('gStatusLink').href = res.statusUrl;
+      step('done');
+    } catch (e) {
+      err(e.message || 'Order မအောင်မြင်ပါ');
+    } finally {
+      btn.disabled = false; btn.textContent = 'အော်ဒါ တင်မည်';
+    }
+  });
+
+  $('gSlip').addEventListener('click', () => {
+    const r = state.placed;
+    if (!r) return;
+    const pad = (s) => String(s).padEnd(18, ' ');
+    const rule = '--------------------------------';
+    const lines = [];
+    lines.push('     MAHAR POS - GAME TOP-UP', rule, '',
+      pad('အော်ဒါနံပါတ်') + ': ' + r.orderNumber,
+      pad('ဂိမ်း') + ': ' + state.game.name,
+      pad('Package') + ': ' + state.pack.name,
+      pad('ပမာဏ') + ': ' + money(state.pack.retailPrice), '');
+    if ($('fPlayer').value.trim()) lines.push(pad(state.game.playerField || 'Player ID') + ': ' + $('fPlayer').value.trim());
+    if ($('fServer').value.trim()) lines.push(pad(state.game.serverField || 'Server') + ': ' + $('fServer').value.trim());
+    lines.push('',
+      pad('ငွေပေးချေမှု') + ': KBZ Pay',
+      pad('Txn ၄ လုံး') + ': ' + $('fTxn').value.trim(), '',
+      rule, 'အခြေအနေ စစ်ရန် link:', r.statusUrl, rule, '',
+      'ငွေလက်ခံရရှိကြောင်း စစ်ဆေးပြီးပါက', 'ချက်ချင်း ဖြည့်ပေးပါမယ်။', 'ဤဖြတ်ပိုင်းကို သိမ်းဆည်းထားပါ။', '');
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = r.orderNumber + '-mahar-pos.txt';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  $('gAgain').addEventListener('click', () => {
+    state.game = null; state.pack = null; state.placed = null;
+    ['fPlayer', 'fServer', 'fPhone', 'fTxn', 'fManualName'].forEach((id) => { $(id).value = ''; });
+    resetCheck();
+    step('games');
+  });
+
+  // ── status lookup ──
+  const STATUS_TEXT = {
+    PENDING_APPROVAL: ['⏳', 'ငွေစစ်ဆေးနေပါသည်', 'ငွေလက်ခံရရှိမှု အတည်ပြုပြီးပါက ချက်ချင်း ဖြည့်ပေးပါမယ်။', 'warn'],
+    // MooGold answers "processing" first and only settles later — this is the
+    // gap between admin approving the order and MooGold actually finishing it.
+    PROCESSING: ['⏳', 'ဖြည့်နေပါသည်', 'ငွေ အတည်ပြုပြီးပါပြီ — ဂိမ်းစနစ်က ဖြည့်နေဆဲပါ။ မိနစ်အနည်းငယ်အတွင်း ပြီးပါမယ်။', 'warn'],
+    COMPLETED: ['✅', 'ဖြည့်ပြီးပါပြီ', 'ဂိမ်းအကောင့်ထဲ ရောက်ပြီးပါပြီ။', 'good'],
+    REJECTED: ['❌', 'ငြင်းပယ်ခံရသည်', '', 'bad'],
+    FAILED: ['⚠️', 'မအောင်မြင်ပါ', 'ဆိုင်သို့ ဆက်သွယ်ပါ။', 'bad'],
+    // The one status where money already left the customer's hand but the
+    // game top-up did not go through — MooGold could not fulfil the package
+    // (out of stock, etc.) after admin had already approved and paid for it.
+    // KBZ Pay cannot be reversed from here, so this tells the customer plainly
+    // that a human still owes them money back, with a way to reach that human.
+    REFUNDED: ['↩️', 'ငွေပြန်အမ်းပေးပါမည်', 'ဂိမ်းစနစ်က ဒီအော်ဒါကို ဖြည့်မပေးနိုင်ခဲ့ပါ (ပစ္စည်းပြတ်နေခြင်း စသည်)။ ငွေကို ဆိုင်မှ ပြန်အမ်းပေးပါမည် — <a href="https://t.me/maharshwebot" target="_blank" rel="noopener">Telegram ကို အော်ဒါနံပါတ်နှင့် ဆက်သွယ်ပါ</a>။', 'bad'],
+  };
+  async function lookup(order, key) {
+    show($('stErr'), false);
+    try {
+      const res = await api('/api/public/game-topup/orders/status?order=' + encodeURIComponent(order) + (key ? '&key=' + encodeURIComponent(key) : ''));
+      const o = res.order;
+      const [icon, title, hint, tone] = STATUS_TEXT[o.status] || ['•', o.status, '', 'warn'];
+      const rows = [
+        ['အော်ဒါနံပါတ်', o.orderNumber],
+        ['ပစ္စည်း', o.productName + ' · ' + o.variationName + ' × ' + o.quantity],
+        ['Player ID', (o.playerId || '-') + (o.serverId ? ' · Server ' + o.serverId : '')],
+        ['ပမာဏ', money(o.retailPrice)],
+        ['တင်သည့်အချိန်', new Date(o.createdAt).toLocaleString()],
+      ];
+      $('stResult').innerHTML = '<div class="note ' + tone + '"><b>' + icon + ' ' + title + '</b>'
+        + (o.rejectReason ? '<br>' + o.rejectReason : (o.failureReason ? '<br>' + o.failureReason : (hint ? '<br>' + hint : ''))) + '</div>'
+        + rows.map(([k, v]) => '<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9"><span class="muted">' + k + '</span><b style="font-size:13.5px;text-align:right">' + String(v) + '</b></div>').join('');
+      show($('stResult'), true);
+    } catch (e) {
+      $('stErr').textContent = e.message || 'ရှာမတွေ့ပါ';
+      show($('stErr'), true);
+      show($('stResult'), false);
+    }
+  }
+  $('stGo').addEventListener('click', () => lookup($('stOrder').value.trim(), ''));
+  $('stBack').addEventListener('click', () => { openPane('game'); });
+
+  // ── install (PWA) ──
+  let installPrompt = null;
+  addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    show($('installBtn'), true);
+  });
+  addEventListener('appinstalled', () => { installPrompt = null; show($('installBtn'), false); });
+  $('installBtn').addEventListener('click', async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') { installPrompt = null; show($('installBtn'), false); }
+  });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/digital/sw.js', { scope: '/digital/' }).catch(() => {});
+
+  // ── boot ──
+  (async () => {
+    const qs = new URLSearchParams(location.search);
+    // Reaching this page via a shop's own "Game Top-up" pill (?shop=slug)
+    // means that shop's own price overrides, KBZ Pay account, and
+    // approve/reject queue apply instead of the platform's — same catalog
+    // and order endpoints, just shop-scoped.
+    state.shopSlug = qs.get('shop') || '';
+    if (qs.get('view') === 'status') {
+      openPane('status');
+      if (qs.get('order')) $('stOrder').value = qs.get('order');
+      // Old links still carry a key (harmless — the endpoint still accepts
+      // one) but new lookups no longer need it.
+      if (qs.get('order')) lookup(qs.get('order'), qs.get('key') || '');
+    } else {
+      openPane('game');
+    }
+    try {
+      const shopQs = state.shopSlug ? '?shop=' + encodeURIComponent(state.shopSlug) : '';
+      const [cat, pay] = await Promise.all([
+        api('/api/public/game-topup/catalog' + shopQs),
+        api('/api/public/game-topup/payment-info' + shopQs),
+      ]);
+      state.products = cat.products || [];
+      state.pay = pay;
+      renderGames();
+    } catch (e) {
+      $('gLoading').innerHTML = '<div class="note bad">' + (e.message || 'ဖွင့်၍ မရပါ') + '</div>';
+    }
+  })();
+})();
+</script>
+</body>
+</html>

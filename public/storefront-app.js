@@ -168,7 +168,7 @@
     if(action==='close-search'){document.querySelector('.search-expand')?.remove();return}
     if(action==='filter'){state.sheet='filter';return render()}
     if(action==='vpn-plans'){state.infoSheet='vpn';return render()}
-    if(action==='game-topup'){window.location.href='/digital/?shop='+encodeURIComponent(slug);return}
+    if(action==='game-topup'){window.location.href='/digital/game/?shop='+encodeURIComponent(slug);return}
     if(action==='sort'){state.sheet='sort';return render()}
     if(action==='close-sheet'){state.sheet=null;return render()}
     if(action==='close-info'){state.infoSheet=null;return render()}
