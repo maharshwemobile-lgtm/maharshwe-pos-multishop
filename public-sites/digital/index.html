@@ -194,6 +194,7 @@ footer a{color:var(--blue);font-weight:700}
       <div id="fCheckWrap">
         <div id="gCheckOut" class="note hid"></div>
       </div>
+      <label id="fManualNameWrap" class="hid"><span>Game Name *</span><input id="fManualName" placeholder="ဂိမ်းထဲက Name ရိုက်ထည့်ပါ"></label>
       <label><span>ဆက်သွယ်ရန် ဖုန်းနံပါတ် *</span><input id="fPhone" type="tel" placeholder="09xxxxxxxxx" inputmode="tel"></label>
       <div class="total"><span>စုစုပေါင်း</span><b id="gTotal">0 ကျပ်</b></div>
       <button class="primary" type="button" id="gNext">ငွေပေးချေရန် ဆက်သွားမည်</button>
@@ -444,6 +445,8 @@ footer a{color:var(--blue);font-weight:700}
     checkSeq += 1;
     show($('gCheckOut'), false);
     $('gCheckOut').className = 'note hid';
+    show($('fManualNameWrap'), false);
+    $('fManualName').value = '';
     syncNext();
   }
 
@@ -513,11 +516,15 @@ footer a{color:var(--blue);font-weight:700}
         // MooGold can't check this particular product's accounts at all —
         // neither confirming nor rejecting it — so treating that the same as
         // a wrong id would block every purchase of it forever. Let the
-        // customer proceed on the id as typed, just without a verified name.
-        state.checked = { playerId: playerId, server: server, username: null };
+        // customer proceed on the id as typed, but since there's no verified
+        // name to attach to the order, ask them to type their in-game name
+        // themselves — the anti-abuse duplicate check needs a name from
+        // every order, verified or not.
+        state.checked = { playerId: playerId, server: server, username: null, unverified: true };
         rememberAccount(state.game.id, playerId, server, null);
         out.className = 'note';
         out.textContent = '⚠️ ဒီဂိမ်းအတွက် အကောင့် အလိုအလျောက် စစ်ဆေးလို့ မရပါ — ID နှင့် Server မှန်ကန်ကြောင်း ကိုယ်တိုင် သေချာစစ်ပြီး ဆက်သွားပါ';
+        show($('fManualNameWrap'), true);
       } else {
         state.checked = null;
         out.className = 'note bad';
@@ -541,6 +548,7 @@ footer a{color:var(--blue);font-weight:700}
     if (state.game.requiresPlayerId && !$('fPlayer').value.trim()) return err('Player ID ထည့်ပါ');
     if (state.game.requiresServer && !$('fServer').value.trim()) return err('Server ထည့်ပါ');
     if (needsCheck() && !state.checked) return err('အကောင့်ကို အရင် စစ်ဆေးပါ');
+    if (state.checked && state.checked.unverified && !$('fManualName').value.trim()) return err('Game Name ထည့်ပါ');
     if ($('fPhone').value.trim().length < 7) return err('ဆက်သွယ်ရန် ဖုန်းနံပါတ် ထည့်ပါ');
     renderPay();
     step('pay');
@@ -614,7 +622,7 @@ footer a{color:var(--blue);font-weight:700}
           quantity: 1,
           playerId: $('fPlayer').value.trim() || undefined,
           server: $('fServer').value.trim() || undefined,
-          customerName: (state.checked && state.checked.username) || undefined,
+          customerName: (state.checked && state.checked.username) || $('fManualName').value.trim() || undefined,
           customerPhone: $('fPhone').value.trim(),
           paymentTransactionId: txn,
           shopSlug: state.shopSlug || undefined,
@@ -659,7 +667,7 @@ footer a{color:var(--blue);font-weight:700}
 
   $('gAgain').addEventListener('click', () => {
     state.game = null; state.pack = null; state.placed = null;
-    ['fPlayer', 'fServer', 'fPhone', 'fTxn'].forEach((id) => { $(id).value = ''; });
+    ['fPlayer', 'fServer', 'fPhone', 'fTxn', 'fManualName'].forEach((id) => { $(id).value = ''; });
     resetCheck();
     step('games');
   });

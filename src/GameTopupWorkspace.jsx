@@ -313,6 +313,10 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
     if (product.requiresPlayerId && !form.playerId.trim()) return setMessage('Player ID ထည့်ပါ');
     if (product.requiresServer && !form.server.trim()) return setMessage('Server ထည့်ပါ');
     if (needsCheck && !checkOk) return setMessage('အကောင့်ကို အရင်စစ်ပါ — Player ID မှန်ကန်ကြောင်း Name ပေါ်လာမှ ဆက်ရောင်းပါ');
+    // A verified username covers this on its own; when MooGold can't check
+    // the account at all, the anti-abuse duplicate lookup still needs some
+    // name to key on, so the cashier has to type one in that case.
+    if (check.state === 'unavailable' && !form.customerName.trim()) return setMessage('ဒီဂိမ်းအတွက် အကောင့် အလိုအလျောက်စစ်လို့ မရလို့ ဖောက်သည်နာမည် ထည့်ပါ');
     if (!form.paymentAccountId) return setMessage('ငွေလက်ခံမည့် Account ရွေးပါ');
     setBusy(true);
     try {
@@ -366,7 +370,7 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
       ) : null}
 
       <div className="gt-form-row">
-        <label><span>ဖောက်သည်နာမည် (Optional)</span><input value={form.customerName} onChange={(event) => setForm({ ...form, customerName: event.target.value })} /></label>
+        <label><span>ဖောက်သည်နာမည် {check.state === 'unavailable' ? '*' : '(Optional)'}</span><input value={form.customerName} onChange={(event) => setForm({ ...form, customerName: event.target.value })} /></label>
         <label><span>ဖုန်းနံပါတ် (Optional)</span><input value={form.customerPhone} onChange={(event) => setForm({ ...form, customerPhone: event.target.value })} /></label>
       </div>
 
