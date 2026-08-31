@@ -45,20 +45,47 @@ function digitsOf(value) {
   return match ? Number(match[1]) : null;
 }
 
-// A repair a sheet row refers to: same shop, same trailing digits.
+// The repair a sheet row refers to, found by the paper voucher it carries.
+// Rows imported before the two numbers were separated have no external
+// reference, so the old match on trailing digits stays as a fallback for them.
 async function findRepairByVoucher(shopId, voucherNo) {
-  const number = digitsOf(voucherNo);
+  const key = String(voucherNo || '').trim();
+  if (!key) return null;
+  const columns = `id, repair_number AS "repairNumber", status, payment_status AS "paymentStatus",
+            final_cost AS "finalCost", delivered_at AS "deliveredAt"`;
+
+  const byReference = await prisma.$queryRawUnsafe(
+    `SELECT ${columns} FROM repairs
+      WHERE shop_id = $1::uuid AND external_repair_id = $2 LIMIT 1`,
+    shopId, key,
+  ).catch(() => []);
+  if (byReference[0]) return byReference[0];
+
+  const number = digitsOf(key);
   if (number === null) return null;
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT id, repair_number AS "repairNumber", status, payment_status AS "paymentStatus",
-            final_cost AS "finalCost", delivered_at AS "deliveredAt"
-       FROM repairs
+  const byNumber = await prisma.$queryRawUnsafe(
+    `SELECT ${columns} FROM repairs
       WHERE shop_id = $1::uuid
+        AND external_repair_id IS NULL
         AND CAST(NULLIF(regexp_replace(repair_number, '^[A-Za-z]+', ''), '') AS INTEGER) = $2
       LIMIT 1`,
     shopId, number,
   ).catch(() => []);
-  return rows[0] || null;
+  return byNumber[0] || null;
+}
+
+// The machine's own series, taken the same way the counter takes it.
+async function nextRepairNumber(shopId, prefix) {
+  const code = String(prefix || 'RP').toUpperCase();
+  const rows = await prisma.$queryRawUnsafe(
+    `INSERT INTO repair_sequences (shop_id, period, last_value, updated_at)
+     VALUES ($1::uuid, $2, 1, NOW())
+     ON CONFLICT (shop_id, period)
+     DO UPDATE SET last_value = repair_sequences.last_value + 1, updated_at = NOW()
+     RETURNING last_value`,
+    shopId, code,
+  );
+  return `${code}${String(rows[0].last_value).padStart(4, '0')}`;
 }
 
 // Every number the sheet has used is one the POS must not issue again.
@@ -114,8 +141,7 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row, trusted) {
   // still a repair. Without that assurance, take only rows that carry both.
   if (trusted ? (!customerName && !device.model) : (!customerName || !device.model)) return null;
 
-  const digits = digitsOf(voucherNo);
-  const repairNumber = `${String(prefix || '').toUpperCase()}${String(digits).padStart(4, '0')}`;
+  const repairNumber = await nextRepairNumber(shopId, prefix);
   const status = STATUS_FROM_SHEET[sheetWord(row.repairStatus)] || 'RECEIVED';
   const payment = PAYMENT_FROM_SHEET[sheetWord(row.paymentStatus)] || 'PENDING';
   const price = Number(String(row.customerPrice || '').replace(/[^\d.]/g, ''));
@@ -126,7 +152,7 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row, trusted) {
        id, shop_id, repair_number, customer_name, device_brand, device_model,
        problem, final_cost, payment_status, status, received_at, delivered_at,
        completed_at, notes, source_type, source_provider, priority,
-       created_at, updated_at
+       external_repair_id, created_at, updated_at
      ) VALUES (
        gen_random_uuid(), $1::uuid, $2, $3, $4, $5,
        -- final_cost is NOT NULL with a default of 0, and passing an explicit
@@ -135,7 +161,7 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row, trusted) {
        CASE WHEN $11::boolean IS TRUE THEN NOW() ELSE NULL END,
        CASE WHEN $9 IN ('COMPLETED','CANNOT_REPAIR') THEN NOW() ELSE NULL END,
        $12, 'IMPORTED', 'GOOGLE_SHEET', 'NORMAL',
-       NOW(), NOW()
+       $13, NOW(), NOW()
      )
      ON CONFLICT DO NOTHING
      RETURNING id, repair_number AS "repairNumber"`,
@@ -144,13 +170,16 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row, trusted) {
     customerName || 'စောင့်ယူ',
     device.brand,
     device.model,
-    String(row.repairPart || '').trim() || '-',
+    // Blank in the book means nothing was written down. A dash here is an
+    // invention, and it goes straight back out to the sheet as one.
+    String(row.repairPart || '').trim(),
     Number.isFinite(price) && price > 0 ? price : null,
     payment,
     status,
     sheetDate(row.date),
     collected,
     String(row.note || '').trim() || null,
+    String(voucherNo).trim(),
   ).catch((error) => {
     console.warn('Sheet row could not be created as a repair:', error.message);
     return [];
@@ -167,14 +196,13 @@ async function applySheetRow(shopId, prefix, row, trusted = false) {
   const voucherNo = String(row.voucherNo || row['Repair ID/Voucher'] || '').trim();
   if (!voucherNo) return { voucherNo, applied: false, reason: 'no voucher number' };
 
-  // The numbering high-water mark is raised only for a voucher this book could
-  // actually have issued. It used to be raised before anything was checked, so
-  // a number from another tab pushed the counter to 4590 and the next voucher
-  // the counter would have issued was MS4591.
   if (!VOUCHER_PATTERN.test(voucherNo)) {
     return { voucherNo, applied: false, reason: 'not a voucher number' };
   }
-  await raiseSequence(shopId, prefix, digitsOf(voucherNo));
+  // The two numbers are kept apart on purpose. The paper voucher belongs to the
+  // book and the POS number belongs to the machine; letting the book drive the
+  // machine's counter is what pushed it to 4590. The sheet's number is carried
+  // as an external reference instead.
 
   let repair = await findRepairByVoucher(shopId, voucherNo);
   if (!repair) {

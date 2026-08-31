@@ -89,7 +89,9 @@ function repairSheetRow(repair) {
   const delivered = Boolean(repair.deliveredAt);
   const values = {
     date: ddmmyyyy(repair.receivedAt),
-    voucherNo: voucherNumber(repair.repairNumber),
+    // The book's own number where the row came from the book; the machine's
+    // where the repair started at the counter. They are separate series.
+    voucherNo: String(repair.externalRepairId || '').trim() || voucherNumber(repair.repairNumber),
     customerName: String(repair.customerName || '').trim(),
     phoneModel: [repair.deviceBrand, repair.deviceModel].filter(Boolean).join(' ').trim(),
     repairPart: String(repair.problem || '').trim(),
