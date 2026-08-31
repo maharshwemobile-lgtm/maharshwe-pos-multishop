@@ -131,6 +131,37 @@ function splitDevice(value) {
  * Only rows that describe an actual job are taken: a voucher number on its own,
  * or a half-typed line, is left alone until it says who and what.
  */
+// A row is typed with the trigger firing on the way, so the same row can be
+// reported under one voucher and then another when that cell is corrected. The
+// second report matches nothing and a second repair appears — the same customer
+// and the same phone, twice. If a repair for this customer and phone was opened
+// from the sheet moments ago, this is that row being re-keyed, not a new one.
+async function adoptRecentlyKeyedRepair(shopId, voucherNo, row) {
+  const customerName = String(row.customerName || '').trim();
+  const device = splitDevice(row.phoneModel);
+  if (!customerName || !device.model) return null;
+
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT id, repair_number AS "repairNumber", external_repair_id AS "externalRepairId"
+       FROM repairs
+      WHERE shop_id = $1::uuid
+        AND source_type = 'IMPORTED'
+        AND created_at > NOW() - INTERVAL '15 minutes'
+        AND LOWER(TRIM(customer_name)) = LOWER($2)
+        AND LOWER(TRIM(COALESCE(device_model, ''))) = LOWER($3)
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    shopId, customerName, device.model,
+  ).catch(() => []);
+  if (!rows[0]) return null;
+
+  await prisma.$executeRawUnsafe(
+    'UPDATE repairs SET external_repair_id = $2, updated_at = NOW() WHERE id = $1::uuid',
+    rows[0].id, String(voucherNo).trim(),
+  );
+  return rows[0];
+}
+
 async function createRepairFromSheet(shopId, prefix, voucherNo, row, trusted) {
   // Rows from other tabs reach here when an older script reports the whole
   // workbook. They do not look like an intake: a VPN key row arrived as a
@@ -208,6 +239,10 @@ async function applySheetRow(shopId, prefix, row, trusted = false) {
 
   let repair = await findRepairByVoucher(shopId, voucherNo);
   if (!repair) {
+    const adopted = await adoptRecentlyKeyedRepair(shopId, voucherNo, row);
+    if (adopted) {
+      return { voucherNo, applied: true, rekeyed: true, repairNumber: adopted.repairNumber };
+    }
     const created = await createRepairFromSheet(shopId, prefix, voucherNo, row, trusted);
     if (!created) return { voucherNo, applied: false, reason: 'not in POS' };
     return { voucherNo, applied: true, created: true, repairNumber: created.repairNumber };
