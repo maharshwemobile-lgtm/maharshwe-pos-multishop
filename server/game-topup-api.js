@@ -233,9 +233,17 @@ function attachGameTopupApi(app) {
         serverField: variation.serverField,
       });
 
+      // MooGold refuses to check accounts at all for a handful of products
+      // (PUBG among them) — a wrong id gets its own distinct message. Without
+      // this flag the sell form treats both the same way and the "Sell"
+      // button stays disabled forever, since it waits on a check that can
+      // never succeed for these products.
+      const unavailable = !result.valid && /validation is not available/i.test(String(result.message || ''));
+
       res.json({
         ok: true,
         valid: result.valid,
+        unavailable,
         username: result.username,
         country: result.country,
         message: result.valid ? null : (result.message || 'Account not found'),

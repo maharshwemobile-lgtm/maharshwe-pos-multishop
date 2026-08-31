@@ -270,6 +270,7 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
   const totalRetail = Number(form.retailPrice || 0);
   const profit = totalRetail - totalCost;
   const needsCheck = Boolean(product.requiresPlayerId);
+  const checkOk = check.state === 'valid' || check.state === 'unavailable';
 
   useEffect(() => {
     setCheck({ state: 'idle', username: '', country: '', message: '' });
@@ -288,9 +289,16 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
           body: { variationId: variation.id, playerId, server: server || undefined },
         });
         if (cancelled) return;
-        setCheck(response.valid
-          ? { state: 'valid', username: response.username, country: response.country, message: '' }
-          : { state: 'invalid', username: '', country: '', message: response.message || 'အကောင့် မတွေ့ပါ' });
+        if (response.valid) {
+          setCheck({ state: 'valid', username: response.username, country: response.country, message: '' });
+        } else if (response.unavailable) {
+          // MooGold can't check this product's accounts either way, so
+          // waiting on a check that can never succeed would block every sale
+          // of it — let the id through as typed, unverified.
+          setCheck({ state: 'unavailable', username: '', country: '', message: response.message || '' });
+        } else {
+          setCheck({ state: 'invalid', username: '', country: '', message: response.message || 'အကောင့် မတွေ့ပါ' });
+        }
       } catch (error) {
         if (!cancelled) setCheck({ state: 'invalid', username: '', country: '', message: error.message || 'စစ်ဆေးလို့ မရပါ' });
       }
@@ -304,7 +312,7 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
     setMessage('');
     if (product.requiresPlayerId && !form.playerId.trim()) return setMessage('Player ID ထည့်ပါ');
     if (product.requiresServer && !form.server.trim()) return setMessage('Server ထည့်ပါ');
-    if (needsCheck && check.state !== 'valid') return setMessage('အကောင့်ကို အရင်စစ်ပါ — Player ID မှန်ကန်ကြောင်း Name ပေါ်လာမှ ဆက်ရောင်းပါ');
+    if (needsCheck && !checkOk) return setMessage('အကောင့်ကို အရင်စစ်ပါ — Player ID မှန်ကန်ကြောင်း Name ပေါ်လာမှ ဆက်ရောင်းပါ');
     if (!form.paymentAccountId) return setMessage('ငွေလက်ခံမည့် Account ရွေးပါ');
     setBusy(true);
     try {
@@ -352,6 +360,7 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
         <div className={`gt-account-check ${check.state}`}>
           {check.state === 'checking' ? 'အကောင့် စစ်ဆေးနေပါသည်…' : null}
           {check.state === 'valid' ? <>✅ <b>{check.username || 'Account'}</b>{check.country ? ` · ${check.country}` : ''}<small>ဒီအကောင့်သို့ ဖြည့်ပါမည် — မှန်မမှန် သေချာစစ်ပါ</small></> : null}
+          {check.state === 'unavailable' ? '⚠️ ဒီဂိမ်းအတွက် အကောင့် အလိုအလျောက် စစ်ဆေးလို့ မရပါ — ID နှင့် Server မှန်ကန်ကြောင်း ကိုယ်တိုင် သေချာစစ်ပြီး ဆက်ရောင်းပါ' : null}
           {check.state === 'invalid' ? check.message : null}
         </div>
       ) : null}
@@ -373,9 +382,9 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
         <div className={profit < 0 ? 'negative' : ''}><span>အမြတ်</span><b>{money(profit)}</b></div>
       </div>
 
-      <button type="submit" className="gt-submit" disabled={busy || (needsCheck && check.state !== 'valid')}>
+      <button type="submit" className="gt-submit" disabled={busy || (needsCheck && !checkOk)}>
         {busy ? <Loader2 className="gt-spin" size={17} /> : <Gamepad2 size={17} />}
-        {needsCheck && check.state !== 'valid' ? 'အကောင့် အရင်စစ်ပါ' : 'ရောင်းမည်'}
+        {needsCheck && !checkOk ? 'အကောင့် အရင်စစ်ပါ' : 'ရောင်းမည်'}
       </button>
     </form>
   );

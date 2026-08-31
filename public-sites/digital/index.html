@@ -509,6 +509,15 @@ footer a{color:var(--blue);font-weight:700}
         hint.textContent = 'မှန်မမှန် သေချာစစ်ပါ';
         out.appendChild(line);
         out.appendChild(hint);
+      } else if (data.ok && data.unavailable) {
+        // MooGold can't check this particular product's accounts at all —
+        // neither confirming nor rejecting it — so treating that the same as
+        // a wrong id would block every purchase of it forever. Let the
+        // customer proceed on the id as typed, just without a verified name.
+        state.checked = { playerId: playerId, server: server, username: null };
+        rememberAccount(state.game.id, playerId, server, null);
+        out.className = 'note';
+        out.textContent = '⚠️ ဒီဂိမ်းအတွက် အကောင့် အလိုအလျောက် စစ်ဆေးလို့ မရပါ — ID နှင့် Server မှန်ကန်ကြောင်း ကိုယ်တိုင် သေချာစစ်ပြီး ဆက်သွားပါ';
       } else {
         state.checked = null;
         out.className = 'note bad';

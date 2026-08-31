@@ -246,9 +246,18 @@ function attachGameTopupPublicApi(app) {
         username = prior[0]?.customerName || null;
       }
 
+      // MooGold answers "Validation is not available for this product" for a
+      // handful of games (PUBG among them) — a wrong id gets its own distinct
+      // message. Treating that one as a hard block meant nobody could ever
+      // buy those products at all, since the checkout step requires a
+      // successful check first. Flagging it lets the client accept the id as
+      // typed instead of failing shut on something MooGold itself can't judge.
+      const unavailable = !result.valid && /validation is not available/i.test(String(result.message || ''));
+
       res.json({
         ok: true,
         valid: result.valid,
+        unavailable,
         username,
         country: result.country,
         message: result.valid ? null : (result.message || 'Account not found'),
