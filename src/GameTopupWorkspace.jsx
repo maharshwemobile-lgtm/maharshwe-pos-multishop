@@ -289,12 +289,22 @@ function SellPanel({ product, variation, accounts, canSeeCost, onClose, onSold }
           body: { variationId: variation.id, playerId, server: server || undefined },
         });
         if (cancelled) return;
-        if (response.valid) {
+        if (response.valid || (response.unavailable && response.username)) {
+          // For an unavailable product the server already fell back to this
+          // account's own last named order, so a returning customer's name
+          // still shows up here without anyone typing it again.
           setCheck({ state: 'valid', username: response.username, country: response.country, message: '' });
+          // Carries the checked name into the actual field the sale submits,
+          // rather than leaving it sitting unused next to the checkmark —
+          // only when the cashier hasn't already typed something themselves.
+          if (response.username) {
+            setForm((prev) => (prev.customerName.trim() ? prev : { ...prev, customerName: response.username }));
+          }
         } else if (response.unavailable) {
-          // MooGold can't check this product's accounts either way, so
-          // waiting on a check that can never succeed would block every sale
-          // of it — let the id through as typed, unverified.
+          // MooGold can't check this product's accounts either way, and
+          // nothing on file names this id yet — waiting on a check that can
+          // never succeed would block every sale of it, so let it through as
+          // typed, but a name has to be typed in this once.
           setCheck({ state: 'unavailable', username: '', country: '', message: response.message || '' });
         } else {
           setCheck({ state: 'invalid', username: '', country: '', message: response.message || 'အကောင့် မတွေ့ပါ' });

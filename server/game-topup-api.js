@@ -240,11 +240,31 @@ function attachGameTopupApi(app) {
       // never succeed for these products.
       const unavailable = !result.valid && /validation is not available/i.test(String(result.message || ''));
 
+      // Same gap as the public storefront: MooGold sometimes drops the name
+      // on an otherwise-good check, and never has one at all for an
+      // unavailable product. This shop's own order history for the same id
+      // covers both, so the cashier only ever has to type a name once per
+      // account rather than on every sale.
+      let username = result.username;
+      if ((result.valid || unavailable) && !username) {
+        const prior = await prisma.$queryRawUnsafe(
+          `SELECT o.customer_name AS "customerName"
+             FROM game_topup_orders o
+             JOIN game_topup_variations v ON v.id = o.variation_id
+            WHERE v.product_id = $1::uuid AND o.player_id = $2
+              AND COALESCE(o.server_id, '') = COALESCE($3, '')
+              AND o.customer_name IS NOT NULL AND TRIM(o.customer_name) <> ''
+            ORDER BY o.created_at DESC LIMIT 1`,
+          variation.productId, input.playerId, input.server || null,
+        );
+        username = prior[0]?.customerName || null;
+      }
+
       res.json({
         ok: true,
         valid: result.valid,
         unavailable,
-        username: result.username,
+        username,
         country: result.country,
         message: result.valid ? null : (result.message || 'Account not found'),
       });

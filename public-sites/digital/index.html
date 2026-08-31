@@ -492,13 +492,17 @@ footer a{color:var(--blue);font-weight:700}
       // The fields may have changed again while this request was in flight;
       // an answer for an id the customer has since edited must not land.
       if (mySeq !== checkSeq) return;
-      if (data.ok && data.valid) {
-        // A blank username on this call doesn't mean the account has no
-        // name — MooGold's check sometimes just doesn't send one back. If we
-        // already confirmed a name for this exact id+server, keep using it.
-        const recalled = recalledAccount(state.game.id);
-        const sameAccount = recalled && recalled.playerId === playerId && recalled.server === (server || '');
-        const username = data.username || (sameAccount ? recalled.username : null) || null;
+      // A blank username on this call doesn't mean the account has no name —
+      // MooGold's check sometimes just doesn't send one back, and for an
+      // unavailable product it never sends one at all. The server already
+      // falls back to this account's own past order for a name in both
+      // cases; this only covers a name that came from this browser earlier
+      // in the same visit and hasn't reached the server as an order yet.
+      const recalled = recalledAccount(state.game.id);
+      const sameAccount = recalled && recalled.playerId === playerId && recalled.server === (server || '');
+      const username = data.username || (sameAccount ? recalled.username : null) || null;
+
+      if (data.ok && (data.valid || (data.unavailable && username))) {
         state.checked = { playerId: playerId, server: server, username: username };
         rememberAccount(state.game.id, playerId, server, username);
         out.className = 'note good compact';
@@ -509,17 +513,16 @@ footer a{color:var(--blue);font-weight:700}
         line.appendChild(document.createTextNode('✅ '));
         line.appendChild(nameEl);
         const hint = document.createElement('small');
-        hint.textContent = 'မှန်မမှန် သေချာစစ်ပါ';
+        hint.textContent = data.valid ? 'မှန်မမှန် သေချာစစ်ပါ' : 'ဒီဂိမ်းအတွက် အလိုအလျောက် စစ်လို့မရပါ — အရင်တင်ခဲ့တဲ့ Name အတိုင်း သုံးထားသည်';
         out.appendChild(line);
         out.appendChild(hint);
       } else if (data.ok && data.unavailable) {
         // MooGold can't check this particular product's accounts at all —
         // neither confirming nor rejecting it — so treating that the same as
         // a wrong id would block every purchase of it forever. Let the
-        // customer proceed on the id as typed, but since there's no verified
-        // name to attach to the order, ask them to type their in-game name
-        // themselves — the anti-abuse duplicate check needs a name from
-        // every order, verified or not.
+        // customer proceed on the id as typed. No name has ever been
+        // captured for this exact id+server before, so it has to be typed in
+        // just this once — every order after this one auto-fills it.
         state.checked = { playerId: playerId, server: server, username: null, unverified: true };
         rememberAccount(state.game.id, playerId, server, null);
         out.className = 'note';

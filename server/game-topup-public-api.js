@@ -225,14 +225,26 @@ function attachGameTopupPublicApi(app) {
         serverField: variation.serverField,
       });
 
+      // MooGold answers "Validation is not available for this product" for a
+      // handful of games (PUBG among them) — a wrong id gets its own distinct
+      // message. Treating that one as a hard block meant nobody could ever
+      // buy those products at all, since the checkout step requires a
+      // successful check first. Flagging it lets the client accept the id as
+      // typed instead of failing shut on something MooGold itself can't judge.
+      const unavailable = !result.valid && /validation is not available/i.test(String(result.message || ''));
+
       // MooGold's own check intermittently comes back valid with no username
       // for an account it named correctly moments earlier — a repeat customer
       // then loses their name at random, and the anti-abuse point of having
-      // it at all is defeated if it's gone half the time. Falling back to this
-      // server's own order history (rather than anything client-supplied)
-      // means it holds even across a cleared browser or a different device.
+      // it at all is defeated if it's gone half the time. Same gap for an
+      // unavailable product: nothing from MooGold names the account at all,
+      // ever, so a returning customer would have to retype their name on
+      // every single order. Falling back to this server's own order history
+      // (rather than anything client-supplied) covers both — and holds even
+      // across a cleared browser or a different device — so typing it in is
+      // only ever needed once per account, the very first time.
       let username = result.username;
-      if (result.valid && !username) {
+      if ((result.valid || unavailable) && !username) {
         const prior = await prisma.$queryRawUnsafe(
           `SELECT o.customer_name AS "customerName"
              FROM game_topup_public_orders o
@@ -245,14 +257,6 @@ function attachGameTopupPublicApi(app) {
         );
         username = prior[0]?.customerName || null;
       }
-
-      // MooGold answers "Validation is not available for this product" for a
-      // handful of games (PUBG among them) — a wrong id gets its own distinct
-      // message. Treating that one as a hard block meant nobody could ever
-      // buy those products at all, since the checkout step requires a
-      // successful check first. Flagging it lets the client accept the id as
-      // typed instead of failing shut on something MooGold itself can't judge.
-      const unavailable = !result.valid && /validation is not available/i.test(String(result.message || ''));
 
       res.json({
         ok: true,
