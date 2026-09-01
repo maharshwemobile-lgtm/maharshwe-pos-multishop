@@ -5,7 +5,7 @@
 // names at it, this maps a repair onto that sheet exactly as it stands:
 //
 //   A  (blank header)        dd/mm/yyyy
-//   B  Repair ID/Voucher     0481          — four digits, no shop prefix
+//   B  Repair ID/Voucher     0481 from the book, MS0985 from the counter
 //   C  ပိုင်ရှင်နာမည်
 //   D  Phone Model
 //   E  ပြင်ဆင်မှုအပိုင်း      TL / Check / USB / Battery …
@@ -89,9 +89,12 @@ function repairSheetRow(repair) {
   const delivered = Boolean(repair.deliveredAt);
   const values = {
     date: ddmmyyyy(repair.receivedAt),
-    // The book's own number where the row came from the book; the machine's
-    // where the repair started at the counter. They are separate series.
-    voucherNo: String(repair.externalRepairId || '').trim() || voucherNumber(repair.repairNumber),
+    // Two series that must not be mistaken for each other. A row that came from
+    // the book keeps the book's number exactly as written — 0988 — because that
+    // is the paper voucher and the book is in that order. A repair opened at the
+    // counter carries the machine's number with its prefix — MS0985 — so it
+    // reads as the machine's and never lands in the paper sequence.
+    voucherNo: String(repair.externalRepairId || '').trim() || String(repair.repairNumber || '').trim(),
     customerName: String(repair.customerName || '').trim(),
     phoneModel: [repair.deviceBrand, repair.deviceModel].filter(Boolean).join(' ').trim(),
     repairPart: String(repair.problem || '').trim(),
