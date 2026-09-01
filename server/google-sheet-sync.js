@@ -73,6 +73,20 @@ async function ensureGoogleSheetSyncSchema() {
 async function queueGoogleSheetSync({ shopId, dataset, action, entityId, payload }) {
   if (!shopId || !DATASETS[dataset]) return null;
   await ensureGoogleSheetSyncSchema();
+
+  // A shop syncing only its repair book still queued every sale, expense and
+  // audit event, and they sat PENDING for good because nothing would ever send
+  // them. Queueing work that cannot be delivered is just a growing pile to
+  // explain later.
+  if (dataset !== 'repair-voucher') {
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT COALESCE((settings->'api'->'googleSheets'->>'repairOnly')::boolean, false) AS "repairOnly"
+         FROM shop_settings WHERE shop_id = $1::uuid LIMIT 1`,
+      shopId,
+    ).catch(() => []);
+    if (rows[0]?.repairOnly === true) return null;
+  }
+
   const id = crypto.randomUUID();
   await prisma.$executeRawUnsafe(
     `INSERT INTO google_sheet_sync_outbox(id,shop_id,dataset,action,entity_id,payload,status,created_at)

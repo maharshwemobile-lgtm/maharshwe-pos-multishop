@@ -384,10 +384,13 @@ export default function GoogleSheetIntegrationSettingsV23() {
       </details>
     </div>
 
-    {(counts.PENDING || counts.FAILED || message) ? (
+    {(counts.PENDING || counts.FAILED || counts.ABANDONED || message) ? (
       <footer className="gs-card-foot">
         {counts.PENDING ? <span>ပို့ရန်ကျန် <b>{counts.PENDING}</b></span> : null}
-        {counts.FAILED ? <span>မအောင်မြင် <b>{counts.FAILED}</b></span> : null}
+        {counts.FAILED ? <span>ပြန်ကြိုးစားနေ <b>{counts.FAILED}</b></span> : null}
+        {/* Past the retry cap: nothing will try these again, so they are
+            reported as closed rather than as an outstanding failure. */}
+        {counts.ABANDONED ? <span className="gs-quiet">လက်လျှော့ပြီး <b>{counts.ABANDONED}</b></span> : null}
         {message ? <span className="gs-msg">{message}</span> : null}
         {(counts.PENDING || counts.FAILED)
           ? <button type="button" className="gs-btn gs-btn-ghost" onClick={retry} disabled={busy}>ပြန်ပို့မည်</button>

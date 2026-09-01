@@ -413,8 +413,15 @@ function attachGoogleSheetProjectSettingsApi(app) {
       await ensureSchema();
       const [config, counts, shop] = await Promise.all([
         ensureSecret(req.auth.shopId),
+        // Rows past the retry cap are done with — they cannot be sent and nothing
+        // will try again. Counting them as failures put 989 on the screen and
+        // left the shop with a number that could never come down.
         prisma.$queryRawUnsafe(
-          `SELECT status,COUNT(*)::int AS count FROM google_sheet_sync_outbox WHERE shop_id=$1::uuid GROUP BY status`,
+          `SELECT CASE WHEN status = 'FAILED' AND attempts >= 20 THEN 'ABANDONED' ELSE status END AS status,
+                  COUNT(*)::int AS count
+             FROM google_sheet_sync_outbox
+            WHERE shop_id = $1::uuid
+            GROUP BY 1`,
           req.auth.shopId,
         ),
         shopIdentity(req.auth.shopId),

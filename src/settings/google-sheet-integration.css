@@ -235,3 +235,4 @@ select.gs-input { padding-right: 32px; }
 .gs-status li.is-warn { background: #fffbeb; }
 .gs-status li.is-warn .gs-status-mark { color: #b45309; }
 .dark .gs-status li.is-warn { background: rgba(120, 53, 15, .22); }
+.gs-quiet { opacity: .65; }
