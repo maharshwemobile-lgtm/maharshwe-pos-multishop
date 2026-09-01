@@ -23,7 +23,7 @@ One row per repair, keyed on the voucher number, in the tab's existing shape:
 | Col | Header | From the POS |
 |-----|--------|--------------|
 | A | *(blank)* | received date, `dd/mm/yyyy` |
-| B | Repair ID/Voucher | voucher number without the shop prefix — `MS0551` is written `0551` |
+| B | Repair ID/Voucher | the paper voucher for rows from the book, `MS0985` for ones opened at the counter |
 | C | ပိုင်ရှင်နာမည် | customer name |
 | D | Phone Model | brand + model |
 | E | ပြင်ဆင်မှုအပိုင်း | the problem as entered |
@@ -182,9 +182,19 @@ function pushEditsToPos(e) {
 
 Wording it does not recognise is left alone rather than guessed at, and
 `ပြင်ရန်` never drags a repair backwards out of a state the counter already
-set. Every voucher number the sheet reports also raises the POS numbering
-high-water mark, so numbers issued here continue the sheet's series instead of
-colliding with it.
+set. Text typed into a row after it was first reported — the fault, most often,
+since a row is filled left to right while the trigger fires on the way — is
+carried too; a blank cell means "not written down yet" and never clears what the
+counter recorded.
+
+### Two numbering series
+
+The book and the POS number independently. The sheet keeps the paper voucher in
+the order the physical book runs; the POS issues its own `MS…` series. A row
+that came from the book is stored against that paper voucher and matched on it,
+so an edit finds its repair. A repair opened at the counter goes into the book
+under its machine number with the prefix — `MS0985` — so it cannot be mistaken
+for a paper voucher or land in that sequence.
 
 ### Loops
 

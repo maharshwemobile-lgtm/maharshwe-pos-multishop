@@ -90,17 +90,6 @@ async function nextRepairNumber(shopId, prefix) {
   return `${code}${String(rows[0].last_value).padStart(4, '0')}`;
 }
 
-// Every number the sheet has used is one the POS must not issue again.
-async function raiseSequence(shopId, prefix, value) {
-  if (!prefix || !Number.isFinite(value) || value <= 0) return;
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO repair_sequences (shop_id, period, last_value, updated_at)
-     VALUES ($1::uuid, $2, $3, NOW())
-     ON CONFLICT (shop_id, period)
-     DO UPDATE SET last_value = GREATEST(repair_sequences.last_value, EXCLUDED.last_value), updated_at = NOW()`,
-    shopId, prefix, Math.trunc(value),
-  ).catch(() => {});
-}
 
 // dd/mm/yyyy, the way the sheet writes it. Anything else is left to Date.
 function sheetDate(value) {
@@ -333,4 +322,4 @@ async function applySheetRow(shopId, prefix, row, trusted = false) {
   return { voucherNo, applied: true, repairNumber: repair.repairNumber, changes };
 }
 
-module.exports = { applySheetRow, raiseSequence, STATUS_FROM_SHEET, PAYMENT_FROM_SHEET, sheetWord, digitsOf };
+module.exports = { applySheetRow, STATUS_FROM_SHEET, PAYMENT_FROM_SHEET, sheetWord, digitsOf };

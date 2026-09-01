@@ -69,13 +69,6 @@ function hhmm(value) {
   return `${ddmmyyyy(date)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-// The sheet records 0481, the POS issues MS0481. Keep the sheet's form so old
-// and new rows sort and search together.
-function voucherNumber(repairNumber) {
-  const raw = String(repairNumber || '').trim();
-  const digits = raw.replace(/^[A-Za-z]+/, '');
-  return digits || raw;
-}
 
 function amount(value) {
   const number = Number(value || 0);
@@ -119,4 +112,4 @@ function repairSheetRow(repair) {
   };
 }
 
-module.exports = { repairSheetRow, voucherNumber, SHEET_COLUMNS, REPAIR_STATUS_TEXT };
+module.exports = { repairSheetRow, SHEET_COLUMNS, REPAIR_STATUS_TEXT };
