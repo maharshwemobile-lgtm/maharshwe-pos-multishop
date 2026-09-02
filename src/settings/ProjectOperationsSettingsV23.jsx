@@ -5,9 +5,9 @@ import MoneyServiceFeeSettingsV23 from '../MoneyServiceFeeSettingsV23.jsx';
 import './project-operations-v23.css';
 
 const TABS = [
-  { id: 'payments', label: 'POS Payment Types', shortLabel: 'Payment Types', icon: Banknote },
-  { id: 'fees', label: 'Money Service Wallets & Fees', shortLabel: 'Wallets & Fees', icon: WalletCards },
-  { id: 'categories', label: 'Income & Expense Categories', shortLabel: 'Categories', icon: Tags },
+  { id: 'payments', label: 'ငွေပေးချေမှု အမျိုးအစားများ', shortLabel: 'ငွေပေးချေမှု', icon: Banknote },
+  { id: 'fees', label: 'ငွေလွှဲ Wallet နှင့် ဝန်ဆောင်ခ', shortLabel: 'Wallet နှင့် ဝန်ဆောင်ခ', icon: WalletCards },
+  { id: 'categories', label: 'ဝင်ငွေ / ထွက်ငွေ အမျိုးအစားများ', shortLabel: 'ဝင်ငွေ / ထွက်ငွေ', icon: Tags },
 ];
 
 export default function ProjectOperationsSettingsV23() {
@@ -15,7 +15,7 @@ export default function ProjectOperationsSettingsV23() {
   const active = TABS.find((item) => item.id === tab) || TABS[0];
 
   return <section className="project-operations-settings-v23">
-    <nav className="project-operations-tabs" aria-label="POS and payment setup tabs">
+    <nav className="project-operations-tabs" aria-label="ငွေပေးချေမှု ဆက်တင်များ">
       {TABS.map((item) => <button key={item.id} type="button" className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)} title={item.label}>
         <item.icon size={17}/><span>{item.shortLabel}</span>
       </button>)}

@@ -143,45 +143,47 @@ export default function ProjectUserAccessSettingsV2({ notify }) {
 
   return <div className="ps-access-layout">
     <section className="ps-panel">
-      <header className="ps-panel-head"><div><UserPlus size={20}/><span><h3>Create User</h3><p>{tenant?.name || 'Current Shop'} PostgreSQL tenant</p></span></div></header>
+      <header className="ps-panel-head"><div><UserPlus size={20}/><span><h3>အသုံးပြုသူ အသစ်</h3><p>{tenant?.name || 'ဤဆိုင်'} အတွက် အကောင့် ဖွင့်ရန်</p></span></div></header>
       <form className="ps-form" onSubmit={createUser}>
-        <label><span>Name</span><input value={createForm.name} onChange={(event) => setCreateForm({...createForm,name:event.target.value})} required/></label>
-        <label><span>Username</span><input value={createForm.username} onChange={(event) => setCreateForm({...createForm,username:event.target.value})} required/></label>
-        <label><span>Password</span><input type="password" minLength="6" value={createForm.password} onChange={(event) => setCreateForm({...createForm,password:event.target.value})} required/></label>
-        <label><span>Role</span><select value={createForm.role} onChange={(event) => setCreateForm({...createForm,role:event.target.value})}><option value="SHOP_ADMIN">Shop Admin</option><option value="CASHIER">Staff / Cashier</option></select></label>
-        <button className="ps-primary" type="submit" disabled={creating}>{creating ? <Loader2 className="ps-spin" size={18}/> : <UserPlus size={18}/>}Create User</button>
+        <label><span>အမည်</span><input value={createForm.name} onChange={(event) => setCreateForm({...createForm,name:event.target.value})} required/></label>
+        <label><span>အကောင့်အမည်</span><input value={createForm.username} onChange={(event) => setCreateForm({...createForm,username:event.target.value})} required/></label>
+        <label><span>စကားဝှက်</span><input type="password" minLength="6" value={createForm.password} onChange={(event) => setCreateForm({...createForm,password:event.target.value})} required/></label>
+        <label><span>Role</span><select value={createForm.role} onChange={(event) => setCreateForm({...createForm,role:event.target.value})}><option value="SHOP_ADMIN">ဆိုင်ပိုင်ရှင်</option><option value="CASHIER">ဝန်ထမ်း / ကောင်တာ</option></select></label>
+        <button className="ps-primary" type="submit" disabled={creating}>{creating ? <Loader2 className="ps-spin" size={18}/> : <UserPlus size={18}/>}အကောင့် ဖွင့်မည်</button>
       </form>
     </section>
 
     <section className="ps-panel ps-user-editor">
-      <header className="ps-panel-head"><div><ShieldCheck size={20}/><span><h3>User Access & Security</h3><p>User ရွေးပြီး လိုအပ်တဲ့ section ကိုနှိပ်မှ Form ပေါ်ပါမယ်။</p></span></div><button className="ps-icon-button" type="button" onClick={() => load()} disabled={loading}><RefreshCw className={loading ? 'ps-spin' : ''} size={18}/></button></header>
-      <div className="ps-user-picker">{users.map((user) => <button type="button" key={user.id} className={selectedId === user.id ? 'active' : ''} onClick={() => selectUser(user.id)}><UserRound size={17}/><span><b>{user.name}</b><small>@{user.username} · {user.role}</small></span><em className={user.active ? 'active' : 'inactive'}>{user.active ? 'Active' : 'Off'}</em></button>)}</div>
+      <header className="ps-panel-head"><div><ShieldCheck size={20}/><span><h3>ခွင့်ပြုချက်နှင့် လုံခြုံရေး</h3><p>အသုံးပြုသူ တစ်ဦးကို ရွေးပါ။ ပြင်လိုသည့် အပိုင်းကို နှိပ်လျှင် ပွင့်လာပါမည်။</p></span></div><button className="ps-icon-button" type="button" onClick={() => load()} disabled={loading}><RefreshCw className={loading ? 'ps-spin' : ''} size={18}/></button></header>
+      <div className="ps-user-picker">{users.map((user) => <button type="button" key={user.id} className={selectedId === user.id ? 'active' : ''} onClick={() => selectUser(user.id)}><UserRound size={17}/><span><b>{user.name}</b><small>@{user.username} · {user.role}</small></span><em className={user.active ? 'active' : 'inactive'}>{user.active ? 'ဖွင့်' : 'ပိတ်'}</em></button>)}</div>
       {editor ? <div className="ps-access-editor">
         <div className="ps-grid-2">
-          <label><span>Display Name</span><input value={editor.name} onChange={(event) => setEditor({...editor,name:event.target.value})}/></label>
+          <label><span>အမည်</span><input value={editor.name} onChange={(event) => setEditor({...editor,name:event.target.value})}/></label>
           <label><span>Role</span><select value={editor.role} onChange={(event) => changeRole(event.target.value)}><option value="SHOP_ADMIN">Shop Admin</option><option value="CASHIER">Staff / Cashier</option></select></label>
         </div>
-        <label className="ps-switch-row"><span><b>User Active</b><small>Inactive user cannot log in.</small></span><input type="checkbox" checked={editor.active} onChange={(event) => setEditor({...editor,active:event.target.checked})}/></label>
-        <button className="ps-primary" type="button" onClick={saveUser} disabled={saving}>{saving ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>}Save User Access</button>
+        <label className="ps-switch-row"><span><b>အသုံးပြုခွင့် ဖွင့်ထားမည်</b><small>ပိတ်ထားလျှင် ဤအကောင့်ဖြင့် ဝင်၍ မရပါ။</small></span><input type="checkbox" checked={editor.active} onChange={(event) => setEditor({...editor,active:event.target.checked})}/></label>
+        <button className="ps-primary" type="button" onClick={saveUser} disabled={saving}>{saving ? <Loader2 className="ps-spin" size={18}/> : <Save size={18}/>}သိမ်းမည်</button>
 
         <div className="ps-user-accordion-list">
-          <AccordionSection id="password" title="Admin Password Reset" description="Temporary password အသစ်သတ်မှတ်ရန်" icon={LockKeyhole} openPanel={openPanel} setOpenPanel={setOpenPanel}>
+          <AccordionSection id="password" title="စကားဝှက် ပြန်သတ်မှတ်" description="ယာယီ စကားဝှက် အသစ် ပေးရန်" icon={LockKeyhole} openPanel={openPanel} setOpenPanel={setOpenPanel}>
             <AdminPasswordResetPanel key={`password-${selected.id}`} user={selected} notify={notify} onReset={() => load(selected.id)}/>
           </AccordionSection>
 
-          <AccordionSection id="tabs" title="Tab Visibility" description="User မြင်ရမည့် Menu Tabs ကို Show / Hide လုပ်ရန်" icon={Eye} openPanel={openPanel} setOpenPanel={setOpenPanel}>
+          <AccordionSection id="tabs" title="မြင်ရမည့် စာမျက်နှာများ" description="ဤသူ မြင်ရမည့် menu များကို ရွေးရန်" icon={Eye} openPanel={openPanel} setOpenPanel={setOpenPanel}>
             <PermissionGrid title="Tab Visibility" icon={Eye} rows={TABS} permissions={editor.permissions} onToggle={toggle} mode="tab" lockedKey={editor.role === 'SHOP_ADMIN' ? 'tab.Settings' : null}/>
           </AccordionSection>
 
-          {canShowDelete ? <AccordionSection id="delete" title="Delete User" description="Staff / Cashier account ကိုအပြီးဖယ်ရှားရန်" icon={Trash2} openPanel={openPanel} setOpenPanel={setOpenPanel} tone="danger">
-            <UserDeleteDangerZone key={`delete-${selected.id}`} user={selected} notify={notify} onDeleted={() => load('')}/>
-          </AccordionSection> : null}
 
-          <AccordionSection id="functions" title="Function Permissions" description="လုပ်ဆောင်ချက်တစ်ခုချင်းစီကို Allow / Block လုပ်ရန်" icon={KeyRound} openPanel={openPanel} setOpenPanel={setOpenPanel}>
+
+          <AccordionSection id="functions" title="လုပ်ဆောင်ခွင့်များ" description="လုပ်ဆောင်ချက် တစ်ခုချင်းစီကို ခွင့်ပြု / ပိတ်ရန်" icon={KeyRound} openPanel={openPanel} setOpenPanel={setOpenPanel}>
             <PermissionGrid title="Function Permissions" icon={KeyRound} rows={FUNCTIONS} permissions={editor.permissions} onToggle={toggle} mode="function"/>
           </AccordionSection>
+
+          {canShowDelete ? <AccordionSection id="delete" title="အကောင့် ဖျက်မည်" description="ဝန်ထမ်း အကောင့်ကို အပြီး ဖယ်ရှားရန် — ပြန်ရ၍ မရပါ" icon={Trash2} openPanel={openPanel} setOpenPanel={setOpenPanel} tone="danger">
+            <UserDeleteDangerZone key={`delete-${selected.id}`} user={selected} notify={notify} onDeleted={() => load('')}/>
+          </AccordionSection> : null}
         </div>
-      </div> : <div className="ps-empty">No user selected.</div>}
+      </div> : <div className="ps-empty">အသုံးပြုသူ တစ်ဦးကို ရွေးပါ။</div>}
     </section>
   </div>;
 }
