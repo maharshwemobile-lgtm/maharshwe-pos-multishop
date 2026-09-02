@@ -71,6 +71,10 @@ function attachProjectSettingsBusinessWrite(app) {
         const business = {
           ...previousBusiness,
           subtitle: text(req.body?.subtitle),
+          // A thermal head has one colour, so a shop can name a black-and-white
+          // copy for slips. Left blank, slips use the main logo — which is what
+          // anyone changing the logo expects to happen.
+          printLogoUrl: text(req.body?.printLogoUrl),
           secondaryPhone: text(req.body?.secondaryPhone),
           townshipRegion: text(req.body?.townshipRegion),
           website: text(req.body?.website),

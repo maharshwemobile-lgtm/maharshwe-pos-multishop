@@ -228,6 +228,9 @@ export default function ProjectSettingsCenter() {
             <Field label="Business Name"><input value={forms.business.name || ''} onChange={(e) => updateForm('business', { name: e.target.value })} disabled={!canManage}/></Field>
             <Field label="Subtitle"><input value={forms.business.subtitle || ''} onChange={(e) => updateForm('business', { subtitle: e.target.value })} disabled={!canManage}/></Field>
             <Field label="Logo URL"><input value={forms.business.logoUrl || ''} onChange={(e) => updateForm('business', { logoUrl: e.target.value })} placeholder="https://..." disabled={!canManage}/></Field>
+            <Field label="Slip Logo URL" hint="ဗလာထားလျှင် အပေါ်က Logo ကိုပဲ slip မှာ သုံးပါမည်။ ဖြည့်ထားလျှင် slip အတွက် ဒါကို ဦးစားပေးပါမည်။">
+              <input value={forms.business.printLogoUrl || ''} onChange={(e) => updateForm('business', { printLogoUrl: e.target.value })} placeholder="https://... (ရွေးချယ်ခွင့်)" disabled={!canManage}/>
+            </Field>
             <Field label="Shop Slug" hint="Read only tenant identity"><input readOnly value={forms.business.slug || ''}/></Field>
 
             <Divider>Contact</Divider>
