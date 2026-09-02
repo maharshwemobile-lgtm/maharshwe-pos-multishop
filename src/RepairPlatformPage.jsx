@@ -51,6 +51,23 @@ const STATUS_GROUP = {
   CANNOT_REPAIR: 'CANNOT_REPAIR',
 };
 
+// The counter sees everything, including the bookkeeping — but in words rather
+// than the event names the database happens to use.
+const EVENT_TEXT = {
+  CREATED: 'ဖုန်းပြင် လက်ခံသည်',
+  STATUS_CHANGED: 'အခြေအနေ ပြောင်းသည်',
+  DELIVERED: 'ဖုန်း ပြန်ထုတ်ပေးသည်',
+  PUBLIC_LINK_ROTATED: 'ဖောက်သည် စစ်ဆေးရန် QR ထုတ်သည်',
+  SHEET_EDIT: 'Google Sheet မှ ပြင်ဆင်သည်',
+  DEVICE_LINKED: 'IMEI / Serial ချိတ်သည်',
+  FINANCE_UPDATED: 'ငွေကြေး ပြင်ဆင်သည်',
+};
+
+function eventLabel(type) {
+  const key = String(type || '');
+  return EVENT_TEXT[key] || key.replaceAll('_', ' ');
+}
+
 function statusGroup(status) {
   return STATUS_GROUP[String(status || '')] || 'IN_PROGRESS';
 }
@@ -561,7 +578,14 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
           <section className="repair-detail-card repair-timeline-card">
             <h4>Repair Timeline</h4>
             <div className="repair-timeline">
-              {(data.timeline || []).map((event) => <article key={event.id}><div><Clock3 size={15} /></div><span><b>{event.eventType.replaceAll('_', ' ')}</b><small>{event.note || statusLabel(event.status)} · {event.changedByName || event.changedByUsername || 'System'}</small><time>{formatDate(event.occurredAt)}</time></span></article>)}
+              {(data.timeline || []).map((event) => <article key={event.id}>
+                <div><Clock3 size={15} /></div>
+                <span>
+                  <b>{eventLabel(event.eventType)}</b>
+                  <small>{[statusLabel(event.status), event.changedByName || event.changedByUsername || 'စနစ်'].filter(Boolean).join(' · ')}</small>
+                  <time>{formatDate(event.occurredAt)}</time>
+                </span>
+              </article>)}
               {!data.timeline?.length ? <p>No timeline events yet.</p> : null}
             </div>
           </section>
@@ -664,10 +688,7 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
     try {
       await apiFetch(`/api/repair-platform/jobs/${job.id}/status`, {
         method: 'PATCH',
-        body: {
-          status: nextStatus,
-          note: 'Quick status changed from repair transaction list',
-        },
+        body: { status: nextStatus },
       });
       notify('success', `${job.repairNumber} status ပြောင်းပြီးပါပြီ`);
       setQuickStatusJobId(null);

@@ -40,6 +40,15 @@ const STATUS_GROUP = {
 
 const statusGroup = (status) => STATUS_GROUP[String(status || '')] || 'IN_PROGRESS';
 
+// What the customer is told happened to their phone. Anything not named here is
+// bookkeeping — a status link being minted, a spreadsheet row being edited —
+// and means nothing to the person waiting for their phone.
+const CUSTOMER_EVENTS = {
+  CREATED: 'ဖုန်း လက်ခံရရှိပါပြီ',
+  STATUS_CHANGED: 'အခြေအနေ ပြောင်းလဲမှု',
+  DELIVERED: 'ဖုန်း ပြန်လည် ထုတ်ပေးပြီး',
+};
+
 const STATUS_TEXT = {
   RECEIVED: 'ဖုန်းကို လက်ခံပြီးပါပြီ',
   CHECKING: 'ဖုန်းကို စစ်ဆေးနေပါပြီ',
@@ -195,7 +204,16 @@ export default function CustomerRepairPortal() {
           <section className="customer-portal-card customer-timeline-card">
             <header><Clock3 size={20} /><div><b>Repair Timeline</b><small>ပြင်ဆင်မှုမှတ်တမ်း</small></div></header>
             <div className="customer-timeline">
-              {(data.timeline || []).map((event, index) => <article key={`${event.eventType}-${event.occurredAt}-${index}`}><span><CheckCircle2 size={16} /></span><div><b>{String(event.eventType || '').replaceAll('_', ' ')}</b><small>{STATUS_TEXT[event.status] || event.status || ''}</small><time>{formatDate(event.occurredAt)}</time></div></article>)}
+              {(data.timeline || [])
+                .filter((event) => CUSTOMER_EVENTS[String(event.eventType || '')])
+                .map((event, index) => <article key={`${event.eventType}-${event.occurredAt}-${index}`}>
+                  <span><CheckCircle2 size={16} /></span>
+                  <div>
+                    <b>{CUSTOMER_EVENTS[String(event.eventType)]}</b>
+                    <small>{STATUS_TEXT[event.status] || ''}</small>
+                    <time>{formatDate(event.occurredAt)}</time>
+                  </div>
+                </article>)}
               {!data.timeline?.length ? <p>Timeline မရှိသေးပါ။</p> : null}
             </div>
           </section>
