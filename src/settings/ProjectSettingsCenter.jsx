@@ -203,7 +203,7 @@ export default function ProjectSettingsCenter() {
 
         {/* ── Shop Info ─────────────────────────────────────── */}
         {data && section === 'business' ? <section className="psc-panel">
-          <PanelHead icon={Building2} title="Shop Info" description="ဆိုင်အမည်၊ ဆက်သွယ်ရန်၊ လိပ်စာနဲ့ payment နံပါတ်များ" onRefresh={load} busy={loading}/>
+          <PanelHead icon={Building2} title="ဆိုင် အချက်အလက်" description="ဆိုင်အမည်၊ လိုဂို၊ ဆက်သွယ်ရန်၊ ငွေလက်ခံနံပါတ်နှင့် ဘောက်ချာနံပါတ်" onRefresh={load} busy={loading}/>
 
           <div className="psc-license">
             <div className={`psc-lic-card psc-lic-status ${licenseColor}`}>
@@ -215,6 +215,11 @@ export default function ProjectSettingsCenter() {
               <div className="psc-lic-bar"><i style={{ width: `${license.usedPercent || 0}%` }}/></div>
               <small>{license.remainingDays || 0} days remaining · {formatDate(license.startsAt)} → {formatDate(license.endsAt)}</small>
             </div>
+            <div className="psc-lic-card">
+              <small>ဆိုင် အမှတ်</small>
+              <b>{forms.business.slug || '-'}</b>
+              <span>ပြောင်း၍ မရပါ · ငွေကြေး MMK</span>
+            </div>
             <div className="psc-lic-card psc-lic-renew">
               <small>{isPremium ? 'Plan' : 'Renew'}</small>
               <b>{isPremium ? 'Premium' : 'Plan Renew'}</b>
@@ -224,67 +229,67 @@ export default function ProjectSettingsCenter() {
           </div>
 
           <div className="psc-form psc-grid-2">
-            <Divider>Identity</Divider>
-            <Field label="Business Name"><input value={forms.business.name || ''} onChange={(e) => updateForm('business', { name: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Subtitle"><input value={forms.business.subtitle || ''} onChange={(e) => updateForm('business', { subtitle: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Logo URL"><input value={forms.business.logoUrl || ''} onChange={(e) => updateForm('business', { logoUrl: e.target.value })} placeholder="https://..." disabled={!canManage}/></Field>
-            <Field label="Slip Logo URL" hint="ဗလာထားလျှင် အပေါ်က Logo ကိုပဲ slip မှာ သုံးပါမည်။ ဖြည့်ထားလျှင် slip အတွက် ဒါကို ဦးစားပေးပါမည်။">
+            <Divider>ဆိုင် အမည်နှင့် လိုဂို</Divider>
+            <Field label="ဆိုင်အမည်"><input value={forms.business.name || ''} onChange={(e) => updateForm('business', { name: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="ခေါင်းစဉ်ခွဲ" hint="ဆိုင်အမည်အောက်တွင် ပြမည့် စာကြောင်း"><input value={forms.business.subtitle || ''} onChange={(e) => updateForm('business', { subtitle: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="လိုဂို လိပ်စာ" hint="မျက်နှာပြင်နှင့် storefront တွင် သုံးမည်"><input value={forms.business.logoUrl || ''} onChange={(e) => updateForm('business', { logoUrl: e.target.value })} placeholder="https://..." disabled={!canManage}/></Field>
+            <Field label="ဘောက်ချာ လိုဂို လိပ်စာ" hint="ဗလာထားလျှင် အပေါ်က လိုဂိုကိုပဲ သုံးပါမည်။ Thermal စက်သည် အရောင်တစ်ရောင်သာ ရိုက်နိုင်၍ အဖြူအမည်း သီးသန့် ထားလိုလျှင် ဤနေရာတွင် ထည့်ပါ။">
               <input value={forms.business.printLogoUrl || ''} onChange={(e) => updateForm('business', { printLogoUrl: e.target.value })} placeholder="https://... (ရွေးချယ်ခွင့်)" disabled={!canManage}/>
             </Field>
-            <Field label="Shop Slug" hint="Read only tenant identity"><input readOnly value={forms.business.slug || ''}/></Field>
+            
 
-            <Divider>Contact</Divider>
-            <Field label="Primary Phone"><input value={forms.business.phone || ''} onChange={(e) => updateForm('business', { phone: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Secondary Phone"><input value={forms.business.secondaryPhone || ''} onChange={(e) => updateForm('business', { secondaryPhone: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Address"><textarea rows="2" value={forms.business.address || ''} onChange={(e) => updateForm('business', { address: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Township / Region"><input value={forms.business.townshipRegion || ''} onChange={(e) => updateForm('business', { townshipRegion: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Website"><input value={forms.business.website || ''} onChange={(e) => updateForm('business', { website: e.target.value })} placeholder="https://..." disabled={!canManage}/></Field>
-            <Field label="Google Map URL"><input value={forms.business.googleMapUrl || ''} onChange={(e) => updateForm('business', { googleMapUrl: e.target.value })} placeholder="https://maps.google.com/..." disabled={!canManage}/></Field>
+            <Divider>ဆက်သွယ်ရန်</Divider>
+            <Field label="ဖုန်းနံပါတ်"><input value={forms.business.phone || ''} onChange={(e) => updateForm('business', { phone: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="ဖုန်းနံပါတ် (၂)"><input value={forms.business.secondaryPhone || ''} onChange={(e) => updateForm('business', { secondaryPhone: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="လိပ်စာ"><textarea rows="2" value={forms.business.address || ''} onChange={(e) => updateForm('business', { address: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="မြို့နယ် / တိုင်း"><input value={forms.business.townshipRegion || ''} onChange={(e) => updateForm('business', { townshipRegion: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="ဝဘ်ဆိုက်"><input value={forms.business.website || ''} onChange={(e) => updateForm('business', { website: e.target.value })} placeholder="https://..." disabled={!canManage}/></Field>
+            <Field label="Google Map လိပ်စာ"><input value={forms.business.googleMapUrl || ''} onChange={(e) => updateForm('business', { googleMapUrl: e.target.value })} placeholder="https://maps.google.com/..." disabled={!canManage}/></Field>
 
-            <Divider>Payment & Numbering</Divider>
-            <Field label="KBZ Pay Number"><input value={forms.business.kbzPayNumber || ''} onChange={(e) => updateForm('business', { kbzPayNumber: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Wave Pay Number"><input value={forms.business.wavePayNumber || ''} onChange={(e) => updateForm('business', { wavePayNumber: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Repair Prefix" hint="Optional. Blank = auto-generate from shop code.">
+            <Divider>ငွေလက်ခံ နံပါတ်</Divider>
+            <Field label="KBZ Pay နံပါတ်"><input value={forms.business.kbzPayNumber || ''} onChange={(e) => updateForm('business', { kbzPayNumber: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="Wave Pay နံပါတ်"><input value={forms.business.wavePayNumber || ''} onChange={(e) => updateForm('business', { wavePayNumber: e.target.value })} disabled={!canManage}/></Field>
+            <Field label="ဘောက်ချာနံပါတ် အစ" hint="ဥပမာ MS ထည့်လျှင် MS0001 မှ စမည်။ ဗလာထားလျှင် ဆိုင်ကုဒ်မှ အလိုအလျောက် ယူပါမည်။">
               <input value={forms.business.repairPrefix || ''} onChange={(e) => updateForm('business', { repairPrefix: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8) })} placeholder="Auto" disabled={!canManage}/>
             </Field>
           </div>
 
-          <SaveBar name="business" saving={saving} onSave={() => save('business')} disabled={!canManage} label="Save Shop Info"/>
+          <SaveBar name="business" saving={saving} onSave={() => save('business')} disabled={!canManage} label="သိမ်းမည်"/>
         </section> : null}
 
         {/* ── Slip & Print ──────────────────────────────────── */}
         {data && section === 'slip' ? <div className="psc-two-col">
           <section className="psc-panel">
-            <PanelHead icon={FileText} title="Slip & Print" description="Sale Slip နဲ့ Repair Voucher အတွက် logo၊ header၊ footer"/>
+            <PanelHead icon={FileText} title="ဘောက်ချာ ပုံစံ" description="ရောင်းအား slip နှင့် ဖုန်းပြင် ဘောက်ချာတွင် ပါမည့် စာသားများ"/>
             <div className="psc-form">
-              <Toggle label="Show Business Logo" checked={forms.slip.showLogo} onChange={(v) => updateForm('slip', { showLogo: v })} disabled={!canManage}/>
+              <Toggle label="လိုဂို ပြမည်" hint="ပိတ်ထားလျှင် ဘောက်ချာတွင် ဆိုင်အမည်သာ ပါပါမည်။" checked={forms.slip.showLogo} onChange={(v) => updateForm('slip', { showLogo: v })} disabled={!canManage}/>
 
               <div className="psc-form psc-grid-2" style={{ padding: 0 }}>
-                <Divider>Sale Slip</Divider>
-                <Field label="Sale Header"><textarea rows="2" value={forms.slip.saleHeader || ''} onChange={(e) => updateForm('slip', { saleHeader: e.target.value })} disabled={!canManage}/></Field>
-                <Field label="Sale Footer"><textarea rows="2" value={forms.slip.saleFooter || ''} onChange={(e) => updateForm('slip', { saleFooter: e.target.value })} disabled={!canManage}/></Field>
-                <Field label="Footer Tag"><textarea rows="2" value={forms.slip.footerTag || ''} onChange={(e) => updateForm('slip', { footerTag: e.target.value })} placeholder="Thank you / warranty / contact" disabled={!canManage}/></Field>
-                <Field label="Warranty Text"><textarea rows="2" value={forms.slip.warrantyText || ''} onChange={(e) => updateForm('slip', { warrantyText: e.target.value })} disabled={!canManage}/></Field>
-                <Field label="Sale Paper Size"><select value={forms.slip.salePaperSize} onChange={(e) => updateForm('slip', { salePaperSize: e.target.value })} disabled={!canManage}><option>58mm</option><option>80mm</option></select></Field>
+                <Divider>ရောင်းအား Slip</Divider>
+                <Field label="အပေါ်စာသား"><textarea rows="2" value={forms.slip.saleHeader || ''} onChange={(e) => updateForm('slip', { saleHeader: e.target.value })} disabled={!canManage}/></Field>
+                <Field label="အောက်စာသား"><textarea rows="2" value={forms.slip.saleFooter || ''} onChange={(e) => updateForm('slip', { saleFooter: e.target.value })} disabled={!canManage}/></Field>
+                <Field label="အောက်ဆုံး မှတ်ချက်"><textarea rows="2" value={forms.slip.footerTag || ''} onChange={(e) => updateForm('slip', { footerTag: e.target.value })} placeholder="Thank you / warranty / contact" disabled={!canManage}/></Field>
+                <Field label="အာမခံ စာသား"><textarea rows="2" value={forms.slip.warrantyText || ''} onChange={(e) => updateForm('slip', { warrantyText: e.target.value })} disabled={!canManage}/></Field>
+                <Field label="စက္ကူ အကျယ်"><select value={forms.slip.salePaperSize} onChange={(e) => updateForm('slip', { salePaperSize: e.target.value })} disabled={!canManage}><option>58mm</option><option>80mm</option></select></Field>
 
-                <Divider>Repair Voucher</Divider>
-                  <Field label="Repair Paper Size"><select value={forms.slip.repairPaperSize} onChange={(e) => updateForm('slip', { repairPaperSize: e.target.value })} disabled={!canManage}><option>58mm</option><option>80mm</option></select></Field>
-                  <Field label="Voucher Header"><textarea rows="2" value={forms.slip.repairVoucherHeader || ''} onChange={(e) => updateForm('slip', { repairVoucherHeader: e.target.value })} disabled={!canManage}/></Field>
-                  <Field label="Voucher Footer"><textarea rows="2" value={forms.slip.repairVoucherFooter || ''} onChange={(e) => updateForm('slip', { repairVoucherFooter: e.target.value })} disabled={!canManage}/></Field>
+                <Divider>ဖုန်းပြင် ဘောက်ချာ</Divider>
+                  <Field label="စက္ကူ အကျယ်"><select value={forms.slip.repairPaperSize} onChange={(e) => updateForm('slip', { repairPaperSize: e.target.value })} disabled={!canManage}><option>58mm</option><option>80mm</option></select></Field>
+                  <Field label="အပေါ်စာသား"><textarea rows="2" value={forms.slip.repairVoucherHeader || ''} onChange={(e) => updateForm('slip', { repairVoucherHeader: e.target.value })} disabled={!canManage}/></Field>
+                  <Field label="အောက်စာသား"><textarea rows="2" value={forms.slip.repairVoucherFooter || ''} onChange={(e) => updateForm('slip', { repairVoucherFooter: e.target.value })} disabled={!canManage}/></Field>
               </div>
 
-              <Divider>Show on Slip</Divider>
+              <Divider>ဘောက်ချာတွင် ထည့်ပြမည့် အချက်များ</Divider>
               <div className="psc-toggle-grid">
-                <Toggle label="Customer Phone" checked={forms.slip.showCustomerPhone} onChange={(v) => updateForm('slip', { showCustomerPhone: v })} disabled={!canManage}/>
-                <Toggle label="Payment Type" checked={forms.slip.showPaymentType} onChange={(v) => updateForm('slip', { showPaymentType: v })} disabled={!canManage}/>
-                <Toggle label="Cashier Name" checked={forms.slip.showCashierName} onChange={(v) => updateForm('slip', { showCashierName: v })} disabled={!canManage}/>
+                <Toggle label="ဖောက်သည် ဖုန်းနံပါတ်" checked={forms.slip.showCustomerPhone} onChange={(v) => updateForm('slip', { showCustomerPhone: v })} disabled={!canManage}/>
+                <Toggle label="ငွေပေးချေပုံ" checked={forms.slip.showPaymentType} onChange={(v) => updateForm('slip', { showPaymentType: v })} disabled={!canManage}/>
+                <Toggle label="ရောင်းသူ အမည်" checked={forms.slip.showCashierName} onChange={(v) => updateForm('slip', { showCashierName: v })} disabled={!canManage}/>
               </div>
             </div>
-            <SaveBar name="slip" saving={saving} onSave={() => save('slip')} disabled={!canManage} label="Save Slip Settings"/>
+            <SaveBar name="slip" saving={saving} onSave={() => save('slip')} disabled={!canManage} label="သိမ်းမည်"/>
           </section>
 
           <section className="psc-panel psc-slip-sticky">
-            <PanelHead icon={FileText} title="Preview" description={`${forms.slip.salePaperSize} sale slip`}/>
+            <PanelHead icon={FileText} title="နမူနာ" description={`ရောင်းအား slip · ${forms.slip.salePaperSize}`}/>
             <div className={`psc-paper ${forms.slip.salePaperSize === '58mm' ? 'narrow' : ''}`}>
               {forms.slip.showLogo && data.business.logoUrl
                 ? <img src={data.business.logoUrl} alt="Business logo"/>
@@ -304,34 +309,34 @@ export default function ProjectSettingsCenter() {
         {/* ── Appearance (My Preference + Shop Default) ─────── */}
         {data && section === 'appearance' ? <>
           <section className="psc-panel">
-            <PanelHead icon={Palette} title="My Preference" description="ဤ user အတွက်သာ သက်ရောက်သည်။ Shop default ကို override လုပ်သည်။"/>
+            <PanelHead icon={Palette} title="ကျွန်ုပ်၏ ပုံစံ" description="ဤအကောင့်တွင်သာ သက်ရောက်သည်။ အောက်က ဆိုင် default ကို ကျော်၍ သုံးပါမည်။"/>
             <div className="psc-form psc-grid-2">
-              <Field label="Language"><select value={forms.preferences.language} onChange={(e) => updateForm('preferences', { language: e.target.value })}><option value="my">မြန်မာ</option><option value="en">English</option></select></Field>
-              <Field label="Theme"><select value={forms.preferences.theme} onChange={(e) => updateForm('preferences', { theme: e.target.value })}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></Field>
-              <Field label="Opening Page"><select value={forms.preferences.openingPage} onChange={(e) => updateForm('preferences', { openingPage: e.target.value })}>{openingPages.map((item) => <option key={item}>{item}</option>)}</select></Field>
-              <Field label="Sidebar"><select value={forms.preferences.sidebarMode} onChange={(e) => updateForm('preferences', { sidebarMode: e.target.value })}><option value="expanded">Expanded</option><option value="compact">Compact</option></select></Field>
-              <Field label="Table Density"><select value={forms.preferences.tableDensity} onChange={(e) => updateForm('preferences', { tableDensity: e.target.value })}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></Field>
-              <Field label="Page Size"><select value={forms.preferences.pageSize} onChange={(e) => updateForm('preferences', { pageSize: Number(e.target.value) })}>{[10,20,50,100].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
-              <Field label="Date Format"><select value={forms.preferences.dateFormat} onChange={(e) => updateForm('preferences', { dateFormat: e.target.value })}><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option><option>MM/DD/YYYY</option></select></Field>
-              <Field label="Time Format"><select value={forms.preferences.timeFormat} onChange={(e) => updateForm('preferences', { timeFormat: e.target.value })}><option value="12h">12 Hour</option><option value="24h">24 Hour</option></select></Field>
+              <Field label="ဘာသာစကား"><select value={forms.preferences.language} onChange={(e) => updateForm('preferences', { language: e.target.value })}><option value="my">မြန်မာ</option><option value="en">English</option></select></Field>
+              <Field label="အရောင် ပုံစံ"><select value={forms.preferences.theme} onChange={(e) => updateForm('preferences', { theme: e.target.value })}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></Field>
+              <Field label="ဖွင့်လိုက်လျှင် ပြမည့် စာမျက်နှာ"><select value={forms.preferences.openingPage} onChange={(e) => updateForm('preferences', { openingPage: e.target.value })}>{openingPages.map((item) => <option key={item}>{item}</option>)}</select></Field>
+              <Field label="ဘေးတန်း"><select value={forms.preferences.sidebarMode} onChange={(e) => updateForm('preferences', { sidebarMode: e.target.value })}><option value="expanded">Expanded</option><option value="compact">Compact</option></select></Field>
+              <Field label="ဇယား သိပ်သည်းမှု"><select value={forms.preferences.tableDensity} onChange={(e) => updateForm('preferences', { tableDensity: e.target.value })}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></Field>
+              <Field label="စာမျက်နှာတစ်ခုလျှင် စာရင်း"><select value={forms.preferences.pageSize} onChange={(e) => updateForm('preferences', { pageSize: Number(e.target.value) })}>{[10,20,50,100].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
+              <Field label="ရက်စွဲ ပုံစံ"><select value={forms.preferences.dateFormat} onChange={(e) => updateForm('preferences', { dateFormat: e.target.value })}><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option><option>MM/DD/YYYY</option></select></Field>
+              <Field label="အချိန် ပုံစံ"><select value={forms.preferences.timeFormat} onChange={(e) => updateForm('preferences', { timeFormat: e.target.value })}><option value="12h">12 Hour</option><option value="24h">24 Hour</option></select></Field>
             </div>
-            <SaveBar name="preferences" saving={saving} onSave={() => save('preferences')} label="Save My Preference"/>
+            <SaveBar name="preferences" saving={saving} onSave={() => save('preferences')} label="သိမ်းမည်"/>
           </section>
 
           <section className="psc-panel">
-            <PanelHead icon={Building2} title="Shop Default" description="ဆိုင်တစ်ခုလုံးအတွက် default။ User က My Preference နဲ့ override နိုင်သည်။"/>
+            <PanelHead icon={Building2} title="ဆိုင် default" description="ဝန်ထမ်းအားလုံးအတွက် စံ။ တစ်ဦးချင်း အပေါ်က ကျွန်ုပ်၏ပုံစံဖြင့် ပြောင်းနိုင်သည်။"/>
             <div className="psc-form psc-grid-2">
-              <Field label="Default Language"><select value={forms.appearance.language} onChange={(e) => updateForm('appearance', { language: e.target.value })} disabled={!canManage}><option value="my">မြန်မာ</option><option value="en">English</option></select></Field>
-              <Field label="Default Theme"><select value={forms.appearance.theme} onChange={(e) => updateForm('appearance', { theme: e.target.value })} disabled={!canManage}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></Field>
-              <Field label="Accent Colour"><select value={forms.appearance.accent} onChange={(e) => updateForm('appearance', { accent: e.target.value })} disabled={!canManage}><option value="green">Green</option><option value="blue">Blue</option><option value="purple">Purple</option><option value="orange">Orange</option></select></Field>
-              <Field label="Font Size"><select value={forms.appearance.fontScale} onChange={(e) => updateForm('appearance', { fontScale: e.target.value })} disabled={!canManage}><option value="normal">Normal</option><option value="large">Large</option></select></Field>
-              <Field label="Table Density"><select value={forms.appearance.tableDensity} onChange={(e) => updateForm('appearance', { tableDensity: e.target.value })} disabled={!canManage}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></Field>
-              <Field label="Timezone"><input value={forms.appearance.timezone} onChange={(e) => updateForm('appearance', { timezone: e.target.value })} disabled={!canManage}/></Field>
-              <Field label="Date Format"><select value={forms.appearance.dateFormat} onChange={(e) => updateForm('appearance', { dateFormat: e.target.value })} disabled={!canManage}><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option><option>MM/DD/YYYY</option></select></Field>
-              <Field label="Time Format"><select value={forms.appearance.timeFormat} onChange={(e) => updateForm('appearance', { timeFormat: e.target.value })} disabled={!canManage}><option value="12h">12 Hour</option><option value="24h">24 Hour</option></select></Field>
-              <Field label="Currency"><input readOnly value="MMK"/></Field>
+              <Field label="ဘာသာစကား"><select value={forms.appearance.language} onChange={(e) => updateForm('appearance', { language: e.target.value })} disabled={!canManage}><option value="my">မြန်မာ</option><option value="en">English</option></select></Field>
+              <Field label="အရောင် ပုံစံ"><select value={forms.appearance.theme} onChange={(e) => updateForm('appearance', { theme: e.target.value })} disabled={!canManage}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></Field>
+              <Field label="အဓိက အရောင်"><select value={forms.appearance.accent} onChange={(e) => updateForm('appearance', { accent: e.target.value })} disabled={!canManage}><option value="green">Green</option><option value="blue">Blue</option><option value="purple">Purple</option><option value="orange">Orange</option></select></Field>
+              <Field label="စာလုံး အရွယ်"><select value={forms.appearance.fontScale} onChange={(e) => updateForm('appearance', { fontScale: e.target.value })} disabled={!canManage}><option value="normal">Normal</option><option value="large">Large</option></select></Field>
+              <Field label="ဇယား သိပ်သည်းမှု"><select value={forms.appearance.tableDensity} onChange={(e) => updateForm('appearance', { tableDensity: e.target.value })} disabled={!canManage}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></Field>
+              <Field label="အချိန်ဇုန်"><input value={forms.appearance.timezone} onChange={(e) => updateForm('appearance', { timezone: e.target.value })} disabled={!canManage}/></Field>
+              <Field label="ရက်စွဲ ပုံစံ"><select value={forms.appearance.dateFormat} onChange={(e) => updateForm('appearance', { dateFormat: e.target.value })} disabled={!canManage}><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option><option>MM/DD/YYYY</option></select></Field>
+              <Field label="အချိန် ပုံစံ"><select value={forms.appearance.timeFormat} onChange={(e) => updateForm('appearance', { timeFormat: e.target.value })} disabled={!canManage}><option value="12h">12 Hour</option><option value="24h">24 Hour</option></select></Field>
+              
             </div>
-            <SaveBar name="appearance" saving={saving} onSave={() => save('appearance')} disabled={!canManage} label="Save Shop Default"/>
+            <SaveBar name="appearance" saving={saving} onSave={() => save('appearance')} disabled={!canManage} label="သိမ်းမည်"/>
           </section>
         </> : null}
 
@@ -342,7 +347,7 @@ export default function ProjectSettingsCenter() {
 
         {/* ── System ────────────────────────────────────────── */}
         {data && section === 'system' ? <section className="psc-panel">
-          <PanelHead icon={Database} title="System" description="ဒေတာဘေs့ အခြေအနေ၊ စနစ် ဆက်တင်နှင့် ပြုပြင်ထိန်းသိမ်းမှု" onRefresh={load} busy={loading}/>
+          <PanelHead icon={Database} title="System" description="ဒေတာဘေ့စ် အခြေအနေ၊ စနစ် ဆက်တင်နှင့် ပြုပြင်ထိန်းသိမ်းမှု" onRefresh={load} busy={loading}/>
 
           {/* Read-only state first. It used to sit in the same grid as the
               editable fields, so Settings Version read as something you could
