@@ -381,3 +381,17 @@
   .psc-toast { left:12px; right:12px; top:12px; max-width:none; }
   .psc-header { padding:11px 12px; }
 }
+
+/* Maintenance Mode stops every normal user from writing anything. In the grid
+   with page size and timezone it read as one preference among several. */
+.psc-danger-block{
+  padding:14px 16px;
+  border:1px solid #fed7aa;
+  border-radius:12px;
+  background:#fffbeb;
+}
+.psc-danger-block.is-on{border-color:#f59e0b;background:#fef3c7}
+.psc-danger-note{margin:10px 0 0;font-size:12.5px;font-weight:700;color:#92400e;line-height:1.6}
+.dark .psc-danger-block{border-color:#7c4a10;background:rgba(120,53,15,.22)}
+.dark .psc-danger-block.is-on{border-color:#f59e0b}
+.dark .psc-danger-note{color:#fde68a}

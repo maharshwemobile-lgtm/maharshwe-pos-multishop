@@ -342,26 +342,55 @@ export default function ProjectSettingsCenter() {
 
         {/* ── System ────────────────────────────────────────── */}
         {data && section === 'system' ? <section className="psc-panel">
-          <PanelHead icon={Database} title="System" description="Database status၊ session နဲ့ default page size" onRefresh={load} busy={loading}/>
+          <PanelHead icon={Database} title="System" description="ဒေတာဘေs့ အခြေအနေ၊ စနစ် ဆက်တင်နှင့် ပြုပြင်ထိန်းသိမ်းမှု" onRefresh={load} busy={loading}/>
 
+          {/* Read-only state first. It used to sit in the same grid as the
+              editable fields, so Settings Version read as something you could
+              type into. */}
+          <Divider>အခြေအနေ</Divider>
           <div className="psc-db-status">
-            <div className="psc-db-card"><Database size={20}/><span><small>Database</small><b>{data.database.provider}</b></span></div>
-            <div className="psc-db-card"><CheckCircle2 size={20}/><span><small>Connection</small><b>{data.database.connected ? 'Connected' : 'Offline'}</b></span></div>
-            <div className="psc-db-card"><ShieldCheck size={20}/><span><small>Tenant Scope</small><b>{data.database.tenantScoped ? 'Protected' : 'Check Required'}</b></span></div>
-            <div className="psc-db-card"><code>{data.database.shopSlug}</code></div>
+            <div className="psc-db-card"><Database size={20}/><span><small>ဒေတာဘေ့စ်</small><b>{data.database.provider}</b></span></div>
+            <div className="psc-db-card"><CheckCircle2 size={20}/><span><small>ချိတ်ဆက်မှု</small><b>{data.database.connected ? 'ကောင်းမွန်' : 'ပြတ်တောက်'}</b></span></div>
+            <div className="psc-db-card"><ShieldCheck size={20}/><span><small>ဆိုင်အလိုက် ကန့်သတ်</small><b>{data.database.tenantScoped ? 'လုံခြုံ' : 'စစ်ဆေးရန်'}</b></span></div>
+            <div className="psc-db-card"><Database size={20}/><span><small>ဆိုင် အမှတ်</small><b>{data.database.shopSlug}</b></span></div>
+            <div className="psc-db-card"><CheckCircle2 size={20}/><span><small>ဆက်တင် ဗားရှင်း</small><b>{data.settingsVersion}</b></span></div>
           </div>
 
+          <Divider>ပြသမှု</Divider>
           <div className="psc-form psc-grid-2">
-            <Field label="Default Page Size"><select value={forms.system.defaultPageSize} onChange={(e) => updateForm('system', { defaultPageSize: Number(e.target.value) })} disabled={!canManage}>{[10,20,50,100].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
-            <Field label="Session Timeout (minutes)"><input type="number" min="15" max="1440" value={forms.system.sessionTimeoutMinutes} onChange={(e) => updateForm('system', { sessionTimeoutMinutes: Number(e.target.value) })} disabled={!canManage}/></Field>
-            <Field label="Timezone"><input value={forms.system.timezone} onChange={(e) => updateForm('system', { timezone: e.target.value })} disabled={!canManage}/></Field>
-            <Field label="Settings Version"><input readOnly value={data.settingsVersion}/></Field>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <Toggle label="Maintenance Mode" hint="ဖွင့်ထားပါက normal user များ write operation မလုပ်နိုင်ပါ။" checked={forms.system.maintenanceMode} onChange={(v) => updateForm('system', { maintenanceMode: v })} disabled={!canManage}/>
-            </div>
+            <Field label="စာမျက်နှာတစ်ခုလျှင် စာရင်း" hint="စာရင်းများတွင် တစ်ကြိမ်ပြမည့် အရေအတွက်">
+              <select value={forms.system.defaultPageSize} onChange={(e) => updateForm('system', { defaultPageSize: Number(e.target.value) })} disabled={!canManage}>
+                {[10,20,50,100].map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </Field>
+            <Field label="အချိန်ဇုန်" hint="အစီရင်ခံစာနှင့် နေ့ချုပ်များ တွက်ရာတွင် သုံးသည်">
+              <input value={forms.system.timezone} onChange={(e) => updateForm('system', { timezone: e.target.value })} disabled={!canManage}/>
+            </Field>
           </div>
 
-          <SaveBar name="system" saving={saving} onSave={() => save('system')} disabled={!canManage} label="Save System Settings"/>
+          <Divider>လုံခြုံရေး</Divider>
+          <div className="psc-form psc-grid-2">
+            <Field label="အလိုအလျောက် ထွက်ချိန် (မိနစ်)" hint="ဤမိနစ်အတွင်း လှုပ်ရှားမှု မရှိပါက အကောင့်မှ ထွက်ပါမည်။ ၁၅ မှ ၁၄၄၀ အထိ">
+              <input type="number" min="15" max="1440" value={forms.system.sessionTimeoutMinutes} onChange={(e) => updateForm('system', { sessionTimeoutMinutes: Number(e.target.value) })} disabled={!canManage}/>
+            </Field>
+          </div>
+
+          {/* Its own block, and last. This stops every normal user from writing
+              anything — it should not sit in a grid looking like a preference. */}
+          <Divider>ပြုပြင်ထိန်းသိမ်းမှု</Divider>
+          <div className={`psc-danger-block ${forms.system.maintenanceMode ? 'is-on' : ''}`}>
+            <Toggle
+              label="Maintenance Mode"
+              hint="ဖွင့်ထားစဉ် ဆိုင်ပိုင်ရှင်မှလွဲ၍ မည်သူမျှ ရောင်းချ၊ မှတ်တမ်းသွင်း၊ ပြင်ဆင်၍ မရပါ။ ပြုပြင်နေချိန်တွင်သာ ဖွင့်ပါ။"
+              checked={forms.system.maintenanceMode}
+              onChange={(v) => updateForm('system', { maintenanceMode: v })}
+              disabled={!canManage}/>
+            {forms.system.maintenanceMode
+              ? <p className="psc-danger-note">⚠️ ဖွင့်ထားပါသည် — ကောင်တာမှ ရောင်းချ၍ မရပါ။</p>
+              : null}
+          </div>
+
+          <SaveBar name="system" saving={saving} onSave={() => save('system')} disabled={!canManage} label="သိမ်းမည်"/>
         </section> : null}
       </main>
     </div>
