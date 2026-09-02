@@ -1,31 +1,6 @@
 const { loadTelegramSettings, sendTelegramMessageToAll } = require('./telegram-automation-api');
 const { prisma } = require('./prisma');
 
-// Actions that are worth sending as audit notifications (skip noise)
-const NOTIFY_ACTIONS = new Set([
-  'SALE_CREATED', 'SALE_VOIDED',
-  'CUSTOMER_CREDIT_COLLECTED', 'CUSTOMER_CREATED', 'CUSTOMER_UPDATED',
-  'MONEY_ACCOUNT_TRANSFERRED', 'MONEY_ACCOUNT_ADJUSTED',
-  'BUSINESS_OTHER_INCOME_CREATED', 'BUSINESS_EXPENSE_CREATED', 'BUSINESS_DAY_CLOSED',
-  'REPAIR_INTAKE_CREATED', 'REPAIR_STATUS_CHANGED', 'REPAIR_FINANCE_UPDATED',
-  'REPAIR_PROVIDER_LINKED', 'REPAIR_REFERRAL_CREATED', 'REPAIR_REFERRAL_CLAIMED',
-  'REPAIR_EXTERNAL_IMPORTED', 'REPAIR_DEVICE_LINKED',
-  'BILLER_SOLD', 'BILLER_REFILL', 'BILLER_OPENING', 'BILLER_ADJUSTMENT',
-  'BILLER_VOIDED', 'BILLER_CREATED',
-  'MONEY_SERVICE_CREATED', 'MONEY_SERVICE_COLLECTED', 'MONEY_SERVICE_VOIDED',
-]);
-
-// Entity-type prefix used for dynamic actions (e.g. POST_INVENTORY → inventory)
-const NOTIFY_ENTITY_TYPES = new Set([
-  'sale', 'customer', 'money_account', 'repair', 'repair_referral',
-  'inventory', 'product', 'user',
-  'business_other_income', 'business_expense', 'business_day_close',
-  'biller_transaction', 'biller', 'money_service',
-]);
-
-// What each action reads as in the feed. The English summaries came from the
-// route table and described the endpoint — "Changed repair data" — rather than
-// what somebody did.
 const ACTION_TEXT = {
   SALE_VOIDED: 'ရောင်းအား ပယ်ဖျက်လိုက်သည်',
   CUSTOMER_CREDIT_COLLECTED: 'အကြွေး ကောက်ခံသည်',
@@ -122,12 +97,18 @@ const ACTION_EMOJI = {
 // nothing the first one did not, and arrives as a second buzz for one event.
 const HAS_OWN_NOTIFICATION = new Set(['SALE_CREATED']);
 
+// One list decides both what is worth sending and how it reads: if there is a
+// sentence for an action, it is sent; if there is not, it is not.
+//
+// The old rule also allowed anything whose entity type was in a second list,
+// and that is what sent everything twice. Taking a repair in writes two audit
+// rows — REPAIR_INTAKE_CREATED from the domain code and REPAIR_POST from the
+// middleware that records every write — and both passed, so the shop got the
+// named message and "Changed repair data" straight after it.
 function shouldNotify(event) {
   if (event.outcome !== 'SUCCESS') return false;
   if (HAS_OWN_NOTIFICATION.has(event.action)) return false;
-  if (NOTIFY_ACTIONS.has(event.action)) return true;
-  if (NOTIFY_ENTITY_TYPES.has(event.entityType)) return true;
-  return false;
+  return Object.prototype.hasOwnProperty.call(ACTION_TEXT, event.action);
 }
 
 function yangonTime() {
