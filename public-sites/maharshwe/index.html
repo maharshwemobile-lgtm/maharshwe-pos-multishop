@@ -3,489 +3,529 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>မဟာရွှေ — Mahar Shwe</title>
-<meta name="description" content="မဟာရွှေ၏ ဝန်ဆောင်မှုများ — Mahar Shwe Mobile ဖုန်းဆိုင်၊ Mahar POS၊ Wallet Note၊ Digital Products (Game Top-up) နှင့် Mahar Shwe VPN။">
+<title>မဟာရွှေ — ဖုန်းဆိုင်များအတွက် Software</title>
+<meta name="description" content="ဖုန်းဆိုင်များအတွက် Cloud POS — အရောင်း၊ စတော့၊ IMEI၊ ဖုန်းပြင်စနစ်၊ ငွေလွှဲနှင့် အစီရင်ခံစာ တစ်နေရာတည်း။ အခြေခံလုပ်ဆောင်ချက်များ အမြဲတမ်း အခမဲ့။">
 <link rel="canonical" href="https://maharshwe.shop/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="မဟာရွှေ — Mahar Shwe">
-<meta property="og:description" content="ဖုန်းရောင်းဝယ်ရေး၊ ဖုန်းပြုပြင်ခြင်းနှင့် software ဝန်ဆောင်မှုများ။">
+<meta property="og:title" content="မဟာရွှေ — ဖုန်းဆိုင်များအတွက် Software">
+<meta property="og:description" content="Mahar POS နှင့် Wallet Note — မြန်မာဆိုင်များအတွက် တည်ဆောက်ထားသော POS နှင့် စာရင်းကိုင် software။">
 <meta property="og:url" content="https://maharshwe.shop/">
 <meta property="og:image" content="https://maharshwe.shop/assets/shop.jpg">
+<meta name="theme-color" content="#0a1120">
 <link rel="icon" type="image/png" href="/assets/maharshwe-logo.png">
 <link rel="apple-touch-icon" href="/assets/maharshwe-logo.png">
 <style>
+/* ==========================================================================
+   Mahar Shwe — a software company's front page, for shop owners.
+   Dark ground so the brand's three colours read as signal rather than
+   decoration: green for the POS, orange for Wallet Note, yellow for the rest.
+   ========================================================================== */
 :root{
-  --ink:#0E1B2C;
-  --ink-soft:#31435C;
-  --paper:#F7F8FB;
-  --card:#FFFFFF;
-  --line:#E3E8F0;
-  --gold:#C9950B;
-  --gold-soft:#F6E8C3;
-  --jade:#0E8A5F;
-  --jade-soft:#DDF3EA;
-  --radius:16px;
-  --shadow:0 8px 28px rgba(14,27,44,.08);
-  --shadow-lg:0 18px 50px rgba(14,27,44,.14);
-  --font-body:"Noto Sans Myanmar","Sora",system-ui,sans-serif;
-  --nav-h:66px;
+  --bg:#0a1120;
+  --bg-2:#101a2e;
+  --card:#141f37;
+  --card-2:#1a2745;
+  --line:#22304f;
+  --line-soft:#1a2540;
+
+  --text:#eef3fb;
+  --text-2:#a8b7d0;
+  --text-3:#7286a6;
+
+  --green:#12b981;
+  --orange:#f79420;
+  --yellow:#e8d024;
+
+  --r:14px;
+  --r-lg:20px;
+  --nav-h:64px;
+  --font:"Noto Sans Myanmar","Padauk",system-ui,-apple-system,Segoe UI,sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-h) + 12px)}
-body{font-family:var(--font-body);background:var(--paper);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-measured, var(--nav-h)) + 16px)}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.75;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
-.wrap{width:min(1120px,92vw);margin:0 auto}
+.wrap{width:min(1140px,92vw);margin:0 auto}
+
+/* ---------- type scale ---------- */
+h1{font-size:clamp(30px,5.2vw,52px);line-height:1.5;font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(23px,3.4vw,34px);line-height:1.5;font-weight:800}
+h3{font-size:18.5px;line-height:1.55;font-weight:800}
+.lead{font-size:clamp(15px,1.9vw,18px);color:var(--text-2);line-height:1.85}
+.muted{color:var(--text-3);font-size:14px}
 
 /* ---------- nav ---------- */
-header.nav{position:sticky;top:0;z-index:20;height:var(--nav-h);display:flex;align-items:center;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px}
-.brand{display:flex;align-items:center;gap:9px}
-.brand img{height:40px;width:auto}
-.nav-links{display:flex;gap:22px;font-size:14.5px;color:var(--ink-soft)}
-.nav-links a:hover{color:var(--jade)}
-@media(max-width:820px){.nav-links{display:none}}
+.nav{position:sticky;top:0;z-index:40;height:var(--nav-h);display:flex;align-items:center;
+  background:rgba(10,17,32,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+.nav .wrap{display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.brand img{height:34px;width:auto}
+.brand b{font-size:15.5px;font-weight:800;letter-spacing:.01em}
+.nav-links{display:flex;gap:4px;margin-left:auto;font-size:14px}
+.nav-links a{padding:8px 12px;border-radius:9px;color:var(--text-2);white-space:nowrap}
+.nav-links a:hover{color:var(--text);background:var(--card)}
+.nav-cta{flex:0 0 auto}
+/* The links used to vanish below 820px and leave a bare logo. They wrap into a
+   scrollable strip instead, so every section stays reachable on a phone. */
+@media(max-width:900px){
+  .nav{height:auto;padding:7px 0}
+  .nav .wrap{flex-wrap:wrap;gap:7px}
+  .brand img{height:29px}
+  .nav-cta .btn{padding:8px 14px;font-size:13.5px}
+  .nav-links{order:3;width:100%;margin:0;overflow-x:auto;padding-bottom:2px;
+    font-size:13.5px;scrollbar-width:none}
+  .nav-links a{padding:5px 9px}
+  .nav-links::-webkit-scrollbar{display:none}
+  .nav-cta{margin-left:auto}
+}
 
 /* ---------- buttons ---------- */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:11px;font-weight:700;font-size:14.5px;border:1px solid transparent;transition:.18s ease;cursor:pointer}
-.btn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.btn-gold{background:var(--gold);color:#fff}
-.btn-gold:hover{background:#b0820a}
-.btn-jade{background:var(--jade);color:#fff}
-.btn-jade:hover{background:#0b7150}
-.btn-ghost{border-color:var(--line);background:var(--card);color:var(--ink)}
-.btn-ghost:hover{border-color:var(--jade);color:var(--jade)}
-.btn-sm{padding:9px 14px;font-size:13.5px;border-radius:9px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 22px;border-radius:11px;font-weight:800;font-size:15px;
+  border:1px solid transparent;transition:transform .15s ease,background .15s ease,border-color .15s ease;
+  cursor:pointer;white-space:nowrap}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--green);color:#052318}
+.btn-primary:hover{background:#0fd191}
+.btn-outline{border-color:var(--line);color:var(--text);background:transparent}
+.btn-outline:hover{border-color:var(--green);color:var(--green)}
+.btn-sm{padding:9px 15px;font-size:13.5px;border-radius:9px}
+.btn-block{width:100%}
 
 /* ---------- hero ---------- */
-.hero{padding:60px 0 44px;text-align:center}
-.eyebrow{display:inline-block;padding:5px 13px;border-radius:999px;background:var(--jade-soft);color:#0a6b4a;font-size:13px;font-weight:700;margin-bottom:16px}
-.hero h1{font-size:clamp(28px,5vw,44px);line-height:1.35;letter-spacing:-.3px}
-.hero h1 span{color:var(--gold)}
-.hero p{margin:16px auto 0;max-width:640px;color:var(--ink-soft);font-size:16px}
-.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+.hero{position:relative;padding:clamp(56px,9vw,104px) 0 clamp(48px,7vw,84px);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-30% -10% auto -10%;height:70%;
+  background:radial-gradient(60% 60% at 30% 40%,rgba(18,185,129,.16),transparent 70%),
+             radial-gradient(50% 50% at 80% 20%,rgba(247,148,32,.11),transparent 70%);
+  pointer-events:none}
+.hero .wrap{position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;
+  background:rgba(18,185,129,.12);border:1px solid rgba(18,185,129,.3);
+  color:var(--green);font-size:13px;font-weight:800;margin-bottom:20px}
+.hero h1{max-width:16ch}
+.hero h1 em{font-style:normal;color:var(--green)}
+.hero .lead{max-width:52ch;margin-top:18px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.hero-note{margin-top:16px;font-size:13.5px;color:var(--text-3)}
+
+/* ---------- stat strip ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:clamp(38px,6vw,58px);
+  background:var(--line-soft);border:1px solid var(--line-soft);border-radius:var(--r-lg);overflow:hidden}
+.stats div{background:var(--bg-2);padding:20px 18px}
+.stats b{display:block;font-size:clamp(19px,2.6vw,26px);font-weight:800;line-height:1.45}
+.stats span{display:block;margin-top:3px;font-size:13px;color:var(--text-3)}
+@media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
 
 /* ---------- sections ---------- */
-section{padding:46px 0}
-.sec-head{text-align:center;margin-bottom:32px}
-.sec-head h2{font-size:clamp(22px,3.4vw,30px)}
-.sec-head p{color:var(--ink-soft);margin-top:8px;font-size:15px}
+section{padding:clamp(56px,8vw,96px) 0}
+.sec-head{max-width:62ch;margin-bottom:clamp(30px,4vw,46px)}
+.sec-head .kicker{font-size:12.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-3);margin-bottom:10px}
+.sec-head p{margin-top:12px}
+.alt{background:var(--bg-2);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
 
-/* ---------- product cards ---------- */
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-@media(max-width:820px){.grid{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:13px;transition:.2s ease}
-.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:#d3dced}
-.card-top{display:flex;align-items:center;gap:13px}
-.icon{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;flex-shrink:0;overflow:hidden}
-.icon img{width:100%;height:100%;object-fit:cover}
-.icon svg{width:26px;height:26px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.icon-plain{background:#fff;border:1px solid var(--line)}
-.icon-plain img{object-fit:contain;padding:5px}
-.card h3{font-size:18px;line-height:1.4}
-.card .tag{font-size:12.5px;font-weight:700;color:var(--ink-soft)}
-.card p{color:var(--ink-soft);font-size:14.5px;flex:1}
-.card .links{display:flex;gap:14px;flex-wrap:wrap;padding-top:2px}
-.card .links a{font-size:13.5px;font-weight:700;color:var(--jade);border-bottom:1px solid transparent}
-.card .links a:hover{border-color:var(--jade)}
+/* ---------- product hero card ---------- */
+.product{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(26px,4vw,52px);align-items:center}
+@media(max-width:900px){.product{grid-template-columns:1fr}}
+.product-badge{display:inline-flex;align-items:center;gap:9px;margin-bottom:16px}
+.product-badge img{height:38px;width:38px;border-radius:9px;object-fit:contain;background:#fff;padding:4px}
+.product-badge span{font-size:13px;font-weight:800;color:var(--text-3)}
+.product h2 + p{margin-top:14px}
+.product-cta{display:flex;flex-wrap:wrap;gap:11px;margin-top:26px}
 
-/* ---------- wallet note feature table ---------- */
-.feature-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-top:20px}
-.feature-panel > header{display:flex;align-items:center;gap:14px;padding:20px 24px;border-bottom:1px solid var(--line);background:#FBFCFE}
-.feature-panel > header h3{font-size:18px}
-.feature-panel > header small{color:var(--ink-soft);font-size:13.5px}
-.ftable{width:100%;border-collapse:collapse}
-.ftable th,.ftable td{text-align:left;padding:11px 24px;border-bottom:1px solid #EEF1F6;font-size:14.5px;vertical-align:top}
-.ftable th{width:230px;font-weight:700;color:var(--ink)}
-.ftable td{color:var(--ink-soft)}
-.ftable tr:last-child th,.ftable tr:last-child td{border-bottom:0}
-@media(max-width:700px){
-  .ftable,.ftable tbody,.ftable tr,.ftable th,.ftable td{display:block;width:auto}
-  .ftable th{padding:14px 18px 2px;border-bottom:0}
-  .ftable td{padding:0 18px 14px;border-bottom:1px solid #EEF1F6}
-}
-.chips{display:flex;flex-wrap:wrap;gap:9px;padding:18px 24px;background:#FBFCFE;border-top:1px solid var(--line)}
-.chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--jade-soft);color:#0a6b4a;font-size:13px;font-weight:700}
-.chip.neutral{background:#EDF1F7;color:var(--ink-soft)}
+/* ---------- feature grid ---------- */
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.features{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.features{grid-template-columns:1fr}}
+.feature{padding:20px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+.feature .ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  font-size:19px;margin-bottom:13px;background:rgba(18,185,129,.13)}
+.feature:nth-child(3n+2) .ico{background:rgba(247,148,32,.13)}
+.feature:nth-child(3n+3) .ico{background:rgba(232,208,36,.13)}
+.feature b{display:block;font-size:15px;font-weight:800}
+.feature p{margin-top:6px;font-size:13.5px;color:var(--text-2);line-height:1.7}
 
-.callout{display:flex;gap:16px;align-items:flex-start;margin-top:20px;padding:20px 22px;border:1px solid #BFE3D2;border-radius:var(--radius);background:#F3FBF7}
-.callout-icon{font-size:26px;line-height:1.2;flex-shrink:0}
-.callout b{display:block;font-size:15.5px;margin-bottom:4px}
-.callout p{color:var(--ink-soft);font-size:14.5px;margin-bottom:12px}
-@media(max-width:600px){.callout{flex-direction:column;gap:10px}}
+/* ---------- module list (Wallet Note) ---------- */
+/* Two cramped columns used to collide. One row per module, label above the
+   description on a phone, side by side once there is room. */
+.modules{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--card)}
+.modules div{display:grid;grid-template-columns:200px 1fr;gap:6px 22px;
+  padding:14px 20px;border-bottom:1px solid var(--line-soft)}
+.modules div:last-child{border-bottom:0}
+.modules b{font-size:14.5px;font-weight:800}
+.modules span{font-size:13.5px;color:var(--text-2);line-height:1.7}
+@media(max-width:680px){.modules div{grid-template-columns:1fr;padding:13px 16px}}
 
-/* ---------- vpn ---------- */
-.vpn{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow)}
-@media(max-width:700px){.vpn{grid-template-columns:1fr;text-align:center;justify-items:center}}
-.vpn-logo{width:104px;height:104px;border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
-.vpn h3{font-size:20px}
-.vpn .tag{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:8px}
-.vpn p{color:var(--ink-soft);font-size:14.5px;margin-bottom:16px}
-.dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
-@media(max-width:700px){.dl{grid-template-columns:1fr;width:100%}}
-.dl a{display:flex;flex-direction:column;gap:3px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;transition:.18s ease;text-align:left}
-.dl a:hover{border-color:var(--jade);background:#F6FCFA}
-.dl b{font-size:14px}
-.dl span{font-size:12.5px;color:var(--ink-soft)}
-.dl em{font-style:normal;font-size:11.5px;color:var(--jade);font-weight:700}
-.vpn-note{margin-top:14px;font-size:13px;color:var(--ink-soft)}
-.vpn-note a{color:var(--jade);font-weight:700}
+/* ---------- chips ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+.chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);font-size:13px;color:var(--text-2)}
+.chip.on{border-color:rgba(18,185,129,.42);color:var(--green);background:rgba(18,185,129,.09)}
 
-/* ---------- vpn plans ---------- */
-.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
+/* ---------- callout ---------- */
+.callout{display:flex;gap:18px;align-items:flex-start;padding:24px;border-radius:var(--r-lg);
+  border:1px solid rgba(247,148,32,.3);background:rgba(247,148,32,.07);margin-top:26px}
+.callout .ico{font-size:26px;line-height:1}
+.callout b{font-size:16px}
+.callout p{margin-top:7px;font-size:14px;color:var(--text-2)}
+.callout .btn{margin-top:15px}
+@media(max-width:560px){.callout{flex-direction:column;gap:12px}}
+
+/* ---------- small product cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.cards{grid-template-columns:1fr}}
+.card{padding:24px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);
+  display:flex;flex-direction:column}
+.card-top{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.card-top img{height:40px;width:40px;border-radius:10px;object-fit:contain;background:#fff;padding:4px}
+.card-top small{display:block;font-size:12.5px;color:var(--text-3);margin-top:2px}
+.card p{font-size:14px;color:var(--text-2);flex:1}
+.card-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+
+/* ---------- downloads ---------- */
+.downloads{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:22px}
+@media(max-width:680px){.downloads{grid-template-columns:1fr}}
+.dl{padding:18px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  display:block;transition:border-color .15s ease}
+.dl:hover{border-color:var(--green)}
+.dl b{display:block;font-size:16px;font-weight:800}
+.dl span{display:block;font-size:13px;color:var(--text-3);margin-top:3px}
+.dl em{display:block;font-style:normal;font-size:12.5px;color:var(--green);font-weight:700;margin-top:9px}
+
+/* ---------- plans ---------- */
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
 @media(max-width:760px){.plans{grid-template-columns:1fr}}
-.plan{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;box-shadow:var(--shadow)}
-.plan.featured{border-color:var(--jade);box-shadow:0 12px 34px rgba(14,138,95,.16)}
-.ribbon{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--jade);color:#fff;font-size:11.5px;font-weight:700;padding:4px 12px;border-radius:999px;white-space:nowrap}
-.plan b{font-size:16px}
-.plan .price{font-size:26px;font-weight:800;color:var(--ink);line-height:1.25}
-.plan .price em{font-style:normal;font-size:14px;font-weight:700;color:var(--ink-soft)}
-.plan span{font-size:13.5px;color:var(--ink-soft)}
-.plan .btn{margin-top:10px}
-.steps{margin:22px auto 0;max-width:620px;display:grid;gap:9px;padding-left:22px;color:var(--ink-soft);font-size:14.5px}
-.steps li{padding-left:4px}
-.steps b{color:var(--ink)}
+.plan{padding:22px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);text-align:center}
+.plan.best{border-color:rgba(232,208,36,.45);background:rgba(232,208,36,.06)}
+.plan .tag{font-size:12px;font-weight:800;color:var(--yellow);letter-spacing:.06em}
+.plan b{display:block;font-size:17px;margin-top:8px}
+.plan .price{display:block;font-size:26px;font-weight:800;margin:9px 0 2px}
+.plan span{font-size:13px;color:var(--text-3)}
+.plan .btn{margin-top:16px}
 
-/* ---------- shop ---------- */
-.shop-split{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch}
-@media(max-width:880px){.shop-split{grid-template-columns:1fr}}
-.shop-photo{border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);min-height:260px}
-.shop-photo img{width:100%;height:100%;object-fit:cover}
-.shop{background:var(--ink);color:#fff;border-radius:var(--radius);padding:30px}
-.shop h2{font-size:clamp(20px,3vw,26px);margin-bottom:10px}
-.shop > p{color:#B9C6D8;font-size:14.5px;margin-bottom:20px}
-.shop-facts{display:grid;gap:11px}
-.fact{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px}
-.fact svg{width:20px;height:20px;stroke:var(--gold);stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;margin-top:2px}
-.fact span{display:block;font-size:12.5px;color:#9FB0C6}
-.fact b{font-size:14.5px;font-weight:700}
-.fact a{color:#fff}
+/* ---------- steps ---------- */
+.steps{counter-reset:s;display:grid;gap:11px;margin-top:22px}
+.steps li{counter-increment:s;list-style:none;display:grid;grid-template-columns:30px 1fr;gap:14px;
+  align-items:start;font-size:14.5px;color:var(--text-2)}
+.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;background:var(--card-2);border:1px solid var(--line);
+  font-size:13px;font-weight:800;color:var(--text)}
 
-footer{padding:30px 0 40px;text-align:center;color:var(--ink-soft);font-size:13.5px;border-top:1px solid var(--line);margin-top:36px}
-footer .foot-links{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;font-weight:600}
-footer .foot-links a:hover{color:var(--jade)}
+/* ---------- contact ---------- */
+.contact{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:760px){.contact{grid-template-columns:1fr}}
+.contact a,.contact div{padding:22px;border:1px solid var(--line);border-radius:var(--r-lg);
+  background:var(--card);display:block}
+.contact small{display:block;font-size:12.5px;color:var(--text-3);margin-bottom:5px}
+.contact b{font-size:16.5px}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line-soft);padding:34px 0;background:var(--bg-2)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+footer .fl{display:flex;flex-wrap:wrap;gap:18px;font-size:13.5px;color:var(--text-3)}
+footer .fl a:hover{color:var(--green)}
 </style>
 </head>
-<body>
+<body id="top">
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><img src="/assets/maharshwe-logo.png" alt="မဟာရွှေ" width="46" height="38"></a>
+    <a class="brand" href="#top">
+      <img src="/assets/maharshwe-logo.png" alt="မဟာရွှေ">
+      <b>မဟာရွှေ</b>
+    </a>
     <nav class="nav-links">
-      <a href="#products">ဝန်ဆောင်မှုများ</a>
+      <a href="#pos">Mahar POS</a>
       <a href="#walletnote">Wallet Note</a>
-      <a href="#vpn">VPN</a>
-      <a href="#digital">Digital Products</a>
       <a href="#shop">ဖုန်းဆိုင်</a>
+      <a href="#vpn">VPN</a>
+      <a href="#digital">Game Top-up</a>
+      <a href="#contact">ဆက်သွယ်ရန်</a>
     </nav>
-    <a class="btn btn-gold btn-sm" href="https://maharpos.shop">Mahar POS</a>
+    <a class="btn btn-primary btn-sm nav-cta" href="https://app.maharpos.shop">အကောင့်ဖွင့်ရန်</a>
   </div>
 </header>
 
-<main id="top">
-
-  <section class="hero">
-    <div class="wrap">
-      <span class="eyebrow">ရှမ်းပြည်နယ်တောင်ပိုင်း · ဆီဆိုင်မြို့</span>
-      <h1>မဟာရွှေ<span>၏</span> ဝန်ဆောင်မှုများ</h1>
-      <p>ဖုန်းရောင်းဝယ်ရေးနှင့် ပြုပြင်ရေးမှ စတင်ပြီး၊ ဆိုင်များအတွက် software အထိ တည်ဆောက်ပေးနေပါသည်။</p>
-      <div class="hero-actions">
-        <a class="btn btn-gold" href="#products">ဝန်ဆောင်မှုများ ကြည့်ရန်</a>
-        <a class="btn btn-ghost" href="#contact">ဆက်သွယ်ရန်</a>
-      </div>
+<!-- ============================ hero ============================ -->
+<div class="hero">
+  <div class="wrap">
+    <span class="eyebrow">● ရှမ်းပြည်နယ်တောင်ပိုင်း · ဆီဆိုင်မြို့</span>
+    <h1>ဖုန်းဆိုင်တစ်ဆိုင်လုံးကို <em>ဖုန်းတစ်လုံးထဲက</em> စီမံပါ</h1>
+    <p class="lead">
+      အရောင်း၊ စတော့၊ IMEI မှတ်တမ်း၊ ဖုန်းပြင်စနစ်၊ ငွေလွှဲနဲ့ အစီရင်ခံစာ — တစ်နေရာတည်းမှာ။
+      ဖုန်းဆိုင် ကိုယ်တိုင် လုပ်နေသူတွေက ဆိုင်လုပ်ငန်းအတွက် တည်ဆောက်ထားတာပါ။
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://app.maharpos.shop">အခမဲ့ အကောင့်ဖွင့်မည်</a>
+      <a class="btn btn-outline" href="#pos">ဘာတွေ ပါလဲ ကြည့်မည်</a>
     </div>
-  </section>
+    <p class="hero-note">အခြေခံလုပ်ဆောင်ချက်များ အမြဲတမ်း အခမဲ့ · ကတိစာချုပ် မလို</p>
 
-  <section id="products">
-    <div class="wrap">
-      <div class="sec-head">
-        <h2>ကျွန်ုပ်တို့၏ ဝန်ဆောင်မှု ၅ ခု</h2>
-        <p>ဖုန်းဆိုင်တစ်ဆိုင်မှ စတင်ခဲ့ပြီး၊ ယခု software ဝန်ဆောင်မှုများပါ ပေးလျက်ရှိပါသည်။</p>
-      </div>
-
-      <div class="grid">
-
-        <article class="card">
-          <div class="card-top">
-            <div class="icon icon-plain"><img src="/assets/maharshwe-logo.png" alt="Mahar Shwe Mobile" width="52" height="52"></div>
-            <div>
-              <h3>Mahar Shwe Mobile</h3>
-              <div class="tag">ဖုန်းဆိုင်</div>
-            </div>
-          </div>
-          <p>ဖုန်းအမျိုးမျိုး ရောင်းဝယ်ခြင်း၊ ပြုပြင်ခြင်းနှင့် ဆက်စပ်ပစ္စည်းများ။ ပြင်ဆင်ရန် အပ်နှံပါက ဘောင်ချာပေါ်ရှိ QR ဖြင့် အခြေအနေကို အချိန်မရွေး ကြည့်နိုင်ပါသည်။</p>
-          <div class="links">
-            <a href="#shop">ဆိုင်အကြောင်း</a>
-            <a href="https://maharpos.shop/shop/maharshwemobile">Online Shop →</a>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="card-top">
-            <div class="icon icon-plain"><img src="/assets/mahar-pos-logo.png" alt="Mahar POS" width="52" height="52"></div>
-            <div>
-              <h3>Mahar POS</h3>
-              <div class="tag">ဖုန်းဆိုင် စီမံခန့်ခွဲမှု Software</div>
-            </div>
-          </div>
-          <p>ဖုန်းဆိုင်များအတွက် Cloud POS။ အရောင်း၊ စတော့၊ IMEI မှတ်တမ်း၊ ဖုန်းပြင်စနစ်၊ ငွေလွှဲဝန်ဆောင်မှုနှင့် အစီရင်ခံစာများ တစ်နေရာတည်း။ အခြေခံလုပ်ဆောင်ချက်များ အမြဲတမ်း အခမဲ့။</p>
-          <div class="links">
-            <a href="https://maharpos.shop">maharpos.shop →</a>
-            <a href="https://app.maharpos.shop">အကောင့်ဖွင့်ရန်</a>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="card-top">
-            <div class="icon"><img src="/assets/walletnote-logo.png" alt="Wallet Note" width="52" height="52"></div>
-            <div>
-              <h3>Wallet Note</h3>
-              <div class="tag">စာရင်းကိုင် &amp; ရောင်းဝယ်ရေး App</div>
-            </div>
-          </div>
-          <p>မြန်မာဆိုင်ငယ်များအတွက် ဖုန်းပေါ်မှာပဲ သုံးလို့ရတဲ့ စာရင်းကိုင်နဲ့ ရောင်းဝယ်ရေး app။ <b>မိနီမတ် / ကုန်စုံဆိုင် POS</b> လည်း ပါဝင်ပါတယ်။ စာအုပ်နဲ့ မှတ်နေရတာကို အစားထိုးဖို့ ရည်ရွယ်ပါတယ်။</p>
-          <div class="links">
-            <a href="#walletnote">အသေးစိတ်</a>
-            <a href="https://walletnote.online">walletnote.online →</a>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="card-top">
-            <div class="icon"><img src="/assets/vpn-logo.png" alt="Mahar Shwe VPN" width="52" height="52"></div>
-            <div>
-              <h3>Mahar Shwe VPN</h3>
-              <div class="tag">Android App</div>
-            </div>
-          </div>
-          <p>Android အတွက် VPN app။ APK ကို တိုက်ရိုက် download ဆွဲပြီး သုံးနိုင်ပါတယ်။</p>
-          <div class="links">
-            <a href="#vpn">Download →</a>
-            <a href="https://t.me/maharshwebot">Telegram Bot</a>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="card-top">
-            <div class="icon" style="background:var(--jade-soft);color:var(--jade)">
-              <svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
-            </div>
-            <div>
-              <h3>Digital Products</h3>
-              <div class="tag">Game Top-up · Diamond / UC / Voucher</div>
-            </div>
-          </div>
-          <p>Mobile Legends၊ Free Fire၊ PUBG Mobile စတဲ့ ဂိမ်းများအတွက် Diamond/UC နှင့် digital voucher များကို Player ID ဖြင့် တိုက်ရိုက် ဝယ်ယူနိုင်ပါတယ်။ KBZ Pay ဖြင့် ငွေချေရုံပါပဲ။</p>
-          <div class="links">
-            <a href="#digital">အသေးစိတ်</a>
-            <a href="https://maharpos.shop/digital/game/">Digital Shop →</a>
-          </div>
-        </article>
-
-      </div>
+    <div class="stats">
+      <div><b>၅ ခု</b><span>ဝန်ဆောင်မှု</span></div>
+      <div><b>Cloud</b><span>ဘယ်ကနေမဆို ဝင်လို့ရ</span></div>
+      <div><b>မြန်မာ</b><span>ဘာသာစကား အပြည့်</span></div>
+      <div><b>အခမဲ့</b><span>အခြေခံ လုပ်ဆောင်ချက်</span></div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <section id="walletnote">
-    <div class="wrap">
-      <div class="sec-head">
-        <h2>Wallet Note</h2>
-        <p>မြန်မာဆိုင်ငယ်တွေအတွက် စာရင်းကိုင်နဲ့ ရောင်းဝယ်ရေး app။ ဖုန်းပေါ်မှာပဲ သုံးလို့ရပြီး စာအုပ်နဲ့ မှတ်နေရတာကို အစားထိုးဖို့ ရည်ရွယ်တာပါ။ မိနီမတ်၊ ကုန်စုံဆိုင်၊ ဖုန်းဆိုင်နဲ့ ငွေလဲဆိုင် — ဆိုင်အမျိုးအစားအလိုက် သုံးနိုင်ပါတယ်။</p>
-      </div>
-
-      <div class="feature-panel">
-        <header>
-          <div class="icon"><img src="/assets/walletnote-logo.png" alt="Wallet Note" width="52" height="52"></div>
-          <div><h3>အဓိက အပိုင်းများ</h3><small>ဆိုင်တစ်ဆိုင်လုံးအတွက် လိုအပ်တဲ့ အပိုင်းတွေ</small></div>
-        </header>
-
-        <table class="ftable">
-          <tbody>
-            <tr><th>ပိုက်ဆံအိတ်</th><td>ငွေသား၊ KPay၊ Wave၊ ဘဏ် — တစ်ခုချင်းစီ လက်ကျန်နဲ့ မှတ်တမ်း</td></tr>
-            <tr><th>ငွေလွှဲ / ငွေထုတ်</th><td>Wallet အချင်းချင်း ရွှေ့တာ၊ အကြောင်းပြချက်နဲ့အတူ</td></tr>
-            <tr><th>ဝင်ငွေ / ထွက်ငွေ</th><td>နေ့စဉ် ဝင်ငွေထွက်ငွေကို ကိုယ်ပိုင် category နဲ့</td></tr>
-            <tr><th>အကြွေး / ပေးရန်ရှိ</th><td>ဘယ်သူက ပေးရန်ရှိလဲ၊ ကိုယ်က ဘယ်သူ့ကို ပေးရမလဲ</td></tr>
-            <tr><th>ရောင်းအား (POS)</th><td>ရောင်းတိုင်း ဖြတ်ပိုင်း print၊ အမြတ် အလိုအလျောက် တွက်။ မိနီမတ်အတွက် Barcode scan နဲ့ ကုန်ဆုံးရက် ပါဝင်</td></tr>
-            <tr><th>ကုန်ပစ္စည်း / လက်ကျန်</th><td>စတော့လက်ကျန်၊ လက်ကျန်နည်းရင် သတိပေး၊ လက်ကျန်တန်ဖိုး</td></tr>
-            <tr><th>အဝယ် / ကုန်သွင်းသူ</th><td>ဝယ်ယူမှုနဲ့ ပေးရန်ကျန်</td></tr>
-            <tr><th>ငွေလဲ</th><td>THB/MMK — ဈေးကွက်နှုန်း အလိုအလျောက် ဆွဲပြီး ကိုယ့်အမြတ်နဲ့ ချိန်လို့ရ</td></tr>
-            <tr><th>ဖုန်းပြင်ဆင်ခ</th><td>ဖုန်းဆိုင်အတွက် — စက်လက်ခံကတည်းက ပြန်အပ်တဲ့အထိ</td></tr>
-            <tr><th>Top-up Biller</th><td>Atom, MPT, Mytel စတဲ့ float နဲ့ အမြတ်</td></tr>
-            <tr><th>ဂဏန်းမှတ်တမ်း</th><td>နေ့စဉ် session အလိုအလျောက် ဖွင့်ပိတ်၊ ရလဒ် အလိုအလျောက် ဆွဲ</td></tr>
-            <tr><th>Telegram bot</th><td>ဆိုင်ရှင်က ဖုန်းကနေ မှတ်လို့ရ၊ customer က အော်ဒါ ပို့လို့ရ</td></tr>
-            <tr><th>Report</th><td>နေ့ပိတ်စာရင်း၊ အမြတ်အရှုံး၊ Excel ထုတ်လို့ရ</td></tr>
-          </tbody>
-        </table>
-
-        <div class="chips">
-          <span class="chip">အခမဲ့ — အကောင့်ဖွင့်ရုံပါပဲ</span>
-          <span class="chip neutral">ဆိုင်အလိုက် သီးသန့် — တခြားဆိုင် လုံးဝ မမြင်ရ</span>
-          <span class="chip neutral">လိုတဲ့ module ပဲ ပွင့်</span>
-          <span class="chip neutral">ဝန်ထမ်း အဆင့်ခွဲ (Owner / Cashier / Accountant)</span>
-          <span class="chip neutral">Audit log</span>
-          <span class="chip neutral">မြန်မာ / English</span>
-          <span class="chip neutral">PWA — ဖုန်းမှာ install လုပ်လို့ရ</span>
+<!-- ============================ Mahar POS ============================ -->
+<section id="pos" class="alt">
+  <div class="wrap">
+    <div class="product">
+      <div>
+        <div class="product-badge">
+          <img src="/assets/maharshwe-logo.png" alt="Mahar POS">
+          <span>MAHAR POS · ဖုန်းဆိုင် စီမံခန့်ခွဲမှု Software</span>
+        </div>
+        <h2>ကောင်တာမှာ လိုတာ အားလုံး၊ တစ်နေရာတည်း</h2>
+        <p class="lead">
+          ရောင်းတာ၊ ပြင်တာ၊ ငွေလွှဲတာ — သီးသန့် စာအုပ်တွေနဲ့ မှတ်နေစရာ မလိုတော့ပါ။
+          ဆိုင်ခွဲ ရှိရင်လည်း ဆိုင်တစ်ဆိုင်စီ သီးသန့် ခွဲထားပေးပါတယ်။
+        </p>
+        <div class="product-cta">
+          <a class="btn btn-primary" href="https://app.maharpos.shop">အခမဲ့ စတင်မည်</a>
+          <a class="btn btn-outline" href="https://maharpos.shop">maharpos.shop →</a>
         </div>
       </div>
 
-
-      <div class="callout">
-        <div class="callout-icon">🛒</div>
-        <div>
-          <b>မိနီမတ် / ကုန်စုံဆိုင် ဖွင့်ထားသူများအတွက်</b>
-          <p>Barcode scan၊ ကုန်ဆုံးရက် စစ်ဆေးခြင်းနှင့် retail POS ကို Wallet Note မှာ အပြည့်အစုံ ရပါတယ်။ Register လုပ်တဲ့အခါ ဆိုင်အမျိုးအစားကို <b>Mini Mart / Retail</b> ရွေးလိုက်ရုံပါပဲ။</p>
-          <a class="btn btn-jade btn-sm" href="https://walletnote.online/register?type=MINI_MART">Mini Mart အကောင့် ဖွင့်မည်</a>
-        </div>
-      </div>
-      <div class="hero-actions" style="margin-top:22px">
-        <a class="btn btn-jade" href="https://walletnote.online">walletnote.online မှာ အခမဲ့ စတင်မည်</a>
+      <div class="features">
+        <div class="feature"><div class="ico">🧾</div><b>အရောင်း</b><p>ရောင်းတိုင်း slip print၊ အမြတ် အလိုအလျောက် တွက်</p></div>
+        <div class="feature"><div class="ico">📦</div><b>စတော့</b><p>လက်ကျန်၊ လက်ကျန်နည်းရင် သတိပေး</p></div>
+        <div class="feature"><div class="ico">📱</div><b>IMEI မှတ်တမ်း</b><p>ဖုန်းတစ်လုံးချင်း ဝင်/ထွက် ခြေရာခံ</p></div>
+        <div class="feature"><div class="ico">🔧</div><b>ဖုန်းပြင်စနစ်</b><p>လက်ခံကတည်းက ပြန်အပ်တဲ့အထိ၊ QR နဲ့ ဖောက်သည် စစ်လို့ရ</p></div>
+        <div class="feature"><div class="ico">💱</div><b>ငွေလွှဲ / Eload</b><p>Wallet လက်ကျန်၊ ဘီလ်နဲ့ Eload အမြတ်</p></div>
+        <div class="feature"><div class="ico">📊</div><b>အစီရင်ခံစာ</b><p>နေ့ချုပ်၊ လချုပ်၊ အမြတ်အရှုံး၊ Excel ထုတ်လို့ရ</p></div>
       </div>
     </div>
-  </section>
 
-  <section id="vpn">
-    <div class="wrap">
-      <div class="sec-head">
-        <h2>Mahar Shwe VPN</h2>
-        <p>Android အတွက် VPN app။ ဖုန်းအမျိုးအစားနဲ့ ကိုက်ညီတဲ့ ဖိုင်ကို ရွေးပြီး download ဆွဲပါ။</p>
-      </div>
-
-      <div class="vpn">
-        <img class="vpn-logo" src="/assets/vpn-logo.png" alt="Mahar Shwe VPN" width="104" height="104">
-        <div>
-          <h3>Version 1.0.23</h3>
-          <div class="tag">Android · APK တိုက်ရိုက် download</div>
-          <p>ဖုန်းအများစုအတွက် <b>ARM64</b> ကို ရွေးပါ။ ဖုန်းအဟောင်းဆိုရင် <b>ARMv7</b>၊ မသေချာရင် <b>Universal</b> ကို ဆွဲပါ (ဖိုင်ကြီးပေမဲ့ အားလုံးနဲ့ အဆင်ပြေပါတယ်)။</p>
-          <div class="dl">
-            <a href="/download/maharshwe-vpn-1.0.23-mid-arm64.apk" download>
-              <b>ARM64</b><span>21.4 MB</span><em>အများစုအတွက်</em>
-            </a>
-            <a href="/download/maharshwe-vpn-1.0.23-low-armv7.apk" download>
-              <b>ARMv7</b><span>21.0 MB</span><em>ဖုန်းအဟောင်း</em>
-            </a>
-            <a href="/download/maharshwe-vpn-1.0.23-high-universal.apk" download>
-              <b>Universal</b><span>49.4 MB</span><em>အားလုံးနဲ့ ရ</em>
-            </a>
-          </div>
-          <p class="vpn-note">APK install လုပ်ရန် ဖုန်းရဲ့ Settings မှာ "Unknown sources" ကို ဖွင့်ပေးရပါမယ်။</p>
-        </div>
-      </div>
-
-      <div class="plans">
-        <article class="plan">
-          <b>Free Trial</b>
-          <div class="price">အခမဲ့</div>
-          <span>၂ ရက်</span>
-          <a class="btn btn-ghost btn-sm" href="https://t.me/maharshwebot">Bot မှာ ယူမည်</a>
-        </article>
-        <article class="plan featured">
-          <div class="ribbon">လူသုံးအများဆုံး</div>
-          <b>1 Month</b>
-          <div class="price">3,000 <em>ကျပ်</em></div>
-          <span>၁ လ</span>
-          <a class="btn btn-jade btn-sm" href="https://t.me/maharshwebot">Bot မှာ ဝယ်မည်</a>
-        </article>
-        <article class="plan">
-          <b>2 Months</b>
-          <div class="price">5,000 <em>ကျပ်</em></div>
-          <span>၂ လ</span>
-          <a class="btn btn-ghost btn-sm" href="https://t.me/maharshwebot">Bot မှာ ဝယ်မည်</a>
-        </article>
-      </div>
-
-      <ol class="steps">
-        <li><b>Telegram bot</b> မှာ Plan ရွေးပါ</li>
-        <li><b>KBZ Pay</b> ဖြင့် ငွေလွှဲပါ (ငွေလက်ခံမည့် အချက်အလက်ကို bot က ပြပါမယ်)</li>
-        <li>ငွေလွှဲပြီး <b>Screenshot</b> ကို bot ထဲ ပို့ပါ</li>
-        <li>အတည်ပြုပြီးလျှင် <b>VPN Key</b> ကို bot ကနေ ချက်ချင်း ရပါမယ်</li>
-      </ol>
+    <div class="chips">
+      <span class="chip on">အခြေခံ အခမဲ့</span>
+      <span class="chip">ဆိုင်အလိုက် သီးသန့်</span>
+      <span class="chip">ဝန်ထမ်း ခွင့်ပြုချက် ခွဲ</span>
+      <span class="chip">Audit log</span>
+      <span class="chip">Telegram သတိပေးချက်</span>
+      <span class="chip">Google Sheet ချိတ်လို့ရ</span>
+      <span class="chip">မြန်မာ / English</span>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="digital">
-    <div class="wrap">
-      <div class="sec-head">
-        <h2>Digital Products — Game Top-up</h2>
-        <p>Mobile Legends၊ Free Fire၊ PUBG Mobile စတဲ့ လူကြိုက်များတဲ့ ဂိမ်းများအတွက် Diamond၊ UC နှင့် digital voucher များကို အွန်လိုင်းမှ အမြန်ဆုံး ဝယ်ယူနိုင်ပါတယ်။</p>
-      </div>
+<!-- ============================ Wallet Note ============================ -->
+<section id="walletnote">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">Wallet Note</div>
+      <h2>စာရင်းကိုင်နဲ့ ရောင်းဝယ်ရေး — ဖုန်းပေါ်မှာပဲ</h2>
+      <p class="lead">
+        မြန်မာဆိုင်ငယ်တွေအတွက်။ စာအုပ်နဲ့ မှတ်နေရတာကို အစားထိုးဖို့ ရည်ရွယ်ပါတယ်။
+        မိနီမတ်၊ ကုန်စုံဆိုင်၊ ဖုန်းဆိုင်နဲ့ ငွေလဲဆိုင် — ဆိုင်အမျိုးအစားအလိုက် သုံးနိုင်ပါတယ်။
+      </p>
+    </div>
 
-      <div class="feature-panel">
-        <header>
-          <div class="icon" style="background:var(--jade-soft);color:var(--jade)">
-            <svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
-          </div>
-          <div><h3>ဘယ်လိုဝယ်ရမလဲ</h3><small>လွယ်ကူတဲ့ ၃ဆင့်</small></div>
-        </header>
+    <div class="modules">
+      <div><b>ပိုက်ဆံအိတ်</b><span>ငွေသား၊ KPay၊ Wave၊ ဘဏ် — တစ်ခုချင်းစီ လက်ကျန်နဲ့ မှတ်တမ်း</span></div>
+      <div><b>ငွေလွှဲ / ငွေထုတ်</b><span>Wallet အချင်းချင်း ရွှေ့တာ၊ အကြောင်းပြချက်နဲ့အတူ</span></div>
+      <div><b>ဝင်ငွေ / ထွက်ငွေ</b><span>နေ့စဉ် ဝင်ငွေထွက်ငွေကို ကိုယ်ပိုင် category နဲ့</span></div>
+      <div><b>အကြွေး / ပေးရန်ရှိ</b><span>ဘယ်သူက ပေးရန်ရှိလဲ၊ ကိုယ်က ဘယ်သူ့ကို ပေးရမလဲ</span></div>
+      <div><b>ရောင်းအား (POS)</b><span>ရောင်းတိုင်း ဖြတ်ပိုင်း print၊ အမြတ် အလိုအလျောက် တွက်။ မိနီမတ်အတွက် Barcode scan နဲ့ ကုန်ဆုံးရက် ပါဝင်</span></div>
+      <div><b>ကုန်ပစ္စည်း / လက်ကျန်</b><span>စတော့လက်ကျန်၊ လက်ကျန်နည်းရင် သတိပေး၊ လက်ကျန်တန်ဖိုး</span></div>
+      <div><b>အဝယ် / ကုန်သွင်းသူ</b><span>ဝယ်ယူမှုနဲ့ ပေးရန်ကျန်</span></div>
+      <div><b>ငွေလဲ</b><span>THB/MMK — ဈေးကွက်နှုန်း အလိုအလျောက် ဆွဲပြီး ကိုယ့်အမြတ်နဲ့ ချိန်လို့ရ</span></div>
+      <div><b>ဖုန်းပြင်ဆင်ခ</b><span>ဖုန်းဆိုင်အတွက် — စက်လက်ခံကတည်းက ပြန်အပ်တဲ့အထိ</span></div>
+      <div><b>Top-up Biller</b><span>Atom, MPT, Mytel စတဲ့ float နဲ့ အမြတ်</span></div>
+      <div><b>Report</b><span>နေ့ပိတ်စာရင်း၊ အမြတ်အရှုံး၊ Excel ထုတ်လို့ရ</span></div>
+    </div>
 
-        <table class="ftable">
-          <tbody>
-            <tr><th>၁။ ဂိမ်းရွေးပါ</th><td>Mobile Legends, Free Fire, PUBG Mobile စသည့် ဂိမ်းများ ရွေးချယ်နိုင်ပါတယ်</td></tr>
-            <tr><th>၂။ Package ရွေးပြီး Player ID ထည့်ပါ</th><td>ဂိမ်းအလိုက် လိုအပ်တဲ့ Player ID / Server ID ကို အလိုအလျောက် တောင်းပါလိမ့်မယ်</td></tr>
-            <tr><th>၃။ KBZ Pay ဖြင့် ငွေချေပါ</th><td>QR scan (သို့) ဖုန်းနံပါတ်ဖြင့် ငွေလွှဲပြီး Order တင်လိုက်ရုံပါပဲ</td></tr>
-            <tr><th>အတည်ပြုချိန်</th><td>Admin မှ စစ်ဆေးပြီးပါက မိနစ်ပိုင်းအတွင်း Diamond/UC ဝင်ရောက်ပါလိမ့်မယ်</td></tr>
-            <tr><th>Order Status</th><td>Order number ဖြင့် ငွေပေးချေမှု အခြေအနေကို အချိန်မရွေး Check လုပ်နိုင်ပါတယ်</td></tr>
-          </tbody>
-        </table>
+    <div class="chips">
+      <span class="chip on">အခမဲ့ — အကောင့်ဖွင့်ရုံပါပဲ</span>
+      <span class="chip">ဆိုင်အလိုက် သီးသန့်</span>
+      <span class="chip">လိုတဲ့ module ပဲ ပွင့်</span>
+      <span class="chip">Owner / Cashier / Accountant</span>
+      <span class="chip">PWA — ဖုန်းမှာ install လုပ်လို့ရ</span>
+    </div>
 
-        <div class="chips">
-          <span class="chip">Diamond / UC ချက်ချင်းဝင်</span>
-          <span class="chip neutral">KBZ Pay ဖြင့် ငွေချေနိုင်</span>
-          <span class="chip neutral">ဂိမ်းအလိုက် Player ID / Server ID အလိုအလျောက်</span>
-          <span class="chip neutral">Telegram မှတဆင့် Order အခြေအနေ ကြေညာ</span>
-          <span class="chip neutral">PWA — ဖုန်းမှာ install လုပ်လို့ရ</span>
-        </div>
-      </div>
-
-      <div class="hero-actions" style="margin-top:22px">
-        <a class="btn btn-jade" href="https://maharpos.shop/digital/game/">Digital Shop သို့ သွားမည်</a>
+    <div class="callout">
+      <div class="ico">🛒</div>
+      <div>
+        <b>မိနီမတ် / ကုန်စုံဆိုင် ဖွင့်ထားသူများအတွက်</b>
+        <p>
+          Barcode scan၊ ကုန်ဆုံးရက် စစ်ဆေးခြင်းနဲ့ retail POS ကို အပြည့်အစုံ ရပါတယ်။
+          Register လုပ်တဲ့အခါ ဆိုင်အမျိုးအစားကို <b>Mini Mart / Retail</b> ရွေးလိုက်ရုံပါပဲ။
+        </p>
+        <a class="btn btn-primary btn-sm" href="https://walletnote.online/register?type=MINI_MART">Mini Mart အကောင့် ဖွင့်မည်</a>
       </div>
     </div>
-  </section>
 
-  <section id="shop">
-    <div class="wrap">
-      <div class="shop-split">
-        <div class="shop-photo">
-          <img src="/assets/shop.jpg" alt="မဟာရွှေ ဖုန်းပြင်ဆိုင်၊ ဆီဆိုင်မြို့" width="1280" height="960" loading="lazy">
+    <div class="product-cta">
+      <a class="btn btn-outline" href="https://walletnote.online">walletnote.online →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ the shop itself ============================ -->
+<section id="shop" class="alt">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">ဘယ်ကနေ စလာလဲ</div>
+      <h2>ဖုန်းဆိုင်တစ်ဆိုင်ကနေ စခဲ့တာပါ</h2>
+      <p class="lead">
+        Mahar Shwe Mobile က ဆီဆိုင်မြို့မှာ ဖုန်းရောင်းဝယ်ရေးနဲ့ ပြုပြင်ရေး လုပ်နေတဲ့ ဆိုင်ပါ။
+        ကိုယ့်ဆိုင်အတွက် လိုအပ်လို့ ဆောက်ခဲ့တဲ့ စနစ်ကို အခု တခြားဆိုင်တွေလည်း သုံးနေကြပါပြီ။
+      </p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-top">
+          <img src="/assets/maharshwe-logo.png" alt="Mahar Shwe Mobile">
+          <div><h3>Mahar Shwe Mobile</h3><small>ဖုန်းဆိုင်</small></div>
         </div>
-        <div class="shop">
-          <h2>မဟာရွှေ ဖုန်းပြင်ဆိုင်</h2>
-          <p>ဖုန်းနှင့် ဖုန်းအပိုပစ္စည်း အရောင်းဆိုင်။ ပြင်ဆင်ရန် အပ်နှံပါက ဘောင်ချာ ထုတ်ပေးပြီး၊ ဘောင်ချာပေါ်ရှိ QR ကို ဖတ်၍ ပြင်ဆင်မှု အခြေအနေကို အချိန်မရွေး ကြည့်ရှုနိုင်ပါသည်။</p>
-          <div class="shop-facts" id="contact">
-            <div class="fact">
-              <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/></svg>
-              <div><span>ဖုန်း</span><b><a href="tel:09778394052">09 778 394 052</a><br><a href="tel:09799519545">09 799 519 545</a></b></div>
-            </div>
-            <div class="fact">
-              <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <div><span>လိပ်စာ</span><b>ဆီဆိုင်မြို့မဈေး တောင်ဖက်၊ တောင်ကြီး–လွိုင်ကော် လမ်းမကြီးဘေး အရှေ့ဖက်ခြမ်း</b></div>
-            </div>
-            <div class="fact">
-              <svg viewBox="0 0 24 24"><path d="M21 3 3 10.5l6 2.5 2.5 6L21 3Z"/><path d="M9 13.5 21 3"/></svg>
-              <div><span>Telegram</span><b><a href="https://t.me/maharshwebot">@maharshwebot</a></b></div>
-            </div>
-          </div>
+        <p>ဖုန်းအမျိုးမျိုး ရောင်းဝယ်ခြင်း၊ ပြုပြင်ခြင်းနဲ့ ဆက်စပ်ပစ္စည်းများ။ ပြင်ဆင်ရန် အပ်နှံပါက ဘောက်ချာပေါ်ရှိ QR ဖြင့် အခြေအနေကို အချိန်မရွေး ကြည့်နိုင်ပါသည်။</p>
+        <div class="card-links"><a class="btn btn-outline btn-sm" href="https://maharpos.shop/shop/maharshwemobile">Online Shop →</a></div>
+      </div>
+      <div class="card">
+        <div class="card-top">
+          <img src="/assets/maharshwe-logo.png" alt="Mahar Shwe VPN">
+          <div><h3>Mahar Shwe VPN</h3><small>Android App</small></div>
         </div>
+        <p>Android အတွက် VPN app။ APK ကို တိုက်ရိုက် download ဆွဲပြီး သုံးနိုင်ပါတယ်။ Plan တွေကို Telegram bot ကနေ ဝယ်လို့ရပါတယ်။</p>
+        <div class="card-links"><a class="btn btn-outline btn-sm" href="#vpn">Download →</a></div>
+      </div>
+      <div class="card">
+        <div class="card-top">
+          <img src="/assets/maharshwe-logo.png" alt="Digital Products">
+          <div><h3>Digital Products</h3><small>Game Top-up</small></div>
+        </div>
+        <p>Mobile Legends၊ Free Fire၊ PUBG Mobile စတဲ့ ဂိမ်းများအတွက် Diamond/UC နဲ့ digital voucher များ။ Player ID ဖြင့် တိုက်ရိုက် ဝယ်ယူနိုင်ပါတယ်။</p>
+        <div class="card-links"><a class="btn btn-outline btn-sm" href="#digital">အသေးစိတ် →</a></div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-</main>
+<!-- ============================ VPN ============================ -->
+<section id="vpn">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">Mahar Shwe VPN</div>
+      <h2>Android အတွက် VPN</h2>
+      <p class="lead">
+        ဖုန်းအမျိုးအစားနဲ့ ကိုက်ညီတဲ့ ဖိုင်ကို ရွေးပြီး download ဆွဲပါ။
+        ဖုန်းအများစုအတွက် <b>ARM64</b> ကို ရွေးပါ။ မသေချာရင် Universal ကို ဆွဲပါ။
+      </p>
+      <p class="muted" style="margin-top:8px">Version 1.0.23 · APK တိုက်ရိုက် download</p>
+    </div>
+
+    <div class="downloads">
+      <a class="dl" href="/download/maharshwe-vpn-1.0.23-mid-arm64.apk"><b>ARM64</b><span>21.4 MB</span><em>အများစုအတွက် →</em></a>
+      <a class="dl" href="/download/maharshwe-vpn-1.0.23-low-armv7.apk"><b>ARMv7</b><span>21.0 MB</span><em>ဖုန်းအဟောင်း →</em></a>
+      <a class="dl" href="/download/maharshwe-vpn-1.0.23-high-universal.apk"><b>Universal</b><span>49.4 MB</span><em>အားလုံးနဲ့ ရ →</em></a>
+    </div>
+    <p class="muted" style="margin-top:14px">APK install လုပ်ရန် ဖုန်းရဲ့ Settings မှာ "Unknown sources" ကို ဖွင့်ပေးရပါမယ်။</p>
+
+    <div class="plans">
+      <div class="plan">
+        <div class="tag">အခမဲ့</div>
+        <b>Free Trial</b>
+        <span class="price">၀ ကျပ်</span>
+        <span>၂ ရက်</span>
+        <a class="btn btn-outline btn-sm btn-block" href="https://t.me/maharshwebot">Bot မှာ ယူမည်</a>
+      </div>
+      <div class="plan best">
+        <div class="tag">လူသုံးအများဆုံး</div>
+        <b>1 Month</b>
+        <span class="price">3,000 ကျပ်</span>
+        <span>၁ လ</span>
+        <a class="btn btn-primary btn-sm btn-block" href="https://t.me/maharshwebot">Bot မှာ ဝယ်မည်</a>
+      </div>
+      <div class="plan">
+        <div class="tag">သက်သာဆုံး</div>
+        <b>2 Months</b>
+        <span class="price">5,000 ကျပ်</span>
+        <span>၂ လ</span>
+        <a class="btn btn-outline btn-sm btn-block" href="https://t.me/maharshwebot">Bot မှာ ဝယ်မည်</a>
+      </div>
+    </div>
+
+    <ol class="steps">
+      <li>Telegram bot မှာ Plan ရွေးပါ</li>
+      <li>KBZ Pay ဖြင့် ငွေလွှဲပါ (ငွေလက်ခံမည့် အချက်အလက်ကို bot က ပြပါမယ်)</li>
+      <li>ငွေလွှဲပြီး Screenshot ကို bot ထဲ ပို့ပါ</li>
+      <li>အတည်ပြုပြီးလျှင် VPN Key ကို bot ကနေ ချက်ချင်း ရပါမယ်</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================ digital ============================ -->
+<section id="digital" class="alt">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">Digital Products</div>
+      <h2>Game Top-up · Diamond / UC / Voucher</h2>
+      <p class="lead">
+        Mobile Legends၊ Free Fire၊ PUBG Mobile စတဲ့ လူကြိုက်များတဲ့ ဂိမ်းများအတွက်
+        Diamond၊ UC နဲ့ digital voucher များကို <b>Player ID</b> ဖြင့် တိုက်ရိုက် ဝယ်ယူနိုင်ပါတယ်။
+        KBZ Pay ဖြင့် ငွေချေရုံပါပဲ။
+      </p>
+    </div>
+    <div class="product-cta">
+      <a class="btn btn-primary" href="https://maharpos.shop/digital/game/">Digital Shop ကို သွားမည် →</a>
+      <a class="btn btn-outline" href="https://t.me/maharshwebot">Telegram Bot</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ contact ============================ -->
+<section id="contact">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">ဆက်သွယ်ရန်</div>
+      <h2>မေးစရာ ရှိရင် ဖုန်းဆက်လိုက်ပါ</h2>
+      <p class="lead">POS သုံးဖို့ စဉ်းစားနေတာဖြစ်ဖြစ်၊ ဖုန်းပြင်ချင်တာဖြစ်ဖြစ် — တိုက်ရိုက် ပြောလို့ရပါတယ်။</p>
+    </div>
+    <div class="contact">
+      <a href="tel:09778394052"><small>ဖုန်း</small><b>09 778 394 052</b></a>
+      <a href="tel:09799519545"><small>ဖုန်း (၂)</small><b>09 799 519 545</b></a>
+      <div><small>တည်နေရာ</small><b>ဆီဆိုင်မြို့</b><span class="muted">ရှမ်းပြည်နယ် တောင်ပိုင်း</span></div>
+    </div>
+  </div>
+</section>
 
 <footer>
   <div class="wrap">
-    <div class="foot-links">
-      <a href="https://maharpos.shop">Mahar POS</a>
-      <a href="https://maharpos.shop/digital/game/">Digital Products</a>
-      <a href="https://walletnote.online">Wallet Note</a>
+    <div class="fl">
+      <a href="#pos">Mahar POS</a>
+      <a href="#walletnote">Wallet Note</a>
+      <a href="#shop">ဖုန်းဆိုင်</a>
       <a href="#vpn">VPN</a>
-      <a href="https://maharpos.shop/shop/maharshwemobile">Online Shop</a>
-      <a href="https://t.me/maharshwebot">Telegram</a>
+      <a href="#digital">Game Top-up</a>
+      <a href="#contact">ဆက်သွယ်ရန်</a>
     </div>
-    <div>© <span id="y">2026</span> မဟာရွှေ · Mahar Shwe</div>
+    <span class="muted">© မဟာရွှေ · ဆီဆိုင်မြို့</span>
   </div>
 </footer>
 
-<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+<script>
+// The nav wraps to two rows on narrow screens, so its height is not a constant.
+// Measure it and let scroll-padding-top follow, or anchor links land with the
+// section heading tucked under the bar.
+(function () {
+  var nav = document.querySelector('.nav');
+  if (!nav) return;
+  var apply = function () {
+    // A separate token: --nav-h drives the bar's own height, so writing the
+    // measurement back into it would make the nav grow off its own shadow.
+    document.documentElement.style.setProperty('--nav-measured', nav.offsetHeight + 'px');
+  };
+  apply();
+  addEventListener('resize', apply);
+  if (window.ResizeObserver) new ResizeObserver(apply).observe(nav);
+  addEventListener('load', apply);
+})();
+</script>
+
 </body>
 </html>
