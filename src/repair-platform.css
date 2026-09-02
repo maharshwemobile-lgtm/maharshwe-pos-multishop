@@ -242,3 +242,17 @@
    by habit. */
 .repair-delete-button{background:#fef2f2!important;border-color:#fecaca!important;color:#b91c1c!important}
 .dark .repair-delete-button{background:#0b1b33!important;border-color:#7f1d1d!important;color:#fca5a5!important}
+
+/* The price belongs beside the decision that produces it, not folded away
+   behind "more details" where a repair gets finished without one. */
+.repair-cost-now{display:grid;gap:5px;margin:11px 0 0;padding:11px 12px;
+  border:1px solid #fed7aa;border-radius:11px;background:#fffbeb}
+.repair-cost-now>span{font-size:12.5px;font-weight:800;color:#92400e}
+.repair-cost-now input{height:44px;padding:0 12px;border:1px solid #fdba74;border-radius:9px;
+  background:#fff;color:#0f172a;font:inherit;font-size:16px;font-weight:800}
+.repair-cost-now input:focus{outline:none;border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.15)}
+.repair-cost-now>small{font-size:11.5px;color:#a16207;line-height:1.5}
+.dark .repair-cost-now{border-color:#7c4a10;background:rgba(120,53,15,.24)}
+.dark .repair-cost-now>span{color:#fde68a}
+.dark .repair-cost-now>small{color:#fcd34d}
+.dark .repair-cost-now input{background:#0b1b33;border-color:#7c4a10;color:#e5eef8}

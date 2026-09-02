@@ -465,6 +465,27 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
                   {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
+
+              {/* Marking a repair finished is when the price is known and when
+                  the customer is told it. Leaving the field folded away meant
+                  the repair was completed without one, and the voucher went out
+                  still showing the estimate. */}
+              {statusForm.status === 'COMPLETED' ? (
+                <label className="repair-cost-now">
+                  <span>ပြင်ခ (ကျသင့်ငွေ)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    autoFocus
+                    value={statusForm.finalCost}
+                    onChange={(event) => setStatusForm({ ...statusForm, finalCost: event.target.value })}
+                    placeholder={repair.estimatedCost ? `ခန့်မှန်း ${money(repair.estimatedCost)}` : 'ကျပ်'}
+                  />
+                  <small>ဗလာထားလျှင် ခန့်မှန်းဈေးအတိုင်း ဆက်သွားပါမည်။</small>
+                </label>
+              ) : null}
+
               <div className="repair-action-row">
                 {/* Only offered when the selection actually differs — a button that
                     saves the status it already has just invites doubt. */}
