@@ -19,7 +19,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-12';
+const SCRIPT_VERSION = 'repair-sync-13';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -556,16 +556,23 @@ const REPAIR_KEY_COLUMN = 2;   // column B, Repair ID/Voucher
 
 // Both writing and deleting start by finding the voucher's row, and the two
 // must agree on what counts as a match.
-function findRepairRow(sheet, key) {
+function findRepairRow(sheet, key, altKey) {
   const lastRow = sheet.getLastRow();
   if (lastRow <= REPAIR_HEADER_ROWS) return 0;
   const keys = sheet
     .getRange(REPAIR_HEADER_ROWS + 1, REPAIR_KEY_COLUMN, lastRow - REPAIR_HEADER_ROWS, 1)
     .getDisplayValues();
+
+  let fallback = 0;
   for (let i = 0; i < keys.length; i += 1) {
-    if (String(keys[i][0]).trim() === key) return REPAIR_HEADER_ROWS + 1 + i;
+    const cell = String(keys[i][0]).trim();
+    if (cell === key) return REPAIR_HEADER_ROWS + 1 + i;
+    // Rows written before the machine number carried its prefix say 0995 where
+    // the POS now says MS0995. Matching the older form updates that row — and
+    // writes the new number into it — instead of adding a second one.
+    if (altKey && !fallback && cell === altKey) fallback = REPAIR_HEADER_ROWS + 1 + i;
   }
-  return 0;
+  return fallback;
 }
 
 // Deleting removes the whole line so the rows below close up, rather than
@@ -578,7 +585,7 @@ function deleteRepairRow(payload, fallbackTab) {
   const key = String(payload.key || '').trim();
   if (!key) return { ok: false, message: 'Row has no voucher number' };
 
-  const target = findRepairRow(sheet, key);
+  const target = findRepairRow(sheet, key, String(payload.altKey || '').trim());
   // Already gone is the outcome that was asked for, so it is not a failure —
   // otherwise the row would be retried until it gave up.
   if (!target) return { ok: true, tab: tabName, deleted: 0, voucher: key };
@@ -597,7 +604,7 @@ function writeRepairRow(payload, fallbackTab) {
   if (!key || !values.length) return { ok: false, message: 'Row has no voucher number' };
 
   const lastRow = sheet.getLastRow();
-  const target = findRepairRow(sheet, key);
+  const target = findRepairRow(sheet, key, String(payload.altKey || '').trim());
 
   if (target) {
     const existing = sheet.getRange(target, 1, 1, values.length).getValues()[0];

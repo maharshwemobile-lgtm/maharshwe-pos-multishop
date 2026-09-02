@@ -102,10 +102,15 @@ function repairSheetRow(repair) {
     paymentStatus: PAYMENT_STATUS_TEXT[String(repair.paymentStatus || '')] || '',
     note: String(repair.notes || '').trim(),
   };
+  // Rows written before the machine number carried its prefix are keyed 0995
+  // where this one now says MS0995. Without the older form to fall back on, the
+  // sheet cannot find them and writes a second row for the same repair.
+  const stripped = String(values.voucherNo).replace(/^[A-Za-z]+/, '');
   return {
     // Keyed so a reprint or a status change updates the row it already wrote
     // instead of appending a second one.
     key: values.voucherNo,
+    altKey: stripped && stripped !== values.voucherNo ? stripped : '',
     columns: SHEET_COLUMNS,
     values,
     row: SHEET_COLUMNS.map((name) => values[name]),
