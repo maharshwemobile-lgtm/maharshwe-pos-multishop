@@ -107,11 +107,22 @@ function baseStyles(paperSize) {
   // bold with solid rules. Sizes stay as they were — weight is what makes it
   // readable, and bumping the type only spends more paper per slip.
   const twoUp = width === '58mm' ? '1fr' : '1fr 1fr';
+  // 2mm of margin each side, so the logo has to fit what is left with room to
+  // spare rather than being clipped at the edge of the paper.
+  const logoWidth = width === '58mm' ? '40mm' : '48mm';
   return `
     @page{size:${width} auto;margin:0 2mm 3mm}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     body{width:${width};max-width:100%;margin:0 auto;padding:0 2mm;font-family:Arial,sans-serif;color:#000;font-size:11px;font-weight:400;background:#fff;-webkit-font-smoothing:none}
-    .slip-logo{display:block;width:66px;height:66px;object-fit:contain;margin:0 auto 6px auto;text-align:center}
+    /* A thermal head prints one dot or no dot — there is no grey. A logo scaled
+       by the browser comes back with soft edges the driver then has to halftone,
+       which is what turns a wordmark into a smudge. The artwork is prepared as a
+       1-bit bitmap at 203dpi, so it is placed at exactly the width it was built
+       for and told not to interpolate: one image pixel, one printer dot. */
+    .slip-logo{display:block;width:${logoWidth};height:auto;max-width:100%;margin:0 auto 6px auto;
+      image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;
+      -ms-interpolation-mode:nearest-neighbor}
+    @media print{.slip-logo{image-rendering:pixelated;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
     .logo-fallback{display:flex;width:58px;height:58px;align-items:center;justify-content:center;margin:0 auto 8px auto;border-radius:50%;background:#000;color:#fff;font-weight:700;font-size:18px}
     h1,h2,p{text-align:center;margin:3px 0}h1{font-size:18px;font-weight:700}h2{font-size:14px;font-weight:700}.muted{color:#000;font-weight:400}.left{text-align:left}.right{text-align:right}.center{text-align:center}
     .meta{margin:7px 0;padding:6px 0;border-top:1px solid #000;border-bottom:1px solid #000}.meta div,.summary div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}.meta span,.summary span{color:#000;font-weight:400}.meta b,.summary b{font-weight:700}
