@@ -107,9 +107,10 @@ function baseStyles(paperSize) {
   // bold with solid rules. Sizes stay as they were — weight is what makes it
   // readable, and bumping the type only spends more paper per slip.
   const twoUp = width === '58mm' ? '1fr' : '1fr 1fr';
-  // 2mm of margin each side, so the logo has to fit what is left with room to
-  // spare rather than being clipped at the edge of the paper.
-  const logoWidth = width === '58mm' ? '40mm' : '48mm';
+  // @page takes 2mm each side and the body another 2mm, so 80mm paper leaves
+  // 72mm of content and 58mm leaves 50mm. The logo fills most of that — at
+  // 48mm it read as small on 80mm paper — while staying clear of the edge.
+  const logoWidth = width === '58mm' ? '46mm' : '64mm';
   return `
     @page{size:${width} auto;margin:0 2mm 3mm}
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
