@@ -15,6 +15,17 @@ function hmac(value, purpose) {
   return crypto.createHmac('sha256', secret).update(`${purpose}:${value}`).digest('hex');
 }
 
+// The key printed on a voucher is derived from the repair, not drawn at random.
+//
+// It used to be random, and every press of "print" minted a fresh one and
+// overwrote the stored hash -- so reprinting a voucher silently killed the QR
+// on the copy the customer was already holding. Deriving it means the same
+// repair always yields the same code: printing it twice is harmless, and a
+// voucher stays readable for as long as the repair exists.
+function stableShareKey(shopId, repairId) {
+  return hmac(`${shopId}:${repairId}`, 'public-repair-key').slice(0, 32);
+}
+
 // The status page is reached from a key printed on the customer own voucher,
 // so it shows their name in full: a masked name only made them doubt the page
 // was theirs.
@@ -153,6 +164,7 @@ module.exports = {
   normalizeRepairNumber,
   digits,
   hmac,
+  stableShareKey,
   customerDisplayName,
   publicBaseUrl,
   findTenantRepair,

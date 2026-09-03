@@ -7,8 +7,9 @@ import { printRepairVoucher } from './projectPrintUtils';
  * Printing goes through a hidden iframe, so there is no popup to be blocked and
  * this works in the mobile web view as well as on the counter PC.
  *
- * The share key is stored hashed, so a printable status URL can only be made by
- * minting a new one — which retires the QR on any voucher printed earlier.
+ * The status URL is derived from the repair, so asking for it again returns the
+ * same one: reprinting a voucher reprints the customer's existing QR rather
+ * than replacing it.
  */
 export async function printRepairVoucherById(repairId, notify) {
   const id = String(repairId || '').trim();

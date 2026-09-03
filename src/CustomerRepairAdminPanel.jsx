@@ -192,10 +192,10 @@ export default function CustomerRepairAdminPanel() {
         <div className="customer-admin-grid">
           <section>
             <h4><Link2 size={18} /> Customer Status Link</h4>
-            <p>Link အသစ်ထုတ်တိုင်း အဟောင်း Link ကို အလိုအလျောက် ပိတ်ပါမယ်။</p>
+            <p>ဤဘောက်ချာအတွက် Link က အမြဲ တစ်ခုတည်းပါ — ဘယ်နှစ်ကြိမ် ထုတ်ထုတ် တူပါမယ်၊ သက်တမ်းလည်း မကုန်ပါ။</p>
             <button className="primary" type="button" onClick={generateLink} disabled={saving}><Link2 size={17} /> Generate & Copy Link</button>
             {shareUrl ? <div className="customer-share-url"><code>{shareUrl}</code><button type="button" onClick={() => copyText(shareUrl, 'Link copied')}><Clipboard size={16} /></button></div> : null}
-            {data.publicAccess ? <small className="customer-meta">Key ending: ••••{data.publicAccess.keyLast4} · Expire: {formatDate(data.publicAccess.expiresAt)} · Last View: {formatDate(data.publicAccess.lastViewedAt)}</small> : null}
+            {data.publicAccess ? <small className="customer-meta">Key ending: ••••{data.publicAccess.keyLast4} · {data.publicAccess.expiresAt ? `Expire: ${formatDate(data.publicAccess.expiresAt)}` : 'သက်တမ်း မကုန်ပါ'} · Last View: {formatDate(data.publicAccess.lastViewedAt)}</small> : null}
           </section>
 
           <section>

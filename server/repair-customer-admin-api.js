@@ -11,6 +11,7 @@ const { ensureRepairPlatformSchema } = require('./repair-platform-schema');
 const { enqueueRepairNotification, listRepairNotifications } = require('./repair-notification-outbox');
 const {
   hmac,
+  stableShareKey,
   publicBaseUrl,
   findTenantRepair,
 } = require('./repair-customer-portal-utils');
@@ -71,25 +72,28 @@ async function addEvent({ shopId, repairId, eventType, status, userId, note, pay
   );
 }
 
+// The same repair always produces the same key and so the same URL: printing a
+// voucher a second time reprints the QR the customer already has instead of
+// replacing it. There is no expiry either -- a paper voucher does not stop
+// being valid on a date, and the shop can still switch a repair's page off.
 async function issuePublicAccess(repair, userId) {
-  const shareKey = crypto.randomBytes(24).toString('base64url');
+  const shareKey = stableShareKey(repair.shopId, repair.id);
   const shareHash = hmac(shareKey, 'public-repair');
-  const days = Math.max(1, Number(process.env.PUBLIC_REPAIR_LINK_DAYS || 90));
   await prisma.$executeRawUnsafe(
     `INSERT INTO repair_public_access (
        id,shop_id,repair_id,access_token_hash,access_token_last4,active,expires_at,created_by_id,created_at,updated_at
-     ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4,$5,TRUE,NOW()+($6::text || ' days')::interval,$7::uuid,NOW(),NOW())
+     ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4,$5,TRUE,NULL,$6::uuid,NOW(),NOW())
      ON CONFLICT (shop_id,repair_id)
      DO UPDATE SET access_token_hash=EXCLUDED.access_token_hash,
                    access_token_last4=EXCLUDED.access_token_last4,
-                   active=TRUE,expires_at=EXCLUDED.expires_at,
+                   active=TRUE,expires_at=NULL,
                    created_by_id=EXCLUDED.created_by_id,updated_at=NOW()`,
-    crypto.randomUUID(), repair.shopId, repair.id, shareHash, shareKey.slice(-4), String(days), userId || null,
+    crypto.randomUUID(), repair.shopId, repair.id, shareHash, shareKey.slice(-4), userId || null,
   );
   return {
     shareKey,
     url: `${publicBaseUrl()}/repair?shop=${encodeURIComponent(repair.shopSlug)}&id=${encodeURIComponent(repair.repairNumber)}&key=${encodeURIComponent(shareKey)}`,
-    expiresInDays: days,
+    expiresInDays: null,
   };
 }
 
