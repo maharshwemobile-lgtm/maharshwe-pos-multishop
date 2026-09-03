@@ -84,20 +84,58 @@ function printWindow(targetWindow, html) {
 
   const frame = document.createElement('iframe');
   frame.setAttribute('aria-hidden', 'true');
-  frame.setAttribute('style', 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden');
+  // Off the side of the screen rather than hidden and zero-sized. A frame with
+  // no layout gives Chrome nothing to paginate and print() returns without ever
+  // opening the dialog — which is what "nothing happens" looked like at the
+  // counter. It needs real dimensions and it must not be visibility:hidden.
+  frame.setAttribute('style', 'position:fixed;left:-10000px;top:0;width:80mm;height:297mm;border:0;opacity:0;pointer-events:none');
   document.body.appendChild(frame);
 
   const remove = () => { if (frame.parentNode) frame.remove(); };
-  // afterprint does not fire everywhere, so the frame is cleaned up on a timer
-  // as well — an orphaned iframe would keep the slip in the DOM for the session.
-  frame.contentWindow.addEventListener('afterprint', () => window.setTimeout(remove, 500));
   window.setTimeout(remove, 60000);
 
   const doc = frame.contentWindow.document;
   doc.open();
   doc.write(html);
   doc.close();
-  return true;
+
+  // document.open() drops every listener registered on the frame's window, so
+  // afterprint is bound here, on the document this call actually wrote.
+  frame.contentWindow.addEventListener('afterprint', () => window.setTimeout(remove, 500));
+
+  // The written document asks to print itself on load, but that never fires in
+  // some engines once document.write has already closed the stream. Printing is
+  // driven from here instead, and the flag keeps the two from stacking.
+  return new Promise((resolve) => {
+    let done = false;
+    const start = () => {
+      if (done) return;
+      done = true;
+      try {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+        resolve(true);
+      } catch (error) {
+        remove();
+        resolve(false);
+      }
+    };
+
+    // A slip carries at most the shop logo. Wait for it so the paper is not
+    // printed with a gap where the logo should be, but never wait on a broken
+    // URL for longer than it takes to notice.
+    const images = Array.from(doc.images || []);
+    const pending = images.filter((image) => !image.complete);
+    if (!pending.length) { window.setTimeout(start, 60); return; }
+
+    let left = pending.length;
+    const settle = () => { left -= 1; if (left <= 0) window.setTimeout(start, 60); };
+    pending.forEach((image) => {
+      image.addEventListener('load', settle, { once: true });
+      image.addEventListener('error', settle, { once: true });
+    });
+    window.setTimeout(start, 3000);
+  });
 }
 
 function baseStyles(paperSize) {
@@ -192,8 +230,13 @@ function brandBlock(settings, title) {
 // With that raised the text prints properly, and rasterising only cost weight
 // control and a logo that had to survive a canvas round trip.
 function emitSlip(targetWindow, { title, body, styles }) {
+  // A popup has to print itself; the iframe path is driven from the parent, so
+  // adding the script there would only ask for the dialog twice.
+  const selfPrint = targetWindow && !targetWindow.closed
+    ? '<script>window.onload=()=>window.print();<\/script>'
+    : '';
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${styles}</style></head><body>${body}
-    <script>window.onload=()=>window.print();<\/script></body></html>`;
+    ${selfPrint}</body></html>`;
   return printWindow(targetWindow, html);
 }
 

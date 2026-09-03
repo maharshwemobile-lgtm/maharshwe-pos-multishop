@@ -19,7 +19,11 @@ export async function printRepairVoucherById(repairId, notify) {
     const response = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(id)}`);
     const access = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(id)}/public-access`, { method: 'POST' })
       .catch(() => null);
-    await printRepairVoucher(response.repair, null, access?.access?.url || '');
+    const printed = await printRepairVoucher(response.repair, null, access?.access?.url || '');
+    if (!printed) {
+      notify?.('error', 'Print window မဖွင့်နိုင်ပါ — browser က ပိတ်ထားခြင်း ရှိမရှိ စစ်ပါ။');
+      return false;
+    }
     if (!access) notify?.('error', 'Status QR link မထုတ်နိုင်ပါ — QR မပါဘဲ ထုတ်ပါမယ်။');
     return true;
   } catch (error) {
