@@ -171,17 +171,24 @@ function baseStyles(paperSize) {
     /* The voucher number block carries the date too. They used to be separate
        bordered rows, which cost two rules and a row of padding to print one
        short line of text. */
-    .voucher-no{margin-top:6px;padding:4px 0;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center}
+    /* Hairlines, not heavy rules. A 2px rule at 203dpi lands as four dots of
+       solid black and reads heavier on paper than it does on screen. */
+    .voucher-no{margin-top:6px;padding:4px 0;border-top:1px solid #000;border-bottom:1px solid #000;text-align:center}
     .voucher-no span{display:block;font-size:9.5px;font-weight:400}
     .voucher-no b{display:block;font-size:19px;font-weight:700;letter-spacing:1.5px;line-height:1.25}
     .voucher-no small{display:block;font-size:9px;font-weight:400;margin-top:2px}
     /* No rule on top: the voucher number block above already closes with one. */
-    .fields{display:grid;grid-template-columns:${twoUp};gap:3px 8px;margin-top:5px;padding-bottom:5px;border-bottom:1px solid #000}
+    /* No rule under the fields either: what follows is the money, and that
+       already opens with one. Space does the separating. */
+    .fields{display:grid;grid-template-columns:${twoUp};gap:3px 8px;margin-top:5px;padding-bottom:2px}
     .fields div{min-width:0;line-height:1.45}.fields .wide{grid-column:1/-1}
     .fields span{font-size:9px;font-weight:400}.fields b{font-size:11px;font-weight:700;word-break:break-word}
     .summary{margin-top:7px}.grand{font-size:15px;font-weight:700;border-top:2px solid #000;margin-top:4px;padding-top:7px!important}.void{margin:9px 0;padding:6px;border:2px solid #000;color:#000;font-weight:700;text-align:center;letter-spacing:2px}
     /* A single rule above the warning instead of a box around it: the heading
        is already centred and bold, so three more sides only spent paper. */
+    /* Voucher only -- the sale receipt keeps its heavier total rule, where the
+       figure is the whole point of the paper. */
+    .voucher-summary{margin-top:9px}.voucher-summary .grand{border-top-width:1px;padding-top:5px!important}
     .notice{margin-top:6px;padding-top:5px;border-top:1px solid #000}.notice>b{display:block;text-align:center;font-size:10.5px;font-weight:700;margin-bottom:3px}.notice ul{margin:0;padding-left:13px}.notice li{font-size:9px;font-weight:400;line-height:1.4;margin-bottom:1px}
     /* Same treatment as the repair voucher's warning: a rule and a centred
        heading rather than a box. Two of these can print back to back, and each
@@ -352,14 +359,14 @@ export async function printRepairVoucher(repair, targetWindow = null, statusUrl 
   if (settled > 0) {
     // Repaired and priced: this is the real figure.
     const due = Number(repair.balanceDue ?? Math.max(0, settled - deposit));
-    money = `<div class="summary"><div><span>ပြင်ခ</span><b>${kyat(settled)}</b></div>${depositRow}<div class="grand"><span>စုစုပေါင်း ကျန်ရှိငွေ</span><b>${kyat(due)}</b></div></div>`;
+    money = `<div class="summary voucher-summary"><div><span>ပြင်ခ</span><b>${kyat(settled)}</b></div>${depositRow}<div class="grand"><span>စုစုပေါင်း ကျန်ရှိငွေ</span><b>${kyat(due)}</b></div></div>`;
   } else if (estimated > 0) {
     // Quoted but not final — say so, and do not call it a total.
-    money = `<div class="summary"><div><span>ခန့်မှန်းပြင်ခ</span><b>${kyat(estimated)}</b></div>${depositRow}<div class="grand"><span>ခန့်မှန်း ကျန်ငွေ</span><b>${kyat(Math.max(0, estimated - deposit))}</b></div></div>
+    money = `<div class="summary voucher-summary"><div><span>ခန့်မှန်းပြင်ခ</span><b>${kyat(estimated)}</b></div>${depositRow}<div class="grand"><span>ခန့်မှန်း ကျန်ငွေ</span><b>${kyat(Math.max(0, estimated - deposit))}</b></div></div>
     <p class="estimate-note">* ခန့်မှန်းချက်သာ ဖြစ်ပါသည်။ အတိအကျ ကျသင့်ငွေကို ပြင်ပြီးမှ အတည်ပြုပါမည်။</p>`;
   } else {
     // Nothing priced yet. Show the deposit if one was taken, and nothing else.
-    money = `${depositRow ? `<div class="summary">${depositRow}</div>` : ''}
+    money = `${depositRow ? `<div class="summary voucher-summary">${depositRow}</div>` : ''}
     <p class="estimate-note">ကျသင့်ငွေ — စစ်ဆေးပြီးမှ အတည်ပြုပါမည်။</p>`;
   }
 
