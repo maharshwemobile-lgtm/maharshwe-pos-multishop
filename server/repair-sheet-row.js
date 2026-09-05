@@ -11,7 +11,7 @@
 //   E  ပြင်ဆင်မှုအပိုင်း      TL / Check / USB / Battery …
 //   F  ပြင်ဆင်မှုအခြေအနေ     ပြင်ပြီး ✅ / ပြင်မရ ❌ / ပြင်ရန် ⏳
 //   G  ကုန်ကျစရိတ်
-//   H  ယူပြီး ခြေနေ          မယူရသေး ⏳ until it is collected
+//   H  ယူပြီး ခြေနေ          မယူရသေး ⏳ until it is collected, then ယူပြီး ✅
 //   I  Customer ဈေး
 //   J  ဆရာအမည်
 //   K  လာယူချိန်
@@ -95,7 +95,10 @@ function repairSheetRow(repair) {
     // The shop uses this column for what the repair cost them, and prices the
     // customer separately. finalCost is the customer figure, so it goes there.
     cost: '',
-    pickupStatus: delivered ? '' : 'မယူရသေး ⏳',
+    // Collected used to be written as an empty cell, which is indistinguishable
+    // from a row nobody has got to yet -- pressing ယူပြီး at the counter looked
+    // like it had done nothing at all in the sheet. It says so now.
+    pickupStatus: delivered ? 'ယူပြီး ✅' : 'မယူရသေး ⏳',
     customerPrice: amount(repair.finalCost || repair.estimatedCost),
     technician: String(repair.technicianName || repair.technicianUsername || '').trim(),
     pickedUpAt: delivered ? hhmm(repair.deliveredAt) : '',

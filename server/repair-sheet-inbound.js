@@ -167,7 +167,11 @@ async function createRepairFromSheet(shopId, prefix, voucherNo, row, trusted) {
   const status = STATUS_FROM_SHEET[sheetWord(row.repairStatus)] || 'RECEIVED';
   const payment = PAYMENT_FROM_SHEET[sheetWord(row.paymentStatus)] || 'PENDING';
   const price = Number(String(row.customerPrice || '').replace(/[^\d.]/g, ''));
-  const collected = row.pickupStatus !== undefined && sheetWord(row.pickupStatus) === '';
+  // Same reading as an edit: ယူပြီး or a blank cell means the phone has gone.
+  const pickupWord = row.pickupStatus === undefined ? null : sheetWord(row.pickupStatus);
+  const collected = pickupWord !== null
+    && !pickupWord.startsWith('မယူ')
+    && (pickupWord === '' || pickupWord.startsWith('ယူ'));
 
   const rows = await prisma.$queryRawUnsafe(
     `INSERT INTO repairs (
@@ -245,12 +249,18 @@ async function applySheetRow(shopId, prefix, row, trusted = false) {
   if (status && status !== repair.status) {
     if (!(status === 'IN_PROGRESS' && inFlight.includes(repair.status))) changes.status = status;
   }
-  // The sheet marks collection in its own column: blank once the customer has
+  // The sheet marks collection in its own column: ယူပြီး once the customer has
   // taken the phone, မယူရသေး while it is still on the shelf. It moves the
   // collection time and leaves the repair state alone.
+  //
+  // An empty cell still counts as collected. That is how the shop cleared the
+  // column by hand for years, and every row written before the counter started
+  // saying ယူပြီး is blank -- reading those as "not collected" would walk the
+  // collection time off hundreds of finished repairs.
   if (row.pickupStatus !== undefined) {
-    const waiting = sheetWord(row.pickupStatus).startsWith('မယူ');
-    const collected = sheetWord(row.pickupStatus) === '';
+    const word = sheetWord(row.pickupStatus);
+    const waiting = word.startsWith('မယူ');
+    const collected = word === '' || (!waiting && word.startsWith('ယူ'));
     if (collected && !repair.deliveredAt) changes.pickedUp = true;
     if (waiting && repair.deliveredAt) changes.pickedUp = false;
   }
