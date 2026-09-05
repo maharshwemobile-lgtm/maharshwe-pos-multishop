@@ -88,6 +88,7 @@ function saleDetailJson(row) {
       productName: item.productNameSnapshot,
       variantName: item.variantNameSnapshot,
       categoryName: item.categoryNameSnapshot,
+      condition: item.conditionSnapshot || 'NEW',
       imeiSerial: item.imeiSerial,
       quantity: item.quantity,
       unitPrice: number(item.actualSoldPrice),

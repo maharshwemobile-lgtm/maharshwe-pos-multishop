@@ -59,6 +59,7 @@ const blankProduct = {
   name: '',
   brand: '',
   model: '',
+  condition: 'NEW',
   requiresSerial: false,
   barcode: '',
   costPrice: '',
@@ -328,6 +329,7 @@ export default function ProductsPage({ onboardingGuide }) {
       name: product.name || '',
       brand: product.brand || '',
       model: product.model || '',
+      condition: product.condition || 'NEW',
       requiresSerial: Boolean(product.requiresSerial),
       active: product.active !== false,
     },
@@ -345,6 +347,7 @@ export default function ProductsPage({ onboardingGuide }) {
       name: form.name.trim(),
       brand: form.brand || null,
       model: form.model || null,
+      condition: form.condition === 'SECOND_HAND' ? 'SECOND_HAND' : 'NEW',
       requiresSerial: Boolean(form.requiresSerial),
       active: form.active !== false,
     };
@@ -589,6 +592,12 @@ export default function ProductsPage({ onboardingGuide }) {
             <Field label="Category *" hint={productCopy.categoryFieldHint}><div className="p2-inline-field-action"><select required value={productEditor.form.categoryId} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, categoryId: event.target.value } })}><option value="">{t('Select Category', 'Category ရွေးပါ')}</option>{categories.filter((category) => category.active).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>{canManage ? <button type="button" className="p2-icon-button" onClick={addCategoryInline} aria-label={t('Add category', 'Category အသစ်ထည့်')} title={t('Add category', 'Category အသစ်ထည့်')}><FolderPlus size={16} /></button> : null}</div></Field>
             <Field label="Brand" hint="တစ်ခါထည့်ဖူးသော Brand ကို ရိုက်ရှာပြီး ရွေးနိုင်ပါတယ်။"><input list="remembered-product-brands" value={productEditor.form.brand} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, brand: event.target.value } })} placeholder="Vivo / Redmi / Samsung" /><datalist id="remembered-product-brands">{rememberedBrands.map((brand) => <option key={brand} value={brand} />)}</datalist></Field>
             <Field label="Model" hint="ရွေးထားသော Brand အတွက် Model အသစ် သို့မဟုတ် မှတ်ထားပြီးသား Model ထည့်ပါ။"><input list="remembered-product-models" value={productEditor.form.model} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, model: event.target.value } })} placeholder="Y28 / Note 15 Pro" /><datalist id="remembered-product-models">{rememberedModels.map((model) => <option key={model} value={model} />)}</datalist></Field>
+            <Field label="ဖုန်း အခြေအနေ" hint="ဖုန်းရောင်းတဲ့အခါ ဒီအတိုင်း အာမခံစာ အလိုအလျောက် ထွက်ပါမယ်။ ဖုန်းမဟုတ်ရင် ဂရုစိုက်စရာ မလိုပါ။">
+              <select value={productEditor.form.condition || 'NEW'} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, condition: event.target.value } })}>
+                <option value="NEW">Brand New (စက်အသစ်)</option>
+                <option value="SECOND_HAND">Second-hand (စက်ဟောင်း)</option>
+              </select>
+            </Field>
             {productEditor.mode === 'create' ? <>
               <Field label="Barcode" hint="Manual ရိုက်နိုင်သလို Camera နဲ့ Scan လည်းလုပ်နိုင်ပါတယ်။"><div className="p2-inline-field-action"><input value={productEditor.form.barcode} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, barcode: event.target.value } })} placeholder="Scan / type barcode" /><button type="button" className="p2-icon-button" onClick={() => setBarcodeScannerOpen(true)} aria-label="Scan barcode"><Camera size={16} /></button></div></Field>
               <Field label="Cost Price"><input type="number" min="0" value={productEditor.form.costPrice} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, costPrice: event.target.value } })} /></Field>

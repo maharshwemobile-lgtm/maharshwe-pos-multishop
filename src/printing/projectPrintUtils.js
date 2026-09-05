@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import { loadProjectSettings } from '../settings/projectSettingsClient';
+import { warrantyBlocksForSale } from './phoneWarrantyText';
 
 // Printed on every repair voucher. The shop asked for this wording verbatim,
 // so it is not built from settings — changing it is a code change on purpose.
@@ -182,6 +183,17 @@ function baseStyles(paperSize) {
     /* A single rule above the warning instead of a box around it: the heading
        is already centred and bold, so three more sides only spent paper. */
     .notice{margin-top:6px;padding-top:5px;border-top:1px solid #000}.notice>b{display:block;text-align:center;font-size:10.5px;font-weight:700;margin-bottom:3px}.notice ul{margin:0;padding-left:13px}.notice li{font-size:9px;font-weight:400;line-height:1.4;margin-bottom:1px}
+    /* Same treatment as the repair voucher's warning: a rule and a centred
+       heading rather than a box. Two of these can print back to back, and each
+       one's own rule and title is enough to show where the next begins. */
+    .warranty-block{margin-top:6px;padding-top:5px;border-top:1px solid #000;text-align:left}
+    .warranty-block>b{display:block;text-align:center;font-size:10px;font-weight:700;line-height:1.45;margin-bottom:3px}
+    .warranty-block h4{margin:4px 0 1px 0;font-size:9px;font-weight:700;line-height:1.45}
+    .warranty-block ul{margin:0;padding-left:12px}
+    /* Not smaller than the repair voucher's warning: these are the terms the
+       customer is being held to, so they have to stay readable off a thermal
+       head, and a couple of millimetres is not worth trading for that. */
+    .warranty-block li{font-size:9px;font-weight:400;line-height:1.45;margin-bottom:1px}
     .sign-row{display:flex;gap:12px;margin-top:10px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:3px;font-size:9px;font-weight:400}.sign-name{display:block;font-size:11px;font-weight:700;padding-bottom:3px}
     .qr-block{margin-top:6px;text-align:center}.qr-block img{width:26mm;height:26mm;display:block;margin:0 auto 3px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
     .footer{margin-top:11px;padding-top:8px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:400}
@@ -250,9 +262,20 @@ function emitSlip(targetWindow, { title, body, styles }) {
   return printWindow(targetWindow, html);
 }
 
+function warrantyBlockHtml(block) {
+  const sections = block.sections.map((section) => `
+    <h4>${escapeHtml(section.heading)}</h4>
+    <ul>${section.lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`).join('');
+  return `<div class="warranty-block"><b>${escapeHtml(block.title)}</b>${sections}</div>`;
+}
+
 export async function printSaleReceipt(sale, targetWindow = null) {
   const settings = await loadProjectSettings(true);
   const slip = settings?.slip || {};
+  // Second-hand and brand new carry different promises, so the slip prints the
+  // one that matches what was actually sold — and both, labelled, if the sale
+  // had one of each.
+  const warranties = warrantyBlocksForSale(sale).map(warrantyBlockHtml).join('');
   const items = (sale.itemRows || sale.items || []).map((item) => {
     const meta = [
       item.imeiSerial ? `Serial: ${item.imeiSerial}` : '',
@@ -280,6 +303,7 @@ export async function printSaleReceipt(sale, targetWindow = null) {
     ${isVoided ? '<div class="void">VOIDED</div>' : ''}
     <table><thead><tr><th>Item</th><th class="center">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${items}</tbody></table>
     <div class="summary"><div><span>Subtotal</span><b>${Number(sale.subtotal || sale.amount || 0).toLocaleString()}</b></div><div><span>Discount</span><b>${Number(sale.discount || 0).toLocaleString()}</b></div><div class="grand"><span>Total</span><b>${Number(sale.amount || sale.total || 0).toLocaleString()} MMK</b></div>${slip.showPaymentType ? `<div><span>Payment</span><b>${escapeHtml(payment)}</b></div>` : ''}<div><span>Customer</span><b>${escapeHtml(customerLine)}</b></div></div>
+    ${warranties}
     <div class="footer">${slip.saleFooter ? nl2br(slip.saleFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>`;
   return emitSlip(targetWindow, {
     title: escapeHtml(invoice),

@@ -10,6 +10,7 @@ const {
 const { queuePush, sendPushToShop } = require('./push-notifications-api');
 const { notifyTelegramSale } = require('./telegram-automation-api');
 const { retireDemoDataAfterFirstSale } = require('./onboarding-demo-cleanup');
+const { ensureProductConditionSchema } = require('./product-condition-schema');
 
 const uuid = z.string().uuid();
 const money = z.coerce.number().finite().min(0);
@@ -53,6 +54,7 @@ function parse(schema, value) {
 function wrap(handler) {
   return async (req, res) => {
     try {
+      await ensureProductConditionSchema();
       await handler(req, res);
     } catch (error) {
       if (error instanceof ApiError) return res.status(error.status).json({ ok: false, message: error.message, details: error.details });
@@ -384,6 +386,9 @@ function attachSalesPostgresApi(app) {
             productNameSnapshot: item.variant.product?.name || item.variant.variantName,
             variantNameSnapshot: item.variant.variantName,
             categoryNameSnapshot: item.variant.category?.name || null,
+            // Kept with the line, not read back off the product: a slip
+            // reprinted later has to promise what was promised on the day.
+            conditionSnapshot: item.variant.product?.condition || 'NEW',
             imeiSerial: item.imeiSerial,
             costPrice: item.variant.costPrice,
             standardPrice: item.variant.standardSellingPrice,
@@ -503,6 +508,8 @@ function attachSalesPostgresApi(app) {
           id: row.id,
           productName: row.productNameSnapshot,
           variantName: row.variantNameSnapshot,
+          categoryName: row.categoryNameSnapshot,
+          condition: row.conditionSnapshot || 'NEW',
           quantity: row.quantity,
           unitPrice: number(row.actualSoldPrice),
           discount: number(row.discount),

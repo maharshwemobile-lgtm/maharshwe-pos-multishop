@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const { Prisma } = require('@prisma/client');
 const { prisma } = require('./prisma');
+const { ensureProductConditionSchema } = require('./product-condition-schema');
 const {
   requireAuth,
   requireShopUser,
@@ -45,6 +46,9 @@ const productCreate = z.object({
   brand: text(120),
   model: text(120),
   productType: text(80),
+  // Decides which warranty the sale slip prints for a phone. Anything that is
+  // not explicitly second-hand is sold as new.
+  condition: z.enum(['NEW', 'SECOND_HAND']).optional(),
   requiresSerial: z.boolean().optional(),
   active: z.boolean().optional(),
   variants: z.array(variantCreate).max(100).optional(),
@@ -75,6 +79,7 @@ function parse(schema, value) {
 function wrap(handler) {
   return async (req, res) => {
     try {
+      await ensureProductConditionSchema();
       await handler(req, res);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -152,6 +157,7 @@ function productJson(row, includeCost) {
     brand: row.brand,
     model: row.model,
     productType: row.productType,
+    condition: row.condition || 'NEW',
     requiresSerial: row.requiresSerial,
     active: row.active,
     category: row.category,
@@ -336,6 +342,7 @@ function attachCatalogStockApi(app) {
           brand: clean(input.brand),
           model: clean(input.model),
           productType: clean(input.productType),
+          condition: input.condition || 'NEW',
           requiresSerial: input.requiresSerial ?? false,
           active: input.active ?? true,
         },
@@ -405,6 +412,7 @@ function attachCatalogStockApi(app) {
           ...(input.brand !== undefined ? { brand: clean(input.brand) } : {}),
           ...(input.model !== undefined ? { model: clean(input.model) } : {}),
           ...(input.productType !== undefined ? { productType: clean(input.productType) } : {}),
+          ...(input.condition !== undefined ? { condition: input.condition } : {}),
           ...(input.requiresSerial !== undefined ? { requiresSerial: input.requiresSerial } : {}),
           ...(input.active !== undefined ? { active: input.active } : {}),
         },

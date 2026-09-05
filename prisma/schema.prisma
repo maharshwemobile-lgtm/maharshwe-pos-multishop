@@ -254,6 +254,7 @@ model Product {
   brand          String?
   model          String?
   productType    String?  @map("product_type")
+  condition      String   @default("NEW")
   requiresSerial Boolean  @default(false) @map("requires_serial")
   active         Boolean  @default(true)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -618,6 +619,7 @@ model SaleItem {
   productNameSnapshot  String   @map("product_name_snapshot")
   variantNameSnapshot  String?  @map("variant_name_snapshot")
   categoryNameSnapshot String?  @map("category_name_snapshot")
+  conditionSnapshot    String?  @map("condition_snapshot")
   imeiSerial           String?  @map("imei_serial")
   costPrice            Decimal  @default(0) @map("cost_price") @db.Decimal(14, 2)
   standardPrice        Decimal  @default(0) @map("standard_price") @db.Decimal(14, 2)
