@@ -232,6 +232,7 @@ model Category {
   shopId    String   @map("shop_id") @db.Uuid
   name      String
   kind      String?
+  condition String   @default("NEW")
   active    Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -254,7 +255,6 @@ model Product {
   brand          String?
   model          String?
   productType    String?  @map("product_type")
-  condition      String   @default("NEW")
   requiresSerial Boolean  @default(false) @map("requires_serial")
   active         Boolean  @default(true)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

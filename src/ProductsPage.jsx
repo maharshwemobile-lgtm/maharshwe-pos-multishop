@@ -59,7 +59,6 @@ const blankProduct = {
   name: '',
   brand: '',
   model: '',
-  condition: 'NEW',
   requiresSerial: false,
   barcode: '',
   costPrice: '',
@@ -329,7 +328,6 @@ export default function ProductsPage({ onboardingGuide }) {
       name: product.name || '',
       brand: product.brand || '',
       model: product.model || '',
-      condition: product.condition || 'NEW',
       requiresSerial: Boolean(product.requiresSerial),
       active: product.active !== false,
     },
@@ -347,7 +345,6 @@ export default function ProductsPage({ onboardingGuide }) {
       name: form.name.trim(),
       brand: form.brand || null,
       model: form.model || null,
-      condition: form.condition === 'SECOND_HAND' ? 'SECOND_HAND' : 'NEW',
       requiresSerial: Boolean(form.requiresSerial),
       active: form.active !== false,
     };
@@ -592,15 +589,6 @@ export default function ProductsPage({ onboardingGuide }) {
             <Field label="Category *" hint={productCopy.categoryFieldHint}><div className="p2-inline-field-action"><select required value={productEditor.form.categoryId} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, categoryId: event.target.value } })}><option value="">{t('Select Category', 'Category ရွေးပါ')}</option>{categories.filter((category) => category.active).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>{canManage ? <button type="button" className="p2-icon-button" onClick={addCategoryInline} aria-label={t('Add category', 'Category အသစ်ထည့်')} title={t('Add category', 'Category အသစ်ထည့်')}><FolderPlus size={16} /></button> : null}</div></Field>
             <Field label="Brand" hint="တစ်ခါထည့်ဖူးသော Brand ကို ရိုက်ရှာပြီး ရွေးနိုင်ပါတယ်။"><input list="remembered-product-brands" value={productEditor.form.brand} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, brand: event.target.value } })} placeholder="Vivo / Redmi / Samsung" /><datalist id="remembered-product-brands">{rememberedBrands.map((brand) => <option key={brand} value={brand} />)}</datalist></Field>
             <Field label="Model" hint="ရွေးထားသော Brand အတွက် Model အသစ် သို့မဟုတ် မှတ်ထားပြီးသား Model ထည့်ပါ။"><input list="remembered-product-models" value={productEditor.form.model} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, model: event.target.value } })} placeholder="Y28 / Note 15 Pro" /><datalist id="remembered-product-models">{rememberedModels.map((model) => <option key={model} value={model} />)}</datalist></Field>
-            {/* Not "ဖုန်း အခြေအနေ": the repair voucher already has a field by
-                that name for the damage a phone arrives with, and the two read
-                as the same thing on screen. */}
-            <Field label="စက်အသစ် / စက်ဟောင်း" hint="ရောင်းအား slip မှာ ထည့်ပေးမည့် အာမခံစာကို ဒီအတိုင်း ရွေးပါမည်။ ဖုန်းပြင် ဘောက်ချာနှင့် မသက်ဆိုင်ပါ။">
-              <select value={productEditor.form.condition || 'NEW'} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, condition: event.target.value } })}>
-                <option value="NEW">Brand New (စက်အသစ်)</option>
-                <option value="SECOND_HAND">Second-hand (စက်ဟောင်း)</option>
-              </select>
-            </Field>
             {productEditor.mode === 'create' ? <>
               <Field label="Barcode" hint="Manual ရိုက်နိုင်သလို Camera နဲ့ Scan လည်းလုပ်နိုင်ပါတယ်။"><div className="p2-inline-field-action"><input value={productEditor.form.barcode} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, barcode: event.target.value } })} placeholder="Scan / type barcode" /><button type="button" className="p2-icon-button" onClick={() => setBarcodeScannerOpen(true)} aria-label="Scan barcode"><Camera size={16} /></button></div></Field>
               <Field label="Cost Price"><input type="number" min="0" value={productEditor.form.costPrice} onChange={(event) => setProductEditor({ ...productEditor, form: { ...productEditor.form, costPrice: event.target.value } })} /></Field>
@@ -647,15 +635,16 @@ export default function ProductsPage({ onboardingGuide }) {
 }
 
 function CategoryManager({ categories, onClose, onChanged, onError, notify }) {
-  const [form, setForm] = useState({ id: '', name: '', kind: '' });
+  const [form, setForm] = useState({ id: '', name: '', kind: '', condition: 'NEW' });
   const save = async (event) => {
     event.preventDefault();
     if (!form.name.trim()) return;
     try {
-      if (form.id) await apiFetch(`/api/categories/${form.id}`, { method: 'PATCH', body: { name: form.name.trim(), kind: form.kind || null } });
-      else await apiFetch('/api/categories', { method: 'POST', body: { name: form.name.trim(), kind: form.kind || null } });
+      const body = { name: form.name.trim(), kind: form.kind || null, condition: form.condition === 'SECOND_HAND' ? 'SECOND_HAND' : 'NEW' };
+      if (form.id) await apiFetch(`/api/categories/${form.id}`, { method: 'PATCH', body });
+      else await apiFetch('/api/categories', { method: 'POST', body });
       notify('success', form.id ? t('Category updated successfully.', 'Category ပြင်ပြီးပါပြီ') : t('New category added successfully.', 'Category အသစ် ထည့်ပြီးပါပြီ'));
-      setForm({ id: '', name: '', kind: '' });
+      setForm({ id: '', name: '', kind: '', condition: 'NEW' });
       await onChanged();
     } catch (error) {
       onError(error);
@@ -671,8 +660,8 @@ function CategoryManager({ categories, onClose, onChanged, onError, notify }) {
       onError(error);
     }
   };
-  return <Modal title="Category Management" subtitle="Product Categories ကို Add၊ Edit၊ Deactivate လုပ်ပါ။" onClose={onClose}>
-    <form className="p2-category-form" onSubmit={save}><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Category name" required /><input value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value })} placeholder="Kind (optional)" /><button className="primary">{form.id ? 'Update' : 'Add'}</button>{form.id ? <button type="button" onClick={() => setForm({ id: '', name: '', kind: '' })}>Cancel</button> : null}</form>
-    <div className="p2-category-list">{categories.map((category) => <div key={category.id} className={category.active ? '' : 'p2-row-inactive'}><span><b>{category.name}</b><small>{category.kind || 'No kind'} · {category._count?.products || 0} products</small></span><div className="p2-actions"><button type="button" onClick={() => setForm({ id: category.id, name: category.name, kind: category.kind || '' })}><Edit3 size={15} /></button>{category.active ? <button type="button" className="p2-danger" onClick={() => remove(category)}><Trash2 size={15} /></button> : null}</div></div>)}</div>
+  return <Modal title="Category Management" subtitle="Product Categories ကို Add၊ Edit၊ Deactivate လုပ်ပါ။ ဖုန်း category အတွက် စက်အသစ် / စက်ဟောင်း ရွေးထားပါ — ရောင်းအား slip မှာ အာမခံစာ အလိုအလျောက် ထည့်ပေးပါမည်။" onClose={onClose}>
+    <form className="p2-category-form" onSubmit={save}><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Category name" required /><input value={form.kind} onChange={(event) => setForm({ ...form, kind: event.target.value })} placeholder="Kind (optional)" /><select value={form.condition} onChange={(event) => setForm({ ...form, condition: event.target.value })} title="ဤ category မှ ဖုန်းရောင်းလျှင် ရောင်းအား slip တွင် ထည့်ပေးမည့် အာမခံစာ"><option value="NEW">Brand New (စက်အသစ်)</option><option value="SECOND_HAND">Second-hand (စက်ဟောင်း)</option></select><button className="primary">{form.id ? 'Update' : 'Add'}</button>{form.id ? <button type="button" onClick={() => setForm({ id: '', name: '', kind: '', condition: 'NEW' })}>Cancel</button> : null}</form>
+    <div className="p2-category-list">{categories.map((category) => <div key={category.id} className={category.active ? '' : 'p2-row-inactive'}><span><b>{category.name}</b><small>{category.kind || 'No kind'} · {category._count?.products || 0} products{category.condition === 'SECOND_HAND' ? ' · စက်ဟောင်း' : ''}</small></span><div className="p2-actions"><button type="button" onClick={() => setForm({ id: category.id, name: category.name, kind: category.kind || '', condition: category.condition || 'NEW' })}><Edit3 size={15} /></button>{category.active ? <button type="button" className="p2-danger" onClick={() => remove(category)}><Trash2 size={15} /></button> : null}</div></div>)}</div>
   </Modal>;
 }

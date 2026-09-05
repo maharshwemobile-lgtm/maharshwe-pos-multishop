@@ -58,16 +58,18 @@ export const WARRANTY_BRAND_NEW = {
   ],
 };
 
-// A phone is the thing that carries an IMEI. Serial-tracked stock and the Phone
-// category both say so; either is enough, because a shop that files a handset
-// under a category of its own still records the IMEI against it.
-function isPhoneLine(item) {
-  if (String(item?.imeiSerial || '').trim()) return true;
-  return /phone|ဖုန်း/i.test(String(item?.categoryName || ''));
-}
-
 function isSecondHand(item) {
   return String(item?.condition || '').toUpperCase() === 'SECOND_HAND';
+}
+
+// A phone is the thing that carries an IMEI, or sits in a category that says so
+// by name. A category marked second-hand counts too: marking one is a deliberate
+// act about handsets, and a shop that files them under "စက်ဟောင်း" rather than
+// "Phone" should not have to discover that the notice quietly stopped printing.
+function isPhoneLine(item) {
+  if (String(item?.imeiSerial || '').trim()) return true;
+  if (isSecondHand(item)) return true;
+  return /phone|ဖုန်း/i.test(String(item?.categoryName || ''));
 }
 
 /**

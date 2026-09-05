@@ -244,7 +244,10 @@ function attachSalesPostgresApi(app) {
       for (const requested of input.items) {
         const variant = await tx.productVariant.findFirst({
           where: { id: requested.productVariantId, shopId: req.auth.shopId, active: true },
-          include: { product: true, category: true, inventoryBalance: true },
+          // The product's category is pulled in as well: a variant can carry a
+          // category of its own, but most do not, and the warranty answer has
+          // to be found either way.
+          include: { product: { include: { category: true } }, category: true, inventoryBalance: true },
         });
         if (!variant || variant.product?.active === false) throw new ApiError(404, 'One or more product variants are unavailable');
 
@@ -386,9 +389,11 @@ function attachSalesPostgresApi(app) {
             productNameSnapshot: item.variant.product?.name || item.variant.variantName,
             variantNameSnapshot: item.variant.variantName,
             categoryNameSnapshot: item.variant.category?.name || null,
-            // Kept with the line, not read back off the product: a slip
+            // Kept with the line, not read back off the category: a slip
             // reprinted later has to promise what was promised on the day.
-            conditionSnapshot: item.variant.product?.condition || 'NEW',
+            conditionSnapshot: item.variant.category?.condition
+              || item.variant.product?.category?.condition
+              || 'NEW',
             imeiSerial: item.imeiSerial,
             costPrice: item.variant.costPrice,
             standardPrice: item.variant.standardSellingPrice,

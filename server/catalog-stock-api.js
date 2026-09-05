@@ -16,6 +16,9 @@ const qty = z.coerce.number().int().min(0);
 const categoryCreate = z.object({
   name: z.string().trim().min(1).max(120),
   kind: text(80),
+  // Decides which warranty the sale slip prints for a phone sold from this
+  // category. Anything not explicitly second-hand is sold as new.
+  condition: z.enum(['NEW', 'SECOND_HAND']).optional(),
   active: z.boolean().optional(),
 });
 const categoryPatch = categoryCreate.partial();
@@ -46,9 +49,6 @@ const productCreate = z.object({
   brand: text(120),
   model: text(120),
   productType: text(80),
-  // Decides which warranty the sale slip prints for a phone. Anything that is
-  // not explicitly second-hand is sold as new.
-  condition: z.enum(['NEW', 'SECOND_HAND']).optional(),
   requiresSerial: z.boolean().optional(),
   active: z.boolean().optional(),
   variants: z.array(variantCreate).max(100).optional(),
@@ -157,7 +157,6 @@ function productJson(row, includeCost) {
     brand: row.brand,
     model: row.model,
     productType: row.productType,
-    condition: row.condition || 'NEW',
     requiresSerial: row.requiresSerial,
     active: row.active,
     category: row.category,
@@ -237,7 +236,11 @@ function attachCatalogStockApi(app) {
       const restored = await prisma.$transaction(async (tx) => {
         const updated = await tx.category.update({
           where: { id: existing.id },
-          data: { active: true, ...(input.kind !== undefined ? { kind: clean(input.kind) } : {}) },
+          data: {
+            active: true,
+            ...(input.kind !== undefined ? { kind: clean(input.kind) } : {}),
+            ...(input.condition !== undefined ? { condition: input.condition } : {}),
+          },
         });
         await addAudit(tx, req, 'CATEGORY_RESTORED', 'category', existing.id, { name: updated.name });
         return updated;
@@ -246,7 +249,13 @@ function attachCatalogStockApi(app) {
     }
     const category = await prisma.$transaction(async (tx) => {
       const created = await tx.category.create({
-        data: { shopId: req.auth.shopId, name: input.name, kind: clean(input.kind), active: input.active ?? true },
+        data: {
+          shopId: req.auth.shopId,
+          name: input.name,
+          kind: clean(input.kind),
+          condition: input.condition || 'NEW',
+          active: input.active ?? true,
+        },
       });
       await addAudit(tx, req, 'CATEGORY_CREATED', 'category', created.id, { name: created.name });
       return created;
@@ -265,6 +274,7 @@ function attachCatalogStockApi(app) {
         data: {
           ...(input.name !== undefined ? { name: input.name } : {}),
           ...(input.kind !== undefined ? { kind: clean(input.kind) } : {}),
+          ...(input.condition !== undefined ? { condition: input.condition } : {}),
           ...(input.active !== undefined ? { active: input.active } : {}),
         },
       });
@@ -342,7 +352,6 @@ function attachCatalogStockApi(app) {
           brand: clean(input.brand),
           model: clean(input.model),
           productType: clean(input.productType),
-          condition: input.condition || 'NEW',
           requiresSerial: input.requiresSerial ?? false,
           active: input.active ?? true,
         },
@@ -412,7 +421,6 @@ function attachCatalogStockApi(app) {
           ...(input.brand !== undefined ? { brand: clean(input.brand) } : {}),
           ...(input.model !== undefined ? { model: clean(input.model) } : {}),
           ...(input.productType !== undefined ? { productType: clean(input.productType) } : {}),
-          ...(input.condition !== undefined ? { condition: input.condition } : {}),
           ...(input.requiresSerial !== undefined ? { requiresSerial: input.requiresSerial } : {}),
           ...(input.active !== undefined ? { active: input.active } : {}),
         },
