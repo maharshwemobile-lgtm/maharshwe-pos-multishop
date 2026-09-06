@@ -384,6 +384,8 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
   const canDelete = ['SUPER_ADMIN', 'SHOP_ADMIN'].includes(getSession()?.user?.role || '');
   const [maharRepairId, setMaharRepairId] = useState('');
   const [deviceId, setDeviceId] = useState('');
+  // Held as typed so a figure entered by mistake can be cleared.
+  const [handover, setHandover] = useState({ cost: '', totalCost: '', paid: false });
 
   const load = async () => {
     setLoading(true);
@@ -391,6 +393,11 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
       const response = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(repairId)}`);
       setData(response);
       setStatusForm((current) => ({ ...current, status: statusGroup(response.repair.status), finalCost: response.repair.finalCost || '' }));
+      setHandover((current) => ({
+        ...current,
+        totalCost: current.totalCost || (response.repair.finalCost ? String(response.repair.finalCost) : ''),
+        paid: current.paid || response.repair.paymentStatus === 'PAID',
+      }));
     } catch (error) {
       notify('error', error.message || 'Repair detail failed');
     } finally {
@@ -421,6 +428,50 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
   }
 
   const repair = data.repair;
+
+  // A phone still being worked on has not been handed back to anyone. Handing it
+  // over is only offered once the repair has an outcome -- finished, or found
+  // to be beyond repair, which the customer still comes to collect.
+  const canHandOver = ['COMPLETED', 'CANNOT_REPAIR'].includes(statusGroup(repair.status));
+
+  // The money and the handover are one act at the counter, so they are saved
+  // together: the price the customer is charged, what it cost the shop, whether
+  // they paid, and that the phone has gone.
+  const handOver = async () => {
+    const totalCost = Number(String(handover.totalCost).trim());
+    const cost = Number(String(handover.cost).trim());
+    const chargeable = Number.isFinite(totalCost) && totalCost > 0 ? totalCost : null;
+    const spent = Number.isFinite(cost) && cost > 0 ? cost : 0;
+
+    setSaving(true);
+    try {
+      if (chargeable !== null || spent > 0) {
+        await apiFetch(`/api/repair-platform/jobs/${repair.id}/finance`, {
+          method: 'PATCH',
+          body: {
+            ...(chargeable !== null ? { finalCost: chargeable } : {}),
+            partsCost: spent,
+            note: 'Recorded when the phone was handed back',
+          },
+        });
+      }
+      await apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
+        method: 'PATCH',
+        body: {
+          status: repair.status,
+          pickedUp: true,
+          ...(handover.paid ? { paymentStatus: 'PAID' } : {}),
+        },
+      });
+      notify('success', 'ယူသွားပြီ မှတ်ပြီးပါပြီ — ယူသွားပြီး စာရင်းသို့ ရွှေ့လိုက်ပါပြီ');
+      onChanged();
+      onClose();
+    } catch (error) {
+      notify('error', error.message || 'ယူပြီး မှတ်၍ မရပါ');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Modal onClose={onClose} wide>
@@ -499,15 +550,85 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
                     },
                   }), 'အခြေအနေ ပြောင်းပြီးပါပြီ')}><CheckCircle2 size={17} /> အခြေအနေ ပြောင်းမည်</button>
                 ) : null}
+              </div>
+            </div>
+          </section>
 
-                <button type="button" disabled={printingVoucher} onClick={async () => {
-                  setPrintingVoucher(true);
-                  try { await printRepairVoucherById(repair.repairNumber, notify); } finally { setPrintingVoucher(false); }
-                }}>{printingVoucher ? <Loader2 className="repair-spin" size={17} /> : <Printer size={17} />} ဘောက်ချာ ပြန်ထုတ်</button>
+          {/* Handing the phone back is its own step, and it comes after the
+              repair is settled -- so it gets its own card rather than sharing a
+              row with printing and deleting. */}
+          <section className="repair-detail-card">
+            <h4>ဖောက်သည်ထံ ပြန်အပ်ခြင်း</h4>
+            <div className="repair-handover">
+              {repair.deliveredAt ? (
+                <>
+                  <p className="repair-handover-done"><PackageCheck size={17} /> {formatDate(repair.deliveredAt)} တွင် ယူသွားပါပြီ</p>
+                  <button type="button" className="repair-pickup-undo" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
+                    method: 'PATCH',
+                    body: { status: repair.status, pickedUp: false },
+                  }), 'မယူရသေး ပြန်ထားပြီးပါပြီ')}><PackageX size={17} /> မယူရသေး ပြန်ထားမည်</button>
+                </>
+              ) : canHandOver ? (
+                <>
+                  {/* The money is written here, at the counter, with the phone in
+                      the customer's hand -- not left to be filled in later from
+                      a list where nobody remembers the figure. */}
+                  <div className="repair-handover-money">
+                    <label>
+                      <span>ကုန်ကျစရိတ်</span>
+                      <input type="number" min="0" inputMode="numeric" placeholder="0"
+                        value={handover.cost}
+                        onChange={(event) => setHandover({ ...handover, cost: event.target.value })} />
+                      <small>ဆိုင်က ကုန်ကျတဲ့ ငွေ</small>
+                    </label>
+                    <label>
+                      <span>စုစုပေါင်း (ကောက်ငွေ)</span>
+                      <input type="number" min="0" inputMode="numeric"
+                        placeholder={repair.finalCost ? String(repair.finalCost) : '0'}
+                        value={handover.totalCost}
+                        onChange={(event) => setHandover({ ...handover, totalCost: event.target.value })} />
+                      <small>ဖောက်သည်ဆီက ကောက်တဲ့ ငွေ</small>
+                    </label>
+                  </div>
+                  <label className="repair-handover-paid">
+                    <input type="checkbox" checked={handover.paid}
+                      onChange={(event) => setHandover({ ...handover, paid: event.target.checked })} />
+                    <span>ငွေ ရှင်းပြီး</span>
+                  </label>
+                  <button type="button" className="repair-pickup-button" disabled={saving} onClick={handOver}>
+                    <PackageCheck size={17} /> ယူပြီး ✅ — မှတ်ပြီး History သို့
+                  </button>
+                  <small className="repair-handover-note">မှတ်ပြီးလျှင် ဤဘောက်ချာသည် စာရင်းမှ ထွက်ပြီး <b>ယူသွားပြီး</b> ထဲသာ ပေါ်ပါမည်။</small>
+                </>
+              ) : (
+                <p className="repair-handover-blocked">
+                  <PackageX size={17} />
+                  <span>ဖုန်း မပြန်အပ်ရသေးပါ — <b>ပြင်ပြီး ✅</b> သို့မဟုတ် <b>ပြင်မရ ❌</b> ရွေးပြီးမှ ယူပြီး မှတ်လို့ ရပါမည်။</span>
+                </p>
+              )}
 
-                {/* Owner only, and behind a typed confirmation: this takes the
-                    repair's whole history with it and removes the sheet row. */}
-                {canDelete ? (
+              {repair.paymentStatus !== 'PAID' ? (
+                <button type="button" className="repair-paid-button" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
+                  method: 'PATCH',
+                  body: { status: repair.status, paymentStatus: 'PAID' },
+                }), 'ငွေရှင်းပြီး မှတ်ပြီးပါပြီ')}><Banknote size={17} /> ငွေ ရှင်းပြီး မှတ်မည်</button>
+              ) : <span className="repair-paid-flag"><CheckCircle2 size={16} /> ငွေရှင်းပြီး</span>}
+            </div>
+          </section>
+
+          <section className="repair-detail-card">
+            <h4>ဘောက်ချာ</h4>
+            <div className="repair-action-row">
+              <button type="button" disabled={printingVoucher} onClick={async () => {
+                setPrintingVoucher(true);
+                try { await printRepairVoucherById(repair.repairNumber, notify); } finally { setPrintingVoucher(false); }
+              }}>{printingVoucher ? <Loader2 className="repair-spin" size={17} /> : <Printer size={17} />} ဘောက်ချာ ပြန်ထုတ်</button>
+
+              <div className="repair-action-row-spacer" />
+
+              {/* Owner only, and behind a typed confirmation: this takes the
+                  repair's whole history with it and removes the sheet row. */}
+              {canDelete ? (
                   <button type="button" className="repair-delete-button" disabled={saving} onClick={async () => {
                     const typed = window.prompt(`${repair.repairNumber} ကို အပြီးဖျက်ပါမည်။
 
@@ -532,47 +653,22 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
                     }
                   }}><Trash2 size={17} /> ဖျက်မည်</button>
                 ) : null}
-
-                {/* Collection is separate from the repair state, the way the
-                    shop's book keeps it — an unrepairable phone still gets
-                    taken home. Both directions, since it gets marked by
-                    mistake. */}
-                {repair.deliveredAt ? (
-                  <button type="button" className="repair-pickup-undo" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
-                    method: 'PATCH',
-                    body: { status: repair.status, pickedUp: false },
-                  }), 'မယူရသေး ပြန်ထားပြီးပါပြီ')}><PackageX size={17} /> မယူရသေး ⏳</button>
-                ) : (
-                  <button type="button" className="repair-pickup-button" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
-                    method: 'PATCH',
-                    body: { status: repair.status, pickedUp: true },
-                  }), 'ယူသွားပြီ မှတ်ပြီးပါပြီ')}><PackageCheck size={17} /> ယူပြီး ✅</button>
-                )}
-
-                {repair.paymentStatus !== 'PAID' ? (
-                  <button type="button" className="repair-paid-button" disabled={saving} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/status`, {
-                    method: 'PATCH',
-                    body: { status: repair.status, paymentStatus: 'PAID' },
-                  }), 'ငွေရှင်းပြီး မှတ်ပြီးပါပြီ')}><Banknote size={17} /> ရှင်းပြီး</button>
-                ) : <span className="repair-paid-flag"><CheckCircle2 size={16} /> ငွေရှင်းပြီး</span>}
-              </div>
-
-              {/* The rest is filled in once, when the repair is finished. Kept out
-                  of the way until then so the common case is three buttons. */}
-              <button type="button" className="repair-more-toggle" onClick={() => setShowStatusDetail((value) => !value)}>
-                {showStatusDetail ? 'အသေးစိတ် ဖျောက်မည်' : 'အသေးစိတ် ဖြည့်မည် (ပြင်ခ၊ အာမခံ၊ မှတ်ချက်)'}
-              </button>
-
-              {showStatusDetail ? (
-                <div className="repair-action-form">
-                  <label>ပြင်ခ<input type="number" min="0" value={statusForm.finalCost} onChange={(event) => setStatusForm({ ...statusForm, finalCost: event.target.value })} /></label>
-                  <label>အာမခံ ရက်<input type="date" value={statusForm.warrantyUntil} onChange={(event) => setStatusForm({ ...statusForm, warrantyUntil: event.target.value })} /></label>
-                  <label>စစ်ဆေးတွေ့ရှိချက်<textarea value={statusForm.diagnosis} onChange={(event) => setStatusForm({ ...statusForm, diagnosis: event.target.value })} /></label>
-                  <label>ပြင်ဆင်ပုံ<textarea value={statusForm.resolution} onChange={(event) => setStatusForm({ ...statusForm, resolution: event.target.value })} /></label>
-                  <label>မှတ်ချက်<textarea value={statusForm.note} onChange={(event) => setStatusForm({ ...statusForm, note: event.target.value })} /></label>
-                </div>
-              ) : null}
             </div>
+
+            {/* Filled in once, when the repair is finished. Kept folded away so
+                the card is a print button until something more is wanted. */}
+            <button type="button" className="repair-more-toggle" onClick={() => setShowStatusDetail((value) => !value)}>
+              {showStatusDetail ? 'အသေးစိတ် ဖျောက်မည်' : 'အသေးစိတ် ဖြည့်မည် (အာမခံ၊ မှတ်ချက်)'}
+            </button>
+
+            {showStatusDetail ? (
+              <div className="repair-action-form">
+                <label>အာမခံ ရက်<input type="date" value={statusForm.warrantyUntil} onChange={(event) => setStatusForm({ ...statusForm, warrantyUntil: event.target.value })} /></label>
+                <label>စစ်ဆေးတွေ့ရှိချက်<textarea value={statusForm.diagnosis} onChange={(event) => setStatusForm({ ...statusForm, diagnosis: event.target.value })} /></label>
+                <label>ပြင်ဆင်ပုံ<textarea value={statusForm.resolution} onChange={(event) => setStatusForm({ ...statusForm, resolution: event.target.value })} /></label>
+                <label>မှတ်ချက်<textarea value={statusForm.note} onChange={(event) => setStatusForm({ ...statusForm, note: event.target.value })} /></label>
+              </div>
+            ) : null}
           </section>
 
           {maharApiAllowed ? <section className="repair-detail-card">
@@ -621,6 +717,9 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [sourceType, setSourceType] = useState('');
+  // The list is what is still on the shelf; collected phones read back under
+  // their own tab rather than mixing into the day's work.
+  const [collected, setCollected] = useState('active');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -653,7 +752,7 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
   const load = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '10' });
+      const params = new URLSearchParams({ page: String(page), limit: '10', collected });
       if (query.trim()) params.set('q', query.trim());
       if (status) params.set('status', status);
       if (sourceType) params.set('sourceType', sourceType);
@@ -668,9 +767,9 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
   useEffect(() => {
     const timer = window.setTimeout(load, 180);
     return () => window.clearTimeout(timer);
-  }, [query, status, sourceType, page]);
+  }, [query, status, sourceType, collected, page]);
 
-  useEffect(() => setPage(1), [query, status, sourceType]);
+  useEffect(() => setPage(1), [query, status, sourceType, collected]);
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   const importRepair = async () => {
@@ -762,6 +861,25 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
       </div> : null}
 
       <section className="repair-list-card">
+        {/* Two lists, not one filter among many: what is still on the shelf, and
+            what has gone home. Mixing them meant the day's work was buried
+            under every repair the shop had ever finished. */}
+        <div className="repair-shelf-tabs" role="tablist">
+          {[
+            ['active', 'ဆိုင်မှာ ရှိသေး'],
+            ['collected', 'ယူသွားပြီး'],
+            ['all', 'အားလုံး'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={collected === value}
+              className={collected === value ? 'active' : ''}
+              onClick={() => setCollected(value)}
+            >{label}</button>
+          ))}
+        </div>
         <div className="repair-toolbar">
           <div className="repair-search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Repair ID, customer, phone, device, IMEI or issue" /></div>
           <select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All Statuses</option>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>

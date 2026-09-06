@@ -256,3 +256,125 @@
 .dark .repair-cost-now>span{color:#fde68a}
 .dark .repair-cost-now>small{color:#fcd34d}
 .dark .repair-cost-now input{background:#0b1b33;border-color:#7c4a10;color:#e5eef8}
+
+/* PR53: the action card was one row of five unrelated buttons.
+   Changing the status, handing the phone back, taking the money, reprinting and
+   deleting all sat side by side, so "ယူပြီး" was one careless click away from
+   "ဖျက်မည်" and could be pressed on a phone still being repaired. They are
+   three cards now, in the order the counter works through them. */
+.repair-shelf-tabs{
+  display:flex;
+  gap:6px;
+  padding:10px 12px 0 12px;
+  flex-wrap:wrap;
+}
+.repair-shelf-tabs button{
+  border:1px solid #dce5ef;
+  border-radius:999px;
+  background:#fff;
+  color:#475569;
+  padding:7px 14px;
+  font-weight:800;
+  font-size:13px;
+  cursor:pointer;
+}
+.repair-shelf-tabs button.active{
+  border-color:#f59e0b;
+  background:#fff7ed;
+  color:#b45309;
+}
+
+.repair-handover{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:0 12px 12px 12px;
+}
+.repair-handover-money{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.repair-handover-money label{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  font-size:12px;
+  font-weight:800;
+  color:#334155;
+}
+.repair-handover-money input{
+  height:40px;
+  padding:0 10px;
+  border:1px solid #dce5ef;
+  border-radius:9px;
+  background:#fff;
+  color:#0f172a;
+  font:inherit;
+  outline:none;
+}
+.repair-handover-money small{
+  font-size:11px;
+  font-weight:600;
+  color:#94a3b8;
+}
+.repair-handover-paid{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  font-weight:800;
+  color:#334155;
+}
+.repair-handover-paid input{
+  width:17px;
+  height:17px;
+}
+.repair-handover-note{
+  font-size:11.5px;
+  line-height:1.5;
+  color:#64748b;
+}
+/* Not an error, just a door that is not open yet -- so it is stated plainly
+   rather than dressed in red. */
+.repair-handover-blocked{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  margin:0;
+  padding:11px 12px;
+  border:1px dashed #cbd5e1;
+  border-radius:10px;
+  background:#f8fafc;
+  font-size:12.5px;
+  line-height:1.55;
+  color:#475569;
+}
+.repair-handover-blocked svg{flex:0 0 auto;color:#94a3b8;margin-top:1px}
+.repair-handover-done{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:0;
+  padding:10px 12px;
+  border:1px solid #bbf7d0;
+  border-radius:10px;
+  background:#f0fdf4;
+  font-size:13px;
+  font-weight:800;
+  color:#15803d;
+}
+/* Deleting sits at the far end of its row, away from the print button. */
+.repair-action-row-spacer{flex:1 1 auto}
+
+.dark .repair-shelf-tabs button{background:#0b1b33;border-color:#1e3555;color:#9fb0c7}
+.dark .repair-shelf-tabs button.active{background:#332b16;border-color:#f59e0b;color:#fbbf24}
+.dark .repair-handover-money label,.dark .repair-handover-paid{color:#cbd8e8}
+.dark .repair-handover-money input{background:#0b1b33;border-color:#1e3555;color:#e5eef8}
+.dark .repair-handover-money small,.dark .repair-handover-note{color:#7f93ad}
+.dark .repair-handover-blocked{background:#10223d;border-color:#2b4467;color:#9fb0c7}
+.dark .repair-handover-done{background:#0d2a1b;border-color:#166534;color:#4ade80}
+
+@media(max-width:560px){
+  .repair-handover-money{grid-template-columns:1fr}
+}

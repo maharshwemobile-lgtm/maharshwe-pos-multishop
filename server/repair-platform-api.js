@@ -773,6 +773,13 @@ function attachRepairPlatformApi(app) {
       params.push(sourceType);
       filters.push(`r.source_type = $${params.length}`);
     }
+    // A phone the customer has taken home is finished business. It stays out of
+    // the working list -- which is meant to be what is still on the shelf --
+    // and is read back under "collected". "all" is the old behaviour, kept for
+    // anything that wants the unsplit list.
+    const collected = String(req.query.collected || 'active');
+    if (collected === 'active') filters.push('r.delivered_at IS NULL');
+    else if (collected === 'collected') filters.push('r.delivered_at IS NOT NULL');
     const where = filters.join(' AND ');
     const countRows = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int AS count FROM repairs r WHERE ${where}`, ...params);
     params.push(limit, (page - 1) * limit);
