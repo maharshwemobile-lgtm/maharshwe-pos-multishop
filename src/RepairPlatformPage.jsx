@@ -712,7 +712,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
   );
 }
 
-export default function RepairPlatformPage({ showHistoryTool: controlledShowHistoryTool, setShowHistoryTool: setControlledShowHistoryTool, bottomTools = null } = {}) {
+export default function RepairPlatformPage() {
   const [data, setData] = useState({ jobs: [], summary: {}, total: 0, totalPages: 1, maharShweApiAccess: { allowed: false } });
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
@@ -828,11 +828,10 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
     { label: 'API Connected', value: data.summary?.imported || 0, icon: Link2, tone: 'teal' },
   ], [data.summary]);
   const maharApiAllowed = data.maharShweApiAccess?.allowed === true;
-  const showHistoryTool = typeof controlledShowHistoryTool === 'boolean' ? controlledShowHistoryTool : internalShowHistoryTool;
-  const toggleHistoryTool = () => {
-    if (setControlledShowHistoryTool) setControlledShowHistoryTool((value) => !value);
-    else setInternalShowHistoryTool((value) => !value);
-  };
+  // The toggle was liftable to a parent while a tool slab lived below the page.
+  // Nothing lifts it now.
+  const showHistoryTool = internalShowHistoryTool;
+  const toggleHistoryTool = () => setInternalShowHistoryTool((value) => !value);
 
   return (
     <section className="repair-platform-page">
@@ -898,7 +897,6 @@ export default function RepairPlatformPage({ showHistoryTool: controlledShowHist
         <div className="repair-pagination"><span>Showing {data.jobs?.length || 0} of {data.total || 0}</span><div><button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft size={17} /> Previous</button><b>Page {page} / {Math.max(1, data.totalPages || 1)}</b><button type="button" disabled={page >= Math.max(1, data.totalPages || 1)} onClick={() => setPage((value) => value + 1)}>Next <ChevronRight size={17} /></button></div></div>
       </section>
 
-      {bottomTools ? <section className="repair-bottom-tools">{bottomTools}</section> : null}
 
       {!setControlledShowHistoryTool ? <div className="repair-quick-grid repair-bottom-history-tools">
         <section className="repair-quick-card repair-quick-launcher">
