@@ -5,6 +5,8 @@ import AppErrorBoundary from './AppErrorBoundary.jsx';
 import { installResponsiveViewportV21 } from './responsiveViewportV21.js';
 import { installProductIconRuntimeV22 } from './productIconRuntimeV22.js';
 import { installDateFieldRuntimeV25 } from './dateFieldRuntimeV25.js';
+// First, so every stylesheet after it can refer to the tokens.
+import './design-system.css';
 import './styles.css';
 import './pos/pos-minimal-overrides.css';
 import './pos/pos-payment-selector-direct-v23.css';

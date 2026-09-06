@@ -1,7 +1,7 @@
-.repair-platform-page{display:flex;flex-direction:column;gap:13px;min-width:0}.repair-page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:13px}.repair-page-heading>div:first-child>span{font-size:12px;font-weight:900;letter-spacing:.09em;color:#f59e0b}.repair-page-heading h2{margin:4px 0 6px;font-size:28px}.repair-page-heading p{margin:0;max-width:920px;color:#64748b;line-height:1.65}.repair-page-heading>div:last-child{display:flex;gap:10px;flex-wrap:wrap}.repair-page-heading button,.repair-modal button,.repair-quick-card button,.repair-history-search button,.repair-pagination button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #dce5ef;background:#fff;color:#334155;border-radius:10px;padding:10px 11px;font-weight:900;cursor:pointer}.repair-page-heading button.primary,.repair-form footer button.primary{background:#f59e0b;border-color:#f59e0b;color:#fff}.repair-page-heading button:disabled,.repair-modal button:disabled,.repair-quick-card button:disabled,.repair-history-search button:disabled,.repair-pagination button:disabled{opacity:.5;cursor:not-allowed}.repair-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.repair-summary-grid article{display:grid;grid-template-columns:46px 1fr;grid-template-rows:auto auto;gap:3px 12px;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.05)}.repair-summary-grid article>div{grid-row:1/3;width:46px;height:46px;border-radius:12px;display:grid;place-items:center}.repair-summary-grid article span{font-size:12px;color:#64748b}.repair-summary-grid article b{font-size:22px}.tone-blue{background:#dbeafe;color:#2563eb}.tone-orange{background:#ffedd5;color:#ea580c}.tone-green{background:#dcfce7;color:#15803d}.tone-purple{background:#ede9fe;color:#7c3aed}.tone-teal{background:#ccfbf1;color:#0f766e}.repair-quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.repair-quick-card,.repair-history-search,.repair-device-history-result,.repair-list-card{border:1px solid #e2e8f0;border-radius:15px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.05)}.repair-quick-card{padding:12px}.repair-quick-card header,.repair-history-search>div:first-child{display:flex;align-items:flex-start;gap:10px}.repair-quick-card header>svg,.repair-history-search>div:first-child>svg{color:#f59e0b;flex:0 0 auto;margin-top:2px}.repair-quick-card b,.repair-quick-card small,.repair-history-search b,.repair-history-search small{display:block}.repair-quick-card small,.repair-history-search small{margin-top:3px;color:#64748b;line-height:1.5}.repair-quick-card>div:last-child,.repair-history-search>div:last-child,.repair-inline-action{display:flex;gap:8px;margin-top:13px}.repair-quick-card input,.repair-history-search input,.repair-toolbar input,.repair-toolbar select,.repair-form input,.repair-form select,.repair-form textarea,.repair-action-form input,.repair-action-form select,.repair-action-form textarea,.repair-inline-action input{border:1px solid #dce5ef;border-radius:9px;background:#fff;color:#0f172a;outline:none;font:inherit}.repair-quick-card input,.repair-history-search input,.repair-toolbar input,.repair-toolbar select,.repair-form input,.repair-form select,.repair-action-form input,.repair-action-form select,.repair-inline-action input{height:42px;padding:0 11px}.repair-quick-card input,.repair-history-search input,.repair-inline-action input{flex:1;min-width:0}.repair-quick-card input:focus,.repair-history-search input:focus,.repair-toolbar input:focus,.repair-toolbar select:focus,.repair-form input:focus,.repair-form select:focus,.repair-form textarea:focus,.repair-action-form input:focus,.repair-action-form select:focus,.repair-action-form textarea:focus,.repair-inline-action input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.12)}.repair-quick-card button,.repair-history-search button{background:#f59e0b;border-color:#f59e0b;color:#fff}.repair-history-search{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px}.repair-history-search>div:last-child{margin-top:0;min-width:430px}.repair-device-history-result{overflow:hidden}.repair-device-history-result>header{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid #edf2f7}.repair-device-history-result>header>svg{color:#0f766e}.repair-device-history-result header b,.repair-device-history-result header small{display:block}.repair-device-history-result header small{margin-top:3px;color:#64748b}.repair-device-history-result header button{width:36px;height:36px;border:1px solid #dce5ef;border-radius:9px;background:#fff;display:grid;place-items:center;color:#475569}.repair-device-history-result>div{display:flex;flex-direction:column}.repair-device-history-result>div>button{display:grid;grid-template-columns:1fr auto 150px;align-items:center;gap:12px;padding:10px 12px;border:0;border-bottom:1px solid #edf2f7;background:#fff;text-align:left;cursor:pointer}.repair-device-history-result>div>button:hover{background:#fffbeb}.repair-device-history-result>div>button:last-child{border-bottom:0}.repair-device-history-result b,.repair-device-history-result small{display:block}.repair-device-history-result small{margin-top:3px;color:#64748b}.repair-device-history-result time{color:#64748b;font-size:12px;text-align:right}.repair-list-card{overflow:hidden}.repair-toolbar{display:flex;gap:10px;padding:12px;border-bottom:1px solid #edf2f7;flex-wrap:wrap}.repair-search{flex:1;min-width:300px;height:42px;border:1px solid #dce5ef;border-radius:9px;display:flex;align-items:center;gap:8px;padding:0 11px;color:#64748b}.repair-search input{border:0;box-shadow:none;padding:0;height:auto;flex:1;min-width:0}.repair-toolbar select{min-width:165px}.repair-table-wrap{overflow:auto}.repair-table-wrap table{width:100%;min-width:1360px;border-collapse:collapse}.repair-table-wrap th,.repair-table-wrap td{padding:8px 11px;text-align:left;border-bottom:1px solid #edf2f7;vertical-align:middle}.repair-table-wrap th{background:#f8fafc;color:#64748b;font-size:12px;font-weight:900;white-space:nowrap}.repair-table-wrap td{font-size:13px}.repair-table-wrap tbody tr:hover{background:#fffcf5}.repair-table-wrap td b,.repair-table-wrap td small{display:block}.repair-table-wrap td small{margin-top:3px;color:#64748b}.repair-id{color:#b45309;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.repair-problem{display:block;max-width:260px;line-height:1.5}.repair-status,.repair-source{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:900;white-space:nowrap}.repair-source.local{background:#f1f5f9;color:#475569}.repair-source.imported{background:#ccfbf1;color:#0f766e}.repair-status-received{background:#dbeafe;color:#1d4ed8}.repair-status-checking{background:#e0e7ff;color:#4338ca}.repair-status-in_progress{background:#ffedd5;color:#c2410c}.repair-status-waiting_part{background:#fef3c7;color:#a16207}.repair-status-completed{background:#dcfce7;color:#15803d}.repair-status-cannot_repair{background:#fee2e2;color:#b91c1c}.repair-status-delivered{background:#ede9fe;color:#6d28d9}.repair-open-button{border:1px solid #fed7aa;background:#fff7ed;color:#c2410c;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:900;cursor:pointer}.repair-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;color:#64748b}.repair-pagination>div{display:flex;align-items:center;gap:9px}.repair-pagination b{min-width:90px;text-align:center;color:#334155}.repair-loading,.repair-empty,.repair-modal-loading{display:flex;align-items:center;justify-content:center;gap:9px;padding:44px;color:#64748b}.repair-empty{flex-direction:column}.repair-spin{animation:repair-spin .8s linear infinite}@keyframes repair-spin{to{transform:rotate(360deg)}}.repair-modal-backdrop{position:fixed;inset:0;z-index:10100;background:rgba(2,6,23,.65);backdrop-filter:blur(3px);display:grid;place-items:center;padding:13px}.repair-modal{width:min(680px,100%);max-height:95vh;overflow:auto;border-radius:17px;background:#fff;box-shadow:0 28px 90px rgba(2,6,23,.4)}.repair-modal.wide{width:min(1120px,100%)}.repair-modal-header{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-bottom:1px solid #e8eef6;background:#fff}.repair-modal-header>div{display:flex;align-items:center;gap:10px}.repair-modal-header>div>svg{color:#f59e0b}.repair-modal-header h3,.repair-modal-header p{margin:0}.repair-modal-header p{margin-top:3px;color:#64748b;font-size:12px}.repair-modal-header>button{width:38px;height:38px;padding:0}.repair-form{padding:13px}.repair-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.repair-form label,.repair-action-form label{display:flex;flex-direction:column;gap:6px;color:#334155;font-size:12px;font-weight:900}.repair-form label.span-2{grid-column:1/3}.repair-form textarea,.repair-action-form textarea{min-height:82px;padding:10px 11px;resize:vertical}.repair-form footer{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;padding-top:15px;border-top:1px solid #edf2f7}.repair-detail-body{padding:13px}.repair-detail-summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.repair-detail-summary article{padding:12px;border:1px solid #e8eef6;border-radius:11px;background:#f8fafc;min-width:0}.repair-detail-summary article>span{display:block;margin-bottom:6px;color:#64748b;font-size:12px;font-weight:900;text-transform:uppercase}.repair-detail-summary article>b{display:block;overflow-wrap:anywhere;font-size:13px}.repair-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}.repair-detail-card{border:1px solid #e8eef6;border-radius:12px;padding:11px;background:#fff}.repair-detail-card h4{margin:0 0 11px;font-size:15px}.repair-detail-card>p{margin:0 0 12px;color:#64748b;font-size:12px;line-height:1.55}.repair-detail-card dl{margin:0}.repair-detail-card dl>div{display:grid;grid-template-columns:115px 1fr;gap:9px;padding:8px 0;border-bottom:1px dashed #e2e8f0}.repair-detail-card dl>div:last-child{border-bottom:0}.repair-detail-card dt{color:#64748b;font-size:12px}.repair-detail-card dd{margin:0;font-weight:700;line-height:1.5}.repair-action-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.repair-action-form label:nth-child(n+4){grid-column:1/3}.repair-action-form>button{grid-column:1/3;background:#f59e0b;border-color:#f59e0b;color:#fff}.repair-inline-action{margin-top:0}.secondary-action{margin-top:9px!important;background:#ecfdf5!important;border-color:#a7f3d0!important;color:#047857!important}.repair-timeline-card{grid-column:1/3}.repair-timeline{display:flex;flex-direction:column}.repair-timeline article{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #edf2f7}.repair-timeline article:last-child{border-bottom:0}.repair-timeline article>div{width:32px;height:32px;border-radius:9px;background:#ffedd5;color:#c2410c;display:grid;place-items:center;flex:0 0 auto}.repair-timeline article>span{flex:1;min-width:0}.repair-timeline b,.repair-timeline small,.repair-timeline time{display:block}.repair-timeline small{margin-top:3px;color:#64748b;line-height:1.45}.repair-timeline time{margin-top:4px;color:#94a3b8;font-size:12px}.repair-toast{position:fixed;right:22px;top:86px;z-index:10200;display:flex;align-items:center;gap:8px;max-width:430px;padding:10px 12px;border-radius:11px;color:#fff;font-weight:800;box-shadow:0 14px 34px rgba(0,0,0,.22)}.repair-toast.success{background:#15803d}.repair-toast.error{background:#b91c1c}.dark .repair-page-heading p,.dark .repair-summary-grid article span,.dark .repair-quick-card small,.dark .repair-history-search small,.dark .repair-device-history-result small,.dark .repair-device-history-result time,.dark .repair-table-wrap td small,.dark .repair-pagination,.dark .repair-modal-header p,.dark .repair-detail-summary article>span,.dark .repair-detail-card>p,.dark .repair-detail-card dt,.dark .repair-timeline small,.dark .repair-timeline time{color:#9fb0c7}.dark .repair-page-heading button,.dark .repair-summary-grid article,.dark .repair-quick-card,.dark .repair-history-search,.dark .repair-device-history-result,.dark .repair-list-card,.dark .repair-modal,.dark .repair-modal-header,.dark .repair-detail-card,.dark .repair-quick-card input,.dark .repair-history-search input,.dark .repair-toolbar input,.dark .repair-toolbar select,.dark .repair-form input,.dark .repair-form select,.dark .repair-form textarea,.dark .repair-action-form input,.dark .repair-action-form select,.dark .repair-action-form textarea,.dark .repair-inline-action input,.dark .repair-device-history-result>div>button{background:#0b1b33;color:#e5eef8;border-color:#1e3555}.dark .repair-table-wrap th,.dark .repair-detail-summary article{background:#10223d}.dark .repair-table-wrap th,.dark .repair-table-wrap td,.dark .repair-toolbar,.dark .repair-pagination,.dark .repair-modal-header,.dark .repair-form footer,.dark .repair-detail-card dl>div,.dark .repair-timeline article,.dark .repair-device-history-result>header,.dark .repair-device-history-result>div>button{border-color:#1e3555}.dark .repair-pagination b,.dark .repair-form label,.dark .repair-action-form label{color:#e5eef8}@media(max-width:1200px){.repair-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.repair-detail-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.repair-page-heading{flex-direction:column}}@media(max-width:850px){.repair-quick-grid,.repair-detail-grid{grid-template-columns:1fr}.repair-timeline-card{grid-column:auto}.repair-history-search{align-items:flex-start;flex-direction:column}.repair-history-search>div:last-child{width:100%;min-width:0}.repair-form-grid{grid-template-columns:1fr}.repair-form label.span-2{grid-column:auto}.repair-action-form{grid-template-columns:1fr}.repair-action-form label:nth-child(n+4),.repair-action-form>button{grid-column:auto}.repair-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.repair-summary-grid{grid-template-columns:1fr}.repair-toolbar{flex-direction:column;align-items:stretch}.repair-search{min-width:0}.repair-toolbar select{width:100%}.repair-pagination{align-items:flex-start;flex-direction:column}.repair-pagination>div{width:100%;justify-content:space-between}.repair-modal-backdrop{padding:7px}.repair-detail-summary{grid-template-columns:1fr}.repair-device-history-result>div>button{grid-template-columns:1fr auto}.repair-device-history-result time{grid-column:1/3;text-align:left}.repair-page-heading h2{font-size:23px}.repair-page-heading>div:last-child{width:100%}.repair-page-heading>div:last-child button{flex:1}}
+.repair-platform-page{display:flex;flex-direction:column;gap:13px;min-width:0}.repair-page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:13px}.repair-page-heading>div:first-child>span{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--ds-amber)}.repair-page-heading h2{margin:4px 0 6px;font-size:28px}.repair-page-heading p{margin:0;max-width:920px;color:var(--ds-muted);line-height:1.65}.repair-page-heading>div:last-child{display:flex;gap:10px;flex-wrap:wrap}.repair-page-heading button,.repair-modal button,.repair-quick-card button,.repair-history-search button,.repair-pagination button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--ds-border);background:#fff;color:var(--ds-text-strong);border-radius:var(--ds-r-md);padding:10px 11px;font-weight:900;cursor:pointer}.repair-page-heading button.primary,.repair-form footer button.primary{background:var(--ds-amber);border-color:var(--ds-amber);color:#fff}.repair-page-heading button:disabled,.repair-modal button:disabled,.repair-quick-card button:disabled,.repair-history-search button:disabled,.repair-pagination button:disabled{opacity:.5;cursor:not-allowed}.repair-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.repair-summary-grid article{display:grid;grid-template-columns:46px 1fr;grid-template-rows:auto auto;gap:3px 12px;padding:12px;border:1px solid var(--ds-border);border-radius:var(--ds-r-lg);background:#fff;box-shadow:var(--ds-shadow-sm)}.repair-summary-grid article>div{grid-row:1/3;width:46px;height:46px;border-radius:var(--ds-r-md);display:grid;place-items:center}.repair-summary-grid article span{font-size:12px;color:var(--ds-muted)}.repair-summary-grid article b{font-size:22px}.tone-blue{background:var(--ds-blue-soft);color:var(--ds-blue)}.tone-orange{background:#ffedd5;color:#ea580c}.tone-green{background:var(--ds-green-soft);color:var(--ds-green-dark)}.tone-purple{background:#ede9fe;color:#7c3aed}.tone-teal{background:#ccfbf1;color:#0f766e}.repair-quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.repair-quick-card,.repair-history-search,.repair-device-history-result,.repair-list-card{border:1px solid var(--ds-border);border-radius:var(--ds-r-lg);background:#fff;box-shadow:var(--ds-shadow)}.repair-quick-card{padding:12px}.repair-quick-card header,.repair-history-search>div:first-child{display:flex;align-items:flex-start;gap:10px}.repair-quick-card header>svg,.repair-history-search>div:first-child>svg{color:var(--ds-amber);flex:0 0 auto;margin-top:2px}.repair-quick-card b,.repair-quick-card small,.repair-history-search b,.repair-history-search small{display:block}.repair-quick-card small,.repair-history-search small{margin-top:3px;color:var(--ds-muted);line-height:1.5}.repair-quick-card>div:last-child,.repair-history-search>div:last-child,.repair-inline-action{display:flex;gap:8px;margin-top:13px}.repair-quick-card input,.repair-history-search input,.repair-toolbar input,.repair-toolbar select,.repair-form input,.repair-form select,.repair-form textarea,.repair-action-form input,.repair-action-form select,.repair-action-form textarea,.repair-inline-action input{border:1px solid var(--ds-border);border-radius:var(--ds-r-sm);background:#fff;color:var(--ds-text);outline:none;font:inherit}.repair-quick-card input,.repair-history-search input,.repair-toolbar input,.repair-toolbar select,.repair-form input,.repair-form select,.repair-action-form input,.repair-action-form select,.repair-inline-action input{height:42px;padding:0 11px}.repair-quick-card input,.repair-history-search input,.repair-inline-action input{flex:1;min-width:0}.repair-quick-card input:focus,.repair-history-search input:focus,.repair-toolbar input:focus,.repair-toolbar select:focus,.repair-form input:focus,.repair-form select:focus,.repair-form textarea:focus,.repair-action-form input:focus,.repair-action-form select:focus,.repair-action-form textarea:focus,.repair-inline-action input:focus{border-color:var(--ds-amber);box-shadow:0 0 0 3px rgba(245,158,11,.12)}.repair-quick-card button,.repair-history-search button{background:var(--ds-amber);border-color:var(--ds-amber);color:#fff}.repair-history-search{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px}.repair-history-search>div:last-child{margin-top:0;min-width:430px}.repair-device-history-result{overflow:hidden}.repair-device-history-result>header{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--ds-border)}.repair-device-history-result>header>svg{color:#0f766e}.repair-device-history-result header b,.repair-device-history-result header small{display:block}.repair-device-history-result header small{margin-top:3px;color:var(--ds-muted)}.repair-device-history-result header button{width:36px;height:36px;border:1px solid var(--ds-border);border-radius:var(--ds-r-sm);background:#fff;display:grid;place-items:center;color:var(--ds-text-2)}.repair-device-history-result>div{display:flex;flex-direction:column}.repair-device-history-result>div>button{display:grid;grid-template-columns:1fr auto 150px;align-items:center;gap:12px;padding:10px 12px;border:0;border-bottom:1px solid var(--ds-border);background:#fff;text-align:left;cursor:pointer}.repair-device-history-result>div>button:hover{background:#fffbeb}.repair-device-history-result>div>button:last-child{border-bottom:0}.repair-device-history-result b,.repair-device-history-result small{display:block}.repair-device-history-result small{margin-top:3px;color:var(--ds-muted)}.repair-device-history-result time{color:var(--ds-muted);font-size:12px;text-align:right}.repair-list-card{overflow:hidden}.repair-toolbar{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--ds-border);flex-wrap:wrap}.repair-search{flex:1;min-width:300px;height:42px;border:1px solid var(--ds-border);border-radius:var(--ds-r-sm);display:flex;align-items:center;gap:8px;padding:0 11px;color:var(--ds-muted)}.repair-search input{border:0;box-shadow:none;padding:0;height:auto;flex:1;min-width:0}.repair-toolbar select{min-width:165px}.repair-table-wrap{overflow:auto}.repair-table-wrap table{width:100%;min-width:1360px;border-collapse:collapse}.repair-table-wrap th,.repair-table-wrap td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--ds-border);vertical-align:middle}.repair-table-wrap th{background:var(--ds-surface-2);color:var(--ds-muted);font-size:12px;font-weight:900;white-space:nowrap}.repair-table-wrap td{font-size:13px}.repair-table-wrap tbody tr:hover{background:#fffcf5}.repair-table-wrap td b,.repair-table-wrap td small{display:block}.repair-table-wrap td small{margin-top:3px;color:var(--ds-muted)}.repair-id{color:var(--ds-amber-dark);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.repair-problem{display:block;max-width:260px;line-height:1.5}.repair-status,.repair-source{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border-radius:var(--ds-r-pill);font-size:12px;font-weight:900;white-space:nowrap}.repair-source.local{background:var(--ds-surface-2);color:var(--ds-text-2)}.repair-source.imported{background:#ccfbf1;color:#0f766e}.repair-status-received{background:var(--ds-blue-soft);color:#1d4ed8}.repair-status-checking{background:#e0e7ff;color:#4338ca}.repair-status-in_progress{background:#ffedd5;color:#c2410c}.repair-status-waiting_part{background:#fef3c7;color:#a16207}.repair-status-completed{background:var(--ds-green-soft);color:var(--ds-green-dark)}.repair-status-cannot_repair{background:var(--ds-red-soft);color:var(--ds-red)}.repair-status-delivered{background:#ede9fe;color:#6d28d9}.repair-open-button{border:1px solid #fed7aa;background:var(--ds-amber-soft);color:#c2410c;border-radius:var(--ds-r-sm);padding:7px 10px;font-size:12px;font-weight:900;cursor:pointer}.repair-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;color:var(--ds-muted)}.repair-pagination>div{display:flex;align-items:center;gap:9px}.repair-pagination b{min-width:90px;text-align:center;color:var(--ds-text-strong)}.repair-loading,.repair-empty,.repair-modal-loading{display:flex;align-items:center;justify-content:center;gap:9px;padding:44px;color:var(--ds-muted)}.repair-empty{flex-direction:column}.repair-spin{animation:repair-spin .8s linear infinite}@keyframes repair-spin{to{transform:rotate(360deg)}}.repair-modal-backdrop{position:fixed;inset:0;z-index:10100;background:rgba(2,6,23,.65);backdrop-filter:blur(3px);display:grid;place-items:center;padding:13px}.repair-modal{width:min(680px,100%);max-height:95vh;overflow:auto;border-radius:var(--ds-r-lg);background:#fff;box-shadow:var(--ds-shadow-lg)}.repair-modal.wide{width:min(1120px,100%)}.repair-modal-header{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-bottom:1px solid var(--ds-border);background:#fff}.repair-modal-header>div{display:flex;align-items:center;gap:10px}.repair-modal-header>div>svg{color:var(--ds-amber)}.repair-modal-header h3,.repair-modal-header p{margin:0}.repair-modal-header p{margin-top:3px;color:var(--ds-muted);font-size:12px}.repair-modal-header>button{width:38px;height:38px;padding:0}.repair-form{padding:13px}.repair-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.repair-form label,.repair-action-form label{display:flex;flex-direction:column;gap:6px;color:var(--ds-text-strong);font-size:12px;font-weight:900}.repair-form label.span-2{grid-column:1/3}.repair-form textarea,.repair-action-form textarea{min-height:82px;padding:10px 11px;resize:vertical}.repair-form footer{display:flex;justify-content:flex-end;gap:9px;margin-top:18px;padding-top:15px;border-top:1px solid var(--ds-border)}.repair-detail-body{padding:13px}.repair-detail-summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.repair-detail-summary article{padding:12px;border:1px solid var(--ds-border);border-radius:var(--ds-r-md);background:var(--ds-surface-2);min-width:0}.repair-detail-summary article>span{display:block;margin-bottom:6px;color:var(--ds-muted);font-size:12px;font-weight:900;text-transform:uppercase}.repair-detail-summary article>b{display:block;overflow-wrap:anywhere;font-size:13px}.repair-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}.repair-detail-card{border:1px solid var(--ds-border);border-radius:var(--ds-r-md);padding:11px;background:#fff}.repair-detail-card h4{margin:0 0 11px;font-size:15px}.repair-detail-card>p{margin:0 0 12px;color:var(--ds-muted);font-size:12px;line-height:1.55}.repair-detail-card dl{margin:0}.repair-detail-card dl>div{display:grid;grid-template-columns:115px 1fr;gap:9px;padding:8px 0;border-bottom:1px dashed var(--ds-border)}.repair-detail-card dl>div:last-child{border-bottom:0}.repair-detail-card dt{color:var(--ds-muted);font-size:12px}.repair-detail-card dd{margin:0;font-weight:700;line-height:1.5}.repair-action-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.repair-action-form label:nth-child(n+4){grid-column:1/3}.repair-action-form>button{grid-column:1/3;background:var(--ds-amber);border-color:var(--ds-amber);color:#fff}.repair-inline-action{margin-top:0}.secondary-action{margin-top:9px!important;background:var(--ds-green-tint)!important;border-color:#a7f3d0!important;color:var(--ds-green-dark)!important}.repair-timeline-card{grid-column:1/3}.repair-timeline{display:flex;flex-direction:column}.repair-timeline article{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--ds-border)}.repair-timeline article:last-child{border-bottom:0}.repair-timeline article>div{width:32px;height:32px;border-radius:var(--ds-r-sm);background:#ffedd5;color:#c2410c;display:grid;place-items:center;flex:0 0 auto}.repair-timeline article>span{flex:1;min-width:0}.repair-timeline b,.repair-timeline small,.repair-timeline time{display:block}.repair-timeline small{margin-top:3px;color:var(--ds-muted);line-height:1.45}.repair-timeline time{margin-top:4px;color:var(--ds-faint);font-size:12px}.repair-toast{position:fixed;right:22px;top:86px;z-index:10200;display:flex;align-items:center;gap:8px;max-width:430px;padding:10px 12px;border-radius:var(--ds-r-md);color:#fff;font-weight:800;box-shadow:0 14px 34px rgba(0,0,0,.22)}.repair-toast.success{background:var(--ds-green-dark)}.repair-toast.error{background:var(--ds-red)}.dark .repair-page-heading p,.dark .repair-summary-grid article span,.dark .repair-quick-card small,.dark .repair-history-search small,.dark .repair-device-history-result small,.dark .repair-device-history-result time,.dark .repair-table-wrap td small,.dark .repair-pagination,.dark .repair-modal-header p,.dark .repair-detail-summary article>span,.dark .repair-detail-card>p,.dark .repair-detail-card dt,.dark .repair-timeline small,.dark .repair-timeline time{color:var(--ds-muted)}.dark .repair-page-heading button,.dark .repair-summary-grid article,.dark .repair-quick-card,.dark .repair-history-search,.dark .repair-device-history-result,.dark .repair-list-card,.dark .repair-modal,.dark .repair-modal-header,.dark .repair-detail-card,.dark .repair-quick-card input,.dark .repair-history-search input,.dark .repair-toolbar input,.dark .repair-toolbar select,.dark .repair-form input,.dark .repair-form select,.dark .repair-form textarea,.dark .repair-action-form input,.dark .repair-action-form select,.dark .repair-action-form textarea,.dark .repair-inline-action input,.dark .repair-device-history-result>div>button{background:var(--ds-surface);color:var(--ds-text);border-color:var(--ds-border)}.dark .repair-table-wrap th,.dark .repair-detail-summary article{background:var(--ds-surface-2)}.dark .repair-table-wrap th,.dark .repair-table-wrap td,.dark .repair-toolbar,.dark .repair-pagination,.dark .repair-modal-header,.dark .repair-form footer,.dark .repair-detail-card dl>div,.dark .repair-timeline article,.dark .repair-device-history-result>header,.dark .repair-device-history-result>div>button{border-color:var(--ds-border)}.dark .repair-pagination b,.dark .repair-form label,.dark .repair-action-form label{color:var(--ds-text)}@media(max-width:1200px){.repair-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.repair-detail-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.repair-page-heading{flex-direction:column}}@media(max-width:850px){.repair-quick-grid,.repair-detail-grid{grid-template-columns:1fr}.repair-timeline-card{grid-column:auto}.repair-history-search{align-items:flex-start;flex-direction:column}.repair-history-search>div:last-child{width:100%;min-width:0}.repair-form-grid{grid-template-columns:1fr}.repair-form label.span-2{grid-column:auto}.repair-action-form{grid-template-columns:1fr}.repair-action-form label:nth-child(n+4),.repair-action-form>button{grid-column:auto}.repair-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.repair-summary-grid{grid-template-columns:1fr}.repair-toolbar{flex-direction:column;align-items:stretch}.repair-search{min-width:0}.repair-toolbar select{width:100%}.repair-pagination{align-items:flex-start;flex-direction:column}.repair-pagination>div{width:100%;justify-content:space-between}.repair-modal-backdrop{padding:7px}.repair-detail-summary{grid-template-columns:1fr}.repair-device-history-result>div>button{grid-template-columns:1fr auto}.repair-device-history-result time{grid-column:1/3;text-align:left}.repair-page-heading h2{font-size:23px}.repair-page-heading>div:last-child{width:100%}.repair-page-heading>div:last-child button{flex:1}}
 .repair-quick-launcher{display:flex;align-items:center;justify-content:space-between;gap:11px}
 .repair-quick-launcher header{min-width:0}
-.repair-quick-launcher>button{flex:0 0 auto;background:#fff7ed!important;border-color:#fed7aa!important;color:#b45309!important}
+.repair-quick-launcher>button{flex:0 0 auto;background:var(--ds-amber-soft)!important;border-color:#fed7aa!important;color:var(--ds-amber-dark)!important}
 @media(max-width:620px){.repair-quick-launcher{align-items:stretch;flex-direction:column}.repair-quick-launcher>button{width:100%}}
 
 .repair-add-entry-card{
@@ -11,13 +11,13 @@
   gap:12px;
   padding:12px;
   border:1px solid #fed7aa;
-  border-radius:16px;
-  background:linear-gradient(135deg,#fff7ed,#ffffff);
+  border-radius:var(--ds-r-lg);
+  background:linear-gradient(135deg,var(--ds-amber-soft),#ffffff);
   box-shadow:0 10px 26px rgba(245,158,11,.1);
 }
 .repair-add-entry-card span{
   display:block;
-  color:#b45309;
+  color:var(--ds-amber-dark);
   font-size:12px;
   font-weight:950;
   letter-spacing:.08em;
@@ -25,20 +25,20 @@
 .repair-add-entry-card h3{
   margin:3px 0 5px;
   font-size:18px;
-  color:#0f172a;
+  color:var(--ds-text);
 }
 .repair-add-entry-card p{
   margin:0;
-  color:#64748b;
+  color:var(--ds-muted);
   font-size:13px;
   line-height:1.55;
 }
 .repair-add-entry-card button{
   flex:0 0 auto;
   min-height:46px;
-  border:1px solid #f59e0b;
-  border-radius:12px;
-  background:#f59e0b;
+  border:1px solid var(--ds-amber);
+  border-radius:var(--ds-r-md);
+  background:var(--ds-amber);
   color:#fff;
   padding:0 12px;
   display:inline-flex;
@@ -50,11 +50,11 @@
   box-shadow:0 12px 22px rgba(245,158,11,.2);
 }
 .dark .repair-add-entry-card{
-  background:linear-gradient(135deg,#332b16,#0b1b33);
+  background:linear-gradient(135deg,#332b16,var(--ds-surface));
   border-color:#92400e;
 }
-.dark .repair-add-entry-card h3{color:#e5eef8}
-.dark .repair-add-entry-card p{color:#9fb0c7}
+.dark .repair-add-entry-card h3{color:var(--ds-text)}
+.dark .repair-add-entry-card p{color:var(--ds-muted)}
 @media(max-width:720px){
   .repair-add-entry-card{align-items:stretch;flex-direction:column}
   .repair-add-entry-card button{width:100%}
@@ -64,8 +64,8 @@
 .repair-status-save-button{
   min-height:48px!important;
   padding:0 13px!important;
-  border-color:#16a34a!important;
-  background:#16a34a!important;
+  border-color:var(--ds-green)!important;
+  background:var(--ds-green)!important;
   color:#fff!important;
   font-size:13px!important;
   box-shadow:0 12px 24px rgba(22,163,74,.22)!important;
@@ -74,21 +74,21 @@
   filter:brightness(.96);
 }
 .repair-open-button{
-  border-color:#f59e0b!important;
-  background:#f59e0b!important;
+  border-color:var(--ds-amber)!important;
+  background:var(--ds-amber)!important;
   color:#fff!important;
   font-weight:950!important;
   min-width:112px!important;
   box-shadow:0 8px 18px rgba(245,158,11,.18)!important;
 }
 .dark .repair-status-save-button{
-  background:#22c55e!important;
-  border-color:#22c55e!important;
+  background:var(--ds-green-bright)!important;
+  border-color:var(--ds-green-bright)!important;
   color:#052e16!important;
 }
 .dark .repair-open-button{
-  background:#f59e0b!important;
-  border-color:#f59e0b!important;
+  background:var(--ds-amber)!important;
+  border-color:var(--ds-amber)!important;
   color:#111827!important;
 }
 
@@ -106,9 +106,9 @@
 .repair-status-inline-select{
   min-width:138px;
   height:32px;
-  border:1px solid #f59e0b;
-  border-radius:999px;
-  background:#fff7ed;
+  border:1px solid var(--ds-amber);
+  border-radius:var(--ds-r-pill);
+  background:var(--ds-amber-soft);
   color:#92400e;
   font-size:12px;
   font-weight:900;
@@ -133,13 +133,13 @@
   min-width:0;
   height:42px;
   padding:0 11px;
-  border:1px solid #dce5ef;
-  border-radius:9px;
+  border:1px solid var(--ds-border);
+  border-radius:var(--ds-r-sm);
 }
 .dark .repair-status-inline-select{
   background:#332b16;
   color:#fbbf24;
-  border-color:#f59e0b;
+  border-color:var(--ds-amber);
 }
 
 /* IMEI entry: digits plus a scan button, with live check-digit feedback */
@@ -151,18 +151,18 @@
   height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid #dce5ef;
-  border-radius: 9px;
+  border: 1px solid var(--ds-border);
+  border-radius:var(--ds-r-sm);
   background: #fff;
-  color: #475569;
+  color: var(--ds-text-2);
   cursor: pointer;
 }
-.repair-imei-scan:hover { border-color: #16a34a; color: #16a34a; }
+.repair-imei-scan:hover { border-color: var(--ds-green); color: var(--ds-green); }
 .repair-imei-hint { display: block; margin-top: 4px; font-size: 12px; }
-.repair-imei-hint.typing { color: #64748b; }
-.repair-imei-hint.valid { color: #15803d; }
-.repair-imei-hint.invalid { color: #dc2626; }
-.dark .repair-imei-scan { background: #0b1b33; color: #e5eef8; border-color: #1e3555; }
+.repair-imei-hint.typing { color: var(--ds-muted); }
+.repair-imei-hint.valid { color: var(--ds-green-dark); }
+.repair-imei-hint.invalid { color: var(--ds-red-bright); }
+.dark .repair-imei-scan { background: var(--ds-surface); color: var(--ds-text); border-color: var(--ds-border); }
 
 /* Repair ID is tap-to-copy wherever it appears */
 .repair-id-copy {
@@ -174,10 +174,10 @@
   transition: color .15s ease, background .15s ease;
 }
 .repair-id-copy svg { opacity: .45; flex-shrink: 0; }
-.repair-id-copy:hover { color: var(--primary, #2563eb); }
+.repair-id-copy:hover { color: var(--primary, var(--ds-blue)); }
 .repair-id-copy:hover svg { opacity: 1; }
 .repair-id-copy.copied,
-.repair-id-copy.copied svg { color: #16a34a; opacity: 1; }
+.repair-id-copy.copied svg { color: var(--ds-green); opacity: 1; }
 
 /* Shown after an intake saves, so the voucher can be printed from a fresh click */
 .repair-saved-panel {
@@ -187,75 +187,75 @@
   padding: 28px 24px 24px;
   text-align: center;
 }
-.repair-saved-panel > svg { color: #16a34a; }
+.repair-saved-panel > svg { color: var(--ds-green); }
 .repair-saved-panel h3 { font-size: 18px; }
-.repair-saved-panel p { color: var(--text-muted, #64748b); font-size: 14px; }
+.repair-saved-panel p { color: var(--text-muted, var(--ds-muted)); font-size: 14px; }
 .repair-saved-number {
   display: grid;
   gap: 3px;
   padding: 12px 26px;
-  border: 2px solid var(--ink, #0f172a);
-  border-radius: 12px;
+  border: 2px solid var(--ink, var(--ds-text));
+  border-radius:var(--ds-r-md);
 }
-.repair-saved-number span { font-size: 11.5px; color: var(--text-muted, #64748b); }
+.repair-saved-number span { font-size: 11.5px; color: var(--text-muted, var(--ds-muted)); }
 .repair-saved-number b { font-size: 27px; letter-spacing: 1.5px; line-height: 1.2; }
 .repair-saved-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
 .repair-saved-actions button {
   display: inline-flex; align-items: center; gap: 7px;
-  min-height: 42px; padding: 0 18px; border-radius: 10px;
-  border: 1px solid var(--border, #dfe4ea); background: var(--card, #fff);
+  min-height: 42px; padding: 0 18px; border-radius:var(--ds-r-md);
+  border: 1px solid var(--border, var(--ds-border)); background: var(--card, #fff);
   color: inherit; font-weight: 700; cursor: pointer;
 }
-.repair-saved-actions button.primary { background: var(--primary, #2563eb); border-color: transparent; color: #fff; }
+.repair-saved-actions button.primary { background: var(--primary, var(--ds-blue)); border-color: transparent; color: #fff; }
 .repair-saved-actions button:disabled { opacity: .6; }
 
 /* Repair actions: three buttons for the common case, details on request */
 .repair-quick-actions { display: grid; gap: 12px; }
 .repair-status-pick { display: grid; gap: 5px; }
-.repair-status-pick > span { font-size: 12.5px; color: var(--text-muted, #64748b); font-weight: 700; }
-.repair-status-pick select { min-height: 44px; border: 1px solid var(--border, #dfe4ea); border-radius: 10px; padding: 0 11px; background: var(--input-bg, #fff); color: inherit; }
+.repair-status-pick > span { font-size: 12.5px; color: var(--text-muted, var(--ds-muted)); font-weight: 700; }
+.repair-status-pick select { min-height: 44px; border: 1px solid var(--border, var(--ds-border)); border-radius:var(--ds-r-md); padding: 0 11px; background: var(--input-bg, #fff); color: inherit; }
 .repair-action-row { display: flex; flex-wrap: wrap; gap: 9px; }
 .repair-action-row button {
   display: inline-flex; align-items: center; gap: 7px;
-  min-height: 44px; padding: 0 15px; border-radius: 10px;
-  border: 1px solid var(--border, #dfe4ea); background: var(--card, #fff);
+  min-height: 44px; padding: 0 15px; border-radius:var(--ds-r-md);
+  border: 1px solid var(--border, var(--ds-border)); background: var(--card, #fff);
   color: inherit; font-weight: 700; font-size: 14px; cursor: pointer; flex: 1 1 auto; justify-content: center;
 }
-.repair-action-row button.primary { background: var(--primary, #2563eb); border-color: transparent; color: #fff; }
-.repair-action-row button.repair-paid-button { border-color: #bbf7d0; color: #15803d; }
+.repair-action-row button.primary { background: var(--primary, var(--ds-blue)); border-color: transparent; color: #fff; }
+.repair-action-row button.repair-paid-button { border-color: var(--ds-green-line); color: var(--ds-green-dark); }
 .repair-action-row button:disabled { opacity: .6; }
-.repair-paid-flag { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; min-height: 44px; color: #15803d; font-weight: 700; font-size: 14px; }
+.repair-paid-flag { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; min-height: 44px; color: var(--ds-green-dark); font-weight: 700; font-size: 14px; }
 .repair-more-toggle {
   justify-self: start; background: none; border: 0; padding: 2px 0;
-  color: var(--primary, #2563eb); font-weight: 700; font-size: 13.5px; cursor: pointer;
+  color: var(--primary, var(--ds-blue)); font-weight: 700; font-size: 13.5px; cursor: pointer;
 }
 @media (max-width: 560px) { .repair-action-row button { flex: 1 1 100%; } }
 
 /* Collection sits beside payment: both are things the counter marks when the
    customer is standing there, and both need an obvious way back. */
 .repair-pickup-button{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important}
-.repair-pickup-undo{background:#fff7ed!important;border-color:#fed7aa!important;color:#c2410c!important}
-.dark .repair-pickup-button{background:#0b1b33!important;border-color:#1e3555!important;color:#93c5fd!important}
-.dark .repair-pickup-undo{background:#0b1b33!important;border-color:#1e3555!important;color:#fdba74!important}
+.repair-pickup-undo{background:var(--ds-amber-soft)!important;border-color:#fed7aa!important;color:#c2410c!important}
+.dark .repair-pickup-button{background:var(--ds-surface)!important;border-color:var(--ds-border)!important;color:#93c5fd!important}
+.dark .repair-pickup-undo{background:var(--ds-surface)!important;border-color:var(--ds-border)!important;color:#fdba74!important}
 
 /* Destructive, and last in the row: it should never be the button reached for
    by habit. */
-.repair-delete-button{background:#fef2f2!important;border-color:#fecaca!important;color:#b91c1c!important}
-.dark .repair-delete-button{background:#0b1b33!important;border-color:#7f1d1d!important;color:#fca5a5!important}
+.repair-delete-button{background:#fef2f2!important;border-color:#fecaca!important;color:var(--ds-red)!important}
+.dark .repair-delete-button{background:var(--ds-surface)!important;border-color:#7f1d1d!important;color:#fca5a5!important}
 
 /* The price belongs beside the decision that produces it, not folded away
    behind "more details" where a repair gets finished without one. */
 .repair-cost-now{display:grid;gap:5px;margin:11px 0 0;padding:11px 12px;
-  border:1px solid #fed7aa;border-radius:11px;background:#fffbeb}
+  border:1px solid #fed7aa;border-radius:var(--ds-r-md);background:#fffbeb}
 .repair-cost-now>span{font-size:12.5px;font-weight:800;color:#92400e}
-.repair-cost-now input{height:44px;padding:0 12px;border:1px solid #fdba74;border-radius:9px;
-  background:#fff;color:#0f172a;font:inherit;font-size:16px;font-weight:800}
-.repair-cost-now input:focus{outline:none;border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.15)}
+.repair-cost-now input{height:44px;padding:0 12px;border:1px solid #fdba74;border-radius:var(--ds-r-sm);
+  background:#fff;color:var(--ds-text);font:inherit;font-size:16px;font-weight:800}
+.repair-cost-now input:focus{outline:none;border-color:var(--ds-amber);box-shadow:0 0 0 3px rgba(245,158,11,.15)}
 .repair-cost-now>small{font-size:11.5px;color:#a16207;line-height:1.5}
 .dark .repair-cost-now{border-color:#7c4a10;background:rgba(120,53,15,.24)}
 .dark .repair-cost-now>span{color:#fde68a}
 .dark .repair-cost-now>small{color:#fcd34d}
-.dark .repair-cost-now input{background:#0b1b33;border-color:#7c4a10;color:#e5eef8}
+.dark .repair-cost-now input{background:var(--ds-surface);border-color:#7c4a10;color:var(--ds-text)}
 
 /* PR53: the action card was one row of five unrelated buttons.
    Changing the status, handing the phone back, taking the money, reprinting and
@@ -269,19 +269,19 @@
   flex-wrap:wrap;
 }
 .repair-shelf-tabs button{
-  border:1px solid #dce5ef;
-  border-radius:999px;
+  border:1px solid var(--ds-border);
+  border-radius:var(--ds-r-pill);
   background:#fff;
-  color:#475569;
+  color:var(--ds-text-2);
   padding:7px 14px;
   font-weight:800;
   font-size:13px;
   cursor:pointer;
 }
 .repair-shelf-tabs button.active{
-  border-color:#f59e0b;
-  background:#fff7ed;
-  color:#b45309;
+  border-color:var(--ds-amber);
+  background:var(--ds-amber-soft);
+  color:var(--ds-amber-dark);
 }
 
 .repair-handover{
@@ -301,22 +301,22 @@
   gap:5px;
   font-size:12px;
   font-weight:800;
-  color:#334155;
+  color:var(--ds-text-strong);
 }
 .repair-handover-money input{
   height:40px;
   padding:0 10px;
-  border:1px solid #dce5ef;
-  border-radius:9px;
+  border:1px solid var(--ds-border);
+  border-radius:var(--ds-r-sm);
   background:#fff;
-  color:#0f172a;
+  color:var(--ds-text);
   font:inherit;
   outline:none;
 }
 .repair-handover-money small{
   font-size:11px;
   font-weight:600;
-  color:#94a3b8;
+  color:var(--ds-faint);
 }
 .repair-handover-paid{
   display:flex;
@@ -324,7 +324,7 @@
   gap:8px;
   font-size:13px;
   font-weight:800;
-  color:#334155;
+  color:var(--ds-text-strong);
 }
 .repair-handover-paid input{
   width:17px;
@@ -333,7 +333,7 @@
 .repair-handover-note{
   font-size:11.5px;
   line-height:1.5;
-  color:#64748b;
+  color:var(--ds-muted);
 }
 /* Not an error, just a door that is not open yet -- so it is stated plainly
    rather than dressed in red. */
@@ -343,37 +343,37 @@
   gap:9px;
   margin:0;
   padding:11px 12px;
-  border:1px dashed #cbd5e1;
-  border-radius:10px;
-  background:#f8fafc;
+  border:1px dashed var(--ds-border-strong);
+  border-radius:var(--ds-r-md);
+  background:var(--ds-surface-2);
   font-size:12.5px;
   line-height:1.55;
-  color:#475569;
+  color:var(--ds-text-2);
 }
-.repair-handover-blocked svg{flex:0 0 auto;color:#94a3b8;margin-top:1px}
+.repair-handover-blocked svg{flex:0 0 auto;color:var(--ds-faint);margin-top:1px}
 .repair-handover-done{
   display:flex;
   align-items:center;
   gap:8px;
   margin:0;
   padding:10px 12px;
-  border:1px solid #bbf7d0;
-  border-radius:10px;
-  background:#f0fdf4;
+  border:1px solid var(--ds-green-line);
+  border-radius:var(--ds-r-md);
+  background:var(--ds-green-tint);
   font-size:13px;
   font-weight:800;
-  color:#15803d;
+  color:var(--ds-green-dark);
 }
 /* Deleting sits at the far end of its row, away from the print button. */
 .repair-action-row-spacer{flex:1 1 auto}
 
-.dark .repair-shelf-tabs button{background:#0b1b33;border-color:#1e3555;color:#9fb0c7}
-.dark .repair-shelf-tabs button.active{background:#332b16;border-color:#f59e0b;color:#fbbf24}
-.dark .repair-handover-money label,.dark .repair-handover-paid{color:#cbd8e8}
-.dark .repair-handover-money input{background:#0b1b33;border-color:#1e3555;color:#e5eef8}
-.dark .repair-handover-money small,.dark .repair-handover-note{color:#7f93ad}
-.dark .repair-handover-blocked{background:#10223d;border-color:#2b4467;color:#9fb0c7}
-.dark .repair-handover-done{background:#0d2a1b;border-color:#166534;color:#4ade80}
+.dark .repair-shelf-tabs button{background:var(--ds-surface);border-color:var(--ds-border);color:var(--ds-muted)}
+.dark .repair-shelf-tabs button.active{background:#332b16;border-color:var(--ds-amber);color:#fbbf24}
+.dark .repair-handover-money label,.dark .repair-handover-paid{color:var(--ds-text-strong)}
+.dark .repair-handover-money input{background:var(--ds-surface);border-color:var(--ds-border);color:var(--ds-text)}
+.dark .repair-handover-money small,.dark .repair-handover-note{color:var(--ds-faint)}
+.dark .repair-handover-blocked{background:var(--ds-surface-2);border-color:var(--ds-border-strong);color:var(--ds-muted)}
+.dark .repair-handover-done{background:#0d2a1b;border-color:var(--ds-green-dark);color:#4ade80}
 
 @media(max-width:560px){
   .repair-handover-money{grid-template-columns:1fr}

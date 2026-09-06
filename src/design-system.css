@@ -1,0 +1,90 @@
+/*
+ * One set of values for the whole app.
+ *
+ * Twenty-five screens were built one at a time over a long stretch, and each
+ * picked its own numbers for the same jobs: 14 different corner radii, six
+ * near-identical greys all meaning "card border", 314 distinct hex colours in
+ * total. Nothing was wrong on its own -- the screens simply did not look like
+ * they came from one program, and that is what reads as unfinished.
+ *
+ * These are the values the app already used most often, kept and named. The
+ * stylesheets refer to them instead of repeating a number, so a card on the
+ * repair page and a card on the settings page are the same card.
+ *
+ * Dark mode redefines the same names, which is why a rule written once works in
+ * both themes.
+ */
+:root{
+  /* ---- corner radius ----
+     Was 7,8,9,10,11,12,13,14,15,16,17,18,20. A reader cannot tell 10 from 11,
+     but they can tell that nothing lines up. Four steps and a pill. */
+  --ds-r-sm:9px;
+  --ds-r-md:12px;
+  --ds-r-lg:16px;
+  --ds-r-xl:20px;
+  --ds-r-pill:999px;
+
+  /* ---- surfaces ---- */
+  --ds-surface:#ffffff;
+  --ds-surface-2:#f8fafc;
+  --ds-page:#eef2f7;
+
+  /* ---- lines ----
+     border is the card edge; strong is for a divider meant to be seen. */
+  --ds-border:#e2e8f0;
+  --ds-border-strong:#cbd5e1;
+
+  /* ---- text ---- */
+  --ds-text:#0f172a;
+  --ds-text-strong:#334155;
+  --ds-text-2:#475569;
+  --ds-muted:#64748b;
+  --ds-faint:#94a3b8;
+
+  /* ---- accents ----
+     Green is the shop's own; amber marks the thing you act on. */
+  --ds-green:#16a34a;
+  --ds-green-dark:#15803d;
+  --ds-green-bright:#22c55e;
+  --ds-green-soft:#dcfce7;
+  --ds-amber:#f59e0b;
+  --ds-amber-dark:#b45309;
+  --ds-amber-soft:#fff7ed;
+  --ds-red:#b91c1c;
+  --ds-red-bright:#dc2626;
+  --ds-red-soft:#fee2e2;
+  --ds-green-tint:#f0fdf4;
+  --ds-green-line:#bbf7d0;
+  --ds-blue:#2563eb;
+  --ds-blue-soft:#dbeafe;
+
+  /* ---- depth ----
+     Three, not eleven. A card, a card that floats, and a dialog. */
+  --ds-shadow-sm:0 6px 18px rgba(15,23,42,.05);
+  --ds-shadow:0 8px 24px rgba(15,23,42,.05);
+  --ds-shadow-lg:0 28px 90px rgba(2,6,23,.40);
+
+  /* ---- focus ----
+     The same ring everywhere, so tabbing through the app is one behaviour. */
+  --ds-focus:0 0 0 3px rgba(245,158,11,.14);
+}
+
+/* Dark mode is the same names with different values, so a rule written against
+   the tokens needs no dark twin of its own. */
+.dark{
+  --ds-surface:#0b1b33;
+  --ds-surface-2:#10223d;
+  --ds-page:#071426;
+  --ds-border:#1e3555;
+  --ds-border-strong:#2b4467;
+  --ds-text:#e5eef8;
+  --ds-text-strong:#cbd8e8;
+  --ds-text-2:#b3c3d6;
+  --ds-muted:#9fb0c7;
+  --ds-faint:#7f93ad;
+  --ds-green-tint:#0d2a1b;
+  --ds-green-line:#166534;
+  --ds-shadow-sm:0 6px 18px rgba(0,0,0,.28);
+  --ds-shadow:0 8px 24px rgba(0,0,0,.32);
+  --ds-shadow-lg:0 28px 90px rgba(0,0,0,.55);
+}

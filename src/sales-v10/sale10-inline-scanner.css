@@ -9,16 +9,16 @@
   height: 34px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius:var(--ds-r-sm);
   background: #eafaf1;
-  color: #15803d;
+  color: var(--ds-green-dark);
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 
-.sale10-inline-scan:hover { background: #dcfce7; }
-.dark .sale10-inline-scan { background: #123629; color: #86efac; }
+.sale10-inline-scan:hover { background: var(--ds-green-soft); }
+.dark .sale10-inline-scan { background: #123629; color: var(--ds-green-line); }
 
 @media (max-width: 760px) {
   .sale10-product-toolbar .stock-search-box { min-width: 0; width: 100%; }

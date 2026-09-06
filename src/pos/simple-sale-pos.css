@@ -1,14 +1,14 @@
 :root{
   --compact-accent:var(--ms-green,#13a36f);
-  --compact-accent-dark:var(--ms-green-dark,#047857);
+  --compact-accent-dark:var(--ms-green-dark,var(--ds-green-dark));
   --compact-accent-soft:#eaf7f0;
   --compact-bg:var(--ms-bg,#f4f8f5);
   --compact-card:var(--ms-card,#fff);
   --compact-line:var(--ms-line,#dfeade);
   --compact-text:var(--ms-ink,#10241a);
   --compact-muted:var(--ms-muted,#64746b);
-  --compact-danger:#dc2626;
-  --compact-warning:#b45309;
+  --compact-danger:var(--ds-red-bright);
+  --compact-warning:var(--ds-amber-dark);
 }
 
 .compact-pos-page{
@@ -24,7 +24,7 @@
   display:grid;
   grid-template-columns:minmax(0,1fr) 390px;
   border:1px solid var(--compact-line);
-  border-radius:14px;
+  border-radius:var(--ds-r-lg);
   overflow:hidden;
   background:var(--compact-card);
   box-shadow:0 14px 38px rgba(10,69,45,.08);
@@ -51,7 +51,7 @@
   width:34px;
   height:34px;
   border:1px solid var(--compact-line);
-  border-radius:8px;
+  border-radius:var(--ds-r-sm);
   background:#fff;
   color:var(--compact-muted);
   display:grid;
@@ -89,7 +89,7 @@
   margin-left:8px;
   padding:0 10px;
   border:1px solid var(--compact-line);
-  border-radius:8px;
+  border-radius:var(--ds-r-sm);
   background:#fff;
   color:var(--compact-muted);
 }
@@ -126,7 +126,7 @@
   gap:5px;
   padding:0 9px;
   border:1px solid var(--compact-line);
-  border-radius:999px;
+  border-radius:var(--ds-r-pill);
   background:#fff;
   color:var(--compact-muted);
   font-size:12px;
@@ -154,7 +154,7 @@
   min-height:30px;
   padding:0 12px;
   border:1px solid var(--compact-line);
-  border-radius:999px;
+  border-radius:var(--ds-r-pill);
   background:#f8fbf9;
   color:var(--compact-muted);
   font-size:12px;
@@ -188,7 +188,7 @@
   gap:4px;
   padding:11px 10px;
   border:1px solid var(--compact-line);
-  border-radius:10px;
+  border-radius:var(--ds-r-md);
   background:#fff;
   color:var(--compact-text);
   text-align:left;
@@ -234,9 +234,9 @@
   right:7px;
   min-width:24px;
   padding:2px 6px;
-  border-radius:999px;
+  border-radius:var(--ds-r-pill);
   background:#e7f6ed;
-  color:#166534;
+  color:var(--ds-green-dark);
   text-align:center;
   font-size:9px;
   font-weight:900;
@@ -252,7 +252,7 @@
   min-height:280px;
   display:grid;
   place-items:center;
-  color:#94a3b8;
+  color:var(--ds-faint);
   font-size:12px;
 }
 
@@ -288,7 +288,7 @@
 .compact-pos-cart-head>div span{
   min-width:24px;
   padding:2px 7px;
-  border-radius:999px;
+  border-radius:var(--ds-r-pill);
   background:var(--compact-accent);
   color:#fff;
   text-align:center;
@@ -302,7 +302,7 @@
   min-height:30px;
   padding:0 9px;
   border:1px solid #fecaca;
-  border-radius:8px;
+  border-radius:var(--ds-r-sm);
   background:#fff;
   color:var(--compact-danger);
   font-size:12px;
@@ -373,7 +373,7 @@
   width:100%;
   height:24px;
   margin-top:4px;
-  border:1px solid #cbd5e1;
+  border:1px solid var(--ds-border-strong);
   border-radius:6px;
   padding:0 6px;
   font:inherit;
@@ -383,10 +383,10 @@
 .compact-pos-price-input{
   width:76px;
   height:30px;
-  border:1px solid #cbd5e1;
-  border-radius:7px;
+  border:1px solid var(--ds-border-strong);
+  border-radius:var(--ds-r-sm);
   padding:0 5px;
-  background:#f8fafc;
+  background:var(--ds-surface-2);
   color:var(--compact-text);
   text-align:center;
   font:inherit;
@@ -418,9 +418,9 @@
   height:23px;
   display:grid;
   place-items:center;
-  border:1px solid #cbd5e1;
+  border:1px solid var(--ds-border-strong);
   border-radius:5px;
-  background:#f8fafc;
+  background:var(--ds-surface-2);
   color:var(--compact-muted);
   cursor:pointer;
 }
@@ -454,7 +454,7 @@
   align-items:center;
   justify-content:center;
   gap:8px;
-  color:#94a3b8;
+  color:var(--ds-faint);
 }
 
 .compact-pos-cart-empty svg{
@@ -485,11 +485,11 @@
 }
 
 .compact-pos-summary .positive{
-  color:#166534;
+  color:var(--ds-green-dark);
 }
 
 .compact-pos-summary .negative{
-  color:#b91c1c;
+  color:var(--ds-red);
 }
 
 .compact-pos-grand-total{
@@ -516,8 +516,8 @@
 .compact-pos-payment-methods button{
   min-height:31px;
   border:1px solid var(--compact-line);
-  border-radius:7px;
-  background:#f8fafc;
+  border-radius:var(--ds-r-sm);
+  background:var(--ds-surface-2);
   color:var(--compact-muted);
   font-size:9px;
   font-weight:900;
@@ -547,8 +547,8 @@
 .compact-pos-credit-fields input{
   width:100%;
   height:32px;
-  border:1px solid #cbd5e1;
-  border-radius:7px;
+  border:1px solid var(--ds-border-strong);
+  border-radius:var(--ds-r-sm);
   padding:0 8px;
   background:#fff;
   color:var(--compact-text);
@@ -572,7 +572,7 @@
   justify-content:center;
   gap:7px;
   border:0;
-  border-radius:8px;
+  border-radius:var(--ds-r-sm);
   background:linear-gradient(135deg,var(--compact-accent),var(--compact-accent-dark));
   color:#fff;
   font-size:12px;
@@ -597,7 +597,7 @@
   transform:translateX(-50%);
   max-width:min(520px,calc(100vw - 24px));
   padding:7px 11px;
-  border-radius:999px;
+  border-radius:var(--ds-r-pill);
   color:#fff;
   text-align:center;
   font-size:12px;
@@ -610,14 +610,14 @@
 }
 
 .compact-pos-toast.error{
-  background:#b91c1c;
+  background:var(--ds-red);
 }
 
 .dark .compact-pos-page{
   --compact-bg:#071426;
-  --compact-card:#0b1b33;
-  --compact-line:#1e3555;
-  --compact-text:#e5eef8;
+  --compact-card:var(--ds-surface);
+  --compact-line:var(--ds-border);
+  --compact-text:var(--ds-text);
   --compact-muted:#9fb0c5;
   --compact-accent-soft:#0d3028;
 }
@@ -638,20 +638,20 @@
 .dark .compact-pos-credit-fields input,
 .dark .compact-pos-payment-methods button,
 .dark .compact-pos-qty button{
-  background:#0b1b33;
+  background:var(--ds-surface);
   color:var(--compact-text);
   border-color:var(--compact-line);
 }
 
 .dark .compact-pos-categories button,
 .dark .compact-pos-cart-columns{
-  background:#10223d;
+  background:var(--ds-surface-2);
   border-color:var(--compact-line);
 }
 
 .dark .compact-pos-product-card:hover,
 .dark .compact-pos-cart-row:hover{
-  background:#10223d;
+  background:var(--ds-surface-2);
 }
 
 @media (max-width:1280px){
@@ -695,7 +695,7 @@
   }
 
   .compact-pos-shell{
-    border-radius:10px;
+    border-radius:var(--ds-r-md);
   }
 
   .compact-pos-header{

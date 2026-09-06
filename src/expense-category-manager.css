@@ -2,7 +2,7 @@
   margin-top: 6px;
   min-height: 30px;
   border: 1px solid #99f6e4;
-  border-radius: 8px;
+  border-radius:var(--ds-r-sm);
   background: #f0fdfa;
   color: #0f766e;
   font-size:12px;
@@ -23,8 +23,8 @@
   width: min(560px, 100%);
   max-height: calc(100dvh - 20px);
   overflow: auto;
-  border: 1px solid #dbe5ef;
-  border-radius: 14px;
+  border: 1px solid var(--ds-border);
+  border-radius:var(--ds-r-lg);
   background: #fff;
 }
 
@@ -38,7 +38,7 @@
 
 .expense-category-modal > header {
   padding:11px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--ds-border);
 }
 
 .expense-category-modal h3,
@@ -48,7 +48,7 @@
 
 .expense-category-modal p,
 .expense-category-list small {
-  color: #64748b;
+  color: var(--ds-muted);
   font-size:12px;
 }
 
@@ -64,13 +64,13 @@
   min-width: 0;
   height: 39px;
   padding: 0 10px;
-  border: 1px solid #dbe5ef;
-  border-radius: 8px;
+  border: 1px solid var(--ds-border);
+  border-radius:var(--ds-r-sm);
 }
 
 .expense-category-add button {
   border: 0;
-  border-radius: 8px;
+  border-radius:var(--ds-r-sm);
   background: #0f766e;
   color: #fff;
   font-weight: 800;
@@ -84,8 +84,8 @@
 
 .expense-category-list article {
   padding: 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid var(--ds-border);
+  border-radius:var(--ds-r-md);
 }
 
 .expense-category-list article.inactive {
@@ -103,16 +103,16 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid #dbe5ef;
-  border-radius: 8px;
+  border: 1px solid var(--ds-border);
+  border-radius:var(--ds-r-sm);
   background: #fff;
 }
 
 .expense-category-message {
   margin: 12px 14px 0;
   padding: 9px;
-  border-radius: 8px;
-  background: #f1f5f9;
+  border-radius:var(--ds-r-sm);
+  background: var(--ds-surface-2);
 }
 
 .expense-category-spin {
@@ -130,8 +130,8 @@
 .dark .expense-category-add input,
 .dark .expense-category-list article > input {
   border-color: #263b58;
-  background: #0b1b33;
-  color: #e5eef8;
+  background: var(--ds-surface);
+  color: var(--ds-text);
 }
 
 @media (max-width: 700px) {

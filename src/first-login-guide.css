@@ -1,19 +1,19 @@
-.first-login-guide{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin:0 0 14px;padding:10px 44px 10px 11px;border:1px solid #bfdbfe;border-radius:16px;background:linear-gradient(135deg,#eff6ff,#f0fdf4);box-shadow:0 10px 28px rgba(15,23,42,.07)}
-.first-login-guide span{font-size:12px;font-weight:950;letter-spacing:.12em;color:#2563eb}
-.first-login-guide h3{margin:3px 0 4px;font-size:17px;color:#0f172a}
-.first-login-guide p{margin:0;color:#64748b;font-size:12px;line-height:1.55}
-.first-login-guide-close{position:absolute;right:10px;top:10px;width:28px;height:28px;border:1px solid #dbeafe;border-radius:999px;background:#fff;color:#64748b;display:grid;place-items:center}
+.first-login-guide{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin:0 0 14px;padding:10px 44px 10px 11px;border:1px solid #bfdbfe;border-radius:var(--ds-r-lg);background:linear-gradient(135deg,#eff6ff,var(--ds-green-tint));box-shadow:0 10px 28px rgba(15,23,42,.07)}
+.first-login-guide span{font-size:12px;font-weight:950;letter-spacing:.12em;color:var(--ds-blue)}
+.first-login-guide h3{margin:3px 0 4px;font-size:17px;color:var(--ds-text)}
+.first-login-guide p{margin:0;color:var(--ds-muted);font-size:12px;line-height:1.55}
+.first-login-guide-close{position:absolute;right:10px;top:10px;width:28px;height:28px;border:1px solid var(--ds-blue-soft);border-radius:var(--ds-r-pill);background:#fff;color:var(--ds-muted);display:grid;place-items:center}
 .first-login-guide-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.first-login-guide-actions button{display:inline-flex;align-items:center;gap:6px;min-height:38px;border:1px solid #22c55e;border-radius:10px;background:#16a34a;color:#fff;font-weight:900;padding:0 11px;cursor:pointer}
-.first-login-inline-guide{display:flex;align-items:center;gap:8px;margin-right:auto;padding:8px 10px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-size:12px;font-weight:850;line-height:1.4}
+.first-login-guide-actions button{display:inline-flex;align-items:center;gap:6px;min-height:38px;border:1px solid var(--ds-green-bright);border-radius:var(--ds-r-md);background:var(--ds-green);color:#fff;font-weight:900;padding:0 11px;cursor:pointer}
+.first-login-inline-guide{display:flex;align-items:center;gap:8px;margin-right:auto;padding:8px 10px;border:1px solid #bfdbfe;border-radius:var(--ds-r-md);background:#eff6ff;color:#1e3a8a;font-size:12px;font-weight:850;line-height:1.4}
 .first-login-inline-guide b{color:#1d4ed8}
-.dark .first-login-guide{border-color:#1e3555;background:linear-gradient(135deg,#0b1b33,#10223d)}
-.dark .first-login-guide h3{color:#e5eef8}
-.dark .first-login-guide p{color:#9fb0c7}
-.dark .first-login-guide-close{background:#0b1b33;border-color:#1e3555;color:#cbd5e1}
-.dark .first-login-inline-guide{background:#10223d;border-color:#1e3555;color:#cbd5e1}
+.dark .first-login-guide{border-color:var(--ds-border);background:linear-gradient(135deg,var(--ds-surface),var(--ds-surface-2))}
+.dark .first-login-guide h3{color:var(--ds-text)}
+.dark .first-login-guide p{color:var(--ds-muted)}
+.dark .first-login-guide-close{background:var(--ds-surface);border-color:var(--ds-border);color:var(--ds-border-strong)}
+.dark .first-login-inline-guide{background:var(--ds-surface-2);border-color:var(--ds-border);color:var(--ds-border-strong)}
 @media(max-width:760px){.first-login-guide{grid-template-columns:1fr;padding:12px 42px 12px 12px}.first-login-guide-actions{justify-content:stretch}.first-login-guide-actions button{width:100%;justify-content:center}.first-login-inline-guide{width:100%;margin:0 0 8px}}
 
 
-.first-login-guide-actions .first-login-guide-skip{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+.first-login-guide-actions .first-login-guide-skip{background:var(--ds-amber-soft);color:#9a3412;border-color:#fed7aa}
 .dark .first-login-guide-actions .first-login-guide-skip{background:#431407;color:#fed7aa;border-color:#9a3412}

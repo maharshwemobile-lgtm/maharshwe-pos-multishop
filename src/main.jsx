@@ -1,5 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+// First, so every stylesheet after it can refer to the tokens.
+import './design-system.css';
 import './styles.css';
 import './pos/pos-minimal-overrides.css';
 import './typography-v20.css';

@@ -6,7 +6,7 @@
   margin-top:18px;
   padding-top:16px;
   border-top:1px solid rgba(148,163,184,.22);
-  color:#64748b;
+  color:var(--ds-muted);
   font-size:12px;
   font-weight:850;
 }
@@ -15,7 +15,7 @@
   border:0;
   padding:0;
   background:transparent;
-  color:#2563eb;
+  color:var(--ds-blue);
   font:inherit;
   font-weight:950;
   cursor:pointer;
@@ -33,43 +33,43 @@
 }
 
 .login-language-switch span{
-  color:#94a3b8;
+  color:var(--ds-faint);
 }
 
 .login-language-switch button{
   min-width:34px;
   height:28px;
   border:1px solid #dbe4ef;
-  border-radius:999px;
+  border-radius:var(--ds-r-pill);
   background:#fff;
-  color:#64748b;
+  color:var(--ds-muted);
   font:inherit;
   font-weight:950;
   cursor:pointer;
 }
 
 .login-language-switch button.active{
-  border-color:#22c55e;
-  background:#dcfce7;
-  color:#15803d;
+  border-color:var(--ds-green-bright);
+  background:var(--ds-green-soft);
+  color:var(--ds-green-dark);
   box-shadow:0 4px 14px rgba(34,197,94,.16);
 }
 
 .dark .login-footer-actions{
-  border-top-color:#1e3555;
-  color:#9fb0c7;
+  border-top-color:var(--ds-border);
+  color:var(--ds-muted);
 }
 
 .dark .login-language-switch button{
-  background:#0b1b33;
+  background:var(--ds-surface);
   border-color:#294463;
-  color:#cbd5e1;
+  color:var(--ds-border-strong);
 }
 
 .dark .login-language-switch button.active{
   background:#102d25;
-  border-color:#22c55e;
-  color:#86efac;
+  border-color:var(--ds-green-bright);
+  color:var(--ds-green-line);
 }
 
 @media(max-width:520px){

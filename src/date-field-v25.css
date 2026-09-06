@@ -11,10 +11,10 @@
   box-sizing: border-box;
   max-width: 100%;
   padding: 8px 12px;
-  border: 1px solid #dce5ef;
-  border-radius: 10px;
+  border: 1px solid var(--ds-border);
+  border-radius:var(--ds-r-md);
   background: #fff;
-  color: #334155;
+  color: var(--ds-text-strong);
   font-weight: 700;
 }
 
@@ -36,7 +36,7 @@
 
 .mp-date-field:not(.mp-date-field-bare):focus {
   outline: 0;
-  border-color: #16a34a;
+  border-color: var(--ds-green);
   box-shadow: 0 0 0 3px rgba(22, 163, 74, .15);
 }
 
@@ -56,9 +56,9 @@
 }
 
 .dark .mp-date-field:not(.mp-date-field-bare) {
-  background: #0b1b33;
-  color: #e5eef8;
-  border-color: #1e3555;
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  border-color: var(--ds-border);
 }
 
 .dark .mp-date-field::-webkit-calendar-picker-indicator {

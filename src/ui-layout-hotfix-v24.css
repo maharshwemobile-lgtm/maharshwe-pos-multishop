@@ -313,21 +313,21 @@ label textarea {
   justify-content: space-between;
   gap: 10px;
   padding:10px 11px 0;
-  color: #64748b;
+  color: var(--ds-muted);
   font-size:12px;
 }
 
 .sale10-card-label b {
-  color: #0f172a;
+  color: var(--ds-text);
   font-size: 13px;
 }
 
 .sale10-product-label b {
-  color: #15803d;
+  color: var(--ds-green-dark);
 }
 
 .sale10-products-card {
-  border-color: #bbf7d0 !important;
+  border-color: var(--ds-green-line) !important;
   background: linear-gradient(180deg, rgba(240, 253, 244, .74), #fff 76px) !important;
 }
 
@@ -353,7 +353,7 @@ label textarea {
 .sale10-product-table .stock-product-cell > div {
   width: 30px !important;
   height: 30px !important;
-  border-radius: 9px !important;
+  border-radius:var(--ds-r-sm)!important;
 }
 
 .sale10-product-table .stock-product-cell b,
@@ -377,20 +377,20 @@ label textarea {
 .sale10-product-table .stock-quantity-badge {
   min-width: 34px !important;
   height: 26px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
   font-size:12px !important;
 }
 
 .sale10-product-price {
-  color: #15803d;
+  color: var(--ds-green-dark);
   font-size: 12px;
   font-weight: 950;
   white-space: nowrap;
 }
 
 .sale10-clickable-product-row.in-cart {
-  background: #ecfdf5 !important;
-  box-shadow: inset 3px 0 0 #16a34a;
+  background: var(--ds-green-tint) !important;
+  box-shadow: inset 3px 0 0 var(--ds-green);
 }
 
 .sale10-in-cart-badge {
@@ -398,9 +398,9 @@ label textarea {
   max-width: 100%;
   margin-top: 3px !important;
   padding: 2px 7px;
-  border-radius: 999px;
-  background: #dcfce7;
-  color: #15803d !important;
+  border-radius:var(--ds-r-pill);
+  background: var(--ds-green-soft);
+  color: var(--ds-green-dark) !important;
   font-size: 9px !important;
   font-weight: 950 !important;
 }
@@ -420,8 +420,8 @@ label textarea {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid #bbf7d0;
-  border-radius: 12px;
+  border: 1px solid var(--ds-green-line);
+  border-radius:var(--ds-r-md);
   background: rgba(240, 253, 244, .96);
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 24px rgba(15, 23, 42, .10);
@@ -440,7 +440,7 @@ label textarea {
 .sale10-cart-price-field span,
 .sale10-cart-line-total span {
   display: block;
-  color: #64748b;
+  color: var(--ds-muted);
   font-size: 9px;
   font-weight: 950;
   text-transform: uppercase;
@@ -448,7 +448,7 @@ label textarea {
 
 .sale10-cart-peek b {
   display: block;
-  color: #0f172a;
+  color: var(--ds-text);
   font-size: 12px;
   line-height: 1.2;
 }
@@ -460,7 +460,7 @@ label textarea {
 }
 
 .sale10-cart-peek-total b {
-  color: #15803d;
+  color: var(--ds-green-dark);
   font-size: 14px;
 }
 
@@ -484,8 +484,8 @@ label textarea {
   align-items: center;
   gap: 7px;
   padding: 8px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
+  border: 1px dashed var(--ds-border-strong);
+  border-radius:var(--ds-r-md);
   background: #fff;
 }
 
@@ -499,21 +499,21 @@ label textarea {
 
 .sale10-cart-slip-main b {
   display: block;
-  color: #0f172a;
+  color: var(--ds-text);
   font-size: 12px;
 }
 
 .sale10-cart-slip-main small {
   display: block;
   margin-top: 2px;
-  color: #64748b;
+  color: var(--ds-muted);
   font-size: 9px;
 }
 
 .sale10-cart-slip-row .sale10-quantity-control {
   height: 30px !important;
   grid-template-columns: 26px 30px 26px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
 }
 
 .sale10-cart-price-field {
@@ -525,14 +525,14 @@ label textarea {
 .sale10-cart-price-field .sale10-price-input {
   width: 100% !important;
   height: 30px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
   padding: 0 7px !important;
   font-size:12px !important;
 }
 
 .sale10-cart-line-total b {
   display: block;
-  color: #15803d;
+  color: var(--ds-green-dark);
   font-size: 12px;
   line-height: 1.2;
   white-space: nowrap;
@@ -541,7 +541,7 @@ label textarea {
 .sale10-cart-slip-row .sale10-remove-button {
   width: 28px !important;
   height: 28px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
 }
 
 .sale10-payment-methods {
@@ -554,7 +554,7 @@ label textarea {
   height: auto !important;
   min-height: 38px !important;
   padding: 6px 8px !important;
-  border-radius: 9px !important;
+  border-radius:var(--ds-r-sm)!important;
   gap: 6px !important;
   text-align: left !important;
 }
@@ -602,7 +602,7 @@ label textarea {
   min-height: 30px !important;
   height: 30px !important;
   padding: 0 8px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
   font-size:12px !important;
 }
 
@@ -617,14 +617,14 @@ label textarea {
   gap: 4px !important;
   margin: 2px 0 8px !important;
   padding: 7px 8px !important;
-  border-radius: 9px !important;
+  border-radius:var(--ds-r-sm)!important;
 }
 
 .sale10-total-lines > div {
   display: block !important;
   min-width: 0 !important;
   padding: 5px 4px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
   background: #fff !important;
   text-align: center !important;
   font-size:12px !important;
@@ -642,7 +642,7 @@ label textarea {
   margin-top: 0 !important;
   padding-top: 5px !important;
   border-top: 0 !important;
-  background: #ecfdf5 !important;
+  background: var(--ds-green-tint) !important;
   font-size:12px !important;
 }
 
@@ -658,7 +658,7 @@ label textarea {
   min-height: 30px !important;
   margin-bottom: 7px !important;
   padding: 4px 8px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
 }
 
 .sale10-change-box span {
@@ -673,7 +673,7 @@ label textarea {
 .sale10-credit-note {
   margin-bottom: 7px !important;
   padding: 7px 9px !important;
-  border-radius: 8px !important;
+  border-radius:var(--ds-r-sm)!important;
   font-size:12px !important;
 }
 
@@ -681,20 +681,20 @@ label textarea {
   min-height: 39px !important;
   height: 39px !important;
   margin-top: 8px !important;
-  border-radius: 9px !important;
+  border-radius:var(--ds-r-sm)!important;
   font-size: 12px !important;
 }
 
 .dark .sale10-card-label b,
 .dark .sale10-cart-slip-main b,
 .dark .sale10-cart-peek b {
-  color: #e5eef8;
+  color: var(--ds-text);
 }
 
 .dark .sale10-products-card,
 .dark .sale10-cart-card,
 .dark .sale10-cart-slip-row {
-  background: #0b1b33 !important;
+  background: var(--ds-surface) !important;
 }
 
 .dark .sale10-cart-peek {
@@ -711,7 +711,7 @@ label textarea {
     top: 7px;
     gap: 6px;
     padding: 7px 8px;
-    border-radius: 10px;
+    border-radius:var(--ds-r-md);
   }
 
   .sale10-product-table tr {
