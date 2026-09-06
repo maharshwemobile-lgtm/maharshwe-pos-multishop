@@ -10,12 +10,23 @@ import RepairPlatformPage from './RepairPlatformPage.jsx';
 import { apiFetch, clearSession } from './phase2Api';
 import './repair-operations-workspace.css';
 
-const money = (value) => `${Number(value || 0).toLocaleString('en-US')} MMK`;
+const money = (value) => `${Number(value || 0).toLocaleString('en-US')} ကျပ်`;
+
+// A box the shop has emptied is not zero, it is unanswered -- but it is worth
+// zero when the figures are added up.
+const amountOf = (value) => {
+  const number = Number(String(value ?? '').trim());
+  return Number.isFinite(number) && number > 0 ? number : 0;
+};
 
 
 export default function RepairOperationsWorkspace() {
   const [repairNumber, setRepairNumber] = useState('');
   const [finance, setFinance] = useState(null);
+  // Held as typed, not as numbers. Coercing on every keystroke turned a cleared
+  // box straight back into 0, so the shop could not empty a field it had filled
+  // in by mistake.
+  const [costForm, setCostForm] = useState({ cost: '', totalCost: '' });
   const [loadingFinance, setLoadingFinance] = useState(false);
   const [savingFinance, setSavingFinance] = useState(false);
   const [message, setMessage] = useState(null);
@@ -44,17 +55,21 @@ export default function RepairOperationsWorkspace() {
     try {
       const response = await apiFetch(`/api/repair-platform/jobs/${encodeURIComponent(repairNumber.trim().toUpperCase())}/finance`);
       setFinance(response.finance);
+      // Repairs priced before this form had two boxes carry a cost split across
+      // parts, commission and other. They add up to the one figure now, so
+      // nothing already recorded is lost when the row is next saved.
+      setCostForm({
+        cost: response.finance.totalCost ? String(response.finance.totalCost) : '',
+        totalCost: response.finance.finalCost ? String(response.finance.finalCost) : '',
+      });
       setRepairNumber(response.finance.repairNumber);
     } catch (error) {
       setFinance(null);
+      setCostForm({ cost: '', totalCost: '' });
       handleError(error);
     } finally {
       setLoadingFinance(false);
     }
-  };
-
-  const setFinanceField = (key, value) => {
-    setFinance((current) => ({ ...current, [key]: Math.max(0, Number(value || 0)) }));
   };
 
   const saveFinance = async () => {
@@ -64,15 +79,19 @@ export default function RepairOperationsWorkspace() {
       const response = await apiFetch(`/api/repair-platform/jobs/${finance.repairId}/finance`, {
         method: 'PATCH',
         body: {
-          finalCost: Number(finance.finalCost || 0),
-          partsCost: Number(finance.partsCost || 0),
-          technicianCommission: Number(finance.technicianCommission || 0),
-          otherCost: Number(finance.otherCost || 0),
+          finalCost: amountOf(costForm.totalCost),
+          partsCost: amountOf(costForm.cost),
+          // Commission and other cost are gone from the form; the server zeroes
+          // them when they are not sent, which is what an unsplit cost means.
           note: 'Updated from Repair Finance workspace',
         },
       });
       setFinance(response.finance);
-      notify('success', `${response.finance.repairNumber} profit saved`);
+      setCostForm({
+        cost: response.finance.totalCost ? String(response.finance.totalCost) : '',
+        totalCost: response.finance.finalCost ? String(response.finance.finalCost) : '',
+      });
+      notify('success', `${response.finance.repairNumber} သိမ်းပြီးပါပြီ`);
     } catch (error) {
       handleError(error);
     } finally {
@@ -80,12 +99,10 @@ export default function RepairOperationsWorkspace() {
     }
   };
 
-  const financePreview = useMemo(() => {
-    if (!finance) return null;
-    const totalCost = Number(finance.partsCost || 0) + Number(finance.technicianCommission || 0) + Number(finance.otherCost || 0);
-    const profit = Number(finance.finalCost || 0) - totalCost;
-    return { totalCost, profit, margin: Number(finance.finalCost || 0) > 0 ? (profit / Number(finance.finalCost)) * 100 : 0 };
-  }, [finance]);
+  const profit = useMemo(
+    () => amountOf(costForm.totalCost) - amountOf(costForm.cost),
+    [costForm.cost, costForm.totalCost],
+  );
 
 
   const bottomTools = (
@@ -93,7 +110,7 @@ export default function RepairOperationsWorkspace() {
       <div className="repair-tool-switcher repair-bottom-tool-switcher">
         <button type="button" className={showFinanceTool ? 'active' : ''} onClick={() => setShowFinanceTool((value) => !value)}>
           <Calculator size={20} />
-          <span><b>Repair Cost & Profit</b><small>နိုပ်မှ cost/profit form ပေါ်မယ်</small></span>
+          <span><b>ပြင်ခ နှင့် အမြတ်</b><small>ဘောက်ချာနံပါတ် ရိုက်ပြီး ကုန်ကျစရိတ် သွင်းပါ</small></span>
         </button>
         <button type="button" className={showHistoryTool ? 'active' : ''} onClick={() => setShowHistoryTool((value) => !value)}>
           <Wrench size={20} />
@@ -103,16 +120,28 @@ export default function RepairOperationsWorkspace() {
 
       {showFinanceTool ? <div className="repair-finance-tools repair-finance-tools-single">
         <section className="repair-cost-editor">
-          <header><Calculator size={20} /><div><b>Repair Cost & Profit</b><small>Repair ID တစ်ခုရိုက်ပြီး အမြတ်တွက်ချက်မှုကို သေချာသိမ်းပါ။</small></div></header>
+          <header><Calculator size={20} /><div><b>ပြင်ခ နှင့် အမြတ်</b><small>ဘောက်ချာနံပါတ် ရိုက်ရှာပြီး ကုန်ကျစရိတ်နှင့် စုစုပေါင်း ကောက်ငွေ သွင်းပါ။</small></div></header>
           <div className="repair-finance-search"><input value={repairNumber} onChange={(event) => setRepairNumber(event.target.value.toUpperCase())} placeholder="AC4470 / MS0551" onKeyDown={(event) => { if (event.key === 'Enter') findFinance(); }} /><button type="button" onClick={findFinance} disabled={loadingFinance || !repairNumber.trim()}>{loadingFinance ? <Loader2 className="repair-finance-spin" size={17} /> : <Search size={17} />} Find</button></div>
           {finance ? <div className="repair-finance-editor-grid">
-            <label>Final Cost<input type="number" min="0" value={finance.finalCost} onChange={(event) => setFinanceField('finalCost', event.target.value)} /></label>
-            <label>Parts Cost<input type="number" min="0" value={finance.partsCost} onChange={(event) => setFinanceField('partsCost', event.target.value)} /></label>
-            <label>Technician Commission<input type="number" min="0" value={finance.technicianCommission} onChange={(event) => setFinanceField('technicianCommission', event.target.value)} /></label>
-            <label>Other Cost<input type="number" min="0" value={finance.otherCost} onChange={(event) => setFinanceField('otherCost', event.target.value)} /></label>
-            <div><span>Total Cost</span><b>{money(financePreview?.totalCost)}</b></div>
-            <div className={Number(financePreview?.profit || 0) >= 0 ? 'profit-value' : 'loss-value'}><span>Net Profit</span><b>{money(financePreview?.profit)}</b><small>{Number(financePreview?.margin || 0).toFixed(1)}% margin</small></div>
-            <button type="button" className="save-finance" onClick={saveFinance} disabled={savingFinance}>{savingFinance ? <Loader2 className="repair-finance-spin" size={17} /> : <CheckCircle2 size={17} />} Save Finance</button>
+            <label>
+              <span>ကုန်ကျစရိတ် (Cost)</span>
+              <input type="number" min="0" inputMode="numeric" placeholder="0"
+                value={costForm.cost}
+                onChange={(event) => setCostForm({ ...costForm, cost: event.target.value })} />
+              <small>ဆိုင်က ကုန်ကျတဲ့ ငွေ — ပစ္စည်းဖိုး၊ ဆရာခ အားလုံးပေါင်း</small>
+            </label>
+            <label>
+              <span>စုစုပေါင်း (Total Cost)</span>
+              <input type="number" min="0" inputMode="numeric" placeholder="0"
+                value={costForm.totalCost}
+                onChange={(event) => setCostForm({ ...costForm, totalCost: event.target.value })} />
+              <small>ဖောက်သည်ဆီက ကောက်တဲ့ ငွေ</small>
+            </label>
+            <div className={profit >= 0 ? 'profit-value' : 'loss-value'}>
+              <span>အမြတ်</span>
+              <b>{money(profit)}</b>
+            </div>
+            <button type="button" className="save-finance" onClick={saveFinance} disabled={savingFinance}>{savingFinance ? <Loader2 className="repair-finance-spin" size={17} /> : <CheckCircle2 size={17} />} သိမ်းမည်</button>
           </div> : null}
         </section>
       </div> : null}

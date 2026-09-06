@@ -17,3 +17,40 @@
 .repair-operations-workspace .repair-finance-overview{
   display:none!important;
 }
+
+/* PR52: the cost form is two boxes, not five.
+   Parts, commission and other cost were four inputs asking the shop to split a
+   figure it does not split, under labels where "Total Cost" meant the shop's
+   spend and "Final Cost" meant the customer's price -- which read as a wrong
+   sum every time. It is a cost, a total, and the difference. */
+.repair-finance-editor-grid label span{
+  display:block;
+}
+.repair-finance-editor-grid label small{
+  font-size:11px;
+  font-weight:600;
+  line-height:1.45;
+  color:#94a3b8;
+}
+.repair-finance-editor-grid .profit-value,
+.repair-finance-editor-grid .loss-value{
+  grid-column:1/3;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+}
+.repair-finance-editor-grid .profit-value b,
+.repair-finance-editor-grid .loss-value b{
+  margin-top:0;
+  font-size:20px;
+}
+.dark .repair-finance-editor-grid label small{
+  color:#7f93ad;
+}
+@media(max-width:650px){
+  .repair-finance-editor-grid .profit-value,
+  .repair-finance-editor-grid .loss-value{
+    grid-column:auto;
+  }
+}
