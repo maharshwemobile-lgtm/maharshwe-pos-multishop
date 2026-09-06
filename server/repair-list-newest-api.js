@@ -52,6 +52,17 @@ function attachRepairListNewestApi(app) {
         params.push(sourceType);
         filters.push(`r.source_type = $${params.length}`);
       }
+      // A phone the customer has taken home is finished business. It stays out
+      // of the working list -- which is meant to be what is still on the shelf
+      // -- and reads back under "collected". "all" is the old, unsplit list.
+      //
+      // This route is served from here, not from repair-platform-api: both
+      // register GET /api/repair-platform/jobs and this one is attached first,
+      // so it is the one Express reaches. The filter has to live in both or it
+      // silently does nothing.
+      const collected = String(req.query.collected || 'active');
+      if (collected === 'active') filters.push('r.delivered_at IS NULL');
+      else if (collected === 'collected') filters.push('r.delivered_at IS NOT NULL');
       const where = filters.join(' AND ');
       const countRows = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int AS count FROM repairs r WHERE ${where}`, ...params);
       params.push(limit, (page - 1) * limit);
@@ -70,6 +81,7 @@ function attachRepairListNewestApi(app) {
                 r.payment_status AS "paymentStatus",
                 r.status,
                 r.received_at AS "receivedAt",
+                r.delivered_at AS "deliveredAt",
                 r.source_type AS "sourceType",
                 r.source_provider AS "sourceProvider",
                 r.source_shop_name AS "sourceShopName",
