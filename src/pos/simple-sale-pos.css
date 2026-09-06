@@ -301,7 +301,7 @@
   gap:5px;
   min-height:30px;
   padding:0 9px;
-  border:1px solid #fecaca;
+  border:1px solid var(--ds-danger-line);
   border-radius:var(--ds-r-sm);
   background:#fff;
   color:var(--compact-danger);

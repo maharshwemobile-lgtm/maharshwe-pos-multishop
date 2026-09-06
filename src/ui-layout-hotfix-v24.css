@@ -332,7 +332,7 @@ label textarea {
 }
 
 .sale10-cart-card {
-  border-color: #bfdbfe !important;
+  border-color: var(--ds-info-line) !important;
   background: linear-gradient(180deg, rgba(239, 246, 255, .85), #fff 86px) !important;
 }
 
@@ -490,7 +490,7 @@ label textarea {
 }
 
 .sale10-cart-slip-row:nth-child(even) {
-  background: #fbfdff;
+  background: var(--ds-surface);
 }
 
 .sale10-cart-slip-main {

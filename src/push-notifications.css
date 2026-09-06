@@ -9,9 +9,9 @@
 }
 
 .push-notification-trigger.off {
-  border-color: #fecaca;
+  border-color: var(--ds-danger-line);
   color: var(--ds-red);
-  background: #fff7f7;
+  background: var(--ds-danger-tint);
 }
 
 .push-notification-menu {
@@ -90,7 +90,7 @@
 }
 
 .push-status-line.off {
-  background: #fef2f2;
+  background: var(--ds-danger-tint);
   color: var(--ds-red);
 }
 

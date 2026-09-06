@@ -7,11 +7,11 @@
 .price-heading button:disabled,.price-toolbar button:disabled,.price-edit:disabled,.price-actions button:disabled{opacity:.5;cursor:not-allowed}
 .price-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .price-summary-grid article{background:#fff;border:1px solid var(--ds-border);border-radius:var(--ds-r-lg);padding:12px;display:grid;grid-template-columns:44px 1fr;gap:3px 12px;box-shadow:var(--ds-shadow-sm)}
-.price-summary-grid svg{grid-row:1/3;width:44px;height:44px;padding:10px;border-radius:var(--ds-r-md);background:#ffedd5;color:#ea580c}
+.price-summary-grid svg{grid-row:1/3;width:44px;height:44px;padding:10px;border-radius:var(--ds-r-md);background:var(--ds-warn-soft);color:var(--ds-warn)}
 .price-summary-grid span{color:var(--ds-muted);font-size:12px}
 .price-summary-grid b{font-size:22px}
 .price-card{background:#fff;border:1px solid var(--ds-border);border-radius:var(--ds-r-lg);box-shadow:var(--ds-shadow);overflow:hidden}
-.price-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px;border-bottom:1px solid #eef2f7}
+.price-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px;border-bottom:1px solid var(--ds-page)}
 .price-toolbar label{flex:1;display:flex;align-items:center;gap:8px;height:42px;border:1px solid var(--ds-border);border-radius:var(--ds-r-md);padding:0 12px;background:var(--ds-surface-2)}
 .price-toolbar input{width:100%;border:0;background:transparent;outline:0}
 .price-toolbar>div{display:flex;align-items:center;gap:8px}
@@ -25,10 +25,10 @@
 .price-low{color:var(--ds-red-bright)!important}
 .price-profit{color:var(--ds-green)}
 .price-loss{color:var(--ds-red-bright)}
-.price-edit{background:var(--ds-amber-soft);border-color:#fed7aa;color:#9a3412}
+.price-edit{background:var(--ds-amber-soft);border-color:var(--ds-warn-line);color:var(--ds-warn-dark)}
 .price-actions{display:flex;gap:6px}
 .price-actions .save{background:var(--ds-green);border-color:var(--ds-green);color:#fff}
-.price-actions button:last-child{width:38px;padding:0;background:var(--ds-red-soft);color:var(--ds-red);border-color:#fecaca}
+.price-actions button:last-child{width:38px;padding:0;background:var(--ds-red-soft);color:var(--ds-red);border-color:var(--ds-danger-line)}
 .price-empty{display:grid;place-items:center;gap:8px;padding:23px;color:var(--ds-muted)}
 .price-footer{display:flex;justify-content:space-between;gap:12px;padding:12px 11px;color:var(--ds-muted);font-size:12px;background:var(--ds-surface-2)}
 .price-footer b{color:var(--ds-amber-dark)}
@@ -65,9 +65,9 @@
   border:1px solid var(--ds-border);box-shadow:0 24px 80px rgba(15,23,42,.35)
 }
 .price-modal header,.price-modal footer{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-bottom:1px solid #eef2f7
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-bottom:1px solid var(--ds-page)
 }
-.price-modal footer{border-top:1px solid #eef2f7;border-bottom:0}
+.price-modal footer{border-top:1px solid var(--ds-page);border-bottom:0}
 .price-modal header span{font-size:12px;font-weight:950;letter-spacing:.1em;color:#f97316}
 .price-modal header h3{margin:3px 0 4px;font-size:20px}
 .price-modal header p{margin:0;color:var(--ds-muted);font-size:13px}
@@ -91,7 +91,7 @@
   grid-template-columns:repeat(4,minmax(0,1fr));
   gap:12px;
   padding:11px;
-  border-bottom:1px solid #eef2f7;
+  border-bottom:1px solid var(--ds-page);
   background:#fffaf3;
 }
 .price-filter-panel label,.price-bulk-panel label{

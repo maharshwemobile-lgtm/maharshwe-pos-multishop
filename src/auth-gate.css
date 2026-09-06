@@ -144,7 +144,7 @@
 
 .ms-auth-logo-link small{
   margin-top:2px;
-  color:#bfdbfe;
+  color:var(--ds-info-line);
   font-size:12px;
   font-weight:900;
   letter-spacing:.22em;
@@ -283,7 +283,7 @@
   justify-content:space-between;
   gap:13px;
   padding:14px 26px;
-  border-bottom:1px solid #eef2f7;
+  border-bottom:1px solid var(--ds-page);
 }
 
 .ms-auth-mobile-logo{
@@ -324,7 +324,7 @@
 }
 
 .ms-auth-tabs button.active{
-  color:#1d4ed8;
+  color:var(--ds-info);
   background:#fff;
   box-shadow:0 9px 22px rgba(15,23,42,.10);
 }
@@ -352,8 +352,8 @@
   padding:9px 11px;
   border:1px solid var(--ds-blue-soft);
   border-radius:var(--ds-r-pill);
-  background:#eff6ff;
-  color:#1d4ed8;
+  background:var(--ds-info-tint);
+  color:var(--ds-info);
   font-size:13px;
   font-weight:950;
 }
@@ -398,8 +398,8 @@
 }
 
 .auth-gate-error{
-  border:1px solid #fecaca;
-  background:#fff7f7;
+  border:1px solid var(--ds-danger-line);
+  background:var(--ds-danger-tint);
   color:var(--ds-red);
 }
 
@@ -582,7 +582,7 @@
 
 .ms-auth-form>button[type="submit"]:hover:not(:disabled){
   transform:translateY(-1px);
-  background:#1d4ed8;
+  background:var(--ds-info);
   box-shadow:0 22px 52px rgba(37,99,235,.36);
 }
 
@@ -604,9 +604,9 @@
 
 .ms-auth-trial-note{
   padding:11px;
-  border:1px solid #bfdbfe;
+  border:1px solid var(--ds-info-line);
   border-radius:var(--ds-r-lg);
-  background:#eff6ff;
+  background:var(--ds-info-tint);
   color:#1e3a8a;
   font-size:13px;
   line-height:1.6;
@@ -639,7 +639,7 @@
 
 .ms-auth-footer{
   padding:13px 23px;
-  border-top:1px solid #eef2f7;
+  border-top:1px solid var(--ds-page);
   color:var(--ds-faint);
   text-align:center;
   font-size:12px;

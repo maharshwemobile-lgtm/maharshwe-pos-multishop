@@ -219,9 +219,9 @@
 
 .bc-tone-blue .bc-metric-icon { background: var(--ds-blue); }
 .bc-tone-gold .bc-metric-icon { background: #d69000; }
-.bc-tone-violet .bc-metric-icon { background: #7c3aed; }
+.bc-tone-violet .bc-metric-icon { background: var(--ds-violet); }
 .bc-tone-red .bc-metric-icon { background: var(--ds-red-bright); }
-.bc-tone-orange .bc-metric-icon { background: #ea580c; }
+.bc-tone-orange .bc-metric-icon { background: var(--ds-warn); }
 
 .bc-account-grid {
   display: grid;
@@ -325,7 +325,7 @@
 .bc-bar-column{grid-template-rows:20px 1fr 24px;gap:5px}
 .bc-bar-column>b{font-size:9px;font-weight:850;white-space:nowrap}
 .bc-bar-column>div{align-items:flex-end}
-.bc-bar-column i{position:relative;width:min(38px,68%);border-radius:9px 9px 4px 4px;background:linear-gradient(180deg,#34d399 0%,#059669 64%,var(--ds-green-dark) 100%);box-shadow:0 9px 18px rgba(5,150,105,.2);transition:height .35s ease,transform .18s ease,filter .18s ease}
+.bc-bar-column i{position:relative;width:min(38px,68%);border-radius:9px 9px 4px 4px;background:linear-gradient(180deg,#34d399 0%,var(--ds-green) 64%,var(--ds-green-dark) 100%);box-shadow:0 9px 18px rgba(5,150,105,.2);transition:height .35s ease,transform .18s ease,filter .18s ease}
 .bc-bar-column:hover i{transform:translateY(-3px);filter:saturate(1.14);box-shadow:0 12px 24px rgba(5,150,105,.28)}
 .bc-bar-column i em{position:absolute;left:50%;top:7px;transform:translateX(-50%);display:grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:var(--ds-r-pill);background:rgba(255,255,255,.9);color:var(--ds-green-dark);font-size:9px;font-style:normal;font-weight:950}
 .bc-bar-column.is-best i{background:linear-gradient(180deg,#fbbf24,var(--ds-amber) 58%,#d97706);box-shadow:0 10px 22px rgba(245,158,11,.24)}

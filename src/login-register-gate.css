@@ -81,9 +81,9 @@
   border:1px solid var(--ds-green-line);
 }
 .ms-login-alert.error{
-  background:#fef2f2;
+  background:var(--ds-danger-tint);
   color:var(--ds-red);
-  border:1px solid #fecaca;
+  border:1px solid var(--ds-danger-line);
 }
 .ms-login-form{
   display:flex;
@@ -101,7 +101,7 @@
   font-weight:800;
 }
 .ms-login-form b{
-  color:#ef4444;
+  color:var(--ds-danger-bright);
 }
 .ms-login-form em{
   color:#9ca3af;
@@ -137,7 +137,7 @@
   border:0;
   border-radius:var(--ds-r-lg);
   padding:11px;
-  background:linear-gradient(135deg,#059669,var(--ds-green-dark));
+  background:linear-gradient(135deg,var(--ds-green),var(--ds-green-dark));
   color:#fff;
   font-size:14px;
   font-weight:900;
@@ -252,8 +252,8 @@
 .ms-lifetime-plan small{
   padding:5px 8px;
   border-radius:var(--ds-r-pill);
-  color:#9a3412;
-  background:#ffedd5;
+  color:var(--ds-warn-dark);
+  background:var(--ds-warn-soft);
   font-size:12px;
   font-weight:900;
   white-space:nowrap;
@@ -295,7 +295,7 @@
   background:linear-gradient(180deg,#0f2546,var(--ds-surface));
 }
 .dark .ms-login-google-register b{
-  color:#bfdbfe;
+  color:var(--ds-info-line);
 }
 .dark .ms-lifetime-plan{
   border-color:var(--ds-green-dark);
@@ -328,7 +328,7 @@
 .dark .ms-retail-notice { background: var(--ds-surface-2); border-color: var(--ds-border); }
 .dark .ms-retail-notice strong { color: var(--ds-text); }
 .dark .ms-retail-notice small { color: var(--ds-muted); }
-.dark .ms-retail-notice a { color: #4ade80; }
+.dark .ms-retail-notice a { color: var(--ds-green-bright); }
 
 /* Password with a show/hide toggle sitting inside the field */
 .ms-password-field { position: relative; display: block; }

@@ -1,13 +1,13 @@
 .purchasing-hub{display:grid;gap:13px}
-.purchasing-hero{display:flex;align-items:center;gap:12px;padding:15px;border:1px solid var(--ds-blue-soft);border-radius:var(--ds-r-xl);background:#eff6ff}
-.purchasing-hero-icon{display:grid;place-items:center;width:54px;height:54px;border-radius:var(--ds-r-lg);background:#0f766e;color:#fff}
+.purchasing-hero{display:flex;align-items:center;gap:12px;padding:15px;border:1px solid var(--ds-blue-soft);border-radius:var(--ds-r-xl);background:var(--ds-info-tint)}
+.purchasing-hero-icon{display:grid;place-items:center;width:54px;height:54px;border-radius:var(--ds-r-lg);background:var(--ds-teal);color:#fff}
 .purchasing-hero h2{margin:3px 0 5px;font-size:26px;color:var(--ds-text)}
 .purchasing-hero p{margin:0;color:var(--ds-text-2)}
 .purchasing-tabs{display:flex;gap:10px;flex-wrap:wrap}
 .purchasing-tabs button{display:flex;align-items:center;gap:8px;padding:11px 11px;border:1px solid var(--ds-border-strong);border-radius:var(--ds-r-lg);background:#fff;color:var(--ds-text-strong);font-weight:700}
-.purchasing-tabs button.active{background:#0f766e;border-color:#0f766e;color:#fff}
-.purchasing-mini-intro{display:grid;gap:4px;padding:12px 13px;border:1px solid var(--ds-green-line);border-radius:var(--ds-r-lg);background:linear-gradient(135deg,var(--ds-green-tint),#eff6ff)}
-.purchasing-mini-intro span{font-size:12px;font-weight:900;letter-spacing:.09em;color:#0f766e}
+.purchasing-tabs button.active{background:var(--ds-teal);border-color:var(--ds-teal);color:#fff}
+.purchasing-mini-intro{display:grid;gap:4px;padding:12px 13px;border:1px solid var(--ds-green-line);border-radius:var(--ds-r-lg);background:linear-gradient(135deg,var(--ds-green-tint),var(--ds-info-tint))}
+.purchasing-mini-intro span{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--ds-teal)}
 .purchasing-mini-intro h3{margin:0;font-size:18px;color:var(--ds-text)}
 .purchasing-mini-intro p{margin:0;color:var(--ds-text-2);line-height:1.45;font-size:13px}
 .purchasing-settlement-panel{display:grid;gap:12px}

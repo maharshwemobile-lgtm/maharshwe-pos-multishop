@@ -14,7 +14,7 @@
 .finance-catalog-list article{padding:9px 10px!important}.finance-catalog-list b{font-size:12px!important}.finance-catalog-list small{font-size:12px!important;line-height:1.25!important}
 .finance-catalog-actions.text-actions button{width:auto!important;min-width:86px;padding:0 9px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;font-size:12px!important;font-weight:850!important;white-space:nowrap}
 .finance-catalog-actions.text-actions button span{display:inline!important}
-.finance-payment-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}.finance-payment-badges span{display:inline-flex;align-items:center;width:max-content;padding:3px 7px;border-radius:var(--ds-r-pill);font-size:12px!important;font-weight:850!important;line-height:1.2!important}.finance-payment-badges .pos-show{background:var(--ds-green-tint);color:var(--ds-green-dark);border:1px solid var(--ds-green-line)}.finance-payment-badges .pos-hidden{background:var(--ds-amber-soft);color:#9a3412;border:1px solid #fed7aa}.finance-catalog-actions.text-actions .finance-pos-toggle{min-width:92px!important}.finance-catalog-actions.text-actions .hide-pos-action{border-color:#fed7aa!important;background:var(--ds-amber-soft)!important;color:#9a3412!important}.finance-catalog-actions.text-actions .show-pos-action{border-color:var(--ds-green-line)!important;background:var(--ds-green-tint)!important;color:var(--ds-green-dark)!important}
+.finance-payment-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}.finance-payment-badges span{display:inline-flex;align-items:center;width:max-content;padding:3px 7px;border-radius:var(--ds-r-pill);font-size:12px!important;font-weight:850!important;line-height:1.2!important}.finance-payment-badges .pos-show{background:var(--ds-green-tint);color:var(--ds-green-dark);border:1px solid var(--ds-green-line)}.finance-payment-badges .pos-hidden{background:var(--ds-amber-soft);color:var(--ds-warn-dark);border:1px solid var(--ds-warn-line)}.finance-catalog-actions.text-actions .finance-pos-toggle{min-width:92px!important}.finance-catalog-actions.text-actions .hide-pos-action{border-color:var(--ds-warn-line)!important;background:var(--ds-amber-soft)!important;color:var(--ds-warn-dark)!important}.finance-catalog-actions.text-actions .show-pos-action{border-color:var(--ds-green-line)!important;background:var(--ds-green-tint)!important;color:var(--ds-green-dark)!important}
 .finance-money-service-visibility{display:grid;gap:10px;padding:12px;border:1px solid rgba(37,99,235,.18);border-radius:var(--ds-r-md);background:rgba(37,99,235,.04)}
 .finance-money-service-visibility>header{display:flex;justify-content:space-between;gap:10px}
 .finance-money-service-visibility>header>div{display:flex;align-items:center;gap:8px}
@@ -22,8 +22,8 @@
 .finance-money-service-visibility>header small{color:var(--text-muted,var(--ds-muted));font-size:12px;line-height:1.3}
 .money-service-wallet-list article{background:var(--card,#fff)}
 .finance-catalog-actions .money-service-on{border-color:var(--ds-green-line)!important;background:var(--ds-green-tint)!important;color:var(--ds-green-dark)!important}
-.finance-catalog-actions .money-service-off{border-color:#fed7aa!important;background:var(--ds-amber-soft)!important;color:#9a3412!important}
+.finance-catalog-actions .money-service-off{border-color:var(--ds-warn-line)!important;background:var(--ds-amber-soft)!important;color:var(--ds-warn-dark)!important}
 @media(max-width:620px){.finance-catalog-actions.text-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;width:100%}.finance-catalog-actions.text-actions button{width:100%!important;min-width:0!important}.finance-catalog-list article{display:grid!important}}
 
-.finance-delete-action { border-color: #fecaca !important; color: var(--ds-red) !important; }
-.finance-delete-action:hover { background: #fef2f2 !important; }
+.finance-delete-action { border-color: var(--ds-danger-line) !important; color: var(--ds-red) !important; }
+.finance-delete-action:hover { background: var(--ds-danger-tint) !important; }

@@ -52,7 +52,7 @@
 .gt-orders h3{margin:0;font-size:15px}
 .gt-table-wrap{overflow:auto}
 .gt-table-wrap table{width:100%;border-collapse:collapse;min-width:760px}
-.gt-table-wrap th,.gt-table-wrap td{padding:9px 10px;border-bottom:1px solid var(--border,#eef2f7);text-align:left;vertical-align:top}
+.gt-table-wrap th,.gt-table-wrap td{padding:9px 10px;border-bottom:1px solid var(--border,var(--ds-page));text-align:left;vertical-align:top}
 .gt-table-wrap th{font-size:12px;color:var(--text-muted,var(--ds-muted));text-transform:uppercase}
 .gt-table-wrap td>small{display:block;color:var(--text-muted,var(--ds-muted));margin-top:2px}
 .gt-negative{color:var(--ds-red-bright)}
@@ -89,7 +89,7 @@
 .gt-pricing-toggle{width:100%;text-align:left;padding:12px 14px;border:0;background:var(--ds-surface-2);font-weight:700;font-size:13.5px;cursor:pointer}
 .gt-pricing-hint{margin:10px 14px;font-size:12px;color:var(--ds-muted)}
 .gt-pricing-panel table{width:100%;border-collapse:collapse;font-size:13px}
-.gt-pricing-panel th,.gt-pricing-panel td{padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:left}
+.gt-pricing-panel th,.gt-pricing-panel td{padding:8px 10px;border-bottom:1px solid var(--ds-page);text-align:left}
 .gt-pricing-panel td small{display:block;color:var(--ds-faint);font-size:11px}
 .gt-pricing-panel input{width:110px;padding:6px 8px;border:1px solid var(--ds-border);border-radius:var(--ds-r-sm)}
 .gt-pricing-panel td button{margin-right:6px;padding:6px 10px;border-radius:var(--ds-r-sm);border:1px solid var(--ds-border);background:#fff;font-size:12px;cursor:pointer}
@@ -109,4 +109,4 @@
 .gt-order-actions{display:flex;gap:6px}
 .gt-order-actions button{border:0;border-radius:var(--ds-r-sm);padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer}
 .gt-order-actions button:first-child{background:#0E8A5F;color:#fff}
-.gt-order-actions button:last-child{background:#fef2f2;color:var(--ds-red-bright)}
+.gt-order-actions button:last-child{background:var(--ds-danger-tint);color:var(--ds-red-bright)}

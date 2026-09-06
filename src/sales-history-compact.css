@@ -7,7 +7,7 @@
   --sh-border:var(--ds-border);
   --sh-text:#0b1328;
   --sh-muted:var(--ds-muted);
-  --sh-danger:#ef4444;
+  --sh-danger:var(--ds-danger-bright);
   min-height:100%;
   padding:0;
   background:transparent;
@@ -16,7 +16,7 @@
 }
 .dark .sale-history-page{
   --sh-accent:var(--ds-green-bright);
-  --sh-accent-dark:#4ade80;
+  --sh-accent-dark:var(--ds-green-bright);
   --sh-accent-soft:rgba(34,197,94,.14);
   --sh-bg:var(--ds-surface);
   --sh-soft:#10213d;
@@ -151,10 +151,10 @@
   white-space:nowrap;
 }
 .sale-history-pill.completed{background:var(--ds-green-soft);color:var(--ds-green-dark)}
-.sale-history-pill.voided{background:var(--ds-red-soft);color:#991b1b}
-.sale-history-pill.returned{background:#ffedd5;color:#9a3412}
+.sale-history-pill.voided{background:var(--ds-red-soft);color:var(--ds-danger-strong)}
+.sale-history-pill.returned{background:var(--ds-warn-soft);color:var(--ds-warn-dark)}
 .dark .sale-history-pill.completed{background:rgba(34,197,94,.16);color:var(--ds-green-line)}
-.dark .sale-history-pill.voided{background:rgba(239,68,68,.15);color:#fca5a5}
+.dark .sale-history-pill.voided{background:rgba(239,68,68,.15);color:var(--ds-danger-line)}
 .dark .sale-history-pill.returned{background:rgba(249,115,22,.16);color:#fdba74}
 .sale-history-empty{display:flex;min-height:330px;align-items:center;justify-content:center;color:var(--sh-muted);font-size:14px}
 .sale-history-footer{
@@ -278,7 +278,7 @@
   gap:7px;
 }
 .sale-history-action.reprint{color:var(--sh-accent-dark);border-color:rgba(34,197,94,.35);background:var(--sh-accent-soft)}
-.sale-history-action.danger{color:var(--sh-danger);border-color:#fecaca;background:var(--sh-bg)}
+.sale-history-action.danger{color:var(--sh-danger);border-color:var(--ds-danger-line);background:var(--sh-bg)}
 .sale-history-action:disabled{opacity:.45;cursor:not-allowed}
 
 .sale-history-void-overlay{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.48)}
@@ -318,7 +318,7 @@
   font-weight:750;
   cursor:pointer;
 }
-.sale-history-void-buttons .confirm{border-color:#ef4444;background:#ef4444;color:#fff}
+.sale-history-void-buttons .confirm{border-color:var(--ds-danger-bright);background:var(--ds-danger-bright);color:#fff}
 
 @media (max-width:1180px){
   .sale-history-body{grid-template-columns:minmax(0,1fr) 340px}

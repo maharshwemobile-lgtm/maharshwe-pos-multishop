@@ -35,28 +35,30 @@ import LoginRegisterGate from './LoginRegisterGate.jsx';
 import { PROJECT_LOGO_URL } from './projectBrand.js';
 import { apiFetch, clearSession, getSession, saveSession, subscribeSession } from './phase2Api';
 
+// The sidebar paints every icon the same slate, or white when it is the open
+// page. Each entry used to carry a hex colour as well; nothing ever read them.
 const menu = [
-  { name: 'Dashboard', icon: Home, color: '#3b82f6' },
-  { name: 'Grand Admin', label: 'Grand Admin Control', icon: ShieldCheck, color: '#2563eb' },
-  { name: 'Game Top-up Admin', label: 'Game Top-up Admin', icon: Gamepad2, color: '#7c3aed' },
-  { name: 'Sale POS', icon: ShoppingCart, color: '#22c55e' },
-  { name: 'Sales History', icon: History, color: '#6366f1' },
-  { name: 'Repairs', label: 'Repair Platform', icon: Wrench, color: '#f59e0b' },
-  { name: 'Products', icon: Box, color: '#ec4899' },
-  { name: 'Online Shop', label: 'E-commerce Website', icon: ShoppingBag, color: '#059669' },
-  { name: 'Prices', label: 'Prices & Discounts', icon: BadgePercent, color: '#f97316' },
-  { name: 'Stock', icon: PackagePlus, color: '#8b5cf6' },
-  { name: 'Purchases', icon: Truck, color: '#06b6d4' },
-  { name: 'Customers', label: 'Customers & Credit', icon: Users, color: '#10b981' },
-  { name: 'Money Service', label: 'Money Service', icon: CircleDollarSign, color: '#16a34a' },
-  { name: 'Bill / Eload', label: 'Bill / Eload', icon: Banknote, color: '#0284c7' },
-  { name: 'Game Top-up', label: 'Game Top-up', icon: Gamepad2, color: '#7c3aed' },
-  { name: 'Accounting', label: 'Finance & Accounts', icon: Wallet, color: '#f97316' },
-  { name: 'Other Records', label: 'Other Records', icon: FileSpreadsheet, color: '#0f766e' },
-  { name: 'Reports', label: 'Reports & Performance', icon: BarChart3, color: '#84cc16' },
-  { name: 'Audit Trail', icon: ShieldCheck, color: '#0ea5e9' },
-  { name: 'Settings', label: 'Project Settings', icon: Settings, color: '#475569' },
-  { name: 'About Us', label: 'About Us', icon: Info, color: '#0f766e' },
+  { name: 'Dashboard', icon: Home },
+  { name: 'Grand Admin', label: 'Grand Admin Control', icon: ShieldCheck },
+  { name: 'Game Top-up Admin', label: 'Game Top-up Admin', icon: Gamepad2 },
+  { name: 'Sale POS', icon: ShoppingCart },
+  { name: 'Sales History', icon: History },
+  { name: 'Repairs', label: 'Repair Platform', icon: Wrench },
+  { name: 'Products', icon: Box },
+  { name: 'Online Shop', label: 'E-commerce Website', icon: ShoppingBag },
+  { name: 'Prices', label: 'Prices & Discounts', icon: BadgePercent },
+  { name: 'Stock', icon: PackagePlus },
+  { name: 'Purchases', icon: Truck },
+  { name: 'Customers', label: 'Customers & Credit', icon: Users },
+  { name: 'Money Service', label: 'Money Service', icon: CircleDollarSign },
+  { name: 'Bill / Eload', label: 'Bill / Eload', icon: Banknote },
+  { name: 'Game Top-up', label: 'Game Top-up', icon: Gamepad2 },
+  { name: 'Accounting', label: 'Finance & Accounts', icon: Wallet },
+  { name: 'Other Records', label: 'Other Records', icon: FileSpreadsheet },
+  { name: 'Reports', label: 'Reports & Performance', icon: BarChart3 },
+  { name: 'Audit Trail', icon: ShieldCheck },
+  { name: 'Settings', label: 'Project Settings', icon: Settings },
+  { name: 'About Us', label: 'About Us', icon: Info },
 ];
 
 const LIMITED_SUBSCRIPTION_PAGES = new Set(['Sale POS', 'Sales History']);

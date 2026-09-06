@@ -22,7 +22,7 @@
     padding:0 10px!important;
     gap:7px!important;
     border-color:var(--ds-green-bright)!important;
-    color:#0f766e!important;
+    color:var(--ds-teal)!important;
     background:var(--ds-green-tint)!important;
     font-weight:900!important;
   }
@@ -35,7 +35,7 @@
     width:8px;
     height:8px;
     border-radius:var(--ds-r-pill);
-    background:#ef4444;
+    background:var(--ds-danger-bright);
     box-shadow:0 0 0 4px rgba(239,68,68,.12);
   }
 }
@@ -202,9 +202,9 @@ body{overscroll-behavior-y:none}
 }
 .app-menu-tour-card{
   pointer-events:auto;
-  border:1px solid #bfdbfe;
+  border:1px solid var(--ds-info-line);
   border-radius:var(--ds-r-lg);
-  background:linear-gradient(135deg,#ffffff,#eff6ff);
+  background:linear-gradient(135deg,#ffffff,var(--ds-info-tint));
   box-shadow:0 24px 70px rgba(15,23,42,.20);
   padding:13px;
   color:var(--ds-text);

@@ -78,8 +78,8 @@
 
 .sale10-next-action.warning {
   background: var(--ds-amber-soft);
-  border-color: #fed7aa;
-  color: #9a3412;
+  border-color: var(--ds-warn-line);
+  color: var(--ds-warn-dark);
 }
 
 .sale10-row-add {
@@ -106,7 +106,7 @@
 .sale10-price-input.invalid {
   border-color: #f97316 !important;
   background: var(--ds-amber-soft) !important;
-  color: #9a3412 !important;
+  color: var(--ds-warn-dark) !important;
 }
 
 .sale10-review-button {

@@ -58,6 +58,35 @@
   --ds-blue:#2563eb;
   --ds-blue-soft:#dbeafe;
 
+  /* ---- tones ----
+     Each tone is a set of four: the text or icon colour, a background it sits
+     on, a line around that, and the palest wash for a whole panel. They were
+     already in the app as thirty-odd separate hexes -- eight different ambers
+     alone -- because each screen mixed its own. Named, they read as one idea
+     used five times instead of five ideas. */
+  --ds-warn:#c2410c;
+  --ds-warn-dark:#9a3412;
+  --ds-warn-soft:#ffedd5;
+  --ds-warn-line:#fed7aa;
+  --ds-warn-tint:#fffbeb;
+
+  --ds-danger:#b91c1c;
+  --ds-danger-strong:#991b1b;
+  --ds-danger-bright:#ef4444;
+  --ds-danger-soft:#fee2e2;
+  --ds-danger-line:#fecaca;
+  --ds-danger-tint:#fef2f2;
+
+  --ds-info:#1d4ed8;
+  --ds-info-soft:#dbeafe;
+  --ds-info-line:#bfdbfe;
+  --ds-info-tint:#eff6ff;
+
+  --ds-teal:#0f766e;
+  --ds-violet:#7c3aed;
+  --ds-violet-dark:#6d28d9;
+  --ds-violet-soft:#ede9fe;
+
   /* ---- depth ----
      Three, not eleven. A card, a card that floats, and a dialog. */
   --ds-shadow-sm:0 6px 18px rgba(15,23,42,.05);
@@ -82,6 +111,16 @@
   --ds-text-2:#b3c3d6;
   --ds-muted:#9fb0c7;
   --ds-faint:#7f93ad;
+  --ds-warn-soft:#3a2410;
+  --ds-warn-line:#5a3a18;
+  --ds-warn-tint:#2a1c0d;
+  --ds-danger-soft:#3a1618;
+  --ds-danger-line:#5a2226;
+  --ds-danger-tint:#2a1214;
+  --ds-info-soft:#152a4d;
+  --ds-info-line:#1e3a66;
+  --ds-info-tint:#101f38;
+  --ds-violet-soft:#241a3d;
   --ds-green-tint:#0d2a1b;
   --ds-green-line:#166534;
   --ds-shadow-sm:0 6px 18px rgba(0,0,0,.28);

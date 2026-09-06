@@ -4,7 +4,7 @@
   border: 1px solid #99f6e4;
   border-radius:var(--ds-r-sm);
   background: #f0fdfa;
-  color: #0f766e;
+  color: var(--ds-teal);
   font-size:12px;
   font-weight: 800;
 }
@@ -71,7 +71,7 @@
 .expense-category-add button {
   border: 0;
   border-radius:var(--ds-r-sm);
-  background: #0f766e;
+  background: var(--ds-teal);
   color: #fff;
   font-weight: 800;
 }

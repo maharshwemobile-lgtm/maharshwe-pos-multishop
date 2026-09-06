@@ -90,7 +90,7 @@
   font-size: 13px;
 }
 .gs-status li:last-child { border-bottom: 0; }
-.gs-status li.is-bad { background: #fef2f2; }
+.gs-status li.is-bad { background: var(--ds-danger-tint); }
 .dark .gs-status li.is-bad { background: rgba(127, 29, 29, .18); }
 
 .gs-status-mark { font-weight: 900; text-align: center; }
@@ -191,8 +191,8 @@ select.gs-input { padding-right: 32px; }
   font-size: 12.5px; line-height: 1.7;
   color: var(--gs-muted);
 }
-.gs-note.is-warn { background: #fffbeb; color: #92400e; }
-.dark .gs-note.is-warn { background: rgba(120, 53, 15, .28); color: #fde68a; }
+.gs-note.is-warn { background: var(--ds-warn-tint); color: var(--ds-warn-dark); }
+.dark .gs-note.is-warn { background: rgba(120, 53, 15, .28); color: var(--ds-warn-line); }
 
 /* ---------- collapsible ---------- */
 
@@ -232,7 +232,7 @@ select.gs-input { padding-right: 32px; }
   .gs-card-foot .gs-btn { margin-left: 0; }
 }
 
-.gs-status li.is-warn { background: #fffbeb; }
+.gs-status li.is-warn { background: var(--ds-warn-tint); }
 .gs-status li.is-warn .gs-status-mark { color: var(--ds-amber-dark); }
 .dark .gs-status li.is-warn { background: rgba(120, 53, 15, .22); }
 .gs-quiet { opacity: .65; }
