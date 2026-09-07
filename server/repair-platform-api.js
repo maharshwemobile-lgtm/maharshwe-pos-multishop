@@ -41,6 +41,15 @@ const intakeSchema = z.object({
   diagnosis: z.string().trim().max(2000).optional().nullable(),
 });
 
+// The intake fields, all optional: send one, change one. deviceModel and
+// problem keep their minimum length -- a voucher with no phone and no fault on
+// it is not a correction, it is a blank.
+const intakeEditSchema = intakeSchema.partial().extend({
+  customerName: z.string().trim().min(1).max(180).optional(),
+  deviceModel: z.string().trim().min(1).max(180).optional(),
+  problem: z.string().trim().min(1).max(2000).optional(),
+}).strict();
+
 const repairIdSchema = z.object({
   repairId: z.string().trim().min(2).max(40),
 });
@@ -971,6 +980,80 @@ function attachRepairPlatformApi(app) {
     // repair-sheet-inbound and never comes through this endpoint.
     await syncRepairToSheet(req.auth.shopId, updated, 'STATUS_CHANGED');
     res.json({ ok: true, message: 'Repair status updated', repair: updated });
+  }));
+
+  // What was written down at intake, corrected.
+  //
+  // A voucher is filled in with the customer standing there and a phone in
+  // hand: a name gets misheard, a deposit gets typed into the wrong box, a
+  // model turns out to be the Pro. Until now the only way to fix any of it was
+  // to delete the repair and take it in again, which threw away its history and
+  // burned a voucher number.
+  //
+  // Only the intake fields. Status, the final cost and the collection time have
+  // their own endpoint and their own rules, and are not editable here.
+  app.patch('/api/repair-platform/jobs/:id', ...write, wrap(async (req, res) => {
+    const input = parse(intakeEditSchema, req.body || {});
+    const repair = await getRepair(prisma, req.auth.shopId, req.params.id);
+    if (!repair) throw new ApiError(404, 'Repair job not found');
+
+    // Every field is optional: send one, change one. COALESCE would make a
+    // deliberate blank impossible, so an explicit undefined check decides
+    // instead -- clearing a phone number has to be allowed.
+    const set = (key, value) => (input[key] === undefined ? null : value);
+    await prisma.$executeRawUnsafe(
+      `UPDATE repairs SET
+         customer_name    = CASE WHEN $3::boolean THEN $4  ELSE customer_name END,
+         customer_phone   = CASE WHEN $5::boolean THEN $6  ELSE customer_phone END,
+         device_brand     = CASE WHEN $7::boolean THEN $8  ELSE device_brand END,
+         device_model     = CASE WHEN $9::boolean THEN $10 ELSE device_model END,
+         imei_serial      = CASE WHEN $11::boolean THEN $12 ELSE imei_serial END,
+         problem          = CASE WHEN $13::boolean THEN $14 ELSE problem END,
+         estimated_cost   = CASE WHEN $15::boolean THEN $16::numeric ELSE estimated_cost END,
+         deposit          = CASE WHEN $17::boolean THEN $18::numeric ELSE deposit END,
+         priority         = CASE WHEN $19::boolean THEN $20 ELSE priority END,
+         intake_condition = CASE WHEN $21::boolean THEN $22 ELSE intake_condition END,
+         accessories      = CASE WHEN $23::boolean THEN $24::jsonb ELSE accessories END,
+         notes            = CASE WHEN $25::boolean THEN $26 ELSE notes END,
+         updated_at = NOW()
+       WHERE id = $1::uuid AND shop_id = $2::uuid`,
+      repair.id, req.auth.shopId,
+      input.customerName !== undefined, set('customerName', input.customerName),
+      input.customerPhone !== undefined, set('customerPhone', input.customerPhone),
+      input.deviceBrand !== undefined, set('deviceBrand', input.deviceBrand),
+      input.deviceModel !== undefined, set('deviceModel', input.deviceModel),
+      input.imeiSerial !== undefined, set('imeiSerial', input.imeiSerial),
+      input.problem !== undefined, set('problem', input.problem),
+      input.estimatedCost !== undefined, input.estimatedCost ?? 0,
+      input.deposit !== undefined, input.deposit ?? 0,
+      input.priority !== undefined, set('priority', input.priority),
+      input.intakeCondition !== undefined, set('intakeCondition', input.intakeCondition),
+      input.accessories !== undefined, JSON.stringify(input.accessories || []),
+      input.notes !== undefined, set('notes', input.notes),
+    );
+
+    const updated = await getRepair(prisma, req.auth.shopId, repair.id);
+
+    // Say what actually moved, so the timeline reads as a correction rather
+    // than "someone edited something".
+    const changed = Object.keys(input).filter((key) => {
+      const before = repair[key];
+      const after = updated[key];
+      return JSON.stringify(before ?? null) !== JSON.stringify(after ?? null);
+    });
+    await addEvent(prisma, {
+      shopId: req.auth.shopId,
+      repairId: repair.id,
+      eventType: 'DETAILS_EDITED',
+      status: updated.status,
+      userId: req.auth.userId,
+      note: changed.length ? changed.join(', ') : null,
+      payload: { changed, deposit: updated.deposit, estimatedCost: updated.estimatedCost },
+    });
+
+    // The sheet holds the customer, the model and the money for this voucher.
+    await syncRepairToSheet(req.auth.shopId, updated, 'DETAILS_EDITED');
+    res.json({ ok: true, message: 'ပြင်ဆင်ပြီးပါပြီ', repair: updated });
   }));
 
   app.delete('/api/repair-platform/jobs/:id', ...write, requireShopOwner, wrap(async (req, res) => {

@@ -23,6 +23,7 @@ import {
   Smartphone,
   Unplug,
   PackageX,
+  Pencil,
   Trash2,
   Wrench,
   X,
@@ -61,6 +62,7 @@ const EVENT_TEXT = {
   SHEET_EDIT: 'Google Sheet မှ ပြင်ဆင်သည်',
   DEVICE_LINKED: 'IMEI / Serial ချိတ်သည်',
   FINANCE_UPDATED: 'ငွေကြေး ပြင်ဆင်သည်',
+  DETAILS_EDITED: 'အချက်အလက် ပြင်ဆင်သည်',
 };
 
 function eventLabel(type) {
@@ -386,6 +388,46 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
   const [deviceId, setDeviceId] = useState('');
   // Held as typed so a figure entered by mistake can be cleared.
   const [handover, setHandover] = useState({ cost: '', totalCost: '', paid: false });
+  // What was written down at intake, open for correction. null while closed.
+  const [edit, setEdit] = useState(null);
+
+  const openEdit = () => setEdit({
+    customerName: repair.customerName || '',
+    customerPhone: repair.customerPhone || '',
+    deviceBrand: repair.deviceBrand || '',
+    deviceModel: repair.deviceModel || '',
+    imeiSerial: repair.imeiSerial || '',
+    problem: repair.problem || '',
+    estimatedCost: repair.estimatedCost ? String(repair.estimatedCost) : '',
+    deposit: repair.deposit ? String(repair.deposit) : '',
+    intakeCondition: repair.intakeCondition || '',
+    accessoriesText: (repair.accessories || []).join(', '),
+    notes: repair.notes || '',
+  });
+
+  const saveEdit = async () => {
+    if (!edit.customerName.trim()) { notify('error', 'ပိုင်ရှင် အမည် ရေးပါ'); return; }
+    if (!edit.deviceModel.trim()) { notify('error', 'ဖုန်း မော်ဒယ် ရေးပါ'); return; }
+    if (!edit.problem.trim()) { notify('error', 'ချို့ယွင်းချက် ရေးပါ'); return; }
+    await run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}`, {
+      method: 'PATCH',
+      body: {
+        customerName: edit.customerName.trim(),
+        customerPhone: edit.customerPhone.trim() || null,
+        deviceBrand: edit.deviceBrand.trim() || null,
+        deviceModel: edit.deviceModel.trim(),
+        imeiSerial: edit.imeiSerial.trim() || null,
+        problem: edit.problem.trim(),
+        // An emptied box is zero, not "leave it alone".
+        estimatedCost: Number(edit.estimatedCost || 0),
+        deposit: Number(edit.deposit || 0),
+        intakeCondition: edit.intakeCondition.trim() || null,
+        accessories: edit.accessoriesText.split(',').map((item) => item.trim()).filter(Boolean),
+        notes: edit.notes.trim() || null,
+      },
+    }), 'ပြင်ဆင်ပြီးပါပြီ');
+    setEdit(null);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -491,13 +533,41 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
 
         <div className="repair-detail-grid">
           <section className="repair-detail-card">
-            <h4>ဖုန်းပြင် အချက်အလက်</h4>
+            <h4>
+              ဖုန်းပြင် အချက်အလက်
+              {/* A voucher is filled in with the customer standing there, so a
+                  misheard name or a deposit in the wrong box is normal. Until
+                  now the only fix was to delete the repair and take it in
+                  again, losing its history and a voucher number. */}
+              {edit ? null : <button type="button" className="repair-edit-open" onClick={openEdit}><Pencil size={14} /> ပြင်မည်</button>}
+            </h4>
+            {edit ? (
+              <div className="repair-edit-form">
+                <label><span>ပိုင်ရှင် *</span><input value={edit.customerName} onChange={(event) => setEdit({ ...edit, customerName: event.target.value })} autoFocus /></label>
+                <label><span>ဖုန်းနံပါတ်</span><input value={edit.customerPhone} onChange={(event) => setEdit({ ...edit, customerPhone: event.target.value })} /></label>
+                <label><span>ဖုန်းအမျိုးအစား</span><input value={edit.deviceBrand} onChange={(event) => setEdit({ ...edit, deviceBrand: event.target.value })} placeholder="Oppo" /></label>
+                <label><span>မော်ဒယ် *</span><input value={edit.deviceModel} onChange={(event) => setEdit({ ...edit, deviceModel: event.target.value })} placeholder="A3s" /></label>
+                <label className="span-2"><span>IMEI / Serial</span><input value={edit.imeiSerial} onChange={(event) => setEdit({ ...edit, imeiSerial: event.target.value })} /></label>
+                <label className="span-2"><span>ချို့ယွင်းချက် *</span><textarea value={edit.problem} onChange={(event) => setEdit({ ...edit, problem: event.target.value })} /></label>
+                <label><span>ခန့်မှန်း ပြင်ခ</span><input type="number" min="0" inputMode="numeric" value={edit.estimatedCost} onChange={(event) => setEdit({ ...edit, estimatedCost: event.target.value })} placeholder="0" /></label>
+                <label><span>စရံ</span><input type="number" min="0" inputMode="numeric" value={edit.deposit} onChange={(event) => setEdit({ ...edit, deposit: event.target.value })} placeholder="0" /></label>
+                <label className="span-2"><span>လက်ခံစဉ် အခြေအနေ</span><input value={edit.intakeCondition} onChange={(event) => setEdit({ ...edit, intakeCondition: event.target.value })} placeholder="မှန်ကွဲ၊ ဘေးဘောင် ပွန်း" /></label>
+                <label className="span-2"><span>ပါလာသော ပစ္စည်းများ</span><input value={edit.accessoriesText} onChange={(event) => setEdit({ ...edit, accessoriesText: event.target.value })} placeholder="ဆင်းကဒ်, မှတ်ဉာဏ်ကဒ်" /><small>ကော်မာ ( , ) ခြားပြီး ရေးပါ</small></label>
+                <label className="span-2"><span>မှတ်ချက်</span><textarea value={edit.notes} onChange={(event) => setEdit({ ...edit, notes: event.target.value })} /></label>
+                <div className="repair-edit-actions">
+                  <button type="button" onClick={() => setEdit(null)} disabled={saving}>မလုပ်တော့ပါ</button>
+                  <button type="button" className="primary" onClick={saveEdit} disabled={saving}>{saving ? <Loader2 className="repair-spin" size={16} /> : <CheckCircle2 size={16} />} သိမ်းမည်</button>
+                </div>
+              </div>
+            ) : (
             <dl>
               <div><dt>ဘောက်ချာနံပါတ်</dt><dd><RepairIdCopy value={repair.repairNumber} as="span"/></dd></div>
               <div><dt>ပိုင်ရှင်</dt><dd>{repair.customerName}</dd></div>
               <div><dt>ဖုန်းနံပါတ်</dt><dd>{repair.customerPhone || '-'}</dd></div>
               <div><dt>ဖုန်း</dt><dd>{repair.deviceBrand || ''} {repair.deviceModel}</dd></div>
               <div><dt>ချို့ယွင်းချက်</dt><dd>{repair.problem}</dd></div>
+              <div><dt>ခန့်မှန်း ပြင်ခ</dt><dd>{money(repair.estimatedCost)}</dd></div>
+              <div><dt>စရံ</dt><dd>{money(repair.deposit)}</dd></div>
               <div><dt>လက်ခံစဉ် အခြေအနေ</dt><dd>{repair.intakeCondition || '-'}</dd></div>
               <div><dt>ပါလာသော ပစ္စည်းများ</dt><dd>{repair.accessories?.join(', ') || '-'}</dd></div>
               <div><dt>စစ်ဆေးတွေ့ရှိချက်</dt><dd>{repair.diagnosis || '-'}</dd></div>
@@ -505,6 +575,7 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
               <div><dt>ပြင်သူ ဆရာ</dt><dd>{repair.technicianName || repair.technicianUsername || '-'}</dd></div>
               <div><dt>ယူပြီး ခြေနေ</dt><dd>{repair.deliveredAt ? `ယူသွားပြီ · ${formatDate(repair.deliveredAt)}` : 'မယူရသေး ⏳'}</dd></div>
             </dl>
+            )}
           </section>
 
           <section className="repair-detail-card">
