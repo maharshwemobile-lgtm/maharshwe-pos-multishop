@@ -9,6 +9,7 @@ import {
   History,
   Grid3X3,
   List,
+  Repeat2,
   Loader2,
   Minus,
   Plus,
@@ -40,6 +41,7 @@ import {
 } from './salesV10Utils';
 import { playPaymentSuccessSound, playPosAddSound } from './salesAudio';
 import ProductCategoryIcon from '../ProductCategoryIcon.jsx';
+import QuickVoucherModal from '../printing/QuickVoucherModal.jsx';
 import WebBarcodeScanner from '../pos/WebBarcodeScanner.jsx';
 
 // Product list fills whatever space the screen gives it instead of a fixed 10.
@@ -233,6 +235,8 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [splitModalOpen, setSplitModalOpen] = useState(false);
   const [discount, setDiscount] = useState(restored?.discount || '0');
   const [toast, setToast] = useState(null);
+  // A part-exchange is not a till sale, so it gets a voucher and no ledger row.
+  const [quickVoucher, setQuickVoucher] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
@@ -685,6 +689,8 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     <div className="stock-page sale10-page">
       {toast ? <div className={`stock-toast stock-toast-${toast.type}`}>{toast.text}</div> : null}
 
+      {quickVoucher ? <QuickVoucherModal onClose={() => setQuickVoucher(false)} notify={notify} /> : null}
+
       {onboardingGuide?.show ? <FirstLoginGuide currentPage="Sale POS" businessType={onboardingGuide.businessType} onNavigate={onboardingGuide.navigate} onDismiss={onboardingGuide.dismiss}/> : null}
 
       {cart.length && latestCartLine ? (
@@ -738,6 +744,11 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
               <button type="button" className={productView === 'grid' ? 'active' : ''} onClick={() => setProductView('grid')}><Grid3X3 size={15}/> Grid</button>
               <button type="button" className={productView === 'list' ? 'active' : ''} onClick={() => setProductView('list')}><List size={15}/> List</button>
             </div>
+            {/* Beside the cart, not inside it: what comes out of this is paper,
+                not a sale. */}
+            <button type="button" className="sale10-quick-voucher" onClick={() => setQuickVoucher(true)} title="အရောင်းစာရင်းထဲ မထည့်ဘဲ ဘောက်ချာသာ ထုတ်မည်">
+              <Repeat2 size={15}/> ဘောက်ချာ သီးသန့်
+            </button>
           </div>
 
           <div ref={productListRef} className="sale10-product-list-host">

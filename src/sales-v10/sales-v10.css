@@ -157,3 +157,15 @@
 .sale10-product-meta:empty { display: none; }
 .sale10-product-meta .sale10-expiry-warning { color: var(--ds-amber-dark); }
 .dark .sale10-product-meta { color: var(--ds-muted); }
+
+/* A part-exchange is not a till sale: it prints paper and leaves the ledger
+   alone. The button sits with the view toggles rather than near Checkout, so it
+   is never mistaken for a way to finish the sale in the cart. */
+.sale10-quick-voucher{
+  display:inline-flex;align-items:center;gap:6px;
+  height:40px;padding:0 12px;white-space:nowrap;
+  border:1px solid var(--ds-warn-line);border-radius:var(--ds-r-sm);
+  background:var(--ds-warn-tint);color:var(--ds-warn-dark);
+  font:inherit;font-weight:900;font-size:12px;cursor:pointer;
+}
+.sale10-quick-voucher:hover{background:var(--ds-warn-soft)}

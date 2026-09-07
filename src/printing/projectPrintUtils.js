@@ -201,6 +201,9 @@ function baseStyles(paperSize) {
        customer is being held to, so they have to stay readable off a thermal
        head, and a couple of millimetres is not worth trading for that. */
     .warranty-block li{font-size:9px;font-weight:400;line-height:1.45;margin-bottom:1px}
+    /* Lines written for one slip -- a swap, a note -- above the warranty. */
+    .slip-notes{margin-top:6px;padding-top:5px;border-top:1px solid #000}
+    .slip-notes p{margin:0 0 2px 0;text-align:left;font-size:9.5px;font-weight:400;line-height:1.5}
     .sign-row{display:flex;gap:12px;margin-top:10px}.sign-row div{flex:1;text-align:center}.sign-row span{display:block;border-top:1px solid #000;padding-top:3px;font-size:9px;font-weight:400}.sign-name{display:block;font-size:11px;font-weight:700;padding-bottom:3px}
     .qr-block{margin-top:6px;text-align:center}.qr-block img{width:26mm;height:26mm;display:block;margin:0 auto 3px auto}.qr-block b{display:block;font-size:9px;font-weight:700}
     .footer{margin-top:11px;padding-top:8px;border-top:1px solid #000;text-align:center;white-space:normal;font-weight:400}
@@ -283,6 +286,13 @@ export async function printSaleReceipt(sale, targetWindow = null) {
   // one that matches what was actually sold — and both, labelled, if the sale
   // had one of each.
   const warranties = warrantyBlocksForSale(sale).map(warrantyBlockHtml).join('');
+  // Lines the counter wrote for this slip alone -- what a phone was swapped
+  // for, and anything else worth putting on the customer's copy.
+  const noteLines = (sale.noteLines || []).filter((line) => String(line || '').trim()).length
+    ? `<div class="slip-notes">${(sale.noteLines || [])
+      .filter((line) => String(line || '').trim())
+      .map((line) => `<p>${escapeHtml(String(line).trim())}</p>`).join('')}</div>`
+    : '';
   const items = (sale.itemRows || sale.items || []).map((item) => {
     const meta = [
       item.imeiSerial ? `Serial: ${item.imeiSerial}` : '',
@@ -310,6 +320,7 @@ export async function printSaleReceipt(sale, targetWindow = null) {
     ${isVoided ? '<div class="void">VOIDED</div>' : ''}
     <table><thead><tr><th>Item</th><th class="center">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${items}</tbody></table>
     <div class="summary"><div><span>Subtotal</span><b>${Number(sale.subtotal || sale.amount || 0).toLocaleString()}</b></div><div><span>Discount</span><b>${Number(sale.discount || 0).toLocaleString()}</b></div><div class="grand"><span>Total</span><b>${Number(sale.amount || sale.total || 0).toLocaleString()} MMK</b></div>${slip.showPaymentType ? `<div><span>Payment</span><b>${escapeHtml(payment)}</b></div>` : ''}<div><span>Customer</span><b>${escapeHtml(customerLine)}</b></div></div>
+    ${noteLines}
     ${warranties}
     <div class="footer">${slip.saleFooter ? nl2br(slip.saleFooter) : ''}${slip.footerTag ? `<span class="footer-tag">${nl2br(slip.footerTag)}</span>` : ''}${slip.warrantyText ? `<div class="warranty">${nl2br(slip.warrantyText)}</div>` : ''}</div>`;
   return emitSlip(targetWindow, {
