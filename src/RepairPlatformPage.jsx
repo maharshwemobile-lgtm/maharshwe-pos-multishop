@@ -647,7 +647,8 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
                       onChanged?.();
                       onClose();
                     } catch (error) {
-                      handleError(error);
+                      // handleError belongs to the list, not the detail modal.
+                      notify('error', error.message || 'ဖျက်၍ မရပါ');
                     } finally {
                       setSaving(false);
                     }
@@ -898,12 +899,14 @@ export default function RepairPlatformPage() {
       </section>
 
 
-      {!setControlledShowHistoryTool ? <div className="repair-quick-grid repair-bottom-history-tools">
+      {/* Was hidden when a parent lifted the toggle to a tool slab of its own.
+          Nothing lifts it now, so this is the only place the search opens. */}
+      <div className="repair-quick-grid repair-bottom-history-tools">
         <section className="repair-quick-card repair-quick-launcher">
           <header><Fingerprint size={20} /><span><b>ဖုန်းတစ်လုံးချင်း ပြင်ဆင်မှတ်တမ်း</b><small>နိုပ်မှ IMEI / Serial history search form ပေါ်မယ်။</small></span></header>
           <button type="button" onClick={toggleHistoryTool}>{showHistoryTool ? <X size={17} /> : <History size={17} />} {showHistoryTool ? 'Hide History Search' : 'Open History Search'}</button>
         </section>
-      </div> : null}
+      </div>
 
       {showHistoryTool ? <section className="repair-quick-card repair-bottom-history-search">
         <header><Fingerprint size={20} /><span><b>ဖုန်းတစ်လုံးချင်း ပြင်ဆင်မှတ်တမ်း</b><small>IMEI / Serial တစ်ခုနဲ့ ဒီဖုန်း ဘာတွေပြင်ဖူးသလဲ ပြန်လိုက်ပါ။</small></span></header>
