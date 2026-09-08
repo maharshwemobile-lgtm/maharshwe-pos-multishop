@@ -334,7 +334,7 @@ export default function ProductPriceDiscountPage() {
         <article><PackageSearch size={22} /><span>Variants</span><b>{summary.variants}</b></article>
         <article><CheckCircle2 size={22} /><span>Priced Items</span><b>{summary.priced}</b></article>
         <article><PackageSearch size={22} /><span>Stock Units</span><b>{summary.stock}</b></article>
-        <article><Tags size={22} /><span>Selected</span><b>{summary.selected}</b></article>
+
       </section>
 
       <section className="price-card">
@@ -387,7 +387,9 @@ export default function ProductPriceDiscountPage() {
           </div>
         </div>
 
-        <div className={`price-bulk-panel ${selectedRows.length ? '' : 'is-empty'}`}>
+        {/* Nothing selected, nothing to apply: the panel was standing open and
+            empty above the table on every visit. */}
+        {selectedRows.length ? <div className="price-bulk-panel">
           <div>
             <Layers3 size={18} />
             <b>Batch Price / Discount</b>
@@ -413,7 +415,7 @@ export default function ProductPriceDiscountPage() {
           <button type="button" className="price-bulk-apply" onClick={applyBulk} disabled={bulkBusy || !selectedRows.length}>
             {bulkBusy ? <Loader2 className="price-spin" size={15} /> : <Save size={15} />} Apply
           </button>
-        </div>
+        </div> : null}
 
         <div className="price-table-wrap">
           <table className="price-table">
@@ -476,7 +478,7 @@ export default function ProductPriceDiscountPage() {
         </div>
 
         <footer className="price-footer">
-          <span>Total {total} products · Showing {filteredRows.length} variants · Selected {selectedRows.length}</span>
+          <span>ပစ္စည်း {total} · ပြနေသည် {filteredRows.length}</span>
           {!showCost ? <b>Cost / Minimum Price ကြည့်ရန် viewCost permission လိုအပ်ပါတယ်။</b> : null}
         </footer>
       </section>

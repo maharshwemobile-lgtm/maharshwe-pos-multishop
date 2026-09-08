@@ -173,17 +173,13 @@
    The eyebrow goes, the title comes down to heading size, and the sentence
    stays -- smaller, and clipped to two lines so a long one cannot push the
    work further down the screen. */
-.stock-page-heading > div > span:first-child,
-.p2-page-heading > div > span:first-child,
-.price-page-heading > div > span:first-child,
+.price-heading > div > span:first-child,
+.bc-trend-heading > div > span:first-child,
 .credit-page-heading > div > span:first-child,
-.payments-page-heading > div > span:first-child,
 .purchase-page-heading > div > span:first-child,
-.reports-page-heading > div > span:first-child,
 .audit-page-heading > div > span:first-child,
 .backup-page-heading > div > span:first-child,
 .repair-page-heading > div > span:first-child,
-.msc-heading > div > span:first-child,
 .br-heading > div > span:first-child,
 .gt-heading > div > span:first-child,
 .remittance-heading > div > span:first-child,
@@ -195,17 +191,13 @@
   display:none;
 }
 
-.stock-page-heading h2,
-.p2-page-heading h2,
-.price-page-heading h2,
+.price-heading h2,
+.bc-trend-heading h2,
 .credit-page-heading h2,
-.payments-page-heading h2,
 .purchase-page-heading h2,
-.reports-page-heading h2,
 .audit-page-heading h2,
 .backup-page-heading h2,
 .repair-page-heading h2,
-.msc-heading h2,
 .br-heading h2,
 .gt-heading h2,
 .remittance-heading h2,
@@ -216,17 +208,13 @@
   margin:0;
 }
 
-.stock-page-heading p,
-.p2-page-heading p,
-.price-page-heading p,
+.price-heading > div > p,
+.bc-trend-heading > div > p,
 .credit-page-heading p,
-.payments-page-heading p,
 .purchase-page-heading p,
-.reports-page-heading p,
 .audit-page-heading p,
 .backup-page-heading p,
 .repair-page-heading p,
-.msc-heading > div > p,
 .br-heading > div > p,
 .gt-heading > div > p,
 .remittance-heading > div > p,
@@ -244,15 +232,11 @@
 
 /* The buttons beside a page title are secondary to the page, so they stop
    being the tallest thing on it. */
-.stock-page-heading button,
-.p2-page-heading button,
-.price-page-heading button,
+.price-heading > button,
+.bc-trend-heading button,
 .credit-page-heading button,
-.payments-page-heading button,
-.reports-page-heading button,
 .audit-page-heading button,
 .backup-page-heading button,
-.msc-heading button,
 .br-heading button,
 .gt-heading button,
 .remittance-heading button{
@@ -260,18 +244,45 @@
   padding:0 11px;
   font-size:var(--ds-t-xs);
 }
-.stock-page-heading button > svg,
-.p2-page-heading button > svg,
-.price-page-heading button > svg,
+.price-heading > button > svg,
+.bc-trend-heading button > svg,
 .credit-page-heading button > svg,
-.payments-page-heading button > svg,
-.reports-page-heading button > svg,
 .audit-page-heading button > svg,
 .backup-page-heading button > svg,
-.msc-heading button > svg,
 .br-heading button > svg,
 .gt-heading button > svg,
 .remittance-heading button > svg{
   width:15px;
   height:15px;
 }
+
+/* Some summary cards put the icon straight in the article as an <svg> rather
+   than wrapping it, so the rule above -- which looks for a first-child div --
+   passes over them. The Prices page is one. */
+.price-summary-grid.price-summary-grid > article{
+  grid-template-columns:24px 1fr;
+  gap:1px 9px;
+  padding:9px 11px;
+}
+.price-summary-grid.price-summary-grid > article > svg{
+  width:18px;
+  height:18px;
+  align-self:center;
+}
+.price-summary-grid.price-summary-grid > article > span{font-size:var(--ds-t-xs)}
+.price-summary-grid.price-summary-grid > article > b{font-size:var(--ds-t-xl)}
+
+/* The Prices page's own controls: a row of buttons for selecting, a row for
+   paging, and a batch panel, all at full button size above the table. */
+.price-toolbar button,
+.price-select-actions button,
+.price-bulk-apply,
+.price-edit{
+  height:32px;
+  padding:0 10px;
+  font-size:var(--ds-t-xs);
+}
+.price-toolbar button > svg,
+.price-select-actions button > svg,
+.price-bulk-apply > svg,
+.price-edit > svg{width:14px;height:14px}
