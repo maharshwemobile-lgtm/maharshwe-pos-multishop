@@ -522,13 +522,24 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
         <button type="button" onClick={onClose}><X size={20} /></button>
       </header>
       <div className="repair-detail-body">
+        {/* Four, not six. Source said "Local" for every repair the shop takes
+            in over the counter; IMEI and the date are both on the card below,
+            where the rest of the intake is. What is left is what someone opens
+            a repair to find out: where it is up to, what it costs, whether it
+            has been paid, and whether the phone has gone home. */}
         <div className="repair-detail-summary">
-          <article><span>Status</span><StatusBadge status={repair.status} /></article>
-          <article><span>Source</span><SourceBadge job={repair} /></article>
-          <article><span>IMEI / Serial</span><b>{repair.identityMasked || repair.imeiSerial || 'မချိတ်ရသေး'}</b></article>
-          <article><span>Received</span><b>{formatDate(repair.receivedAt)}</b></article>
-          <article><span>Final Cost</span><b>{money(repair.finalCost)}</b></article>
-          <article><span>Balance Due</span><b>{money(repair.balanceDue)}</b></article>
+          <article><span>အခြေအနေ</span><StatusBadge status={repair.status} /></article>
+          <article>
+            <span>ကျသင့်ငွေ</span>
+            <b>{repair.finalCost ? money(repair.finalCost) : money(repair.estimatedCost)}</b>
+            {repair.finalCost ? null : <small>ခန့်မှန်း</small>}
+          </article>
+          <article><span>ကျန်ငွေ</span><b>{money(repair.balanceDue)}</b></article>
+          <article>
+            <span>ဖုန်း</span>
+            <b>{repair.deliveredAt ? 'ယူသွားပြီ ✅' : 'မယူရသေး ⏳'}</b>
+            {repair.deliveredAt ? <small>{formatDate(repair.deliveredAt)}</small> : null}
+          </article>
         </div>
 
         <div className="repair-detail-grid">
@@ -561,25 +572,38 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
               </div>
             ) : (
             <dl>
+              {/* A row nobody filled in is left off rather than printed as a
+                  dash. A fresh repair had four in a row -- condition,
+                  accessories, diagnosis, resolution -- and four dashes tell you
+                  nothing except that the card is long. Collection is not here
+                  either: the card below is entirely about that.
+                  The number is the one row that is never empty and never plain
+                  text, because tapping it copies. */}
               <div><dt>ဘောက်ချာနံပါတ်</dt><dd><RepairIdCopy value={repair.repairNumber} as="span"/></dd></div>
-              <div><dt>ပိုင်ရှင်</dt><dd>{repair.customerName}</dd></div>
-              <div><dt>ဖုန်းနံပါတ်</dt><dd>{repair.customerPhone || '-'}</dd></div>
-              <div><dt>ဖုန်း</dt><dd>{repair.deviceBrand || ''} {repair.deviceModel}</dd></div>
-              <div><dt>ချို့ယွင်းချက်</dt><dd>{repair.problem}</dd></div>
-              <div><dt>ခန့်မှန်း ပြင်ခ</dt><dd>{money(repair.estimatedCost)}</dd></div>
-              <div><dt>စရံ</dt><dd>{money(repair.deposit)}</dd></div>
-              <div><dt>လက်ခံစဉ် အခြေအနေ</dt><dd>{repair.intakeCondition || '-'}</dd></div>
-              <div><dt>ပါလာသော ပစ္စည်းများ</dt><dd>{repair.accessories?.join(', ') || '-'}</dd></div>
-              <div><dt>စစ်ဆေးတွေ့ရှိချက်</dt><dd>{repair.diagnosis || '-'}</dd></div>
-              <div><dt>ပြင်ဆင်ပုံ</dt><dd>{repair.resolution || '-'}</dd></div>
-              <div><dt>ပြင်သူ ဆရာ</dt><dd>{repair.technicianName || repair.technicianUsername || '-'}</dd></div>
-              <div><dt>ယူပြီး ခြေနေ</dt><dd>{repair.deliveredAt ? `ယူသွားပြီ · ${formatDate(repair.deliveredAt)}` : 'မယူရသေး ⏳'}</dd></div>
+              {[
+                ['ပိုင်ရှင်', repair.customerName],
+                ['ဖုန်းနံပါတ်', repair.customerPhone],
+                ['ဖုန်း', `${repair.deviceBrand || ''} ${repair.deviceModel || ''}`.trim()],
+                ['IMEI / Serial', repair.identityMasked || repair.imeiSerial],
+                ['ချို့ယွင်းချက်', repair.problem],
+                ['လက်ခံသည့်နေ့', formatDate(repair.receivedAt)],
+                ['ခန့်မှန်း ပြင်ခ', repair.estimatedCost ? money(repair.estimatedCost) : ''],
+                ['စရံ', repair.deposit ? money(repair.deposit) : ''],
+                ['လက်ခံစဉ် အခြေအနေ', repair.intakeCondition],
+                ['ပါလာသော ပစ္စည်းများ', Array.isArray(repair.accessories) ? repair.accessories.join(', ') : ''],
+                ['စစ်ဆေးတွေ့ရှိချက်', repair.diagnosis],
+                ['ပြင်ဆင်ပုံ', repair.resolution],
+                ['ပြင်သူ ဆရာ', repair.technicianName || repair.technicianUsername],
+                ['မှတ်ချက်', repair.notes],
+              ]
+                .filter(([, value]) => (typeof value === 'string' ? value.trim() : value))
+                .map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
             </dl>
             )}
           </section>
 
           <section className="repair-detail-card">
-            <h4>လုပ်ဆောင်ချက်</h4>
+            <h4>အခြေအနေ ပြောင်းရန်</h4>
             <div className="repair-quick-actions">
               <label className="repair-status-pick">
                 <span>အခြေအနေ</span>
@@ -759,13 +783,13 @@ function DetailModal({ repairId, onClose, onChanged, notify, maharApiAllowed }) 
           </section> : null}
 
           <section className="repair-detail-card">
-            <h4>Device Identity</h4>
+            <h4>IMEI / Serial ချိတ်ရန်</h4>
             <p>IMEI သို့မဟုတ် Serial ကိုချိတ်ပြီး ဒီဖုန်းရဲ့ Repair History အားလုံးပြန်ကြည့်နိုင်ပါတယ်။</p>
             <div className="repair-inline-action"><input value={deviceId} onChange={(event) => setDeviceId(event.target.value)} placeholder="IMEI / Serial" /><button type="button" disabled={saving || deviceId.trim().length < 6} onClick={() => run(() => apiFetch(`/api/repair-platform/jobs/${repair.id}/device`, { method: 'POST', body: { imeiSerial: deviceId.trim(), deviceBrand: repair.deviceBrand, deviceModel: repair.deviceModel } }), 'ဖုန်း IMEI ချိတ်ပြီးပါပြီ')}><Fingerprint size={17} /> Link</button></div>
           </section>
 
           <section className="repair-detail-card repair-timeline-card">
-            <h4>Repair Timeline</h4>
+            <h4>မှတ်တမ်း</h4>
             <div className="repair-timeline">
               {(data.timeline || []).map((event) => <article key={event.id}>
                 <div><Clock3 size={15} /></div>

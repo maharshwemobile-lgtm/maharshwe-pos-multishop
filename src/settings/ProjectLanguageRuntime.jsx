@@ -772,11 +772,17 @@ const AMBIGUOUS_REVERSE = new Set([
   'ဖွင့်', 'ပိတ်', 'ရှာ', 'သိမ်း', 'ဖျက်', 'ပြင်', 'ထုတ်', 'သွင်း',
 ]);
 
-const ENGLISH = Object.fromEntries(
-  Object.entries(MYANMAR)
-    .filter(([, my]) => !AMBIGUOUS_REVERSE.has(String(my).trim()))
-    .map(([en, my]) => [my, en]),
-);
+// First key wins, not last. Several English words share a Myanmar translation
+// -- Status and Condition are both အခြေအနေ -- and Object.fromEntries keeps the
+// last one it sees, so the status label on the repair card came back reading
+// "Condition". The dictionary is written with the primary sense first, so the
+// first key is the one to keep.
+const ENGLISH = {};
+for (const [en, my] of Object.entries(MYANMAR)) {
+  const key = String(my).trim();
+  if (AMBIGUOUS_REVERSE.has(key)) continue;
+  if (!(key in ENGLISH)) ENGLISH[key] = en;
+}
 const textState = new WeakMap();
 const elementState = new WeakMap();
 const TRANSLATABLE_ATTRIBUTES = ['placeholder', 'title', 'aria-label', 'value'];
