@@ -88,42 +88,57 @@
   .sale10-split-summary{grid-template-columns:1fr}
 }
 
-/* PR56: the history was pinned to 1380px for nine columns, so on any normal
-   screen the browser stretched the gaps until the invoice number and what the
-   customer paid sat at opposite ends of a sideways scroll.
+/* PR56: the history was pinned to 1380px for nine columns and stretched to
+   100% on top of that, so the browser had 400 spare pixels to push between the
+   columns -- the invoice number at one end of the desk and what the customer
+   paid at the other.
 
-   Every rule here is behind min-width:761px. Below that the table stops being
-   a table and becomes one card per sale, and a first pass at this appended the
-   column widths unscoped -- so they landed after that media query and pulled
-   the cards apart. Fixed widths and a fixed table layout have no meaning once
-   the rows are cards. */
+   Giving each column a fixed width did not fix it: whichever column took the
+   remainder simply held all the slack itself, and the row still read as
+   scattered. The table sizes itself to its contents now, so the leftover space
+   ends up to the right of the data rather than inside it.
+
+   Every rule is behind min-width:761px. Below that the table stops being a
+   table and becomes one card per sale, and a first pass appended these
+   unscoped -- so they landed after that media query and pulled the cards
+   apart. */
 @media(min-width:761px){
   .sale10-history-table{
-    min-width:1138px;
-    table-layout:fixed;
+    width:auto;
+    min-width:0;
+    table-layout:auto;
   }
   .sale10-history-table th,
   .sale10-history-table td{
-    padding:8px 9px;
-    /* Without this the padding is added on top of each declared width, the
-       fixed columns eat the table, and Customer -- the one left to take the
-       remainder -- collapses to nothing. */
+    padding:7px 10px;
+    /* Nothing wraps: a wrapped cell is what makes a row look loose, and there
+       is no width pressure left to force one. */
+    white-space:nowrap;
     box-sizing:border-box;
   }
-  .sale10-history-table th:nth-child(1),.sale10-history-table td:nth-child(1){width:112px}  /* Invoice */
-  .sale10-history-table th:nth-child(2),.sale10-history-table td:nth-child(2){width:148px}  /* Date */
-  .sale10-history-table th:nth-child(3),.sale10-history-table td:nth-child(3){width:auto;min-width:150px} /* Customer */
-  .sale10-history-table th:nth-child(4),.sale10-history-table td:nth-child(4){width:64px}   /* Items */
-  .sale10-history-table th:nth-child(5),.sale10-history-table td:nth-child(5){width:136px;white-space:nowrap} /* Total */
-  .sale10-history-table th:nth-child(6),.sale10-history-table td:nth-child(6){width:104px}  /* Payment */
-  .sale10-history-table th:nth-child(7),.sale10-history-table td:nth-child(7){width:104px}  /* Status */
-  .sale10-history-table th:nth-child(8),.sale10-history-table td:nth-child(8){width:110px}  /* Cashier */
-  .sale10-history-table th:nth-child(9),.sale10-history-table td:nth-child(9){width:206px}  /* Actions */
-  .sale10-history-table td{overflow-wrap:anywhere}
+  /* The one column that can run long: a customer name is cut rather than
+     allowed to stretch the row. */
+  .sale10-history-table td:nth-child(3){max-width:260px;overflow:hidden;text-overflow:ellipsis}
+  .sale10-history-table td:nth-child(5){text-align:right}
 
   /* The buttons keep their words. Stripping them to icons saved 80px and cost
      more than that: three unlabelled squares where the row used to say what
      each one did. The columns were the thing that was too far apart. */
   .sale10-history-actions{min-width:0;display:flex;gap:6px}
   .sale10-history-actions .stock-action{min-width:0;padding:7px 8px;white-space:nowrap}
+}
+
+/* A part-exchange prints paper and leaves the ledger alone. The button belongs
+   near the view toggles rather than near Checkout, and it should look like a
+   side door -- small, quiet, not competing with the green one that ends a sale.
+   (Its styles were lost when this file was truncated; this is them back.) */
+.sale10-quick-voucher{
+  display:inline-flex;align-items:center;gap:5px;
+  height:34px;padding:0 10px;white-space:nowrap;
+  border:1px solid var(--ds-border);border-radius:var(--ds-r-sm);
+  background:var(--ds-surface);color:var(--ds-muted);
+  font:inherit;font-size:var(--ds-t-xs);font-weight:var(--ds-w-label);cursor:pointer;
+}
+.sale10-quick-voucher:hover{
+  border-color:var(--ds-warn-line);background:var(--ds-warn-tint);color:var(--ds-warn-dark);
 }
