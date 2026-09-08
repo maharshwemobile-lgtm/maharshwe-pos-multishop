@@ -506,22 +506,25 @@ export default function ProductsPage({ onboardingGuide }) {
     <div className="p2-products-page">
       {message ? <div className={`p2-toast p2-toast-${message.type}`}>{message.text}</div> : null}
 
-      <section className="p2-page-heading p2-page-actions-only">
+      {/* The four counts and the three buttons were two stacked blocks, each
+          the height of a card, before the list even started. They say very
+          little between them -- four numbers and three verbs -- so they share
+          one strip now and the products start higher up the screen. */}
+      <section className="p2-topbar">
+        <div className="p2-stat-strip">
+          <span title="ဆိုင်တစ်ခုလုံးရှိ ပစ္စည်း အရေအတွက်"><i className="p2-green"><Boxes size={15} /></i>စုစုပေါင်း<b>{total}</b></span>
+          <span title="ဤစာမျက်နှာတွင် ပြနေသည့် variant အရေအတွက်"><i className="p2-blue"><Layers3 size={15} /></i>Variants<b>{summary.variants}</b></span>
+          <span title="ဤစာမျက်နှာတွင် ပြနေသည့် စတော့ အရေအတွက်"><i className="p2-purple"><PackagePlus size={15} /></i>စတော့<b>{summary.stock}</b></span>
+          <span className={summary.low > 0 ? 'p2-stat-warn' : ''} title="ဤစာမျက်နှာတွင် စတော့နည်းနေသည့် အရေအတွက်"><i className="p2-orange"><AlertTriangle size={15} /></i>စတော့နည်း<b>{summary.low}</b></span>
+        </div>
         <div className="p2-heading-actions">
           {canManage ? <InventoryImportReview compact onImported={loadProducts}/> : null}
-          {canManage ? <button type="button" onClick={() => setCategoryEditor(true)}><FolderPlus size={17} /> Categories</button> : null}
-          {canManage ? <button type="button" className="primary" onClick={openCreateProduct}><Plus size={18} /> Add Product</button> : null}
+          {canManage ? <button type="button" onClick={() => setCategoryEditor(true)}><FolderPlus size={16} /> Categories</button> : null}
+          {canManage ? <button type="button" className="primary" onClick={openCreateProduct}><Plus size={17} /> Add Product</button> : null}
         </div>
       </section>
 
       {onboardingGuide?.show ? <FirstLoginGuide currentPage="Products" businessType={onboardingGuide.businessType} onNavigate={onboardingGuide.navigate} onAction={openGuideAction} onDismiss={onboardingGuide.dismiss}/> : null}
-
-      <section className="p2-summary-grid">
-        <article><div className="p2-summary-icon p2-green"><Boxes /></div><span>Total Products</span><b>{total}</b></article>
-        <article><div className="p2-summary-icon p2-blue"><Layers3 /></div><span>Variants on Page</span><b>{summary.variants}</b></article>
-        <article><div className="p2-summary-icon p2-purple"><PackagePlus /></div><span>Units on Page</span><b>{summary.stock}</b></article>
-        <article><div className="p2-summary-icon p2-orange"><AlertTriangle /></div><span>Low Stock on Page</span><b>{summary.low}</b></article>
-      </section>
 
       <section className="card p2-products-card">
         <div className="p2-toolbar">

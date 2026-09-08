@@ -8,3 +8,36 @@
 .p2-variant-panel th:last-child,.p2-variant-panel td:last-child{width:190px;min-width:190px}
 .p2-actions{align-items:center;flex-wrap:nowrap;white-space:nowrap}
 .p2-actions button{width:auto;min-width:34px;height:34px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+
+/* PR57: the page header was two full-height blocks -- four stat cards at 48px
+   icons and 24px numbers, then a row of buttons -- before a single product
+   appeared. Between them they carry four numbers and three verbs. One strip. */
+.p2-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;
+  padding:8px 11px;
+  border:1px solid var(--ds-border);border-radius:var(--ds-r-md);
+  background:var(--ds-surface);box-shadow:var(--ds-shadow-sm);
+}
+.p2-stat-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.p2-stat-strip>span{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 10px 5px 5px;border-radius:var(--ds-r-pill);
+  background:var(--ds-surface-2);
+  font-size:var(--ds-t-sm);font-weight:var(--ds-w-label);color:var(--ds-muted);
+  white-space:nowrap;
+}
+.p2-stat-strip>span>i{
+  display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;
+  border-radius:50%;font-style:normal;
+}
+.p2-stat-strip>span>b{font-size:var(--ds-t-lg);font-weight:var(--ds-w-head);color:var(--ds-text)}
+/* Nothing low is not news; something low is. */
+.p2-stat-strip>span.p2-stat-warn{background:var(--ds-warn-tint);color:var(--ds-warn-dark)}
+.p2-stat-strip>span.p2-stat-warn>b{color:var(--ds-warn)}
+.p2-topbar .p2-heading-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+@media(max-width:760px){
+  .p2-topbar{align-items:stretch;flex-direction:column}
+  .p2-topbar .p2-heading-actions{width:100%}
+  .p2-topbar .p2-heading-actions>*{flex:1}
+}
