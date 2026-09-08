@@ -18,6 +18,9 @@ import './product-category-icon.css';
 import './ui-layout-hotfix-v24.css';
 import './date-field-v25.css';
 import './font-geist-v26.css';
+// Last: it trims the summary cards every page opens with, and has to land
+// after the stylesheets that size them.
+import './compact-headers.css';
 
 const RUNTIME_VERSION = '20260723-stable-record-categories-date-picker';
 

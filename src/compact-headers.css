@@ -1,0 +1,103 @@
+/*
+ * The summary cards at the top of every page, made smaller.
+ *
+ * Nearly every screen opens with four or five cards -- a 48px icon, a label
+ * and a number set at 22 to 24px -- before the thing the page is actually for.
+ * They cost about 100px of the screen to carry four numbers, on a counter PC
+ * where the list underneath is what the shop came to look at.
+ *
+ * Every page builds them the same way: a grid of <article>, each an icon in
+ * the first column with a <span> label and a <b> number beside it. So this is
+ * one rule rather than eleven edits, and no page's markup changes.
+ *
+ * The doubled class is deliberate. These selectors have to beat the per-page
+ * rules they override, and the pages import their own stylesheets in an order
+ * the bundler decides -- repeating the class raises specificity so the outcome
+ * does not depend on that order.
+ */
+.p2-summary-grid.p2-summary-grid,
+.stock-summary-grid.stock-summary-grid,
+.repair-summary-grid.repair-summary-grid,
+.audit-summary-grid.audit-summary-grid,
+.backup-summary-grid.backup-summary-grid,
+.credit-summary-grid.credit-summary-grid,
+.payments-summary-grid.payments-summary-grid,
+.price-summary-grid.price-summary-grid,
+.reports-summary-grid.reports-summary-grid,
+.sale10-summary-grid.sale10-summary-grid{
+  gap:9px;
+}
+
+.p2-summary-grid.p2-summary-grid > article,
+.stock-summary-grid.stock-summary-grid > article,
+.repair-summary-grid.repair-summary-grid > article,
+.audit-summary-grid.audit-summary-grid > article,
+.backup-summary-grid.backup-summary-grid > article,
+.credit-summary-grid.credit-summary-grid > article,
+.payments-summary-grid.payments-summary-grid > article,
+.price-summary-grid.price-summary-grid > article,
+.reports-summary-grid.reports-summary-grid > article,
+.sale10-summary-grid.sale10-summary-grid > article{
+  grid-template-columns:32px 1fr;
+  gap:1px 9px;
+  padding:9px 11px;
+  border-radius:var(--ds-r-md);
+}
+
+/* The icon is a colour cue, not a picture worth 48 pixels. */
+.p2-summary-grid.p2-summary-grid > article > div:first-child,
+.stock-summary-grid.stock-summary-grid > article > div:first-child,
+.repair-summary-grid.repair-summary-grid > article > div:first-child,
+.audit-summary-grid.audit-summary-grid > article > div:first-child,
+.backup-summary-grid.backup-summary-grid > article > div:first-child,
+.credit-summary-grid.credit-summary-grid > article > div:first-child,
+.payments-summary-grid.payments-summary-grid > article > div:first-child,
+.price-summary-grid.price-summary-grid > article > div:first-child,
+.reports-summary-grid.reports-summary-grid > article > div:first-child,
+.sale10-summary-grid.sale10-summary-grid > article > div:first-child{
+  width:32px;
+  height:32px;
+  border-radius:var(--ds-r-sm);
+}
+.p2-summary-grid > article > div:first-child > svg,
+.stock-summary-grid > article > div:first-child > svg,
+.repair-summary-grid > article > div:first-child > svg,
+.audit-summary-grid > article > div:first-child > svg,
+.backup-summary-grid > article > div:first-child > svg,
+.credit-summary-grid > article > div:first-child > svg,
+.payments-summary-grid > article > div:first-child > svg,
+.price-summary-grid > article > div:first-child > svg,
+.reports-summary-grid > article > div:first-child > svg,
+.sale10-summary-grid > article > div:first-child > svg{
+  width:17px;
+  height:17px;
+}
+
+.p2-summary-grid.p2-summary-grid > article > span,
+.stock-summary-grid.stock-summary-grid > article > span,
+.repair-summary-grid.repair-summary-grid > article > span,
+.audit-summary-grid.audit-summary-grid > article > span,
+.backup-summary-grid.backup-summary-grid > article > span,
+.credit-summary-grid.credit-summary-grid > article > span,
+.payments-summary-grid.payments-summary-grid > article > span,
+.price-summary-grid.price-summary-grid > article > span,
+.reports-summary-grid.reports-summary-grid > article > span,
+.sale10-summary-grid.sale10-summary-grid > article > span{
+  font-size:var(--ds-t-xs);
+  line-height:var(--ds-lh-tight);
+}
+
+/* Still the loudest thing on the card, just not a headline. */
+.p2-summary-grid.p2-summary-grid > article > b,
+.stock-summary-grid.stock-summary-grid > article > b,
+.repair-summary-grid.repair-summary-grid > article > b,
+.audit-summary-grid.audit-summary-grid > article > b,
+.backup-summary-grid.backup-summary-grid > article > b,
+.credit-summary-grid.credit-summary-grid > article > b,
+.payments-summary-grid.payments-summary-grid > article > b,
+.price-summary-grid.price-summary-grid > article > b,
+.reports-summary-grid.reports-summary-grid > article > b,
+.sale10-summary-grid.sale10-summary-grid > article > b{
+  font-size:var(--ds-t-xl);
+  line-height:var(--ds-lh-tight);
+}
