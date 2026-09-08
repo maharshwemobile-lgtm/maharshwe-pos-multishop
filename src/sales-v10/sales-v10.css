@@ -149,7 +149,7 @@
    controls beside it rather than like something you came here to press. */
 .sale10-export-button{
   display:inline-flex;align-items:center;gap:6px;
-  height:42px;padding:0 12px;margin-left:auto;white-space:nowrap;
+  height:42px;padding:0 12px;white-space:nowrap;
   border:1px solid var(--ds-border);border-radius:var(--ds-r-sm);
   background:var(--ds-surface);color:var(--ds-muted);
   font:inherit;font-size:var(--ds-t-sm);font-weight:var(--ds-w-label);cursor:pointer;
@@ -159,5 +159,5 @@
 }
 .sale10-export-button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:620px){
-  .sale10-export-button{margin-left:0;width:100%;justify-content:center}
+  .sale10-export-button{width:100%;justify-content:center}
 }
