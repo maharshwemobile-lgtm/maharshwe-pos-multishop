@@ -101,3 +101,28 @@
   font-size:var(--ds-t-xl);
   line-height:var(--ds-lh-tight);
 }
+
+/* The lone action rows.
+   Three pages still open with a row that holds nothing but Refresh, or Refresh
+   and New: a full-height button bar spending 70px of the screen on one or two
+   secondary actions. They are not merged into anything -- these pages have no
+   toolbar to merge them into -- but they do not need to be page-sized either. */
+.credit-page-actions-only,
+.purchase-page-actions-only,
+.repair-page-actions-only{
+  margin-bottom:2px;
+}
+.credit-page-actions-only button,
+.purchase-page-actions-only button,
+.repair-page-actions-only button{
+  height:34px;
+  padding:0 11px;
+  font-size:var(--ds-t-xs);
+  border-radius:var(--ds-r-sm);
+}
+.credit-page-actions-only button > svg,
+.purchase-page-actions-only button > svg,
+.repair-page-actions-only button > svg{
+  width:15px;
+  height:15px;
+}

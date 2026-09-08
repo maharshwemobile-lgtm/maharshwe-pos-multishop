@@ -1,0 +1,56 @@
+/*
+ * Let tables be as wide as their contents, not as wide as the card.
+ *
+ * Every table in the app carries width:100% and a large minimum on top of it:
+ * stock 1280px, payments 1320, audit 1260, credit 1180, products 1100, the
+ * period close 2050. The minimum was picked so the columns would not crush at
+ * the narrowest width anyone tested; the 100% then tells the browser to spend
+ * whatever is left over widening the gaps. On a normal counter screen that is
+ * hundreds of pixels pushed between the columns, so a row reads as scattered --
+ * the reference number at one end of the desk and the money at the other.
+ *
+ * Sizing to content fixes both at once. The columns sit together, nothing is
+ * crushed because each takes what it needs, and the leftover space ends up to
+ * the right of the row instead of inside it.
+ *
+ * Desktop only. Below these widths most of these tables stop being tables and
+ * become one card per row, where a width in pixels means nothing -- a first
+ * attempt at this on the sales history was applied unscoped and pulled those
+ * cards apart.
+ */
+@media(min-width:900px){
+  .stock-table,
+  .stock-history-table,
+  .audit-table,
+  .credit-table,
+  .credit-history-table,
+  .grand-table,
+  .psw-table,
+  .payments-table,
+  .price-table,
+  .p2-product-table,
+  .p10-table,
+  .reports-table,
+  .rw-close-table{
+    width:auto;
+    min-width:0;
+    table-layout:auto;
+  }
+
+  /* A cell should take the room its content needs and no more. Long free text
+     -- a note, a description -- is the exception: it is capped so one wordy
+     row cannot stretch the whole table back out again. */
+  .stock-table td,
+  .audit-table td,
+  .credit-table td,
+  .payments-table td,
+  .price-table td,
+  .p2-product-table td,
+  .reports-table td{
+    max-width:340px;
+  }
+  .stock-note-cell,
+  .audit-table td.audit-detail-cell{
+    max-width:260px;
+  }
+}

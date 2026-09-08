@@ -21,6 +21,8 @@ import './font-geist-v26.css';
 // Last: it trims the summary cards every page opens with, and has to land
 // after the stylesheets that size them.
 import './compact-headers.css';
+// Same reason, one layer down: tables that stretch instead of sizing to fit.
+import './compact-tables.css';
 
 const RUNTIME_VERSION = '20260723-stable-record-categories-date-picker';
 
