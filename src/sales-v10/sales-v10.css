@@ -88,119 +88,42 @@
   .sale10-split-summary{grid-template-columns:1fr}
 }
 
-/* PR56: Split Payment modal UI */
-.sale10-split-summary-compact{margin:10px 0 12px}
-.sale10-split-modal-backdrop{
-  position:fixed;inset:0;z-index:13000;background:rgba(15,23,42,.55);
-  display:flex;align-items:center;justify-content:center;padding:13px
-}
-.sale10-split-modal{
-  width:min(760px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:var(--ds-r-xl);
-  border:1px solid var(--ds-border);box-shadow:0 24px 80px rgba(15,23,42,.35)
-}
-.sale10-split-modal header,.sale10-split-modal footer{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-bottom:1px solid var(--ds-page)
-}
-.sale10-split-modal footer{border-top:1px solid var(--ds-page);border-bottom:0}
-.sale10-split-modal header span{font-size:var(--ds-t-sm);font-weight:var(--ds-w-head);letter-spacing:.1em;color:#f97316}
-.sale10-split-modal header h3{margin:3px 0 0;font-size:var(--ds-t-2xl)}
-.sale10-split-modal header button,.sale10-split-modal footer button,.sale10-add-split-row{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--ds-border);background:#fff;
-  border-radius:var(--ds-r-md);padding:9px 12px;font-weight:var(--ds-w-head);cursor:pointer;color:var(--ds-text-strong)
-}
-.sale10-split-modal footer .primary{background:var(--ds-green);border-color:var(--ds-green);color:#fff}
-.sale10-add-split-row{width:100%;background:var(--ds-amber-soft);border-color:var(--ds-warn-line);color:var(--ds-warn-dark)}
-.dark .sale10-split-modal{background:var(--ds-surface);color:var(--ds-text);border-color:var(--ds-border)}
-.dark .sale10-split-modal header,.dark .sale10-split-modal footer{border-color:var(--ds-border)}
-.dark .sale10-split-modal header button,.dark .sale10-split-modal footer button,.dark .sale10-add-split-row{background:var(--ds-surface-2);color:var(--ds-text);border-color:var(--ds-border)}
-
-/* Compact receipt actions and mobile-friendly Sale History cards. */
-.sale10-history-detail-actions{display:flex;justify-content:flex-end;gap:8px}
-.sale10-history-detail-actions button{min-height:38px;padding:7px 12px}
-.sale10-detail-reprint{border-color:var(--ds-green-line)!important;background:var(--ds-green-tint)!important;color:var(--ds-green-dark)!important;font-weight:var(--ds-w-head)}
-.dark .sale10-detail-reprint{border-color:var(--ds-green-dark)!important;background:#0d3028!important;color:var(--ds-green-line)!important}
-
-@media(max-width:760px){
-  .sale10-history-table{min-width:0;display:block}
-  .sale10-history-table thead{display:none}
-  .sale10-history-table tbody{display:grid;gap:10px;padding:8px}
-  .sale10-history-table tr{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;padding:9px;border:1px solid var(--ds-border);border-radius:var(--ds-r-md);background:#fff}
-  .sale10-history-table td{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;border:0;text-align:right;font-size:var(--ds-t-sm)}
-  .sale10-history-table td::before{content:attr(data-label);color:var(--ds-muted);font-size:var(--ds-t-sm);font-weight:var(--ds-w-label);text-align:left}
-  .sale10-history-table td:first-child,.sale10-history-table td:last-child{grid-column:1/-1}
-  .sale10-history-table td:first-child{padding-bottom:8px;border-bottom:1px solid var(--ds-border)}
-  .sale10-history-table td:last-child{padding-top:8px;border-top:1px solid var(--ds-border)}
-  .sale10-history-actions{width:100%;min-width:0;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .sale10-history-actions .stock-action{min-width:0;justify-content:center;padding:7px 5px;font-size:var(--ds-t-sm)}
-  .sale10-history-detail-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
-  .sale10-history-detail-actions button{width:100%;justify-content:center}
-  .dark .sale10-history-table tr{background:var(--ds-surface);border-color:var(--ds-border)}
-  .dark .sale10-history-table td:first-child,.dark .sale10-history-table td:last-child{border-color:var(--ds-border)}
-}
-
-/* Product picker rows: the meta line used to stack up to five <small> elements,
-   so a row with a variant, unit and expiry stood twice as tall as a plain one.
-   One clipped line keeps every row the same height. */
-.sale10-product-table tbody tr { height: 56px; }
-.sale10-product-table tbody td { vertical-align: middle; }
-.sale10-product-table .stock-product-cell { align-items: center; }
-.sale10-product-meta {
-  display: block;
-  margin-top: 3px;
-  max-width: 46ch;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--ds-muted);
-  font-size:var(--ds-t-sm);
-}
-.sale10-product-meta:empty { display: none; }
-.sale10-product-meta .sale10-expiry-warning { color: var(--ds-amber-dark); }
-.dark .sale10-product-meta { color: var(--ds-muted); }
-
-/* A part-exchange is not a till sale: it prints paper and leaves the ledger
-   alone. The button sits with the view toggles rather than near Checkout, so it
-   is never mistaken for a way to finish the sale in the cart. */
-.sale10-quick-voucher{
-  display:inline-flex;align-items:center;gap:6px;
-  height:40px;padding:0 12px;white-space:nowrap;
-  border:1px solid var(--ds-warn-line);border-radius:var(--ds-r-sm);
-  background:var(--ds-warn-tint);color:var(--ds-warn-dark);
-  font:inherit;font-weight:var(--ds-w-head);font-size:var(--ds-t-sm);cursor:pointer;
-}
-.sale10-quick-voucher:hover{background:var(--ds-warn-soft)}
-
 /* PR56: the history was pinned to 1380px for nine columns, so on any normal
    screen the browser stretched the gaps until the invoice number and what the
-   customer paid sat at opposite ends of a sideways scroll -- the same thing the
-   repair list was doing at 1360. Columns are sized to what they hold, and the
-   three row buttons drop their labels so Actions stops costing 220px to say
-   View, Reprint, Void. */
-.sale10-history-table{
-  min-width:1058px;
-  table-layout:fixed;
-}
-.sale10-history-table th,
-.sale10-history-table td{
-  padding:8px 9px;
-  box-sizing:border-box;
-}
-.sale10-history-table th:nth-child(1),.sale10-history-table td:nth-child(1){width:112px}  /* Invoice */
-.sale10-history-table th:nth-child(2),.sale10-history-table td:nth-child(2){width:148px}  /* Date */
-.sale10-history-table th:nth-child(3),.sale10-history-table td:nth-child(3){width:auto;min-width:150px} /* Customer */
-.sale10-history-table th:nth-child(4),.sale10-history-table td:nth-child(4){width:64px}   /* Items */
-.sale10-history-table th:nth-child(5),.sale10-history-table td:nth-child(5){width:136px;white-space:nowrap} /* Total */
-.sale10-history-table th:nth-child(6),.sale10-history-table td:nth-child(6){width:104px}  /* Payment */
-.sale10-history-table th:nth-child(7),.sale10-history-table td:nth-child(7){width:104px}  /* Status */
-.sale10-history-table th:nth-child(8),.sale10-history-table td:nth-child(8){width:110px}  /* Cashier */
-.sale10-history-table th:nth-child(9),.sale10-history-table td:nth-child(9){width:126px}  /* Actions */
-.sale10-history-table td{overflow-wrap:anywhere}
+   customer paid sat at opposite ends of a sideways scroll.
 
-/* Icon-only on the desktop table: the icons already say it, and the tooltip is
-   there for anyone unsure. The mobile card layout below keeps the words. */
-.sale10-history-actions{min-width:0;display:flex;gap:5px}
-.sale10-history-actions .stock-action{
-  width:34px;min-width:0;padding:0;
-  display:grid;place-items:center;font-size:0;
+   Every rule here is behind min-width:761px. Below that the table stops being
+   a table and becomes one card per sale, and a first pass at this appended the
+   column widths unscoped -- so they landed after that media query and pulled
+   the cards apart. Fixed widths and a fixed table layout have no meaning once
+   the rows are cards. */
+@media(min-width:761px){
+  .sale10-history-table{
+    min-width:1138px;
+    table-layout:fixed;
+  }
+  .sale10-history-table th,
+  .sale10-history-table td{
+    padding:8px 9px;
+    /* Without this the padding is added on top of each declared width, the
+       fixed columns eat the table, and Customer -- the one left to take the
+       remainder -- collapses to nothing. */
+    box-sizing:border-box;
+  }
+  .sale10-history-table th:nth-child(1),.sale10-history-table td:nth-child(1){width:112px}  /* Invoice */
+  .sale10-history-table th:nth-child(2),.sale10-history-table td:nth-child(2){width:148px}  /* Date */
+  .sale10-history-table th:nth-child(3),.sale10-history-table td:nth-child(3){width:auto;min-width:150px} /* Customer */
+  .sale10-history-table th:nth-child(4),.sale10-history-table td:nth-child(4){width:64px}   /* Items */
+  .sale10-history-table th:nth-child(5),.sale10-history-table td:nth-child(5){width:136px;white-space:nowrap} /* Total */
+  .sale10-history-table th:nth-child(6),.sale10-history-table td:nth-child(6){width:104px}  /* Payment */
+  .sale10-history-table th:nth-child(7),.sale10-history-table td:nth-child(7){width:104px}  /* Status */
+  .sale10-history-table th:nth-child(8),.sale10-history-table td:nth-child(8){width:110px}  /* Cashier */
+  .sale10-history-table th:nth-child(9),.sale10-history-table td:nth-child(9){width:206px}  /* Actions */
+  .sale10-history-table td{overflow-wrap:anywhere}
+
+  /* The buttons keep their words. Stripping them to icons saved 80px and cost
+     more than that: three unlabelled squares where the row used to say what
+     each one did. The columns were the thing that was too far apart. */
+  .sale10-history-actions{min-width:0;display:flex;gap:6px}
+  .sale10-history-actions .stock-action{min-width:0;padding:7px 8px;white-space:nowrap}
 }
-.sale10-history-actions .stock-action svg{font-size:initial}
