@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   Loader2,
   Search,
+  RefreshCw,
   Upload,
   X,
 } from 'lucide-react';
@@ -340,19 +341,19 @@ export default function InventoryToolsPanel({ onInventoryChanged }) {
 
   return (
     <section className="inventory-tools-panel">
-      <div className="inventory-tools-heading inventory-tools-actions-only">
-        <div className="inventory-tool-actions">
-          <button type="button" onClick={enableNotifications}><BellRing size={17} /> Enable Notification</button>
-          <button type="button" onClick={() => setScannerOpen(true)}><Barcode size={17} /> Scan Barcode</button>
-          <button type="button" onClick={() => setImportOpen(true)}><Upload size={17} /> Import CSV</button>
-          <button type="button" onClick={exportCsv}><Download size={17} /> Export CSV</button>
-        </div>
-      </div>
-
+      {/* One bar, not two. The four buttons had a full-height row of their own
+          above the low stock strip, which is itself a single line of text --
+          two bars and about 130px of screen before the stock list starts. */}
       <div className={`low-stock-strip ${lowItems.length ? 'has-alert' : ''}`}>
         <div className="low-stock-icon">{loadingLow ? <Loader2 className="inventory-spin" /> : lowItems.length ? <AlertTriangle /> : <Bell />}</div>
         <div><b>{lowItems.length ? `${lowItems.length} Low Stock Items` : 'Stock levels are healthy'}</b><span>{lowItems.length ? lowItems.slice(0, 5).map((item) => `${item.product?.name || item.variantName} (${item.inventory?.quantity || 0})`).join(' · ') : 'Low-stock threshold အောက်ရောက်ရင် ဒီနေရာနဲ့ Browser notification မှာပြပါမယ်။'}</span></div>
-        <button type="button" onClick={() => loadLowStock({ notify: false })}>Refresh</button>
+        <div className="inventory-tool-actions">
+          <button type="button" onClick={() => loadLowStock({ notify: false })} title="Low stock ကို ပြန်စစ်မည်"><RefreshCw size={15} /> Refresh</button>
+          <button type="button" onClick={enableNotifications} title="Stock နည်းရင် အသိပေးချက် ဖွင့်မည်"><BellRing size={15} /> Alerts</button>
+          <button type="button" onClick={() => setScannerOpen(true)} title="Barcode scan လုပ်မည်"><Barcode size={15} /> Scan</button>
+          <button type="button" onClick={() => setImportOpen(true)} title="CSV မှ ကုန်ပစ္စည်း သွင်းမည်"><Upload size={15} /> Import</button>
+          <button type="button" onClick={exportCsv} title="စတော့စာရင်းကို CSV ထုတ်မည်"><Download size={15} /> Export</button>
+        </div>
       </div>
       {message ? <div className="inventory-tools-message">{message}</div> : null}
 
