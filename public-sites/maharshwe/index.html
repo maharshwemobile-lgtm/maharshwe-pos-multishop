@@ -185,14 +185,26 @@ section{padding:clamp(56px,8vw,96px) 0}
 .card-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 
 /* ---------- downloads ---------- */
-.downloads{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-top:22px}
+/* The three builds are the point of this section, so they are the loudest
+   thing in it. They used to be named ARM64, ARMv7 and Universal -- the answer
+   to a question nobody at a phone shop counter can be expected to ask, let
+   alone the customer holding the phone. Numbered, there is nothing to know:
+   try 1, then 2, then 3. The build name stays underneath, small, for the one
+   person in a hundred who wants it. */
+.downloads{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
 @media(max-width:680px){.downloads{grid-template-columns:1fr}}
-.dl{padding:18px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);
-  display:block;transition:border-color .15s ease}
-.dl:hover{border-color:var(--green)}
-.dl b{display:block;font-size:16px;font-weight:800}
-.dl span{display:block;font-size:13px;color:var(--text-3);margin-top:3px}
-.dl em{display:block;font-style:normal;font-size:12.5px;color:var(--green);font-weight:700;margin-top:9px}
+.dl{position:relative;padding:22px 20px 20px;border:1.5px solid rgba(18,185,129,.35);
+  border-radius:var(--r-lg);background:linear-gradient(180deg,rgba(18,185,129,.10),rgba(18,185,129,.03));
+  display:block;transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease}
+.dl:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 12px 28px rgba(18,185,129,.16)}
+.dl i{display:grid;place-items:center;width:38px;height:38px;margin-bottom:13px;
+  border-radius:50%;background:var(--green);color:#04140d;
+  font-style:normal;font-size:19px;font-weight:800;line-height:1}
+.dl b{display:block;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.dl span{display:block;font-size:14px;color:var(--text-2);margin-top:5px;line-height:1.6}
+.dl em{display:block;font-style:normal;font-size:14px;color:var(--green);font-weight:800;margin-top:13px}
+.dl small{display:block;font-size:11.5px;color:var(--text-3);margin-top:10px;
+  padding-top:9px;border-top:1px solid var(--line-soft);letter-spacing:.04em}
 
 /* ---------- plans ---------- */
 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
@@ -413,16 +425,34 @@ footer .fl a:hover{color:var(--green)}
       <div class="kicker">Mahar Shwe VPN</div>
       <h2>Android အတွက် VPN</h2>
       <p class="lead">
-        ဖုန်းအမျိုးအစားနဲ့ ကိုက်ညီတဲ့ ဖိုင်ကို ရွေးပြီး download ဆွဲပါ။
-        ဖုန်းအများစုအတွက် <b>ARM64</b> ကို ရွေးပါ။ မသေချာရင် Universal ကို ဆွဲပါ။
+        <b>Download 1</b> ကို အရင် ဆွဲပါ။ ဖုန်းနဲ့ မတည့်ရင် <b>2</b>၊ ပြီးရင် <b>3</b> —
+        တစ်ခုခုကတော့ ရပါမယ်။ ဖုန်းအမျိုးအစား သိစရာ မလိုပါဘူး။
       </p>
       <p class="muted" style="margin-top:8px">Version 1.0.23 · APK တိုက်ရိုက် download</p>
     </div>
 
     <div class="downloads">
-      <a class="dl" href="/download/maharshwe-vpn-1.0.23-mid-arm64.apk"><b>ARM64</b><span>21.4 MB</span><em>အများစုအတွက် →</em></a>
-      <a class="dl" href="/download/maharshwe-vpn-1.0.23-low-armv7.apk"><b>ARMv7</b><span>21.0 MB</span><em>ဖုန်းအဟောင်း →</em></a>
-      <a class="dl" href="/download/maharshwe-vpn-1.0.23-high-universal.apk"><b>Universal</b><span>49.4 MB</span><em>အားလုံးနဲ့ ရ →</em></a>
+      <a class="dl" href="/download/maharshwe-vpn-1.0.23-mid-arm64.apk">
+        <i>1</i>
+        <b>Download 1</b>
+        <span>ဖုန်းအများစု အတွက်</span>
+        <em>21.4 MB · ဆွဲမည် →</em>
+        <small>ARM64</small>
+      </a>
+      <a class="dl" href="/download/maharshwe-vpn-1.0.23-low-armv7.apk">
+        <i>2</i>
+        <b>Download 2</b>
+        <span>ဖုန်းအဟောင်း အတွက်</span>
+        <em>21.0 MB · ဆွဲမည် →</em>
+        <small>ARMv7</small>
+      </a>
+      <a class="dl" href="/download/maharshwe-vpn-1.0.23-high-universal.apk">
+        <i>3</i>
+        <b>Download 3</b>
+        <span>ဖုန်းအားလုံးနဲ့ ရ</span>
+        <em>49.4 MB · ဆွဲမည် →</em>
+        <small>Universal</small>
+      </a>
     </div>
     <p class="muted" style="margin-top:14px">APK install လုပ်ရန် ဖုန်းရဲ့ Settings မှာ "Unknown sources" ကို ဖွင့်ပေးရပါမယ်။</p>
 
