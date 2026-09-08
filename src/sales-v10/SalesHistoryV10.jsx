@@ -367,14 +367,6 @@ export default function SalesHistoryV10() {
     <div className="stock-page sale10-history-page">
       {toast ? <div className={`stock-toast stock-toast-${toast.type}`}>{toast.text}</div> : null}
 
-      <div className="stock-page-heading stock-page-actions-only">
-        <div className="sale10-heading-actions">
-          <button type="button" className="stock-refresh-button sale10-export-button" onClick={exportCsv} disabled={exporting || loading}>
-            {exporting ? <Loader2 className="stock-spin" size={18} /> : <Download size={18} />} Export CSV
-          </button>
-        </div>
-      </div>
-
       <section className="stock-summary-grid">
         <article><div className="stock-summary-icon stock-tone-blue"><History /></div><span>Total Sales</span><b>{Number(summary.saleCount ?? data.total ?? 0).toLocaleString()}</b></article>
         <article><div className="stock-summary-icon stock-tone-green"><Wallet /></div><span>Net Sales</span><b className="sale10-summary-money">{money(summary.netSales)}</b></article>
@@ -394,6 +386,11 @@ export default function SalesHistoryV10() {
           <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>{PAYMENT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
           <select value={status} onChange={(event) => setStatus(event.target.value)}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
           {activeFilterCount ? <button type="button" className="stock-action stock-action-red sale10-clear-filter" onClick={clearFilters}><X size={15} /> Clear {activeFilterCount}</button> : null}
+          {/* With the filters, because what it writes out is whatever they have
+              left in the list -- not on a row of its own above the page. */}
+          <button type="button" className="sale10-export-button" onClick={exportCsv} disabled={exporting || loading} title="ပြနေသည့် စာရင်းကို CSV ထုတ်မည်">
+            {exporting ? <Loader2 className="stock-spin" size={15} /> : <Download size={15} />} CSV
+          </button>
         </div>
 
         {loading && rows.length === 0 ? (
