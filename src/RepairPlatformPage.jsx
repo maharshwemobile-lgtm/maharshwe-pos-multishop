@@ -935,23 +935,26 @@ export default function RepairPlatformPage() {
         {/* Two lists, not one filter among many: what is still on the shelf, and
             what has gone home. Mixing them meant the day's work was buried
             under every repair the shop had ever finished. */}
-        <div className="repair-shelf-tabs" role="tablist">
-          {[
-            ['active', 'ဆိုင်မှာ ရှိသေး'],
-            ['collected', 'ယူသွားပြီး'],
-            ['all', 'အားလုံး'],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={collected === value}
-              className={collected === value ? 'active' : ''}
-              onClick={() => setCollected(value)}
-            >{label}</button>
-          ))}
-        </div>
         <div className="repair-toolbar">
+          {/* On the same line as the search: which shelf you are looking at and
+              what you are looking for are one question, and a row of three
+              buttons above the bar was a row of the page to hold them. */}
+          <div className="repair-shelf-tabs" role="tablist">
+            {[
+              ['active', 'ဆိုင်မှာ ရှိသေး'],
+              ['collected', 'ယူသွားပြီး'],
+              ['all', 'အားလုံး'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={collected === value}
+                className={collected === value ? 'active' : ''}
+                onClick={() => setCollected(value)}
+              >{label}</button>
+            ))}
+          </div>
           <div className="repair-search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Repair ID, customer, phone, device, IMEI or issue" /></div>
           <select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All Statuses</option>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
           <select value={sourceType} onChange={(event) => setSourceType(event.target.value)}><option value="">All Sources</option><option value="LOCAL">Local</option><option value="MAHAR_SHWE_IMPORT">Mahar Shwe Import</option><option value="PROVIDER_IMPORT">Provider Import</option><option value="PARTNER_HANDOFF">Partner Handoff</option></select>

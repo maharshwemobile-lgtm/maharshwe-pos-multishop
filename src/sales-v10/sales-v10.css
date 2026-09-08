@@ -161,3 +161,21 @@
 @media(max-width:620px){
   .sale10-export-button{width:100%;justify-content:center}
 }
+
+/* One line for the filters.
+   The controls carried minimum widths chosen when each sat alone -- a 260px
+   search box, 150px selects, two native date inputs that ask for about 200px
+   apiece -- and together they came to more than the card is wide, so All
+   Statuses dropped to a second row. The search box still takes whatever is
+   left over, it just no longer reserves a quarter of the bar before anything
+   else gets a say. */
+@media(min-width:900px){
+  .sale10-history-toolbar{flex-wrap:nowrap}
+  .sale10-history-toolbar .stock-search-box{min-width:150px}
+  .sale10-history-toolbar .sale10-filter-input{min-width:0;width:98px;flex:0 0 auto}
+  .sale10-history-toolbar .sale10-date-filter{flex:0 0 auto;padding:0 8px;gap:5px}
+  .sale10-history-toolbar .sale10-date-filter input{width:104px;min-width:0}
+  .sale10-history-toolbar select{min-width:0;width:124px;flex:0 0 auto}
+  .sale10-history-toolbar .sale10-export-button{flex:0 0 auto}
+  .sale10-history-toolbar .sale10-clear-filter{flex:0 0 auto}
+}

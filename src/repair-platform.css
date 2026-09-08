@@ -450,3 +450,32 @@
   .repair-edit-form{grid-template-columns:1fr}
   .repair-edit-form label.span-2,.repair-edit-actions{grid-column:auto}
 }
+
+/* The shelf tabs sit in the filter bar rather than on a row above it: which
+   shelf you are looking at and what you are looking for are one question. */
+.repair-toolbar .repair-shelf-tabs{
+  display:flex;gap:0;flex:0 0 auto;
+  border:1px solid var(--ds-border);border-radius:var(--ds-r-sm);
+  overflow:hidden;height:42px;
+}
+.repair-toolbar .repair-shelf-tabs button{
+  height:100%;padding:0 12px;white-space:nowrap;
+  border:0;border-right:1px solid var(--ds-border);border-radius:0;
+  background:var(--ds-surface);color:var(--ds-muted);
+  font:inherit;font-size:var(--ds-t-sm);font-weight:var(--ds-w-label);cursor:pointer;
+}
+.repair-toolbar .repair-shelf-tabs button:last-child{border-right:0}
+.repair-toolbar .repair-shelf-tabs button.active{
+  background:var(--ds-amber-soft);color:var(--ds-amber-dark);
+}
+/* One line at desktop widths: the search takes what is left after the tabs and
+   the two selects, rather than reserving 300px before they get a say. */
+@media(min-width:900px){
+  .repair-toolbar{flex-wrap:nowrap}
+  .repair-toolbar .repair-search{min-width:150px}
+  .repair-toolbar select{min-width:0;width:150px;flex:0 0 auto}
+}
+@media(max-width:620px){
+  .repair-toolbar .repair-shelf-tabs{width:100%}
+  .repair-toolbar .repair-shelf-tabs button{flex:1}
+}
