@@ -7,8 +7,8 @@
   padding-top:16px;
   border-top:1px solid rgba(148,163,184,.22);
   color:var(--ds-muted);
-  font-size:12px;
-  font-weight:850;
+  font-size:var(--ds-t-sm);
+  font-weight:var(--ds-w-label);
 }
 
 .login-footer-link{
@@ -17,7 +17,7 @@
   background:transparent;
   color:var(--ds-blue);
   font:inherit;
-  font-weight:950;
+  font-weight:var(--ds-w-head);
   cursor:pointer;
 }
 
@@ -44,7 +44,7 @@
   background:#fff;
   color:var(--ds-muted);
   font:inherit;
-  font-weight:950;
+  font-weight:var(--ds-w-head);
   cursor:pointer;
 }
 

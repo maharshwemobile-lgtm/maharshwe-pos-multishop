@@ -14,9 +14,9 @@
   --line-height-tight: 1.28;
 }
 
-html { font-size: 16px; }
-html[data-font-scale='small'] { font-size: 15px; }
-html[data-font-scale='large'] { font-size: 17px; }
+html { font-size:var(--ds-t-lg); }
+html[data-font-scale='small'] { font-size:var(--ds-t-lg); }
+html[data-font-scale='large'] { font-size:var(--ds-t-xl); }
 
 html,
 body,
@@ -94,7 +94,7 @@ nav button { font-size: 0.875rem; }
 .project-settings-page > header h2,
 .ps-page-head h2 {
   font-size: var(--font-size-page-title) !important;
-  font-weight: 800;
+  font-weight:var(--ds-w-label);
   letter-spacing: -0.025em;
 }
 
@@ -113,7 +113,7 @@ nav button { font-size: 0.875rem; }
 .ps-eyebrow,
 .br-heading > div > span {
   font-size: var(--font-size-caption) !important;
-  font-weight: 900;
+  font-weight:var(--ds-w-head);
   letter-spacing: 0.11em;
 }
 

@@ -6,7 +6,7 @@
 @font-face {
   font-family: 'Geist';
   src: url('/fonts/geist-latin.woff2') format('woff2');
-  font-weight: 100 900;
+  font-weight:var(--ds-w-body) 900;
   font-style: normal;
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
@@ -17,7 +17,7 @@
 @font-face {
   font-family: 'Geist';
   src: url('/fonts/geist-latin-ext.woff2') format('woff2');
-  font-weight: 100 900;
+  font-weight:var(--ds-w-body) 900;
   font-style: normal;
   font-display: swap;
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
@@ -35,13 +35,16 @@ body {
   font-family: 'Geist', 'Pyidaungsu', 'Noto Sans Myanmar', 'Myanmar Text', system-ui, sans-serif;
 }
 
-/* Regular weight only.
-   The stylesheets declare 900 in 235 places, 800 in 111 and 950 in 56 — weights
-   that read far heavier in Geist than in the face they were tuned for. One
-   override keeps every element at Geist Regular. */
-body,
-body * {
-  font-weight: 400 !important;
+/* The 900s this override existed to tame are gone.
+   They were declared in 235 places, 800 in 111, 950 in 56 -- weights tuned for
+   another face that read as Black in Geist -- and forcing every element to
+   Regular was the quickest way to stop the shouting. It also took every heading,
+   every total and every label down with it, so nothing on any screen stood out
+   from anything else: an app with no bold in it at all.
+   The stylesheets now ask for body, label or heading by name, which is the
+   distinction this rule was flattening. */
+body {
+  font-weight: var(--ds-w-body);
 }
 
 /* A bare <small> inherits 0.8em from the browser, so one nested inside a 13px

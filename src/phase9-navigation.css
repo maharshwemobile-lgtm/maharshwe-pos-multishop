@@ -24,7 +24,7 @@
     border-color:var(--ds-green-bright)!important;
     color:var(--ds-teal)!important;
     background:var(--ds-green-tint)!important;
-    font-weight:900!important;
+    font-weight:var(--ds-w-head)!important;
   }
   .phase9-mobile-menu-button span{display:inline!important}
   .phase9-mobile-menu-button:after{
@@ -75,7 +75,7 @@ body{overscroll-behavior-y:none}
   .topbar{height:auto!important;min-height:62px!important;padding:8px 10px!important;gap:8px!important;z-index:80!important}
   .topbar>img{width:40px!important;height:40px!important;border-radius:var(--ds-r-md)!important}
   .topbar-title-copy{min-width:0!important;flex:1!important}
-  .topbar-title-copy h1{font-size:17px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .topbar-title-copy h1{font-size:var(--ds-t-xl)!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
   .topbar-title-copy p,.topbar .profile,.topbar .search{display:none!important}
   .phase9-mobile-menu-button{box-shadow:0 8px 20px rgba(34,197,94,.18)!important}
   .phase9-sidebar{scrollbar-width:thin;-webkit-overflow-scrolling:touch}
@@ -86,7 +86,7 @@ body{overscroll-behavior-y:none}
   :where(.toolbar,.stock-toolbar,.payments-toolbar,.repair-toolbar,.reports-period-bar,.reports-heading-actions,.p2-toolbar,.tenant-users-toolbar){align-items:stretch!important;flex-direction:column!important;gap:8px!important;padding:10px!important}
   :where(.toolbar input,.toolbar select,.toolbar button,.stock-toolbar select,.payments-toolbar input,.payments-toolbar select,.repair-toolbar select,.reports-period-bar label,.p2-toolbar select,.p2-toolbar input){width:100%!important;min-width:0!important}
   :where(.table-wrap,.stock-table-wrap,.payments-table-wrap,.repair-table-wrap,.reports-table-wrap,.p2-table-wrap,.tenant-users-table-wrap){overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;max-width:100%!important}
-  :where(table){font-size:12px!important}
+  :where(table){font-size:var(--ds-t-sm)!important}
   :where(th,td){padding:9px 10px!important}
   :where(.p2-modal-backdrop,.stock-modal-backdrop,.repair-modal-backdrop,.msc-modal-backdrop){padding:0!important;align-items:stretch!important;place-items:stretch!important}
   :where(.p2-modal,.stock-modal,.repair-modal,.msc-detail-modal){width:100%!important;max-width:100%!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important}
@@ -96,18 +96,18 @@ body{overscroll-behavior-y:none}
   :where(button:has(svg.lucide-refresh-cw),button:has(.lucide-refresh-cw),button:has(svg.lucide-download),button:has(.lucide-download),button:has(svg.lucide-upload),button:has(.lucide-upload),button:has(svg.lucide-printer):not(.allow-mobile-print),button:has(.lucide-printer):not(.allow-mobile-print),button:has(svg.lucide-file-down),button:has(.lucide-file-down),button:has(svg.lucide-file-up),button:has(.lucide-file-up),.refresh-button,.payments-refresh-button,.stock-refresh-button,.export-button){display:none!important}
   :where(.reports-heading-actions button:not(.primary),.repair-page-heading button:not(.primary),.payments-heading-actions button:not(.payments-transfer-button)){display:none!important}
   :where(.stock-row-actions,.p2-actions,.repair-page-heading>div:last-child){gap:5px!important}
-  :where(.stock-action,.p2-actions button,.repair-open-button){min-height:34px!important;padding:6px 8px!important;font-size:12px!important}
+  :where(.stock-action,.p2-actions button,.repair-open-button){min-height:34px!important;padding:6px 8px!important;font-size:var(--ds-t-sm)!important}
   :where(.notice,.subscription-limited-banner){margin:0 0 8px!important}
 }
 @media(max-width:560px){
   .topbar{position:sticky!important;top:0!important}
   .content{padding-left:8px!important;padding-right:8px!important}
-  :where(h1){font-size:20px!important}
-  :where(h2){font-size:21px!important}
-  :where(h3){font-size:17px!important}
+  :where(h1){font-size:var(--ds-t-2xl)!important}
+  :where(h2){font-size:var(--ds-t-2xl)!important}
+  :where(h3){font-size:var(--ds-t-xl)!important}
   :where(.card,[class$="-card"]){border-radius:var(--ds-r-md)!important}
   :where(.stat,.quickCard){padding:10px!important}
-  :where(input,select,textarea,button){font-size:16px}
+  :where(input,select,textarea,button){font-size:var(--ds-t-lg)}
 }
 
 
@@ -212,20 +212,20 @@ body{overscroll-behavior-y:none}
 .app-menu-tour-badge{
   display:inline-flex;
   margin-bottom:7px;
-  font-size:12px;
-  font-weight:950;
+  font-size:var(--ds-t-sm);
+  font-weight:var(--ds-w-head);
   letter-spacing:.14em;
   color:var(--ds-blue);
 }
-.app-menu-tour-card h3{margin:0 0 8px;font-size:20px}
-.app-menu-tour-card p{margin:0;color:var(--ds-text-2);line-height:1.7;font-size:13px}
+.app-menu-tour-card h3{margin:0 0 8px;font-size:var(--ds-t-2xl)}
+.app-menu-tour-card p{margin:0;color:var(--ds-text-2);line-height:1.7;font-size:var(--ds-t-md)}
 .app-menu-tour-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
 .app-menu-tour-actions button{
   border:0;
   border-radius:var(--ds-r-md);
   min-height:40px;
   padding:0 11px;
-  font-weight:900;
+  font-weight:var(--ds-w-head);
   cursor:pointer;
 }
 .app-menu-tour-actions .secondary{
@@ -253,7 +253,7 @@ body{overscroll-behavior-y:none}
     border-radius:var(--ds-r-lg);
     padding:11px;
   }
-  .app-menu-tour-card h3{font-size:17px}
+  .app-menu-tour-card h3{font-size:var(--ds-t-xl)}
   .app-menu-tour-actions{
     display:grid;
     grid-template-columns:1fr;
@@ -282,8 +282,8 @@ body{overscroll-behavior-y:none}
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 12px;
-  font-weight: 800;
+  font-size:var(--ds-t-sm);
+  font-weight:var(--ds-w-label);
   cursor: pointer;
 }
 .global-language-switcher button.active { background: var(--ds-green); color: #fff; }
@@ -291,7 +291,7 @@ body{overscroll-behavior-y:none}
 
 @media (max-width: 700px) {
   .global-language-switcher > svg { display: none; }
-  .global-language-switcher button { min-height: 30px; padding: 4px 7px; font-size:12px; }
+  .global-language-switcher button { min-height: 30px; padding: 4px 7px; font-size:var(--ds-t-sm); }
 }
 
 /* Shared POS shell polish: consistent controls, readable Myanmar text and safe overflow. */
@@ -312,7 +312,7 @@ body{overscroll-behavior-y:none}
 .phase9-app :where(th) { white-space: nowrap; }
 .phase9-app :where(.card, section, article, dialog) { min-width: 0; }
 .phase9-app :where(button) { min-height: 36px; }
-.phase9-app :where(button.primary, .primary) { font-weight: 800; }
+.phase9-app :where(button.primary, .primary) { font-weight:var(--ds-w-label); }
 .phase9-app :where(button.danger, .danger, .destructive) { color: #fff; background: var(--ds-red-bright); }
 
 html[lang="my"] .phase9-app {

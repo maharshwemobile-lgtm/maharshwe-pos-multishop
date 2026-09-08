@@ -4,15 +4,15 @@
 .purchasing-hero h2{margin:3px 0 5px;font-size:26px;color:var(--ds-text)}
 .purchasing-hero p{margin:0;color:var(--ds-text-2)}
 .purchasing-tabs{display:flex;gap:10px;flex-wrap:wrap}
-.purchasing-tabs button{display:flex;align-items:center;gap:8px;padding:11px 11px;border:1px solid var(--ds-border-strong);border-radius:var(--ds-r-lg);background:#fff;color:var(--ds-text-strong);font-weight:700}
+.purchasing-tabs button{display:flex;align-items:center;gap:8px;padding:11px 11px;border:1px solid var(--ds-border-strong);border-radius:var(--ds-r-lg);background:#fff;color:var(--ds-text-strong);font-weight:var(--ds-w-head)}
 .purchasing-tabs button.active{background:var(--ds-teal);border-color:var(--ds-teal);color:#fff}
 .purchasing-mini-intro{display:grid;gap:4px;padding:12px 13px;border:1px solid var(--ds-green-line);border-radius:var(--ds-r-lg);background:linear-gradient(135deg,var(--ds-green-tint),var(--ds-info-tint))}
-.purchasing-mini-intro span{font-size:12px;font-weight:900;letter-spacing:.09em;color:var(--ds-teal)}
-.purchasing-mini-intro h3{margin:0;font-size:18px;color:var(--ds-text)}
-.purchasing-mini-intro p{margin:0;color:var(--ds-text-2);line-height:1.45;font-size:13px}
+.purchasing-mini-intro span{font-size:var(--ds-t-sm);font-weight:var(--ds-w-head);letter-spacing:.09em;color:var(--ds-teal)}
+.purchasing-mini-intro h3{margin:0;font-size:var(--ds-t-xl);color:var(--ds-text)}
+.purchasing-mini-intro p{margin:0;color:var(--ds-text-2);line-height:1.45;font-size:var(--ds-t-md)}
 .purchasing-settlement-panel{display:grid;gap:12px}
 .purchasing-subtabs{display:flex;gap:8px;flex-wrap:wrap}
-.purchasing-subtabs button{display:flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid var(--ds-border-strong);border-radius:var(--ds-r-pill);background:#fff;color:var(--ds-text-strong);font-weight:800}
+.purchasing-subtabs button{display:flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid var(--ds-border-strong);border-radius:var(--ds-r-pill);background:#fff;color:var(--ds-text-strong);font-weight:var(--ds-w-label)}
 .purchasing-subtabs button.active{background:var(--ds-text);border-color:var(--ds-text);color:#fff}
 @media(max-width:640px){
   .purchasing-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}

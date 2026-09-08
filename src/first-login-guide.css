@@ -1,11 +1,11 @@
 .first-login-guide{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin:0 0 14px;padding:10px 44px 10px 11px;border:1px solid var(--ds-info-line);border-radius:var(--ds-r-lg);background:linear-gradient(135deg,var(--ds-info-tint),var(--ds-green-tint));box-shadow:0 10px 28px rgba(15,23,42,.07)}
-.first-login-guide span{font-size:12px;font-weight:950;letter-spacing:.12em;color:var(--ds-blue)}
-.first-login-guide h3{margin:3px 0 4px;font-size:17px;color:var(--ds-text)}
-.first-login-guide p{margin:0;color:var(--ds-muted);font-size:12px;line-height:1.55}
+.first-login-guide span{font-size:var(--ds-t-sm);font-weight:var(--ds-w-head);letter-spacing:.12em;color:var(--ds-blue)}
+.first-login-guide h3{margin:3px 0 4px;font-size:var(--ds-t-xl);color:var(--ds-text)}
+.first-login-guide p{margin:0;color:var(--ds-muted);font-size:var(--ds-t-sm);line-height:1.55}
 .first-login-guide-close{position:absolute;right:10px;top:10px;width:28px;height:28px;border:1px solid var(--ds-blue-soft);border-radius:var(--ds-r-pill);background:#fff;color:var(--ds-muted);display:grid;place-items:center}
 .first-login-guide-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.first-login-guide-actions button{display:inline-flex;align-items:center;gap:6px;min-height:38px;border:1px solid var(--ds-green-bright);border-radius:var(--ds-r-md);background:var(--ds-green);color:#fff;font-weight:900;padding:0 11px;cursor:pointer}
-.first-login-inline-guide{display:flex;align-items:center;gap:8px;margin-right:auto;padding:8px 10px;border:1px solid var(--ds-info-line);border-radius:var(--ds-r-md);background:var(--ds-info-tint);color:#1e3a8a;font-size:12px;font-weight:850;line-height:1.4}
+.first-login-guide-actions button{display:inline-flex;align-items:center;gap:6px;min-height:38px;border:1px solid var(--ds-green-bright);border-radius:var(--ds-r-md);background:var(--ds-green);color:#fff;font-weight:var(--ds-w-head);padding:0 11px;cursor:pointer}
+.first-login-inline-guide{display:flex;align-items:center;gap:8px;margin-right:auto;padding:8px 10px;border:1px solid var(--ds-info-line);border-radius:var(--ds-r-md);background:var(--ds-info-tint);color:#1e3a8a;font-size:var(--ds-t-sm);font-weight:var(--ds-w-label);line-height:1.4}
 .first-login-inline-guide b{color:var(--ds-info)}
 .dark .first-login-guide{border-color:var(--ds-border);background:linear-gradient(135deg,var(--ds-surface),var(--ds-surface-2))}
 .dark .first-login-guide h3{color:var(--ds-text)}

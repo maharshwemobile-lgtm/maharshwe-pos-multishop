@@ -4,13 +4,13 @@
 .repair-finance-tools-single{grid-template-columns:1fr}
 .phase11-repair-bottom-tools{display:flex;flex-direction:column;gap:12px;margin-top:2px;padding-top:18px;border-top:2px solid var(--ds-border)}
 .phase11-repair-bottom-heading{padding:13px 14px;border:1px solid #dfe8e3;border-radius:var(--ds-r-lg);background:linear-gradient(135deg,#fff,#fffaf0)}
-.phase11-repair-bottom-heading span{display:block;margin-bottom:5px;color:var(--ds-green);font-size:12px;font-weight:950;letter-spacing:.1em}
-.phase11-repair-bottom-heading h2{margin:0;color:var(--ds-text);font-size:20px}
-.phase11-repair-bottom-heading p{margin:6px 0 0;color:var(--ds-muted);font-size:12px;line-height:1.5}
+.phase11-repair-bottom-heading span{display:block;margin-bottom:5px;color:var(--ds-green);font-size:var(--ds-t-sm);font-weight:var(--ds-w-head);letter-spacing:.1em}
+.phase11-repair-bottom-heading h2{margin:0;color:var(--ds-text);font-size:var(--ds-t-2xl)}
+.phase11-repair-bottom-heading p{margin:6px 0 0;color:var(--ds-muted);font-size:var(--ds-t-sm);line-height:1.5}
 .phase11-repair-bottom-tools>.repair-export-panel{width:100%;box-sizing:border-box}
 .phase11-repair-tool-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:10px}
-.phase11-repair-tool-buttons button{display:flex;align-items:center;gap:10px;min-height:64px;padding:12px;border:1px solid #dfe8e3;border-radius:var(--ds-r-lg);background:#fff;color:var(--ds-text);text-align:left;font-weight:900;cursor:pointer;box-shadow:var(--ds-shadow)}
-.phase11-repair-tool-buttons button svg{color:var(--ds-amber);flex:0 0 auto}.phase11-repair-tool-buttons b,.phase11-repair-tool-buttons small{display:block}.phase11-repair-tool-buttons small{margin-top:3px;color:var(--ds-muted);font-size:12px}.phase11-repair-tool-buttons button.active{border-color:var(--ds-amber);background:var(--ds-amber-soft)}.phase11-repair-tool-buttons .clear-tool{justify-content:center;background:var(--ds-surface-2);color:var(--ds-text-2)}
+.phase11-repair-tool-buttons button{display:flex;align-items:center;gap:10px;min-height:64px;padding:12px;border:1px solid #dfe8e3;border-radius:var(--ds-r-lg);background:#fff;color:var(--ds-text);text-align:left;font-weight:var(--ds-w-head);cursor:pointer;box-shadow:var(--ds-shadow)}
+.phase11-repair-tool-buttons button svg{color:var(--ds-amber);flex:0 0 auto}.phase11-repair-tool-buttons b,.phase11-repair-tool-buttons small{display:block}.phase11-repair-tool-buttons small{margin-top:3px;color:var(--ds-muted);font-size:var(--ds-t-sm)}.phase11-repair-tool-buttons button.active{border-color:var(--ds-amber);background:var(--ds-amber-soft)}.phase11-repair-tool-buttons .clear-tool{justify-content:center;background:var(--ds-surface-2);color:var(--ds-text-2)}
 .dark .phase11-repair-heading,.dark .phase11-repair-bottom-heading{background:var(--ds-surface-2);border-color:#1f3655}
 .dark .phase11-repair-heading h2,.dark .phase11-repair-bottom-heading h2{color:var(--ds-surface-2)}
 .dark .phase11-repair-bottom-heading p{color:var(--ds-muted)}

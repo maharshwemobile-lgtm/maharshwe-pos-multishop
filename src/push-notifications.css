@@ -48,7 +48,7 @@
 .push-list time,
 .push-notice {
   color: var(--ds-muted);
-  font-size:12px;
+  font-size:var(--ds-t-sm);
 }
 
 .push-notification-menu button {
@@ -61,8 +61,8 @@
   background: #fff;
   color: var(--ds-text-strong);
   padding: 7px 9px;
-  font-size:12px;
-  font-weight: 900;
+  font-size:var(--ds-t-sm);
+  font-weight:var(--ds-w-head);
   cursor: pointer;
 }
 
@@ -80,8 +80,8 @@
   border-radius:var(--ds-r-md);
   background: var(--ds-surface-2);
   color: var(--ds-text-2);
-  font-size: 12px;
-  font-weight: 800;
+  font-size:var(--ds-t-sm);
+  font-weight:var(--ds-w-label);
 }
 
 .push-status-line.on {
@@ -131,7 +131,7 @@
 }
 
 .push-list b {
-  font-size: 12px;
+  font-size:var(--ds-t-sm);
 }
 
 .push-list span {
@@ -165,7 +165,7 @@
 .push-toast span {
   margin-top: 4px;
   color: #dbe7f4;
-  font-size: 12px;
+  font-size:var(--ds-t-sm);
   line-height: 1.45;
 }
 

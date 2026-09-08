@@ -5,8 +5,8 @@
   border-radius:var(--ds-r-sm);
   background: #f0fdfa;
   color: var(--ds-teal);
-  font-size:12px;
-  font-weight: 800;
+  font-size:var(--ds-t-sm);
+  font-weight:var(--ds-w-label);
 }
 
 .expense-category-backdrop {
@@ -49,7 +49,7 @@
 .expense-category-modal p,
 .expense-category-list small {
   color: var(--ds-muted);
-  font-size:12px;
+  font-size:var(--ds-t-sm);
 }
 
 .expense-category-add {
@@ -73,7 +73,7 @@
   border-radius:var(--ds-r-sm);
   background: var(--ds-teal);
   color: #fff;
-  font-weight: 800;
+  font-weight:var(--ds-w-label);
 }
 
 .expense-category-list {

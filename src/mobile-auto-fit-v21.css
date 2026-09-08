@@ -411,7 +411,7 @@ canvas {
     margin-bottom: 3px;
     color: var(--ds-muted);
     font-size: 0.68rem;
-    font-weight: 800;
+    font-weight:var(--ds-w-label);
   }
 
   .sale10-product-table td:nth-child(2)::before { content: 'Stock'; }
@@ -458,7 +458,7 @@ canvas {
     margin-bottom: 4px;
     color: var(--ds-muted);
     font-size: 0.67rem;
-    font-weight: 800;
+    font-weight:var(--ds-w-label);
   }
 
   .sale10-cart-table td:nth-child(2)::before { content: 'Quantity'; }
@@ -529,7 +529,7 @@ canvas {
     margin-bottom: 3px;
     color: var(--ds-muted);
     font-size: 0.67rem;
-    font-weight: 800;
+    font-weight:var(--ds-w-label);
   }
 
   .repair-table-wrap td:nth-child(2)::before { content: 'Customer'; }
@@ -593,7 +593,7 @@ canvas {
     margin-bottom: 3px;
     color: var(--ds-muted);
     font-size: 0.67rem;
-    font-weight: 800;
+    font-weight:var(--ds-w-label);
   }
 
   .br-table-wrap td:nth-child(3)::before { content: 'Source / Expense'; }
@@ -781,7 +781,7 @@ canvas {
   .sale10-row-add {
     min-height: 30px !important;
     padding: 0 9px !important;
-    font-size:12px !important;
+    font-size:var(--ds-t-sm) !important;
     border-radius:var(--ds-r-sm)!important;
   }
 

@@ -87,6 +87,30 @@
   --ds-violet-dark:#6d28d9;
   --ds-violet-soft:#ede9fe;
 
+  /* ---- type ----
+     The app was set almost entirely in Black. 255 declarations at weight 900,
+     156 at 800, 64 at 950 -- and three at normal. Everything shouted at once,
+     so nothing stood out, and heavy weights at 12px go muddy in Burmese, where
+     a stacked mark has to stay legible inside the same line.
+     Three weights carry every screen: body, label, heading. */
+  --ds-w-body:400;
+  --ds-w-label:600;
+  --ds-w-head:700;
+
+  /* A floor of 11px. Captions were set at 8 and 9, which no one reads. */
+  --ds-t-xs:11px;
+  --ds-t-sm:12px;
+  --ds-t-md:13px;
+  --ds-t-lg:15px;
+  --ds-t-xl:18px;
+  --ds-t-2xl:22px;
+
+  /* Burmese stacks marks above and below, so it needs more room per line than
+     Latin does at the same size. */
+  --ds-lh-tight:1.35;
+  --ds-lh:1.6;
+  --ds-lh-loose:1.75;
+
   /* ---- depth ----
      Three, not eleven. A card, a card that floats, and a dialog. */
   --ds-shadow-sm:0 6px 18px rgba(15,23,42,.05);
@@ -127,3 +151,16 @@
   --ds-shadow:0 8px 24px rgba(0,0,0,.32);
   --ds-shadow-lg:0 28px 90px rgba(0,0,0,.55);
 }
+
+/* The app never set a line-height on the body, so every screen inherited the
+   browser's "normal" -- roughly 1.2. Latin survives that; Burmese does not,
+   because a stacked mark has to fit inside the line and ends up touching the
+   row above. */
+body{
+  line-height:var(--ds-lh);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+/* Headings keep their own, tighter measure -- a two-line title with body
+   leading reads as two separate lines. */
+h1,h2,h3,h4,h5{line-height:var(--ds-lh-tight)}

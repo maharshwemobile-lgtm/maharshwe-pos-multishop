@@ -1,7 +1,7 @@
 .sale10-clear-helper {
   margin-top: 6px !important;
   color: var(--ds-green-dark) !important;
-  font-weight: 800;
+  font-weight:var(--ds-w-label);
 }
 
 .sale10-guided-flow {
@@ -37,19 +37,19 @@
   place-items: center;
   background: var(--ds-border);
   color: var(--ds-text-2);
-  font-size: 15px;
+  font-size:var(--ds-t-lg);
 }
 
 .sale10-guided-flow article span {
   color: var(--ds-text);
-  font-size: 13px;
-  font-weight: 950;
+  font-size:var(--ds-t-md);
+  font-weight:var(--ds-w-head);
   line-height: 1.25;
 }
 
 .sale10-guided-flow article small {
   color: var(--ds-muted);
-  font-size:12px;
+  font-size:var(--ds-t-sm);
   line-height: 1.35;
 }
 
@@ -73,7 +73,7 @@
   background: var(--ds-green-tint);
   border-color: var(--ds-green-line);
   color: var(--ds-green-dark);
-  font-weight: 950;
+  font-weight:var(--ds-w-head);
 }
 
 .sale10-next-action.warning {
@@ -91,7 +91,7 @@
 
 .sale10-price-warning {
   color: var(--ds-amber-dark);
-  font-weight: 950;
+  font-weight:var(--ds-w-head);
 }
 
 .sale10-price-help,
@@ -99,8 +99,8 @@
   display: block;
   margin-top: 4px;
   color: var(--ds-amber-dark) !important;
-  font-size:12px;
-  font-weight: 900;
+  font-size:var(--ds-t-sm);
+  font-weight:var(--ds-w-head);
 }
 
 .sale10-price-input.invalid {
@@ -111,7 +111,7 @@
 
 .sale10-review-button {
   min-height: 50px;
-  font-size: 14px;
+  font-size:var(--ds-t-md);
   letter-spacing: 0.01em;
 }
 
@@ -128,15 +128,15 @@
 }
 
 .sale10-payment-methods button b {
-  font-size: 12px;
+  font-size:var(--ds-t-sm);
   line-height: 1.15;
 }
 
 .sale10-payment-methods button small {
   margin-top: 2px;
   color: inherit;
-  font-size: 9px;
-  font-weight: 750;
+  font-size:var(--ds-t-xs);
+  font-weight:var(--ds-w-label);
   opacity: .72;
 }
 
@@ -231,13 +231,13 @@
   }
 
   .sale10-product-table .stock-product-cell b {
-    font-size: 12px;
+    font-size:var(--ds-t-sm);
     line-height: 1.25;
   }
 
   .sale10-product-table .stock-product-cell small,
   .sale10-price-help {
-    font-size: 9px !important;
+    font-size:var(--ds-t-xs) !important;
     line-height: 1.25;
   }
 
@@ -246,8 +246,8 @@
     display: block;
     margin-bottom: 3px;
     color: var(--ds-muted);
-    font-size:12px;
-    font-weight: 950;
+    font-size:var(--ds-t-sm);
+    font-weight:var(--ds-w-head);
     text-transform: uppercase;
   }
 
@@ -299,7 +299,7 @@
     min-height: 32px;
     padding: 0 10px !important;
     border-radius:var(--ds-r-sm)!important;
-    font-size:12px !important;
+    font-size:var(--ds-t-sm) !important;
   }
 }
 
@@ -316,7 +316,7 @@
   .sale10-next-action {
     padding: 9px 10px;
     border-radius:var(--ds-r-md);
-    font-size: 12px;
+    font-size:var(--ds-t-sm);
     line-height: 1.45;
   }
 
@@ -336,11 +336,11 @@
   }
 
   .sale10-payment-methods button b {
-    font-size:12px;
+    font-size:var(--ds-t-sm);
   }
 
   .sale10-payment-methods button small {
-    font-size: 7.5px;
+    font-size:var(--ds-t-xs);
   }
 
   .sale10-review-button {

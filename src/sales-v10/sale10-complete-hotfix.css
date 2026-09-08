@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 12px;
+  font-size:var(--ds-t-sm);
   line-height: 1.15;
   white-space: nowrap;
 }
@@ -40,7 +40,7 @@
   border-color: var(--ds-green-line);
   background: var(--ds-green-tint);
   color: var(--ds-green-dark);
-  font-weight: 900;
+  font-weight:var(--ds-w-head);
 }
 .sale10-cart-quantity-field { gap: 0 !important; }
 @media (max-width: 520px) {
