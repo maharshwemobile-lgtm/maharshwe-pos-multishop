@@ -275,7 +275,7 @@ function ImportModal({ onClose, onImported }) {
   );
 }
 
-export default function InventoryToolsPanel({ onInventoryChanged }) {
+export default function InventoryToolsPanel({ onInventoryChanged, extraActions = null }) {
   const [lowItems, setLowItems] = useState([]);
   const [loadingLow, setLoadingLow] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -353,6 +353,7 @@ export default function InventoryToolsPanel({ onInventoryChanged }) {
           <button type="button" onClick={() => setScannerOpen(true)} title="Barcode scan လုပ်မည်"><Barcode size={15} /> Scan</button>
           <button type="button" onClick={() => setImportOpen(true)} title="CSV မှ ကုန်ပစ္စည်း သွင်းမည်"><Upload size={15} /> Import</button>
           <button type="button" onClick={exportCsv} title="စတော့စာရင်းကို CSV ထုတ်မည်"><Download size={15} /> Export</button>
+          {extraActions}
         </div>
       </div>
       {message ? <div className="inventory-tools-message">{message}</div> : null}

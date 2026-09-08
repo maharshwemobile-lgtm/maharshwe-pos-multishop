@@ -286,7 +286,7 @@ export default function InventoryImportReview({ onImported, compact = false }) {
   };
 
   if (compact) return <>
-    <button type="button" onClick={() => setOpen(true)}><FileSpreadsheet size={18}/> Excel / Sheet Import</button>
+    <button type="button" onClick={() => setOpen(true)} title="CSV / Excel ကို သွင်းမီ New / Update / Stock Changes အားလုံး ကြိုကြည့်မည်"><FileSpreadsheet size={15}/> Excel / Sheet</button>
     {message ? <div className="import-review-message">{message}</div> : null}
     {open ? <ReviewModal onClose={() => setOpen(false)} onImported={imported}/> : null}
   </>;

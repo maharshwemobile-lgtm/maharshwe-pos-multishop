@@ -153,3 +153,12 @@
 /* Nothing sits above the strip any more, so its 16px top margin was holding a
    gap open against the top of the page. */
 .inventory-tools-panel .low-stock-strip{margin-top:0}
+/* Six buttons and a line of text share the strip. The text column defaults to
+   a min-content floor, which reserves room for the longest low-stock name and
+   pushes the buttons onto a second line; letting it shrink and truncate keeps
+   them all on one. */
+.low-stock-strip{grid-template-columns:32px minmax(0,1fr) auto}
+.low-stock-strip > div:nth-child(2){min-width:0}
+.low-stock-strip > div:nth-child(2) span{
+  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
