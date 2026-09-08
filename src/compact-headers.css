@@ -162,3 +162,116 @@
 .low-stock-strip > div:nth-child(2) span{
   display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+
+/* Page headings, every page.
+   The pattern is the same everywhere: an all-caps eyebrow, a title, and a
+   sentence explaining the page. The eyebrow says PRICE & DISCOUNT CONTROL
+   directly above a title that says ဈေးနှုန်းနှင့် လျှော့ဈေး -- the same thing,
+   louder, in a second line. On a counter PC the shop knows what page it opened;
+   what it wants is the list.
+
+   The eyebrow goes, the title comes down to heading size, and the sentence
+   stays -- smaller, and clipped to two lines so a long one cannot push the
+   work further down the screen. */
+.stock-page-heading > div > span:first-child,
+.p2-page-heading > div > span:first-child,
+.price-page-heading > div > span:first-child,
+.credit-page-heading > div > span:first-child,
+.payments-page-heading > div > span:first-child,
+.purchase-page-heading > div > span:first-child,
+.reports-page-heading > div > span:first-child,
+.audit-page-heading > div > span:first-child,
+.backup-page-heading > div > span:first-child,
+.repair-page-heading > div > span:first-child,
+.msc-heading > div > span:first-child,
+.br-heading > div > span:first-child,
+.gt-heading > div > span:first-child,
+.remittance-heading > div > span:first-child,
+.branch-heading > div > span:first-child,
+.grand-heading > div > span:first-child,
+.stock-eyebrow,
+.ps-eyebrow,
+.bc-control-title > span:first-child{
+  display:none;
+}
+
+.stock-page-heading h2,
+.p2-page-heading h2,
+.price-page-heading h2,
+.credit-page-heading h2,
+.payments-page-heading h2,
+.purchase-page-heading h2,
+.reports-page-heading h2,
+.audit-page-heading h2,
+.backup-page-heading h2,
+.repair-page-heading h2,
+.msc-heading h2,
+.br-heading h2,
+.gt-heading h2,
+.remittance-heading h2,
+.branch-heading h2,
+.grand-heading h2,
+.bc-control-title h2{
+  font-size:var(--ds-t-xl)!important;
+  margin:0;
+}
+
+.stock-page-heading p,
+.p2-page-heading p,
+.price-page-heading p,
+.credit-page-heading p,
+.payments-page-heading p,
+.purchase-page-heading p,
+.reports-page-heading p,
+.audit-page-heading p,
+.backup-page-heading p,
+.repair-page-heading p,
+.msc-heading > div > p,
+.br-heading > div > p,
+.gt-heading > div > p,
+.remittance-heading > div > p,
+.branch-heading > div > p,
+.grand-heading > div > p,
+.bc-control-title p{
+  margin:3px 0 0;
+  font-size:var(--ds-t-xs)!important;
+  line-height:1.55!important;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+/* The buttons beside a page title are secondary to the page, so they stop
+   being the tallest thing on it. */
+.stock-page-heading button,
+.p2-page-heading button,
+.price-page-heading button,
+.credit-page-heading button,
+.payments-page-heading button,
+.reports-page-heading button,
+.audit-page-heading button,
+.backup-page-heading button,
+.msc-heading button,
+.br-heading button,
+.gt-heading button,
+.remittance-heading button{
+  height:34px;
+  padding:0 11px;
+  font-size:var(--ds-t-xs);
+}
+.stock-page-heading button > svg,
+.p2-page-heading button > svg,
+.price-page-heading button > svg,
+.credit-page-heading button > svg,
+.payments-page-heading button > svg,
+.reports-page-heading button > svg,
+.audit-page-heading button > svg,
+.backup-page-heading button > svg,
+.msc-heading button > svg,
+.br-heading button > svg,
+.gt-heading button > svg,
+.remittance-heading button > svg{
+  width:15px;
+  height:15px;
+}

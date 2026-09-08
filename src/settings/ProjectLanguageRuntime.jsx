@@ -757,7 +757,26 @@ Object.assign(MYANMAR, {
   'Notification status unavailable': 'Notification status မရနိုင်ပါ',
   'Notification worker was updated. Please refresh once, then press Update device again.': 'Notification worker update ဖြစ်ထားပါသည်။ Refresh တစ်ချက်လုပ်ပြီး Update device ပြန်နှိပ်ပါ။',
 });
-const ENGLISH = Object.fromEntries(Object.entries(MYANMAR).map(([en, my]) => [my, en]));
+// The reverse map turns Myanmar back into English when the app is switched to
+// English, by matching a text node's whole trimmed contents against a
+// translation. That works for a phrase and fails badly for a common word: the
+// dictionary translates the login page's "Or continue with" as သို့မဟုတ်, so
+// every standalone သို့မဟုတ် in the app -- in the middle of a sentence broken
+// by a <b>, say -- came back reading "Or continue with".
+//
+// A translation short enough to appear inside somebody else's sentence is not
+// safe to reverse. Forward translation is unaffected: English keys are long
+// and specific, and this only drops the Myanmar-to-English direction.
+const AMBIGUOUS_REVERSE = new Set([
+  'သို့မဟုတ်', 'နှင့်', 'သည်', 'ပါ', 'မည်', 'ရန်', 'အားလုံး', 'ပြီး', 'မရ',
+  'ဖွင့်', 'ပိတ်', 'ရှာ', 'သိမ်း', 'ဖျက်', 'ပြင်', 'ထုတ်', 'သွင်း',
+]);
+
+const ENGLISH = Object.fromEntries(
+  Object.entries(MYANMAR)
+    .filter(([, my]) => !AMBIGUOUS_REVERSE.has(String(my).trim()))
+    .map(([en, my]) => [my, en]),
+);
 const textState = new WeakMap();
 const elementState = new WeakMap();
 const TRANSLATABLE_ATTRIBUTES = ['placeholder', 'title', 'aria-label', 'value'];
