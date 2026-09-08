@@ -49,8 +49,9 @@
   .reports-table td{
     max-width:340px;
   }
-  .stock-note-cell,
-  .audit-table td.audit-detail-cell{
+  /* Free text is the exception: capped so one wordy row cannot stretch the
+     table back out again. */
+  .stock-note-cell{
     max-width:260px;
   }
 }
