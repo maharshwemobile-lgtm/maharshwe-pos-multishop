@@ -169,3 +169,38 @@
   font:inherit;font-weight:var(--ds-w-head);font-size:var(--ds-t-sm);cursor:pointer;
 }
 .sale10-quick-voucher:hover{background:var(--ds-warn-soft)}
+
+/* PR56: the history was pinned to 1380px for nine columns, so on any normal
+   screen the browser stretched the gaps until the invoice number and what the
+   customer paid sat at opposite ends of a sideways scroll -- the same thing the
+   repair list was doing at 1360. Columns are sized to what they hold, and the
+   three row buttons drop their labels so Actions stops costing 220px to say
+   View, Reprint, Void. */
+.sale10-history-table{
+  min-width:1058px;
+  table-layout:fixed;
+}
+.sale10-history-table th,
+.sale10-history-table td{
+  padding:8px 9px;
+  box-sizing:border-box;
+}
+.sale10-history-table th:nth-child(1),.sale10-history-table td:nth-child(1){width:112px}  /* Invoice */
+.sale10-history-table th:nth-child(2),.sale10-history-table td:nth-child(2){width:148px}  /* Date */
+.sale10-history-table th:nth-child(3),.sale10-history-table td:nth-child(3){width:auto;min-width:150px} /* Customer */
+.sale10-history-table th:nth-child(4),.sale10-history-table td:nth-child(4){width:64px}   /* Items */
+.sale10-history-table th:nth-child(5),.sale10-history-table td:nth-child(5){width:136px;white-space:nowrap} /* Total */
+.sale10-history-table th:nth-child(6),.sale10-history-table td:nth-child(6){width:104px}  /* Payment */
+.sale10-history-table th:nth-child(7),.sale10-history-table td:nth-child(7){width:104px}  /* Status */
+.sale10-history-table th:nth-child(8),.sale10-history-table td:nth-child(8){width:110px}  /* Cashier */
+.sale10-history-table th:nth-child(9),.sale10-history-table td:nth-child(9){width:126px}  /* Actions */
+.sale10-history-table td{overflow-wrap:anywhere}
+
+/* Icon-only on the desktop table: the icons already say it, and the tooltip is
+   there for anyone unsure. The mobile card layout below keeps the words. */
+.sale10-history-actions{min-width:0;display:flex;gap:5px}
+.sale10-history-actions .stock-action{
+  width:34px;min-width:0;padding:0;
+  display:grid;place-items:center;font-size:0;
+}
+.sale10-history-actions .stock-action svg{font-size:initial}

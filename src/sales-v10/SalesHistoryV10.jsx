@@ -417,9 +417,9 @@ export default function SalesHistoryV10() {
                     <td data-label="Cashier">{row.cashier || '-'}</td>
                     <td data-label="Actions">
                       <div className="stock-row-actions sale10-history-actions">
-                        <button type="button" className="stock-action stock-action-blue" onClick={() => loadDetail(row)}><FileText size={15} /> View</button>
-                        <button type="button" className="stock-action stock-action-green allow-mobile-print" onClick={() => reprint(row)} disabled={printingId === (row.id || row.invoice)}><Printer size={15} /> {printingId === (row.id || row.invoice) ? 'Loading' : 'Reprint'}</button>
-                        <button type="button" className="stock-action stock-action-red" disabled={String(row.status).toLowerCase().includes('void')} onClick={() => openVoid(row)}><Ban size={15} /> Void</button>
+                        <button type="button" className="stock-action stock-action-blue" title="View" aria-label="View" onClick={() => loadDetail(row)}><FileText size={15} /> View</button>
+                        <button type="button" className="stock-action stock-action-green allow-mobile-print" title="Reprint" aria-label="Reprint" onClick={() => reprint(row)} disabled={printingId === (row.id || row.invoice)}><Printer size={15} /> {printingId === (row.id || row.invoice) ? 'Loading' : 'Reprint'}</button>
+                        <button type="button" className="stock-action stock-action-red" title="Void" aria-label="Void" disabled={String(row.status).toLowerCase().includes('void')} onClick={() => openVoid(row)}><Ban size={15} /> Void</button>
                       </div>
                     </td>
                   </tr>
