@@ -327,3 +327,55 @@
   padding:0 11px;
   font-size:var(--ds-t-xs);
 }
+
+/* The repair list on a phone.
+   It had no mobile layout at all: seven columns and a table that had to be
+   dragged sideways to read one repair. It becomes one card per repair -- the
+   voucher number and where it is up to on the first line, who and which phone
+   on the second, the money and the date on the third. The fault, the IMEI and
+   the source are the detail, and the detail is what opening the repair is for;
+   tapping the card already does that. */
+@media(max-width:760px){
+  .repair-table-wrap{overflow:visible}
+  .repair-table-wrap table{width:100%;min-width:0;display:block}
+  .repair-table-wrap thead{display:none}
+  .repair-table-wrap tbody{display:grid;gap:8px;padding:8px}
+  .repair-table-wrap tbody tr{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:3px 10px;
+    padding:9px 11px;
+    align-items:baseline;
+    border:1px solid var(--ds-border);
+    border-radius:var(--ds-r-md);
+    background:var(--ds-surface);
+  }
+  /* phase9-navigation puts padding:9px 10px !important on every cell in the
+     app at this width, which is right for a table and wrong for a card: three
+     lines with 9px above and below each is 54px of nothing. */
+  .repair-table-wrap tbody td{
+    display:block;
+    padding:0!important;
+    border:0;
+    font-size:var(--ds-t-sm);
+    line-height:1.45;
+  }
+  /* voucher number, then status opposite it */
+  .repair-table-wrap tbody td:nth-child(1){grid-column:1;grid-row:1;font-size:var(--ds-t-md)}
+  .repair-table-wrap tbody td:nth-child(5){grid-column:2;grid-row:1;justify-self:end}
+  /* owner and phone share the second line */
+  .repair-table-wrap tbody td:nth-child(2){grid-column:1;grid-row:2}
+  .repair-table-wrap tbody td:nth-child(3){grid-column:2;grid-row:2;text-align:right;color:var(--ds-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* money and the date it came in share the third */
+  .repair-table-wrap tbody td:nth-child(7){grid-column:1;grid-row:3;color:var(--ds-text)}
+  .repair-table-wrap tbody td:nth-child(6){grid-column:2;grid-row:3;text-align:right;color:var(--ds-muted);font-size:var(--ds-t-xs)}
+  /* The fault, the phone number, the IMEI and what is still due are the
+     detail, and the detail is what opening the repair is for. Three lines:
+     which repair and where it is up to, who and which phone, how much and
+     when it came in. */
+  .repair-table-wrap tbody td:nth-child(4){display:none}
+  .repair-table-wrap tbody td small{display:none}
+  .repair-table-wrap tbody td b{display:inline;font-weight:var(--ds-w-label)}
+  .repair-table-wrap tbody td:nth-child(1) b{font-weight:var(--ds-w-head)}
+  .repair-table-wrap tbody .repair-status{min-height:24px;font-size:var(--ds-t-xs)}
+}
