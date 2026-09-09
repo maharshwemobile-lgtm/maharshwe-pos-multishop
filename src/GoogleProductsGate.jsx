@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import ProductsPage from './ProductsPage.jsx';
 import { getSession, googleLogin } from './phase2Api';
+import { googleIdentityScriptSrc } from './googleIdentityScript.js';
 import './products.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
@@ -22,7 +23,7 @@ function loadGoogleIdentityScript() {
     }
 
     const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
+    script.src = googleIdentityScriptSrc();
     script.async = true;
     script.defer = true;
     script.dataset.maharGoogleIdentity = 'true';

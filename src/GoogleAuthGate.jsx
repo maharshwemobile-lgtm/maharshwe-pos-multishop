@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { KeyRound, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import { getSession, googleLogin, login, registerTenant, subscribeSession } from './phase2Api';
 import LoginFooterActions from './LoginFooterActions.jsx';
+import { googleIdentityScriptSrc } from './googleIdentityScript.js';
 import { ADMIN_URL, API_URL, APP_HOST, LANDING_URL, PROJECT_LOGO_URL } from './projectBrand';
 import './auth-gate.css';
 
@@ -28,7 +29,7 @@ function loadGoogleIdentityScript() {
     }
 
     const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
+    script.src = googleIdentityScriptSrc();
     script.async = true;
     script.defer = true;
     script.dataset.maharGoogleIdentity = 'true';

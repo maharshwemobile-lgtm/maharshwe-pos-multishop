@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { changePassword, clearSession, googleLogin, login, registerTenant } from './phase2Api';
 import { PROJECT_LOGO_URL } from './projectBrand';
 import LoginFooterActions from './LoginFooterActions.jsx';
+import { googleIdentityLocale, googleIdentityScriptSrc } from './googleIdentityScript.js';
 import './login-register-gate.css';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '648689584934-kbfljosfdkui7phmiq9k9o3dfl9un0ql.apps.googleusercontent.com';
@@ -145,7 +146,9 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
         size: 'large',
         width: 320,
         text: mode === 'register' ? 'signup_with' : 'signin_with',
-        locale: 'my',
+        // Kept in step with the script URL below, which is what actually
+        // decides the button's language.
+        locale: googleIdentityLocale(),
       });
     };
 
@@ -161,7 +164,7 @@ export default function LoginRegisterGate({ onSession, forcePasswordChange = fal
     }
 
     const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
+    script.src = googleIdentityScriptSrc();
     script.async = true;
     script.defer = true;
     script.dataset.maharGoogleLogin = 'true';
