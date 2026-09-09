@@ -452,21 +452,18 @@ export default function ProductPriceDiscountPage() {
                   <tr key={row.id} className={row.active === false || row.productActive === false ? 'inactive' : ''}>
                     <td><input type="checkbox" checked={checked} onChange={() => toggleSelected(row.id)} /></td>
                     <td>
-                      <div className="price-product-cell">
+                      <div className="price-product-cell" title={[row.sku ? `SKU: ${row.sku}` : '', row.barcode ? `Barcode: ${row.barcode}` : ''].filter(Boolean).join(' · ')}>
                         <b>{row.productName}</b>
-                        <span>{row.variantName || 'Default'}{row.sku ? ` · SKU: ${row.sku}` : ''}{row.barcode ? ` · Barcode: ${row.barcode}` : ''}</span>
+                        {row.variantName && row.variantName !== 'Default' ? <span>{row.variantName}</span> : null}
                       </div>
                     </td>
-                    <td>
-                      <span>{row.categoryName}</span>
-                      <small>{[row.productBrand, row.productModel].filter(Boolean).join(' / ') || '-'}</small>
-                    </td>
+                    <td title={[row.productBrand, row.productModel].filter(Boolean).join(' / ')}>{row.categoryName}</td>
                     <td><b className={low ? 'price-low' : ''}>Stock {stock}</b></td>
                     {showCost ? <td>{money(row.costPrice)}</td> : null}
                     <td><b>{money(row.standardSellingPrice)}</b></td>
                     <td>{money(row.wholesalePrice)}</td>
                     {showCost ? <td>{money(row.minimumSellingPrice)}</td> : null}
-                    {showCost ? <td><b className={selling - cost >= 0 ? 'price-profit' : 'price-loss'}>{money(selling - cost)}</b><small>{marginPercent(selling, cost)}</small></td> : null}
+                    {showCost ? <td title={marginPercent(selling, cost)}><b className={selling - cost >= 0 ? 'price-profit' : 'price-loss'}>{money(selling - cost)}</b></td> : null}
                     <td>
                       <button type="button" className="price-edit" onClick={() => startEdit(row)} disabled={!canManage}><Edit3 size={14} /> ဈေးညှိမယ်</button>
                     </td>

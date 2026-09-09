@@ -379,3 +379,23 @@
   .repair-table-wrap tbody td:nth-child(1) b{font-weight:var(--ds-w-head)}
   .repair-table-wrap tbody .repair-status{min-height:24px;font-size:var(--ds-t-xs)}
 }
+
+/* One line per price.
+   Three cells carried a second line -- the SKU and barcode under the product,
+   the brand and model under the category, the margin under the profit -- so a
+   row stood two lines tall and read as pulled apart. Each of those now sits
+   on the cell's title instead, a hover away rather than in the way, which
+   takes the row from 58px to 45px and the table from 1272px wide to 1118. */
+.price-table td{white-space:nowrap;vertical-align:middle}
+/* The empty state is a paragraph inside a cell, so it keeps its wrapping. */
+.price-table .price-empty,.price-table .price-empty *{white-space:normal}
+.price-table .price-product-cell{
+  display:flex;align-items:baseline;gap:7px;min-width:0;
+}
+.price-table .price-product-cell b{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;
+}
+.price-table .price-product-cell span{
+  color:var(--ds-muted);font-size:var(--ds-t-xs);white-space:nowrap;margin:0;
+}
+.price-table th,.price-table td{padding:6px 9px}
