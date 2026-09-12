@@ -524,6 +524,33 @@ function attachGoogleSheetSyncApi(app) {
     }
   });
 
+  // The other direction for the spare-part shelf: the STOCK tab is kept by
+  // hand, so an edit there is the shop telling the POS what is actually on the
+  // shelf. Repairs already worked this way; stock did not, which is why editing
+  // a QTY and waiting for the POS to follow did nothing.
+  app.post('/api/google-sheet-sync/spare-part-stock', requireShopSheetSecret, async (req, res) => {
+    try {
+      const { applyStockRow } = require('./spare-part-sheet-inbound');
+      const shop = req.sheetShop;
+      const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 1000) : [];
+      if (!rows.length) return res.json({ ok: true, applied: 0, results: [] });
+
+      const results = [];
+      for (const row of rows) results.push(await applyStockRow(shop.id, row));
+
+      return res.json({
+        ok: true,
+        applied: results.filter((r) => r.applied).length,
+        created: results.filter((r) => r.created).length,
+        changed: results.filter((r) => r.changed).length,
+        skipped: results.filter((r) => !r.applied),
+        results,
+      });
+    } catch (error) {
+      return res.status(500).json({ ok: false, message: error.message || 'Spare part stock sync failed' });
+    }
+  });
+
   app.get('/api/google-sheet-sync/export/:dataset', requireSheetSecret, async (req, res) => {
     try {
       const dataset = datasetKey(req.params.dataset);

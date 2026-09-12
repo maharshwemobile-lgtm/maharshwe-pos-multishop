@@ -19,7 +19,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-13';
+const SCRIPT_VERSION = 'repair-sync-14';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -27,8 +27,30 @@ const POS_DATASETS = [
   ['other-income', 'Other Income'],
   ['service-income', 'Service Income'],
   ['expense', 'Expense'],
-  ['stock', 'STOCK'],
   ['user-audit', 'User audit'],
+];
+
+// The spare-part shelf, kept by hand on the STOCK tab. It is a wall chart, not
+// a table: each brand owns a pair of columns -- the part name, then its QTY --
+// so one row holds a Redmi part, an Oppo part and a Vivo part that have nothing
+// to do with each other. Read down a pair, never across a row.
+//
+// This tab is deliberately absent from POS_DATASETS above. The POS stock export
+// carries its own column names, and writing it here would rewrite row 1 and
+// bury the chart under hundreds of appended rows.
+const STOCK_TAB = 'STOCK';
+const STOCK_HEADER_ROWS = 1;
+const STOCK_COLUMNS = [
+  { name: 1, qty: 2, brand: 'Redmi' },
+  { name: 3, qty: 4, brand: 'Oppo' },
+  { name: 5, qty: 6, brand: 'Vivo' },
+  { name: 7, qty: 8, brand: 'Infinix' },
+  { name: 9, qty: 10, brand: 'Tecno' },
+  { name: 11, qty: 12, brand: 'Samsung' },
+  { name: 13, qty: 14, brand: 'Huawei' },
+  // Column 15 is "Modified လုပ်ရန်" -- notes about parts to rework, with no QTY
+  // beside them. It is not stock and is not sent.
+  { name: 16, qty: 17, brand: '' },
 ];
 
 // Named for this script rather than onOpen, so pasting it beside another
@@ -38,6 +60,7 @@ function posSyncOnOpen() {
     .createMenu('MaharShwe POS')
     .addItem('Setup Tabs', 'setupMaharShwePosSync')
     .addItem('Sync All Now', 'syncAllTabs')
+    .addItem('STOCK ကို POS သို့ ပို့မည်', 'pushAllStockToPos')
     .addItem('Install 5-Min Backup Sync', 'installBackupSyncTrigger')
     .addToUi();
 }
@@ -200,11 +223,18 @@ function installRepairEditTrigger() {
     // minutes; it should not be running at all.
     if (fn === 'syncAllTabs') ScriptApp.deleteTrigger(trigger);
   });
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === 'pushStockEditsToPos') ScriptApp.deleteTrigger(trigger);
+  });
   ScriptApp.newTrigger('pushRepairEditsToPos')
     .forSpreadsheet(targetSpreadsheet())
     .onEdit()
     .create();
-  return 'Trigger installed';
+  ScriptApp.newTrigger('pushStockEditsToPos')
+    .forSpreadsheet(targetSpreadsheet())
+    .onEdit()
+    .create();
+  return 'Triggers installed';
 }
 
 function secretFingerprint() {
@@ -681,3 +711,96 @@ function pushRepairEditsToPos(e) {
   return response.getContentText();
 }
 
+
+// ===========================================================================
+// STOCK tab → POS
+//
+// Editing a QTY here used to do nothing at all: repairs were the only thing
+// that ever travelled from the sheet back to the POS, and stock went the other
+// way only. These two send it.
+//
+// Quantity is set, not added, so sending the same row twice is not a second
+// stock-in, and a full push is safe to run whenever the chart looks out of step.
+// ===========================================================================
+
+function stockPairForColumn_(column) {
+  for (var i = 0; i < STOCK_COLUMNS.length; i += 1) {
+    if (STOCK_COLUMNS[i].name === column || STOCK_COLUMNS[i].qty === column) return STOCK_COLUMNS[i];
+  }
+  return null;
+}
+
+function stockRowsFrom_(sheet, firstRow, lastRow, pairs) {
+  var width = sheet.getLastColumn();
+  var values = sheet.getRange(firstRow, 1, lastRow - firstRow + 1, width).getDisplayValues();
+  var rows = [];
+  for (var r = 0; r < values.length; r += 1) {
+    for (var p = 0; p < pairs.length; p += 1) {
+      var pair = pairs[p];
+      if (pair.qty > width) continue;
+      var name = String(values[r][pair.name - 1] || '').trim();
+      var qty = String(values[r][pair.qty - 1] || '').trim();
+      // A name with no QTY beside it is a note, not a shelf count; a QTY with
+      // no name is a gap in the chart that only the shop can fill.
+      if (!name || qty === '') continue;
+      rows.push({ brand: pair.brand, name: name, qty: qty });
+    }
+  }
+  return rows;
+}
+
+function sendStockRows_(rows) {
+  if (!rows.length) return null;
+  var response = UrlFetchApp.fetch(POS_CONFIG.BASE_URL + '/api/google-sheet-sync/spare-part-stock', {
+    method: 'post',
+    contentType: 'application/json',
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      secret: getRequiredProperty('POS_SYNC_SECRET'),
+      shopSlug: POS_CONFIG.SHOP_SLUG,
+      tab: STOCK_TAB,
+      rows: rows,
+    }),
+  });
+  return response.getContentText();
+}
+
+function pushStockEditsToPos(e) {
+  var range = (e && e.range) ? e.range : SpreadsheetApp.getActiveSpreadsheet().getActiveRange();
+  if (!range) return;
+  var sheet = range.getSheet();
+  if (sheet.getName() !== STOCK_TAB) return;
+
+  // Only the pair the edit landed in. An edit to one brand's QTY says nothing
+  // about the part sitting beside it in the same spreadsheet row.
+  var pairs = [];
+  for (var c = range.getColumn(); c <= range.getLastColumn(); c += 1) {
+    var pair = stockPairForColumn_(c);
+    if (pair && pairs.indexOf(pair) < 0) pairs.push(pair);
+  }
+  if (!pairs.length) return;
+
+  var firstRow = Math.max(range.getRow(), STOCK_HEADER_ROWS + 1);
+  var lastRow = Math.min(range.getLastRow(), sheet.getLastRow());
+  if (lastRow < firstRow) return;
+
+  return sendStockRows_(stockRowsFrom_(sheet, firstRow, lastRow, pairs));
+}
+
+// For when the chart and the POS have drifted apart -- after a batch of edits
+// made while the script was not installed, say.
+function pushAllStockToPos() {
+  var sheet = targetSpreadsheet().getSheetByName(STOCK_TAB);
+  if (!sheet) throw new Error(STOCK_TAB + ' tab ကို မတွေ့ပါ။');
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= STOCK_HEADER_ROWS) throw new Error(STOCK_TAB + ' tab ထဲမှာ data မရှိပါ။');
+
+  var rows = stockRowsFrom_(sheet, STOCK_HEADER_ROWS + 1, lastRow, STOCK_COLUMNS);
+  var body = sendStockRows_(rows);
+  var ui;
+  try { ui = SpreadsheetApp.getUi(); } catch (error) { ui = null; }
+  var applied = String(body || '').match(/"applied":(\d+)/);
+  var message = 'ပို့လိုက်သည် ' + rows.length + ' ခု။ POS လက်ခံသည် ' + (applied ? applied[1] : '?') + ' ခု။';
+  if (ui) ui.alert(message);
+  return message;
+}
