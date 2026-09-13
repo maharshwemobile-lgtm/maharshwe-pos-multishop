@@ -447,6 +447,13 @@ function attachGoogleSheetSyncApi(app) {
         enabled: true,
         scriptVersion: clean(req.body?.version, 40),
         availableTabs: tabs,
+        // The script's own trigger list, read after it installs them. A status
+        // chosen in the sheet reaches the POS only through the edit trigger,
+        // and when that went quiet on 2 Sep nothing here could show it. Older
+        // scripts send no list, and the last one reported is kept.
+        ...(Array.isArray(req.body?.triggers)
+          ? { scriptTriggers: req.body.triggers.map((t) => clean(t, 120)).filter(Boolean).slice(0, 50) }
+          : {}),
         registeredAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

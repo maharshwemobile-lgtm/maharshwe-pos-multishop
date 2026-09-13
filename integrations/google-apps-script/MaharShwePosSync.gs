@@ -19,7 +19,7 @@ const POS_CONFIG = {
 // Bump this whenever the script's behaviour changes. doGet reports it, and it
 // is the only way to tell a workbook running current code from one still on a
 // version pasted weeks ago — the failures otherwise look identical.
-const SCRIPT_VERSION = 'repair-sync-14';
+const SCRIPT_VERSION = 'repair-sync-15';
 
 const POS_DATASETS = [
   ['remittances', 'Remittances'],
@@ -99,6 +99,14 @@ function connectToPos() {
     throw new Error('Google Sheet ကို ဖွင့်လို့ မရပါ — POS မှာ Sheet link ထည့်ပြီး Script Code ပြန်ကူးပါ။ (' + error.message + ')');
   }
 
+  // Installed before reporting, so what the POS records is the state the
+  // workbook is really left in. On 2 Sep the edit trigger was installed, fired
+  // once, and then went quiet for good -- while an older project's trigger kept
+  // sending edits the POS has to refuse -- and nothing on either side showed
+  // it. The trigger list now travels with every connect.
+  installRepairEditTrigger();
+  const triggers = projectTriggerList_();
+
   const response = UrlFetchApp.fetch(POS_CONFIG.BASE_URL + '/api/google-sheet-sync/register', {
     method: 'post',
     contentType: 'application/json',
@@ -109,6 +117,7 @@ function connectToPos() {
       webAppUrl: webAppUrl,
       version: SCRIPT_VERSION,
       tabs: tabs,
+      triggers: triggers,
     }),
   });
 
@@ -121,7 +130,6 @@ function connectToPos() {
   // every time, it reads as a failure on a connection that just succeeded.
   var posHasUrl = body.indexOf('"hasWebAppUrl":true') >= 0;
   if (!webAppUrl && !posHasUrl) {
-    installRepairEditTrigger();
     throw new Error('နောက်ဆုံး တစ်ဆင့် ကျန်ပါသေးသည်။ Deploy → Manage deployments ကို ဖွင့်ပြီး /exec နှင့် ဆုံးသော Web App URL ကို ကူးယူကာ POS ၏ "Apps Script Web App URL" ကွက်ထဲ ထည့်ပါ။');
   }
 
@@ -131,7 +139,6 @@ function connectToPos() {
   const stale = props.getProperty('POS_SYNC_SECRET');
   if (stale && stale !== POS_CONFIG.SYNC_SECRET) props.deleteProperty('POS_SYNC_SECRET');
 
-  installRepairEditTrigger();
   const done = '✅ ချိတ်ပြီးပါပြီ — tab ' + tabs.length + ' ခု တွေ့ပါတယ်။ POS မှာ စစ်ဆေးမည် နှိပ်ကြည့်ပါ။';
   Logger.log(done);
   return done;
@@ -211,6 +218,16 @@ function syncAllRepairsToPos() {
   return done;
 }
 
+function projectTriggerList_() {
+  try {
+    return ScriptApp.getProjectTriggers().map(function (trigger) {
+      return trigger.getHandlerFunction() + ':' + String(trigger.getEventType());
+    });
+  } catch (error) {
+    return ['(unreadable: ' + (error.message || error) + ')'];
+  }
+}
+
 // The shop should not have to find the trigger screen and pick the right
 // function and event type off three dropdowns.
 function installRepairEditTrigger() {
@@ -275,6 +292,9 @@ function doPost(e) {
     if (String(payload.dataset || '') === 'status') {
       let tabs = [];
       try { tabs = targetSpreadsheet().getSheets().map(function (sheet) { return sheet.getName(); }); } catch (error) { tabs = []; }
+      // Whether the edit trigger exists is what decides if a status chosen in
+      // the sheet ever reaches the POS, and it was invisible from outside.
+      const triggers = projectTriggerList_();
       return jsonResponse({
         ok: true,
         service: 'MaharShwe POS Google Sheet Sync',
@@ -282,6 +302,8 @@ function doPost(e) {
         secretFingerprint: secretFingerprint(),
         sheetReadable: tabs.length > 0,
         tabs: tabs,
+        repairTab: String(POS_CONFIG.REPAIR_TAB || ''),
+        triggers: triggers,
       });
     }
 
