@@ -534,8 +534,8 @@ async function registerHandler(req, res) {
       message: "Account already exists. Please login.",
     });
   }
-  const trialDays = Number(process.env.SELF_REGISTER_TRIAL_DAYS || 30);
-  const safeTrialDays = Number.isFinite(trialDays) && trialDays >= 1 && trialDays <= 365 ? Math.floor(trialDays) : 30;
+  const trialDays = Number(process.env.SELF_REGISTER_TRIAL_DAYS || 90);
+  const safeTrialDays = Number.isFinite(trialDays) && trialDays >= 1 && trialDays <= 365 ? Math.floor(trialDays) : 90;
   const trialEndsAt = addDays(now, safeTrialDays);
 
   try {

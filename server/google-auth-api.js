@@ -69,8 +69,8 @@ function googleSelfSignupEnabled() {
 }
 
 function trialDays() {
-  const parsed = Number(process.env.GOOGLE_TRIAL_DAYS || process.env.SELF_REGISTER_TRIAL_DAYS || 30);
-  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 365) return 30;
+  const parsed = Number(process.env.GOOGLE_TRIAL_DAYS || process.env.SELF_REGISTER_TRIAL_DAYS || 90);
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 365) return 90;
   return Math.floor(parsed);
 }
 

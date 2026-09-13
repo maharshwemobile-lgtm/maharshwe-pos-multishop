@@ -772,7 +772,7 @@ function attachTenantLifecycleApi(app) {
 
     try {
       const now = new Date();
-      const trialDays = input.trialDays || 30;
+      const trialDays = input.trialDays || 90;
       const created = await prisma.$transaction(async (tx) => {
         const slug = await uniqueShopSlug(input.slug || input.name, tx);
         if (isHiddenTenantSlug(slug)) {

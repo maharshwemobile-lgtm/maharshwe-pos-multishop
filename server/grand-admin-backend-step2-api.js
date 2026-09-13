@@ -452,7 +452,7 @@ async function upsertSubscription(req, res) {
         status: legacySubscriptionStatus(input.status || latest?.status || "TRIAL"),
         startsAt: input.startsAt ? new Date(input.startsAt) : latest?.startsAt || now,
         endsAt: input.endsAt ? new Date(input.endsAt) : latest?.endsAt || addDays(now, input.customDays || 30),
-        monthlyFee: input.monthlyFee ?? latest?.monthlyFee ?? 50000,
+        monthlyFee: input.monthlyFee ?? latest?.monthlyFee ?? 30000,
         setupFee: input.setupFee ?? latest?.setupFee ?? 0,
         notes: input.notes ?? latest?.notes ?? "Updated by Grand Super Admin",
       };
@@ -504,7 +504,7 @@ async function renewSubscription(req, res) {
       const newEndsAt = addDays(base, days);
       const subscription = latest
         ? await tx.subscription.update({ where: { id: latest.id }, data: { status: "ACTIVE", endsAt: newEndsAt, renewedAt: now, monthlyFee: input.monthlyFee ?? latest.monthlyFee, notes: input.notes || latest.notes || `Renewed for ${days} days` } })
-        : await tx.subscription.create({ data: { shopId, status: "ACTIVE", startsAt: now, endsAt: newEndsAt, renewedAt: now, monthlyFee: input.monthlyFee ?? 50000, notes: input.notes || `Renewed for ${days} days` } });
+        : await tx.subscription.create({ data: { shopId, status: "ACTIVE", startsAt: now, endsAt: newEndsAt, renewedAt: now, monthlyFee: input.monthlyFee ?? 30000, notes: input.notes || `Renewed for ${days} days` } });
       await shopSettingsPatch(tx, shopId, { subscriptionStatus: "ACTIVE", subscriptionPlan: input.plan || platformFromShop(shop).subscriptionPlan || "starter", bundleBudget: input.bundleBudget ?? platformFromShop(shop).bundleBudget ?? 0, subscriptionCustomDays: input.customDays || null }, {});
       if (tx.adminRenewalHistory?.create) {
         await tx.adminRenewalHistory.create({

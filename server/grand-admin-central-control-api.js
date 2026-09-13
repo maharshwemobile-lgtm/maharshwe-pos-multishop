@@ -280,7 +280,7 @@ async function updateShop(req, res) {
             status: input.subscription.status || "ACTIVE",
             startsAt: now,
             endsAt: input.subscription.extendDays ? addDays(now, input.subscription.extendDays) : addDays(now, 30),
-            monthlyFee: input.subscription.monthlyFee ?? 50000,
+            monthlyFee: input.subscription.monthlyFee ?? 30000,
             setupFee: input.subscription.setupFee ?? 0,
             notes: input.subscription.notes || "Created by Grand Super Admin",
           },

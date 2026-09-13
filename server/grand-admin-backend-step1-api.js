@@ -240,9 +240,9 @@ async function subscriptionPlans(_req, res) {
   return res.json({
     ok: true,
     plans: [
-      { id: "starter", name: "Starter", price: 50000, billingCycle: "MONTHLY", enabledFeatures: ["dashboard", "sales", "products"] },
-      { id: "standard", name: "Standard", price: 80000, billingCycle: "MONTHLY", enabledFeatures: ["dashboard", "sales", "products", "stock", "repairs", "customers"] },
-      { id: "pro", name: "Pro", price: 120000, billingCycle: "MONTHLY", enabledFeatures: GRAND_ADMIN_FEATURE_KEYS },
+      { id: "starter", name: "Starter", price: 30000, billingCycle: "MONTHLY", enabledFeatures: ["dashboard", "sales", "products"] },
+      { id: "standard", name: "Standard", price: 60000, billingCycle: "MONTHLY", enabledFeatures: ["dashboard", "sales", "products", "stock", "repairs", "customers"] },
+      { id: "pro", name: "Pro", price: 100000, billingCycle: "MONTHLY", enabledFeatures: GRAND_ADMIN_FEATURE_KEYS },
     ],
   });
 }
