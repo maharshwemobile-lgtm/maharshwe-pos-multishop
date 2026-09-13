@@ -179,3 +179,6 @@
   .sale10-history-toolbar .sale10-export-button{flex:0 0 auto}
   .sale10-history-toolbar .sale10-clear-filter{flex:0 0 auto}
 }
+/* A discount note can be a sentence; it wraps under its label instead of pushing the amount column wide. */
+.sale10-discount-note-line b{max-width:70%;text-align:right;overflow-wrap:anywhere;font-weight:var(--ds-w-body)}
+.sale10-discount-note-field{margin-top:-4px}

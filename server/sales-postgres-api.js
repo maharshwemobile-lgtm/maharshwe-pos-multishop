@@ -21,6 +21,8 @@ const saleCreateSchema = z.object({
   customerName: text(180),
   customerPhone: text(60),
   discount: money.optional(),
+  // Why the discount was given, e.g. "swapped for a Note 13 Pro second-hand".
+  discountNote: text(300),
   paymentMethod: z.enum(['CASH', 'KPAY', 'WAVE_PAY', 'MIXED', 'OTHER', 'CREDIT']).default('CASH'),
   paymentReference: text(180),
   cashReceived: money.optional(),
@@ -370,6 +372,8 @@ function attachSalesPostgresApi(app) {
           userId: req.auth.userId,
           subtotal,
           discount,
+          // A note with no discount beside it explains nothing, so it is not kept.
+          discountNote: discount > 0 ? clean(input.discountNote) : null,
           total,
           costTotal,
           profitTotal: total - costTotal,
@@ -494,6 +498,7 @@ function attachSalesPostgresApi(app) {
         customerPhone: customer?.phone || null,
         subtotal,
         discount,
+        discountNote: sale.discountNote || null,
         amount: total,
         total,
         payment: isCredit ? 'Credit' : (usingSplitPayment ? 'Mixed' : paymentMethod.replace('_', ' ')),

@@ -108,7 +108,7 @@ function paymentLabel(method, fallback = 'Cash') {
   return method.accountName || method.name || method.code || fallback;
 }
 
-function ReviewModal({ cart, customer, payment, paymentLegacyMethod, paymentMethodLabel, subtotal, discount, total, cashReceived, change, splitPayments = [], busy, error, onClose, onConfirm }) {
+function ReviewModal({ cart, customer, payment, paymentLegacyMethod, paymentMethodLabel, subtotal, discount, discountNote = '', total, cashReceived, change, splitPayments = [], busy, error, onClose, onConfirm }) {
   return (
     <div className="stock-modal-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget && !busy) onClose();
@@ -150,6 +150,7 @@ function ReviewModal({ cart, customer, payment, paymentLegacyMethod, paymentMeth
           <section className="sale10-review-totals">
             <div><span>Subtotal</span><b>{money(subtotal)}</b></div>
             <div><span>Discount</span><b>-{money(discount)}</b></div>
+            {discount > 0 && discountNote ? <div className="sale10-discount-note-line"><span>Discount Note</span><b>{discountNote}</b></div> : null}
             <div className="grand"><span>Total</span><b>{money(total)}</b></div>
             {splitPayments.length ? <>
               <div><span>Paid / Covered</span><b>{money(cashReceived)}</b></div>
@@ -234,6 +235,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   const [splitPayments, setSplitPayments] = useState(restored?.splitPayments || []);
   const [splitModalOpen, setSplitModalOpen] = useState(false);
   const [discount, setDiscount] = useState(restored?.discount || '0');
+  const [discountNote, setDiscountNote] = useState(restored?.discountNote || '');
   const [toast, setToast] = useState(null);
   // A part-exchange is not a till sale, so it gets a voucher and no ledger row.
   const [quickVoucher, setQuickVoucher] = useState(false);
@@ -421,10 +423,10 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (!cart.length) clearDraft(session);
-      else saveDraft(session, { cart, customer, payment, splitPayments, discount });
+      else saveDraft(session, { cart, customer, payment, splitPayments, discount, discountNote });
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [cart, customer, payment, splitPayments, discount]);
+  }, [cart, customer, payment, splitPayments, discount, discountNote]);
 
   const addProduct = (item, sourceElement = null) => {
     if (Number(item.available ?? item.stockQuantity ?? 0) <= 0) {
@@ -547,6 +549,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
     setSplitPayments([]);
     setSplitModalOpen(false);
     setDiscount('0');
+    setDiscountNote('');
     clearDraft(session);
   };
 
@@ -646,6 +649,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
           customerName: customer.name || null,
           customerPhone: customer.phone || null,
           discount: safeDiscount,
+          discountNote: safeDiscount > 0 ? (discountNote.trim() || null) : null,
           paymentMethod: splitPaymentActive ? 'MIXED' : paymentLegacyMethod,
           paymentMethodId: selectedPaymentMethod?.id || null,
           paymentMethodCode: selectedPaymentMethod?.code || payment.methodCode || paymentLegacyMethod,
@@ -677,6 +681,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
       setPayment(EMPTY_PAYMENT);
       setSplitPayments([]);
       setDiscount('0');
+      setDiscountNote('');
       await loadCatalog();
     } catch (error) {
       setCheckoutError(error?.message || 'Checkout failed');
@@ -883,6 +888,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
             </div>
 
             <label className="stock-field sale10-discount-field"><span>Overall Discount</span><input type="number" min="0" value={discount} disabled={!canDiscount} onChange={(event) => setDiscount(event.target.value)} /><small>{canDiscount ? 'Applied to the whole sale' : 'Discount permission required'}</small></label>
+            {canDiscount && safeDiscount > 0 ? <label className="stock-field sale10-discount-note-field"><span>Discount Note</span><input value={discountNote} maxLength={300} onChange={(event) => setDiscountNote(event.target.value)} placeholder="ဥပမာ Note 13 Pro Second နဲ့ လဲ" /></label> : null}
 
             <div className="sale10-total-lines">
               <div><span>Subtotal</span><b>{money(subtotal)}</b></div>
@@ -977,7 +983,7 @@ export default function NewSaleV10({ onOpenHistory, onboardingGuide }) {
         </div>
       ) : null}
 
-      {reviewOpen ? <ReviewModal cart={cart} customer={customer} payment={payment} paymentLegacyMethod={splitPaymentActive ? 'MIXED' : paymentLegacyMethod} paymentMethodLabel={splitPaymentActive ? 'Split Payment' : paymentMethodLabel} subtotal={subtotal} discount={safeDiscount} total={total} cashReceived={splitPaymentActive ? splitPaymentTotal : cashReceived} change={splitPaymentActive ? splitPaymentChange : change} splitPayments={splitPayments} busy={checkoutBusy} error={checkoutError} onClose={() => setReviewOpen(false)} onConfirm={completeSale} /> : null}
+      {reviewOpen ? <ReviewModal cart={cart} customer={customer} payment={payment} paymentLegacyMethod={splitPaymentActive ? 'MIXED' : paymentLegacyMethod} paymentMethodLabel={splitPaymentActive ? 'Split Payment' : paymentMethodLabel} subtotal={subtotal} discount={safeDiscount} discountNote={discountNote.trim()} total={total} cashReceived={splitPaymentActive ? splitPaymentTotal : cashReceived} change={splitPaymentActive ? splitPaymentChange : change} splitPayments={splitPayments} busy={checkoutBusy} error={checkoutError} onClose={() => setReviewOpen(false)} onConfirm={completeSale} /> : null}
       {scannerOpen ? <WebBarcodeScanner onClose={() => setScannerOpen(false)} onDetected={addScannedProduct} /> : null}
       {completedSale ? <CompletedModal sale={completedSale} onNewSale={() => { setCompletedSale(null); searchRef.current?.focus(); }} onHistory={onOpenHistory} /> : null}
     </div>

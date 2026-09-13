@@ -118,6 +118,7 @@ function DetailModal({ sale, loading, printing, onClose, onReprint, onVoid }) {
             <section className="sale10-detail-totals">
               <div><span>Subtotal</span><b>{money(sale.subtotal)}</b></div>
               <div><span>Discount</span><b>-{money(sale.discount)}</b></div>
+              {sale.discountNote ? <div className="sale10-discount-note-line"><span>Discount Note</span><b>{sale.discountNote}</b></div> : null}
               <div><span>Profit</span><b>{money(sale.profit)}</b></div>
               <div className="grand"><span>Total</span><b>{money(sale.amount)}</b></div>
             </section>

@@ -99,6 +99,7 @@ function listRow(row) {
     cashierUsername: row.user?.username || null,
     cashierRole: row.user?.role || null,
     cashierActive: row.user?.active !== false,
+    discountNote: row.discountNote || null,
   };
 }
 

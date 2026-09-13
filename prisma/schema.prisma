@@ -588,6 +588,7 @@ model Sale {
   status        SaleStatus    @default(COMPLETED)
   subtotal      Decimal       @default(0) @db.Decimal(14, 2)
   discount      Decimal       @default(0) @db.Decimal(14, 2)
+  discountNote  String?       @map("discount_note")
   total         Decimal       @default(0) @db.Decimal(14, 2)
   costTotal     Decimal       @default(0) @map("cost_total") @db.Decimal(14, 2)
   profitTotal   Decimal       @default(0) @map("profit_total") @db.Decimal(14, 2)

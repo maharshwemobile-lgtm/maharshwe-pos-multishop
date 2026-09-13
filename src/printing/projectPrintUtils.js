@@ -288,9 +288,13 @@ export async function printSaleReceipt(sale, targetWindow = null) {
   const warranties = warrantyBlocksForSale(sale).map(warrantyBlockHtml).join('');
   // Lines the counter wrote for this slip alone -- what a phone was swapped
   // for, and anything else worth putting on the customer's copy.
-  const noteLines = (sale.noteLines || []).filter((line) => String(line || '').trim()).length
-    ? `<div class="slip-notes">${(sale.noteLines || [])
-      .filter((line) => String(line || '').trim())
+  // The reason a discount was given travels with the sale and prints with them.
+  const writtenLines = [
+    ...(sale.noteLines || []),
+    Number(sale.discount || 0) > 0 && sale.discountNote ? `Discount: ${sale.discountNote}` : '',
+  ].filter((line) => String(line || '').trim());
+  const noteLines = writtenLines.length
+    ? `<div class="slip-notes">${writtenLines
       .map((line) => `<p>${escapeHtml(String(line).trim())}</p>`).join('')}</div>`
     : '';
   const items = (sale.itemRows || sale.items || []).map((item) => {

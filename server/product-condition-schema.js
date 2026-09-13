@@ -17,6 +17,11 @@ let schemaPromise;
 const statements = [
   `ALTER TABLE categories ADD COLUMN IF NOT EXISTS condition TEXT NOT NULL DEFAULT 'NEW'`,
   `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS condition_snapshot TEXT`,
+  // Why a discount was given, written at the counter -- "swapped for a Note 13
+  // Pro second-hand". Prisma reads every column of a sale, so on a new database
+  // this has to run before anything lists sales; the live one had it added by
+  // hand ahead of the deploy for that reason.
+  `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_note TEXT`,
 ];
 
 async function ensureProductConditionSchema() {
