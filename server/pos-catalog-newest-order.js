@@ -53,6 +53,16 @@ function attachPosCatalogNewestOrder(app) {
         product: { active: true },
         inventoryBalance: { quantity: { gt: 0 } },
         ...(categoryResult?.success ? { categoryId: categoryResult.data } : {}),
+        // Spare parts -- screens and batteries named after the phone they fit --
+        // are stock for repairs, not things sold across the counter, and a
+        // hundred of them buried the products the till actually sells. They stay
+        // out of the list until someone searches or picks their category.
+        ...(!search && !categoryResult?.success ? {
+          NOT: [
+            { category: { is: { kind: 'REPAIR_PART' } } },
+            { product: { category: { is: { kind: 'REPAIR_PART' } } } },
+          ],
+        } : {}),
         ...(search ? {
           OR: [
             { variantName: { contains: search, mode: 'insensitive' } },
